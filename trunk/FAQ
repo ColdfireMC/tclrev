@@ -1,0 +1,155 @@
+
+Q1. How do I log in to a remote server?
+Q2. How do I import a new module?
+Q3. I can't get the Module Browser to work with my CVSROOT/modules file!
+Q4. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
+    I still use tkcvs to check out a project?
+Q5. What good are modules anyway?
+Q6. I get an error that says "error in startup script-invalid command name
+    "get_cde_params" while executing "get_cde_params" 
+     (file"usr/local/bin/tkcvs"line 1)
+Q7. The "Hide" and "Show" fields don't seem to do anything.
+Q8. I'm seeing strange behavior - things just don't act right.
+Q9. How do you get the colors shown in your screenshots?
+
+-----------------------------------------------------------------
+Q1. How do I log in to a remote server?
+
+A. There's no way to transmit a password through tkcvs, but luckily you
+   don't have to.  If it's a pserver, do "cvs login" once from the command
+   line, then start tkcvs.  CVS client saves your password (encrypted) in
+   your .cvspass file.
+
+   For remote access via ssh, you normally upload your public key to the
+   remote machine so it won't ask for a password.  (If you have a shell
+   account, it goes in ~/.ssh/authorized_keys.)  Then you set your
+   environment like this:
+   % setenv CVSROOT username@cvs.tkcvs.sourceforge.net:/cvsroot/project
+   % setenv CVS_RSH ssh
+
+   If you can't use authorized keys for some reason, you can use ssh-agent:
+   % ssh-agent $SHELL
+   % setenv CVSROOT username@cvs.tkcvs.sourceforge.net:/cvsroot/project
+   % setenv CVS_RSH ssh
+   % ssh-add (type passphrase)
+   % tkcvs
+
+-----------------------------------------------------------------
+Q2. How do I import a new module?
+
+   Get your new directory the way you want it.
+   Cd into the directory.
+   Press the big "Module Browser" button in the top part of the tkcvs UI.
+
+   In the Module Browser, press the rightmost button on the bottom, the
+   one that shows a folder and an up arrow.
+
+   In the dialog that pops up, fill in a descriptive title for the module.
+   This will be what you see in the right side of the Module Browser.
+
+   OK the dialog.  Several things happen now.  The directory is
+   imported, the CVSROOT/module file is updated, your original directory is
+   saved as directory.orig, and the newly created module is checked out.
+
+   When the dust clears, you should find the original Working Directory
+   Browser showing the files in the newly created, checked out module.
+
+   The most common cause of failure here is not having the proper
+   permissions to write to the repository.
+
+-----------------------------------------------------------------
+Q3. I can't get the Module Browser to work with my CVSROOT/modules file!
+
+A. (Version 6.x) You're not alone.  Here are some common mistakes:
+
+   Make sure the fields in your file are separated by TABS!  Does your editor
+   automatically de-tab when you save a file?  (Hint: if your editor has syntax
+   highlighting, use the Makefile mode.)
+
+   Every group of modules (#M) must be preceded by a directory (#D).
+
+   Not quite every possible module arrangement that can be specified in the
+   modules file can be reflected in the Module Browser.  That's a little
+   better in version 7.x, but you lose some freedom to create fictional
+   directory trees.
+
+-----------------------------------------------------------------
+Q4. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
+    I still use tkcvs to check out a project?
+
+A. Yes.  Start tkcvs.  Open the Module Browser.  It will be empty because
+   there's no modules file, but type the name of the project in the "Module"
+   entry.  Press the Checkout button (the ball with the arrow). 
+
+-----------------------------------------------------------------
+Q5. What good are modules anyway?
+
+A. It's hard to see the utility of modules unless you have projects that
+   have nested directories.  Defining a directory as a module makes it
+   behave as though it were at the top level of your repository.  For example,
+   the repository may contain documentation in a structure like this:
+
+   manuals
+     |
+     | - programA - reference manual
+     |     |
+     |     |------appnotes
+     |
+     | - programB - reference manual
+           |
+           |------appnotes
+   
+   If I didn't use modules and I wanted to check out only the programA
+   documents, I'd have to say "cvs co manuals/programA".  But since I have a
+   line in the CVSROOT/modules file that says
+
+   programA    manuals/programA
+
+   I can say "cvs co programA".  That may not help much in this simple example,
+   but as the project tree gets deeper, it becomes handy.  You can also make a
+   module out of different directories that are not so obviously grouped, or
+   make a module that includes some files in a directory and not others.
+
+-----------------------------------------------------------------
+Q6. I get an error that says "error in startup script-invalid command name
+    "get_cde_params" while executing "get_cde_params" 
+     (file"usr/local/bin/tkcvs"line 1)
+
+A. Did you run doinstall.tcl?
+
+   If yes, make sure you don't have a TCLROOT environment variable
+   that's pointing to somewhere other than where it put tkcvs' .tcl
+   files.
+
+   If that's not the trouble, do "which tkcvs" or whatever tells you which tkcvs
+   file you're executing.  Look at that file and see what TclRoot is set to.
+   Are the .tcl files in $TclRoot/tkcvs?  Is there a tclIndex there? 
+
+-----------------------------------------------------------------
+Q7. The "Hide" and "Show" fields don't seem to do anything.
+
+A. "Hide" works exactly the way a .cvsignore file works.  That is, it
+   causes non-CVS files with the pattern to be ignored.  It's meant
+   for hiding .o files and such.  Any file under CVS control will be
+   listed anyway.
+
+   "Show" is the inverse - it hides non-CVS files except for those with
+   the pattern.
+
+-----------------------------------------------------------------
+Q8. I'm seeing strange behavior - things just don't act right.
+
+A. Do you have a .cvsrc file or other .cvs* files lurking about?  If you
+   change cvs's behaviour in certain ways, it can trick tkcvs.  Be especially
+   careful of modifying "cvs log".
+
+-----------------------------------------------------------------
+Q9. How do you get the colors shown in your screenshots?
+
+A. I put this in my ~/.tkcvs file:
+   option add *Canvas.background #c3c3c3
+   option add *selectColor #ffec8b
+   option add *Menu.background gray
+   option add *Text.background gray92
+   option add *Entry.background gray92
+

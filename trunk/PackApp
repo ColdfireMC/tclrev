@@ -1,0 +1,50 @@
+#!/bin/csh -f
+
+# This makes a MacOS X package starting with stand-alone Wish.app.
+
+set V = 7.3
+
+if ( -f $HOME/tkcvs_$V ) rm -rf $HOME/tkcvs_$V
+mkdir $HOME/tkcvs_$V
+set Target = $HOME/tkcvs_$V/TkCVS.app
+echo "Ditto Target"
+ditto $HOME/Downloads/Wish\ Shell.app $Target
+chmod -R +w $Target/*
+
+echo "Installing Icons"
+cp tkcvs/bitmaps/Ticklefish.icns $Target/Contents/Resources
+chmod 644 $Target/Contents/Resources/Ticklefish.icns
+cp Info.plist $Target/Contents
+
+echo "Making Lib Directories"
+rm -rf    $Target/Contents/Resources/Scripts
+mkdir     $Target/Contents/Resources/Scripts
+mkdir     $Target/Contents/Resources/Scripts/bin
+mkdir     $Target/Contents/Resources/Scripts/lib
+mkdir     $Target/Contents/Resources/Scripts/lib/tkcvs
+mkdir     $Target/Contents/Resources/Scripts/lib/tkcvs/bitmaps
+
+echo "Installing Scripts"
+echo "source [file join [file dirname [info script]] bin/tkcvs.tcl]" > \
+        $Target/Contents/Resources/Scripts/AppMain.tcl
+cp tkcvs/tkcvs.tcl $Target/Contents/Resources/Scripts/bin/tkcvs.tcl
+chmod +x  $Target/Contents/Resources/Scripts/bin/tkcvs.tcl
+cp tkcvs/*.tcl $Target/Contents/Resources/Scripts/lib/tkcvs
+cp tkcvs/tclIndex $Target/Contents/Resources/Scripts/lib/tkcvs
+rm $Target/Contents/Resources/Scripts/lib/tkcvs/tkcvs.tcl
+cp tkcvs/bitmaps/*.{gif,xbm} $Target/Contents/Resources/Scripts/lib/tkcvs/bitmaps
+
+cp COPYING FAQ INSTALL $HOME/tkcvs_$V
+#cp CHANGELOG $HOME/tkcvs_$V/Changelog-tkcvs
+cp CHANGELOG $HOME/tkcvs_$V
+
+echo "See if it works"
+cd $HOME
+# This is the way it will be invoked on a double-click, so it had
+# better be able to handle it
+echo "$Target/Contents/MacOS/Wish Shell -psn_0_7995393"
+"$Target/Contents/MacOS/Wish Shell" -psn_0_7995393
+
+# To make a disk image, use
+# buildDmg.pl -dmgName tkcvs_$V -volName tkcvs_$V tkcvs_$V/*
+ 
