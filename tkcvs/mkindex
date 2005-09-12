@@ -1,0 +1,13 @@
+#!/bin/sh
+#-*-tcl-*-
+# the next line restarts using tclsh \
+exec tclsh "$0" -- ${1+"$@"}
+
+puts "making tclIndex"
+auto_mkindex .
+
+#puts "making pkgIndex.tcl"
+#pkg_mkIndex .
+
+puts "done"
+exit

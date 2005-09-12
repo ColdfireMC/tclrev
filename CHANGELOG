@@ -1,0 +1,584 @@
+Release 7.3     ?
+
+- Implement Subversion support
+
+
+Release 7.2.4   July, 2005
+
+- Fix problem with confirmation dialog
+
+
+Release 7.2.3   July, 2005
+
+- Close file descriptor for stderr output, which could exhaust the
+  maximum number of open files.
+
+- Re-work the pop-up dialogs so they appear in the center of their parent
+  window, not the middle of the screen (or between the two screens.)
+
+- The branch browser can now diff two versions even if it was invoked from
+  the Module Browser and the file isn't checked out.
+
+- TkDiff 4.1 (Tk8.4 recommended but not required)
+
+- The bookmarks stay in alphabetical order.
+
+
+Release 7.2.2   November, 2004
+
+- Handle UTF time format in cvs 1.12.8 log.  The author field no longer
+  gets lost during parsing.
+
+- Modify the exec module so that it gives back the GUI while the background
+  process is running
+
+- If using an external editor for commit messages (use_cvseditor), don't
+  display the dialog but go straight to the editor.
+
+- New menu functions to set or unset the -kb (keyword-binary) flag
+
+- Added a button to save the contents of a log-viewer window to a file
+
+- Choose whether to update the working directory after branching.  TkCVS has
+  always updated the working directory to be on the new branch, though
+  cvs itself doesn't do that.  Now TkCVS gives you the choice.
+
+- Change the cvs log options so the merging tool doesn't have a problem
+  with certain combinations of cvs clients and servers (1.10 client and
+  1.12 server was one such bad combination)
+
+- Fix default cvscfg(editor).  The defaults are now
+  set cvscfg(editor) "xterm"
+  set cvscfg(editorargs) "-e vi"
+ 
+- TkDiff 4.0.2
+
+
+Release 7.2.1   April, 2004
+
+- Vendor Merge is back, rehabilitated by Eugene Lee, its author.
+
+- Bug fixes:
+  892051 apply the tag ignores user input
+  892050 merge changes to current doesn't do that
+  (No report) Clear entry containing tag instead of appending, so tag
+     doesn't grow if dialog is re-opened.
+  Fixed a few problems with defaults in tkcvs_def.tcl.
+
+- The installer no longer hardcodes the library path in tkcvs.  The program
+  now figures out where it is at runtime.
+
+- You can now configure how many lines to keep in the trace window with
+  $cvscfg(trace_savelines)
+
+- Import dialog has better defaults.  Version default is the same as
+  you get if you don't supply the -b option on the command line.
+
+- Don't show stderr in CVS Commit dialog, since if there are many directories
+  they may make too much output and make you miss what you were interested in.
+
+
+Release 7.2     January 1, 2004
+
+- More merging functionality.  Helps you tag the merged-from and merged-to
+  versions, and if you use the tagnames properly, draws curving arrows between
+  them to show where merges occurred.  The tagnames are configurable with the
+  cvscfg(mergetoformat) and cvscfg(mergefromformat) variables.
+
+- Requires Tk 8.4 for the curved lines.
+
+- Fixed bug in annotation browser wherein it didn't change colors when
+  "Days per Color" changed.
+
+- No longer pops an error dialog if the background exec fails.  Just beeps at
+  you.  The command's output should tell you what happened.
+
+- TkDiff v4.0:
+      "r" key binding to recompute diffs
+      fix for diff symbols in Change Bars disappearing
+      preferences for showing whitespace differences
+      better tolerance of Windows filenames
+
+
+Release 7.1.4   November 6, 2003
+
+- Bugfix for hangs in 7.1.3
+
+- Bugfix for uninitialized X1 coordinate
+
+
+Release 7.1.3   October 20, 2003
+
+- Compatible with CVS 1.11.8, which lost the global -l flag.
+
+- Mainline tkdiff is back.  Tkdiff is on Sourceforge now and there's an
+  official beta, which is pretty stable.
+
+- Annotation browsing is available from the log branch browser.  There's also
+  a button on the main window to make it more likely that people will discover
+  the function, which can be most useful.
+
+- Merging will work to the branch as well as to the trunk in the logcanvas
+  browser.
+
+- Solved a few problems with the exec functionality.  High CPU usage is gone.
+  It now gives back the UI (to one degree or another) and captures stderr (both)
+  instead of doing one or the other.
+
+- Made a filter for single-line module-diff (patch) output.  Now files that
+  were added, removed, or changed are easier to pick out visually.
+
+- Added an Apply button to the module-level checkout, export, and patch
+  dialogs.  Since they don't save state, you could have to type the same
+  thing over and over on subsequent operations.
+
+
+Release 7.1.2   December 21, 2002
+
+- Fix exec problems.  Exit status is detected properly.  There's a new trace
+  level so you can see what CVS says on stderr.
+
+- Log browser no longer gives a stack trace if it can't figure out where to put
+  the "you are here" guy.  It just draws the diagram without him.
+
+- The correct highlight foreground is used in the canvas so the highlighted text
+  is readable with Windows color schemes.
+
+- Directory-level merge now picks up new directories (-d flag.)  It should be
+  an option, but you get bitten worse without -d than with it.
+
+
+Release 7.1.1  November 13, 2002
+
+- Fix right-mouse button problem that showed up in the contextual popup for the
+  current directory canvas.  Fixed an area-select problem while I was at it.
+
+- Fix reversed -j arguments in the merge_diff dialog
+
+- Required Tk version is 8.3, not 8.1
+
+
+Release 7.1  November 10, 2002
+
+- New graphical tool to help with merging directories and seeing an overview
+  of the branches.
+
+- New, completely re-written, branching diagram.  Much more sensible and
+  pleasing to the eye.  Contributed by Mike Jagdis
+
+- You can invoke the log browser from the command line:
+  tkcvs [-dir directory] [-root cvsroot] [-win workdir|module] [-log file]
+  Saves a lot of time if you're working with a remote repository and you
+  only want to browse one file.  Contributed by John Lash.
+
+- Option to use an external editor for commit messages so the rcsinfo template
+  feature can be used.  Terminal-based editors only for now, unless you don't mind
+  a superfluous shell window popping up in addition to your GUI-based editor.
+  Contributed by Mike Jagdis.
+
+- A picklist keeps a temporary history of directories visited.  Favorite places
+  can be bookmarked.
+
+- Capability to browse RCS files, in case you find yourself in an
+  rcs-controlled directory.  You can't do checkins and checkouts, but you can
+  see which files are under RCS control, which ones differ from the checked-in
+  version, and who has them locked.
+
+- A heavily patched TkDiff that works in AquaTK, in case you're a MacOS X fan.
+  TkCVS does pretty well in AquaTK as-is, with a few tweaks to tkcvs_def.tcl.
+
+- More intuitive module-operation dialogs contributed by Mike Jagdis.
+
+- Re-arranged buttons.  There's a somewhat overwhelming array, but now almost
+  everything is there without resorting to the menus.  I've tried to organize
+  them helpfully.  In addition, the ones that do CVS functions are disabled
+  when in a non-CVS directory.
+
+- The ".." directory has been removed from the browser, and we now have a
+  "go up" button instead.  Saves space in the list and keeps people from doing
+  unfortunate things to ".."
+
+- Namespace problems eliminated in log browser.  Now you can have as many
+  open as you like.  Contributed by Mike Jagdis
+
+- Improved viewer for command output.  It has multi-command capability.
+  That is used to advantage by the import routine, which used to open "waaaay
+  too many windows."  Contributed by Mike Jagdis
+
+- Smoother (faster?) scrolling in the directory and module browsers, due to
+  eliminating the windows-within-a-canvas method of drawing icons.
+  Contributed by John Cerney.
+
+- Patch for filtering and color coding "cvs update" output, contributed by
+  Laurent Duperval.
+
+- Since there are more ways you can start tkcvs, the exiting had to be cleaned
+  up so you don't accidentally exit, or worse, leave a windowless wish running.
+  Contributed by Mike Jagdis.
+
+- Enhanced dialog for importing a module.  Contributed by Mike Jagdis
+
+- Always sort by filename so that even if the files are sorted some other way,
+  they are sub-sorted in alphabetical order.
+
+- If the edit file button is clicked with nothing selected, a dialog box pops
+  up to allow input of a (new?) file name rather than erroring.  (Mike Jagdis)
+
+- There was a call to "cat" in exec.tcl.  It's gone now, so Windows users don't
+  have to have cat.exe anymore.
+
+- Repaired a bug in which if you did an import and the "Group Aliases in a
+  Folder" option was set, the aliases would be duplicated in the browser.
+
+- These days X is usually set up to map mouse wheel motion to button 4/5
+  events.  Patch adds bindings for buttons for and 5 so that the mouse wheel
+  can be used to scroll under X.  (Mike Jagdis)
+
+
+Release 7.0.3  January 23, 2002
+
+- Improved the algorithm for building the tree in the module browser, making
+  it less error-prone.
+
+- Recursive add respects .cvsignore and $cvscfg(ignore_file_filter)
+
+- The Working Directory Browser parses the "Sticky Options" field and uses
+  a different icon if a locally-added or up-to-date file is binary (-kb).
+
+- The Log Browser color-codes the selected revisions so you can visually
+  match the log text with the box in the branching diagram.
+
+- The dialog for module-level tagging (cvs rtag) is a little more
+  informative (and the code is a little less rococo).
+
+- The installer has a new option "-finaldest", to facilitate building
+  debian-style packages.
+
+- The man page is installed in man1 instead of mann.
+
+- The tooltips no longer persist until the operation started by the button
+  is finished.
+
+
+Release 7.0.2  October 19, 2001
+
+- Fixed duplicate items when using Control-B1 to add items to the selection
+  in the workdir browser.
+
+- Several bugfixes to the module browser.  You can now have "&" composites
+  at the end of a nested module without blowing it out of the graphical
+  tree structure.  Also fixed bugs in finding a module's title and choosing
+  the right icon.
+
+- The ability to group alias modules in their own folder is back, but as an
+  option cvscfg(aliasfolder).  It defaults to true.
+
+- There's now an Options menu in the module browser to turn tracing on and
+  off and temporarily change the display of alias modules.
+
+- New "File->Module File" item in the module browser menu displays the
+  CVSROOT/modules file in a text window.
+
+- Do a "file join" on the CVSROOT variable to put it in the native
+  path format.  That helps with a PC and a Samba-mounted repository
+  and doesn't seem to hurt anything else.
+
+
+Release 7.0.1  September 3, 2001
+
+- By popular demand, made file selection in the main canvas conform more to
+  the Shift-click-adds-range and Ctrl-click-adds-single model.
+
+- Made the CDE parameter thing more bullet-proof.  It shouldn't fail if
+  something is missing now.
+
+- After a module import, it renames the original directory and checks out
+  into a fresh one.  Otherwise, the checkout isn't recursive and you get a
+  lot of "independently added by a second party" messages.
+
+- Commented out the tkwaits that were causing the commit and merge dialogs
+  to disappear in some window managers.  Unfortunately they may have to
+  be un-commented back on some systems, especially Mandrake, which seems to
+  exhibit timing problems sometimes.
+
+- If a file's log message had a line containing only "=" characters, the
+  logcanvas browser would drop all the revisions that came after it.  It will
+  still do it if there are exactly 77 equal signs, but not otherwise.
+
+
+Release 7.0   June 2, 2001
+
+- Improved main file-browsing window.  It now has icons to indicate the status
+  of the files.  The right mouse button activates context-sensitive popup menus.
+  As a consequence of using a canvas widget instead of a listbox, the selection
+  mechanism is different.  It's click to select, shift-click to add selection,
+  click-on-background to deselect all.  The right button does an area select.
+
+- The module browser reads whatever information is available in the
+  modules file via "cvs checkout -c" before it looks for the tkcvs-specific
+  extensions.  Thus if there is a modules file at all, some information
+  will be available without the additional comments.
+
+- Options are specified via the options database instead of with cvscfg
+  variables.  If the window manager is CDE, its options are used by default.
+
+- The state of the main windows is remembered between sessions.
+
+- Bugs in display of the Editors column are fixed.
+
+- Finally found a good home for the "Checkout with Options" dialog.  Someone
+  pointed out that it belongs in the File menu next to the simple Update item.
+  I'm convinced that that's right.
+
+- The module browser window is paned so that you can adjust the relative
+  width of the columns.
+
+- CVS version 1.11 is supported better.
+
+
+Release 6.4  October 12, 2000
+
+- An optional column to show who's editing, and buttons to edit and unedit. 
+
+- The file list can be sorted up or down by each column. 
+
+- Filenames containing spaces are now permissible. 
+
+- Some configuration options can be saved. 
+
+- Most output windows are searchable.
+
+- New reports 
+  - cvs annotate 
+  - cvs log showing only the latest commit 
+
+- Option to show only a few tags for each revision in the branch browser. 
+
+- Some bug fixes. 
+
+- TkCVS 6.4 requires Tcl/Tk8.1 or better! Sorry, 8.0 has problems on too many
+  platforms. Besides, a regular expression parser that doesn't understand
+  [\s\t]+ just isn't good enough. :-( 
+
+Release 6.3
+
+  The bugfixes have finally caught up with the new features,
+  and we are declaring a stable release.
+
+  This is the first release that runs "native" on Windows - that is, without
+  either the Cygnus emulation layer or a whole lot of fiddling.
+
+Release 6.3.b2 (bugfix)
+
+- Fix the tag dialog so that it can be invoked more than once.
+
+- Insert "tkwait visibility" before "wm withdraw" for the larger dialogs
+  to avert race conditions which occurred on slower framebuffers.
+
+Release 6.3.b1
+
+-  New graphical Module Browser.  I reworked a BWidget implementation that
+   was contributed by Marcel Koelewijn.  Then I moved some of the buttons and
+   menus from the workdir to the module browser if they seemed more related
+   to modules than to the working directory.  Then I updated the help text to
+   reflect the changes.
+
+-  The GUI and listbox fonts are now configurable.
+
+-  TkCVS now looks for a file called "site_def" in the installation directory.
+   That's a good place to define your tagcolours and other site-specific
+   things.  It won't be overwritten by installs like tkcvs_def.tcl is.
+
+-  Some contributions by Andrew Johnson:
+     Added the ability to select an editor based on a pattern match on the
+        filename (eg to launch gimp on .gif files, etc).  User configurable
+        with the cvscfg(editors) variable and it defaults to the cvscfg(editor)
+        setting for backwards compatibility.
+     Fixed scrolling in the workdir listboxes so they remain synchronized if
+        you drag one up or down with the middle mouse button.
+ 
+-  User-configurable debug output, contributed by Marcel Koelewijn.  Tinkerers
+     will like this.
+
+-  Featurecide:
+     Buttons are always graphical and tooltips are always on.  You don't have
+        a choice anymore.
+     Log level "last" was removed because it didn't seem to work.
+        You can't count on the most recent checkin coming first or last,
+        especially on a branch.
+     Support for old versions of CVS was removed.
+
+-  Replaced the calls to awk with internal tcl parsing.  It slows down
+   the workdir listing some, but it solves portability problems and it's
+   cleaner.  Also replaced execs of rm, mv, and cp with tcl file commands.
+
+-  Put scrollbars on the text windows in the Log Browser so you can see how
+   long the log messages are.
+
+-  Put a fill color in the revision rectangles in the log browser so that
+   you can select them by clicking anywhere instead of just on the border.
+
+-  Added a conflict-merge proc, translated from a shell script by Bryan Ogawa.
+
+-  Between Marcel and me, the Vendor Merge functionality is rehabilitated,
+   working with remote repositories, and using the new module browser.
+   At least I think it's working.
+
+-  And of course I've been messing with the icons.
+
+
+Release 6.2.b3
+
+-  Added a button to the filebrowser to list the tags of a file.
+
+-  Fixed a bug in logbrowsing from the filebrowser.
+
+-  Scroll to the top of log canvas, so the most recent activity shows first.
+
+-  Changed the bitmap for iconified workdir and module windows.
+
+
+Release 6.2.b2
+
+-  Fixed the invocation of the logbrowser from the module filelist.
+
+
+Release 6.2.b1
+
+-  Made tkcvs more remote-client friendly by replacing all calls which
+   change directory to the repository with CVS commands.  You can now
+   get a file list from the Module Browser remotely, although it can be slow.
+
+-  Colorized the icons.
+
+-  Fixed the module browser so it will display directory trees that
+   are more than two levels deep.
+
+-  Made the reports behave the way the help file says they do.
+   The 'by name' lists weren't confined to the selected module
+   like the helpfile said, but now they are.
+
+-  Prevent "runaway tkdiff."  If no file is selected, tell the user to
+   select one.
+
+-  Display "sticky tags" in the logcanvas browser.  Fixed another
+   branching bug.  The x offsets of the tag labels aren't perfect -
+   we'll have to do a real place-and-route algorithm some day.
+
+-  Added a checkbox for the -F argument to cvs tag, because everyone
+   argues about whether it should force or not.  Let's let them
+   decide.
+
+-  Folded in some more changes to help it run on Windows.
+
+-  Fixed the "Go" menu so it remembers where we've been.  Don't know
+   when that got broken.
+
+
+Release 6.1.a8:
+
+-  Quotes in comment strings stopped passing thru when exec_command was
+   implemented.  Added a regsub to fix it.  Dollar signs are still OK.
+
+-  Changed "rsh -l user host" to "rsh host -l user" because some
+   implementations of rsh don't understand the former.
+
+-  Fixed some erratic behavior when a remote module file isn't read
+   successfully.
+
+-  read the .cvsignore file in the working directory and add it to
+   the ignore patterns which were optionally set in tkcvs_def.
+
+-  Bugfix: filter "no file xyz" out of getFiles so it doesn't try to commit them.
+
+Release 6.1.a7:
+
+-  Jo Wahle has redone building the workdir columns so it's much faster, and
+   fixed a bug in which merge conflicts would cause it to get confused.
+
+-  I parsed the branch info from the cvs log to take the guesswork
+   out of the branching tree.
+ 
+-  Stephen Kick improved logcanvas sizing so tags on the top
+   revision don't disappear off the top of the canvas.
+
+Release 6.1.a6:
+
+-   Fix some bugs.  Put in a dialog to tell you if your rsh to a cvs
+    server failed.  Fixed the listing of arguments in the "are you sure?"
+    dialog.  Improved the logcanvas' ability to find a parent node
+    in a strange revision sequence.
+
+
+Release 6.1.a5:
+
+-   Put in some configuration options to run on DOS/Windows.  Contributed
+    by Christoph Jaeschke.
+
+    NOTE:  I don't have a Wintel machine to test on (strange but true.)
+    The configuration options are only tested on unix.
+
+-   Changed the report commands to run under exec_command.  I missed 
+    some last time.
+
+Release 6.1.a4:
+
+-   Run lengthy cvs operations in the background to avoid locking up the
+    GUI.  Contributed by Christoph Jaeschke.
+
+-   Upgrade tkdiff from v2.03 to 3.0-beta-6, which looks like it's going
+    to be final.  Tkdiff has its own editor preference now, so we don't
+    have to kludge one in at install time.
+
+-   The cvscheck script is integrated into the tcl code.  Contributed
+    by Christoph Jaeschke.
+
+Release 6.1.a3: 
+
+-   Bugfixes.  Module browser looks at the repository that the current
+    CVS directory is in.  TkDiff2.03 is patched so that it will work with
+    two un-checked-out files.
+
+Release 6.1.a2: 
+
+-   Upgrade from tkdiff v1.0 to v2.03
+
+-   Fix the bug in the module browser so that the current module always
+    matches the X selection.
+
+-   Added command-line options
+    -dir directory
+    -root cvsroot
+    -win (workdir|module)
+
+-   Logfile browser doesn't try to evaluate dollar signs in comments
+    anymore, so you can use them with impunity.
+
+-------------------------------------------------------------------------------
+Release 6.1.a1 was put together by Dorothy Robinson. It contains bugfixes and
+enhancements provided by users.  Please don't blame Del for my mistakes.
+In general, I rolled in patches but didn't do anything with suggestions
+unless they were very simple. The most noticeable changes are:
+
+-   Showing the current tag of each file and the directory in the main
+    window, so users know right away whether they are on a branch or not.
+    Providing more information and options in the update dialog box.
+    This group of changes was contributed by Jo Wahle.  It reflects use
+    in a production environment where users are sometimes inexperienced.
+    It's informative without getting in the way, I think.
+
+-   The install script has been updated for Wish8.0, and it should now
+    work on FreeBSD.
+
+-   ~/.tkcvs is sourced on startup.
+
+-   The help file no longer talks about marking files, which was obsolete.
+
+-   The log browser has been reworked to show the tagnames and to draw branches
+    more intelligently, making better use of horizontal space.  Blame me for
+    this one.
+
+-   Import checks out the modules file before trying to change it.  This
+    was from  M.E. Smith.
+
+

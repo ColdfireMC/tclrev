@@ -1,0 +1,62 @@
+TkCVS requires Tcl/Tk 8.4.  Tkcvs and tkdiff expect to find a
+program called "wish" in the path.  This can be a symbolic link to wish8.x
+or whatever is appropriate.  Naturally, you also need CVS and diff.
+
+To install TkCVS, run "doinstall.tcl".  The installer provides an entry
+containing the default path for installation, and it shows where it will put
+the various files, On Unix/Linux, the default location is /usr/local, and on
+Windows it's C:. If you want to put TkCVS somewhere else, type a new directory
+in the entry and hit return.  doinstall.tcl can be run without the gui and with
+an argument specifying the destination. 
+
+Usage: doinstall.tcl [-nox] [destination]
+
+
+--- IMPORTANT: Configuration Files ---
+
+Look at <install_dir>/lib/tkcvs/tkcvs_def.tcl and see if there's anything you
+want to change.  You may need to change the variables which specify how to
+invoke various programs and the location of the the temporary directory.  You
+can also choose a default editor, specify colors for important tags, and set
+many other preferences.
+
+tkcvs_def.tcl will look for a file called site_def in the same directory
+it is in.  That's a good place to put site-specific preferences such as tag
+colours, without having them overwritten the next time you update tkcvs.
+
+Also, you can put personal preferences in the .tkcvs file in your home
+directory.  User interface preferences should usually go there.
+
+This is the order of precedence:
+ ~/.tkcvs
+ <installdir>/lib/tkcvs/site_def
+ <installdir>/lib/tkcvs/tkcvs_def.tcl
+
+Some important preferences:
+  cvscfg(editor) "xterm -e vi"
+  cvscfg(shell) "xterm -name tkcvsxterm -n {TkCVS xterm}"
+  
+
+--------------------------------------
+On Windows:
+
+You need Tcl/Tk, CVS, and diff.exe.  Make sure these are in your PATH.
+Also set CVSROOT.  If your version of Windows doesn't set HOME, you should
+set that too.
+
+We recommend not to use Cygwin to set up TkCVS for Windows.  TkCVS runs just
+fine native, and the Windows version of Tcl won't understand Cygwin's
+paths, which can lead to problems if you use the Cygwin shell.
+
+--------------------------------------
+
+Aqua Tk on MacOSX:
+
+Just drop TkCVS.app and TkDiff.app into your Applications folder.  No separate
+Wish shell is necessary.  Pay attention to the .tkcvs file that's written in
+your home directory when TkCVS is run.  You may want to specify a different
+editor or shell:
+
+set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
+
+
