@@ -33,11 +33,7 @@ proc commit_run {} {
   }
 
   if {[winfo exists .commit]} {
-    wm deiconify .commit
-    raise .commit
-    #grab set .commit
-    gen_log:log T "LEAVE"
-    return
+     destroy .commit
   }
 
   toplevel .commit

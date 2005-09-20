@@ -236,11 +236,7 @@ proc svn_commit_dialog {} {
   }
 
   if {[winfo exists .commit]} {
-    wm deiconify .commit
-    raise .commit
-    #grab set .commit
-    gen_log:log T "LEAVE"
-    return
+    destroy .commit
   }
 
   toplevel .commit
@@ -347,7 +343,6 @@ proc svn_commit {comment args} {
     }
     set v [viewer::new "SVN Commit"]
     regsub -all "\"" $comment "\\\"" comment
-    # Lets not show stderr as it does a lot of "examining" ?
     $v\::do "svn commit -m \"$comment\" $filelist" 1
     $v\::wait
   }
