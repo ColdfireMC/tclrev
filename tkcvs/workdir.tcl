@@ -854,6 +854,8 @@ proc setup_dir { } {
       -command { rcs_filelog [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { rcs_checkout [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
+      -command rcs_commit_dialog
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "Reports" -state disabled
