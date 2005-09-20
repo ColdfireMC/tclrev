@@ -1409,7 +1409,7 @@ foreach orphan $remaining_branches {
                }]
       button $branch_canvas.annotate -image Annotate \
         -command [namespace code {
-                 cvs_annotate [$branch_canvas.up.revA_rvers cget -text] $filename
+                 svn_annotate [$branch_canvas.up.revA_rvers cget -text] $filename
                }]
       button $branch_canvas.diff -image Diff \
         -command [namespace code {
@@ -1473,13 +1473,12 @@ foreach orphan $remaining_branches {
                  svn_cat [$branch_canvas.up.revA_rvers cget -text] $filename
                }]
         $branch_canvas.join configure -state disabled
-        $branch_canvas.annotate configure \
-        -command [namespace code {
-                   cvs_annotate_r [$branch_canvas.up.revA_rvers cget\
-                   -text] $filename
-                 }]
+        #$branch_canvas.annotate configure \
+        #-command [namespace code {
+                   #svn_annotate [$branch_canvas.up.revA_rvers cget-text] $filename "svn"
+                 #}]
         $branch_canvas.join configure -state disabled
-        $branch_canvas.delta configure -state disabled
+        #$branch_canvas.delta configure -state disabled
   
       set_tooltips $branch_canvas.refresh \
         {"Re-read the log information"}
