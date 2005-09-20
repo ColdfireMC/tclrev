@@ -877,6 +877,8 @@ proc setup_dir { } {
       -command { svn_annotate BASE [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command svn_commit_dialog
+    .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
+      -command svn_merge_conflict
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "Reports" -state normal
@@ -902,6 +904,8 @@ proc setup_dir { } {
       -command commit_run
     .workdir.bottom.buttons.cvsfuncs.blogfile configure \
       -command { cvs_logcanvas [pwd] [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bconflict configure \
+      -command cvs_merge_conflict
     # Menus
     .workdir.menubar entryconfigure "CVS" -state normal
     .workdir.menubar entryconfigure "Reports" -state normal

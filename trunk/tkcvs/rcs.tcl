@@ -118,7 +118,7 @@ proc rcs_commit_dialog {} {
     }
   button .commit.apply -text "Apply" \
     -command {
-      rcs_commit [.commit.tcomment get 1.0 end] $cvsglb(commit_list)
+      rcs_checkin [.commit.tcomment get 1.0 end] $cvsglb(commit_list)
     }
   button .commit.clear -text "ClearAll" \
     -command {
