@@ -492,3 +492,55 @@ proc svn_log {args} {
   gen_log:log T "LEAVE"
 }
 
+proc cvs_merge_conflict {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+
+  set filelist [join $args]
+  if {$filelist == ""} {
+    cvsfail "Please select some files to merge first!"
+    return
+  }
+
+  foreach file $filelist {
+    gen_log:log F "OPEN $file"
+    set f [open $file]
+    set match 0
+    while { [eof $f] == 0 } {
+      gets $f line
+      if { [string match "<<<<<<< *" $line] } {
+        set match 1
+        break
+      }
+    }
+    gen_log:log F "CLOSE $file"
+    close $f
+   
+    if { $match != 1 } { 
+      cvsfail "This file does not appear to have a conflict." .workdir
+      return
+    }
+    # Invoke tkdiff with the proper option for a conflict file
+    # and have it write to the original file
+    set commandline "$cvscfg(tkdiff) -conflict -o \"$filename\" \"$filename\""
+    gen_log:log C "$commandline"
+    set ret [catch {eval "exec $commandline"} view_this]
+    if {$ret == 0} {
+      set mess "Mark $filename resolved?"
+      if {[cvsconfirm $mess .workdir] != "ok"} {
+        continue
+      }
+      set commandline "svn resolved $filename"
+      exec::new $commandline
+    } else {
+      cvsfail "$view_this" .workdir
+    }
+  }
+  
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+  gen_log:log T "LEAVE"
+}
+

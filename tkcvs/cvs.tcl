@@ -1437,6 +1437,8 @@ proc cvs_merge_conflict {args} {
   gen_log:log T "LEAVE"
 }
 
+proc svn_merge_conflict {} {
+}
 proc cvs_gettaglist {filename parent} {
   global cvs
   global cvscfg
