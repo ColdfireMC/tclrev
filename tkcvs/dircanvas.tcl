@@ -231,12 +231,14 @@ proc DirCanvas:newitem {w f} {
   #gen_log:log T "ENTER ($w $f)"
 
   set DirList($w:$f:name) $f
-  #puts "Newitem $f status $Filelist($f:status)"
+  gen_log:log D "Newitem $f status $Filelist($f:status)"
   set DirList($w:$f:status) $Filelist($f:status)
   set DirList($w:$f:date) $Filelist($f:date)
   set DirList($w:$f:sticky) $Filelist($f:stickytag)
   set DirList($w:$f:option) $Filelist($f:option)
-  set DirList($w:$f:option) ""
+  gen_log:log D "Newitem $f option $Filelist($f:option)"
+  # Why did I do this?
+  #set DirList($w:$f:option) ""
   if { [info exists Filelist($f:editors)]} {
     set DirList($w:$f:editors) $Filelist($f:editors)
   } else {
@@ -1240,14 +1242,14 @@ proc DirCanvas:makepopup {w} {
   $w.stat_mod_pop add command -label "Diff" \
     -command { comparediff [workdir_list_files] }
   $w.stat_mod_pop add command -label "Commit" \
-    -command { commit_run }
+    -command { cvs_commit_dialog }
 
   # For CVS files that have been added or removed but not commited
   menu $w.stat_plus_pop -tearoff 0
   $w.stat_plus_pop add command -label "Open" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_plus_pop add command -label "Commit" \
-    -command { commit_run }
+    -command { cvs_commit_dialog }
 
   # For CVS files with conflicts
   menu $w.stat_conf_pop -tearoff 0

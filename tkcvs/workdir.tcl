@@ -166,7 +166,7 @@ proc workdir_setup {} {
   button .workdir.bottom.buttons.cvsfuncs.bdiff -image Diff \
      -command { comparediff [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bcheckin -image Checkin \
-      -command commit_run
+      -command cvs_commit_dialog
   button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout
   button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate \
      -command { cvs_annotate $current_tagname [workdir_list_files] }
@@ -403,7 +403,7 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add command -label "Update with Options" -underline 7 \
      -command update_run
   .workdir.menubar.cvs add command -label "Commit" -underline 0 \
-     -command commit_run
+     -command cvs_commit_dialog
   .workdir.menubar.cvs add command -label "Add Files" -underline 0 \
      -command { add_dialog [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Add Recursively" \
@@ -901,7 +901,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bannotate configure \
       -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure \
-      -command commit_run
+      -command cvs_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.blogfile configure \
       -command { cvs_logcanvas [pwd] [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bconflict configure \
