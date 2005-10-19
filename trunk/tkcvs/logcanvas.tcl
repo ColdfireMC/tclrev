@@ -1574,7 +1574,7 @@ namespace eval ::logcanvas {
                }]
       button $logcanvas.diff -image Diff \
         -command [namespace code {
-                 cvs_diff_r [$logcanvas.up.revA_rvers cget -text] \
+                 comparediff_r [$logcanvas.up.revA_rvers cget -text] \
                    [$logcanvas.up.revB_rvers cget -text] $cwd $logcanvas $filename
                }]
       button $logcanvas.join -image Mergebranch \
