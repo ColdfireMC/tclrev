@@ -145,9 +145,9 @@ proc svn_add {args} {
   if {$filelist == ""} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
-  set cmd [exec::new "svn add $filelist"]
+  set cmd(svnadd) [exec::new "svn add $filelist"]
   if {$cvscfg(auto_status)} {
-    $cmd\::wait
+    $cmd(svnadd)\::wait
     setup_dir
   }
 
@@ -162,9 +162,9 @@ proc svn_remove {args} {
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
 
-  set cmd [exec::new "svn remove $filelist"]
+  set cmd(svndel) [exec::new "svn remove $filelist"]
   if {$cvscfg(auto_status)} {
-    $cmd\::wait
+    $cmd(svndel)\::wait
     setup_dir
   }
 
@@ -253,6 +253,8 @@ proc svn_commit_dialog {} {
   text .commit.tcomment -relief sunken -width 70 -height 10 \
     -exportselection 1 \
     -wrap word -border 2 -setgrid yes
+
+
   # Explain what it means to "commit" files
   message .commit.message -justify left -aspect 800 \
     -text "This will commit changes from your \
@@ -265,11 +267,13 @@ proc svn_commit_dialog {} {
     -command {
       grab release .commit
       wm withdraw .commit
-      svn_commit [.commit.tcomment get 1.0 end] $cvsglb(commit_list)
+      set cvsglb(commit_comment) [.commit.tcomment get 1.0 end]
+      svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
     }
   button .commit.apply -text "Apply" \
     -command {
-      svn_commit [.commit.tcomment get 1.0 end] $cvsglb(commit_list)
+      set cvsglb(commit_comment) [.commit.tcomment get 1.0 end]
+      svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
     }
   button .commit.clear -text "ClearAll" \
     -command {
@@ -293,6 +297,10 @@ proc svn_commit_dialog {} {
 
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
     -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  # Fill in the most recent commit message
+  .commit.tcomment insert end $cvsglb(commit_comment)
+
   wm title .commit "Commit Changes"
   wm minsize .commit 1 1
 
