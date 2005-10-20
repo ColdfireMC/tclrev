@@ -79,6 +79,13 @@ proc workdir_setup {} {
   label .workdir.top.lcvsroot -text "CVSROOT"
   label .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) -anchor w -relief groove
 
+  if {[regexp {://} $cvscfg(cvsroot)]} {
+     set cvscfg(url) $cvscfg(cvsroot)
+     set cvscfg(svnroot) $cvscfg(url)
+    .workdir.top.lcvsroot configure -text "SVN URL"
+    .workdir.top.tcvsroot configure -textvariable cvscfg(url)
+    .workdir.top.bmodbrowse configure -image Modules_svn
+  }
 
   grid columnconf .workdir.top 1 -weight 1
   grid rowconf .workdir.top 3 -weight 1
@@ -327,6 +334,10 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) unedit.gif]
   image create photo Modules \
     -format gif -file [file join $cvscfg(bitmapdir) modbrowse.gif]
+  image create photo Modules_cvs \
+    -format gif -file [file join $cvscfg(bitmapdir) modbrowse_cvs.gif]
+  image create photo Modules_svn \
+    -format gif -file [file join $cvscfg(bitmapdir) modbrowse_svn.gif]
 
   image create photo Tags \
     -format gif -file [file join $cvscfg(bitmapdir) tags.gif]
@@ -846,7 +857,7 @@ proc setup_dir { } {
   gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
   if {$inrcs} {
     # Top
-    .workdir.top.lcvsroot configure -text "RCS dir"
+    .workdir.top.lcvsroot configure -text "RCS *,v"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
@@ -863,6 +874,7 @@ proc setup_dir { } {
     # Top
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
+    .workdir.top.bmodbrowse configure -image Modules_svn
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
@@ -893,6 +905,7 @@ proc setup_dir { } {
     # Top
     .workdir.top.lcvsroot configure -text "CVSROOT"
     .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
+    .workdir.top.bmodbrowse configure -image Modules_cvs
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -command { \
        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }

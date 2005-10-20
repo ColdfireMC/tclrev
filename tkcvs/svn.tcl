@@ -416,25 +416,33 @@ proc parse_svnmodules {svnroot} {
           set modval(trunk) "trunk"
        }
       "branches/" {
+        set branches ""
         set command "svn list $svnroot/branches"
         set cmd(svnlist) [exec::new "$command"]
         if {[info exists cmd(svnlist)]} {
-          set branches [$cmd(svnlist)\::output]
+          set branch_ret [$cmd(svnlist)\::output]
         }
-        foreach branch $branches {
+        foreach branch $branch_ret {
           gen_log:log D "  $branch"
-          set modval($branch) "branches/$branch"
+          if { [string match {*/} $branch] } {
+             set modval($branch) "branches/$branch"
+             lappend branches $branch
+          }
         }
       }
       "tags/" {
+        set tags ""
         set command "svn list $svnroot/tags"
         set cmd(svnlist) [exec::new "$command"]
         if {[info exists cmd(svnlist)]} {
-          set tags [$cmd(svnlist)\::output]
+          set tags_ret [$cmd(svnlist)\::output]
         }
-        foreach tag $tags {
+        foreach tag $tags_ret {
           gen_log:log D "  $tag"
-          set modval($tag) "tags/$tag"
+          if { [string match {*/} $tag] } {
+             lappend tags $tag
+             set modval($tag) "tags/$tag"
+          }
         }
       }
       default {
