@@ -854,11 +854,16 @@ proc setup_dir { } {
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
     $widget configure -state $bstate
   }
+  if {! $cvsglb(econtrol)} {
+    .workdir.bottom.buttons.cvsfuncs.bcvsedit_files configure -state disabled
+    .workdir.bottom.buttons.cvsfuncs.bunedit_files configure -state disabled
+  }
   gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
   if {$inrcs} {
     # Top
     .workdir.top.lcvsroot configure -text "RCS *,v"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
+    .workdir.top.bmodbrowse configure -image Modules
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
