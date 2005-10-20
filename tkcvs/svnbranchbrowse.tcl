@@ -110,6 +110,7 @@ puts "Trunk"
         # if the file was added on a branch, this will error out
         # Come to think of it, there's nothing especially privileged about the trunk
         set command "svn log $cvscfg(svnroot)/trunk/$relpath/$filename"
+        gen_log:log C "$command"
         #set trunk_log [::exec::new $command]
         #set trunk_lines [split [$trunk_log\::output] "\n"]
         set ret [catch {eval exec $command} trunk_log]
@@ -534,8 +535,9 @@ puts "sorted branchrevs($r) $branchrevs($r)"
           [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]]
       }
 
-      proc DrawRoot { x y box_width root_rev branch last_rev } {
+      proc DrawRoot { x y box_width root_rev branch } {
         global cvscfg
+        variable box_height
         variable curr
         variable font_norm
         variable font_norm_h
@@ -544,8 +546,8 @@ puts "sorted branchrevs($r) $branchrevs($r)"
         variable root_info
         variable tags
 
-        gen_log:log T "ENTER ($x $y $box_width $root_rev $branch $last_rev)"
-        set root_text [concat $root_info $last_rev ]
+        gen_log:log T "ENTER ($x $y $box_width $root_rev $branch)"
+        set root_text $root_info
         set btag [lindex $tags($branch) 0]
         # draw the box
         set rheight [expr {$curr(pady,2) + [llength $root_text] * $font_norm_h}]
@@ -851,7 +853,7 @@ gen_log:log D "$r"
 puts "\nrevlist $revlist"
 gen_log:log D "revlist $revlist"
 puts "        [lrange $revlist 0 end-1]"
-        foreach revision [lrange $revlist 0 end-1] {rtag_width rheight} $rdata {
+        foreach revision [lrange $revlist 0 end] {rtag_width rheight} $rdata {
           if {$revision == ""} {continue}
           incr y $curr(spcy)
           incr y $rheight
@@ -928,7 +930,7 @@ gen_log:log D "revbranches($revision): $r2"
         }
         incr y $curr(spcy)
         if {[info exists revision]} {
-          DrawRoot $x $y $box_width $revision $branch [lindex $revlist end]
+          DrawRoot $x $y $box_width $revision $branch
 puts "Finished $branch"
           if {$opt(update_drawing) < 2} {
             UpdateBndBox
