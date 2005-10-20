@@ -26,7 +26,7 @@ proc read_svn_dir {dirname} {
       set root ""
       set relp ""
       set current_tagname ""
-      puts $spl
+      #puts $spl
       set state P
       for {set j 0} {$j < [llength $spl]} {incr j} {
         set word [lindex $spl $j]
@@ -54,8 +54,8 @@ proc read_svn_dir {dirname} {
           default {}
         }
       }
-      puts $current_tagname
-      puts "***"
+      #puts $current_tagname
+      #puts "***"
       set cvscfg(svnroot) [string trimright $root "/"]
       gen_log:log D "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
@@ -501,6 +501,7 @@ proc svn_log {args} {
   if {$cvscfg(ldetail) == "summary"} {
     append commandline "-q "
   }
+  append commandline $filelist
 
   set logcmd [viewer::new "SVN Log ($cvscfg(ldetail))"]
   $logcmd\::do "$commandline"

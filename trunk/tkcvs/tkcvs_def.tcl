@@ -224,6 +224,10 @@ if {$tcl_platform(platform) == "windows"} {
     # Some special stuff for MacOSX "native" Tk
     if {! [catch {set windowingsystem [tk windowingsystem]}] && $windowingsystem == "aqua"} {
       set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
+      set cvscfg(editorargs) {}
+      # If you invoke vim this way, -psn_ tells it to run in its own window
+      #set cvscfg(editor) /Applications/Vim.app/Contents/MacOS/Vim
+      #set cvscfg(editorargs) -psn
       set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
       set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/Wish Shell\""
 
