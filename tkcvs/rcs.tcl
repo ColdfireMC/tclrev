@@ -2,30 +2,43 @@
 # Get the revision log of an RCS file and send it to the
 # branch-diagram browser.
 # Disable merge buttons.
-proc rcs_filelog {filename} {
+proc rcs_filelog {files} {
   global cvscfg
   global cwd
   
-  gen_log:log T "ENTER ($filename)"
-  set pid [pid]
-  set filetail [file tail $filename]
-  
-  set commandline "rlog \"$filename\""
+  gen_log:log T "ENTER ($files)"
 
-  # Log canvas viewer
-  logcanvas::new $cwd $filename "no file" $commandline
+  if {$files == {}} {
+    cvsfail "Please select one or more files!" .workdir
+    return
+  }
+
+  foreach filename $files {
+    set pid [pid]
+    set filetail [file tail $filename]
+    set commandline "rlog \"$filename\""
+
+    # Log canvas viewer
+    logcanvas::new $cwd $filename "no file" $commandline
+  }
   gen_log:log T "LEAVE"
 }
 
 # check out (co) a file.  Called from the "update" button
-proc rcs_checkout {filename} {
+proc rcs_checkout {files} {
   global cvscfg
 
-  gen_log:log T "ENTER ($filename)"
-  set commandline "co -l $filename"
+  gen_log:log T "ENTER ($files)"
+
+  if {$files == {}} {
+    cvsfail "Please select one or more files!" .workdir
+    return
+  }
+
+  set commandline "co -l $files"
   set v [::viewer::new "RCS Checkout"]
   $v\::do "$commandline" 1
-
+  
   if {$cvscfg(auto_status)} {
     $v\::wait
     setup_dir
@@ -155,7 +168,8 @@ proc rcs_commit_dialog {} {
 
   gen_log:log T "LEAVE"
 }
-# Get an rcs status for files in working directory
+
+# Get an rcs status for files in working directory, for the dircanvas
 proc rcs_workdir_status {} {
   global cvscfg
   global Filelist
@@ -246,6 +260,65 @@ proc rcs_workdir_status {} {
       }  
     }
   }
+  gen_log:log T "LEAVE"
+}
+
+# for Directory Status Check
+proc rcs_check {} {
+  global cvscfg
+
+  gen_log:log T "ENTER"
+
+  set v [::viewer::new "Directory Status Check"]
+  set rcsfiles [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
+  set command "rlog -h $rcsfiles"
+  gen_log:log C "$command"
+  set ret [catch {eval "exec $command"} raw_rcs_log]
+  #gen_log:log D "$raw_rcs_log"
+
+  set rlog_lines [split $raw_rcs_log "\n"]
+  foreach rlogline $rlog_lines {
+    if {[string match "Working file:*" $rlogline]} {
+      regsub {Working file: } $rlogline "" filename
+      regsub {\s*$} $filename "" filename
+      gen_log:log D "RCS file $filename"
+      if {[file exists $filename]} {
+        # Do rcsdiff to see if it's changed
+        set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
+        gen_log:log C "$command"
+        set ret [catch {eval "exec $command"}]
+        if {$ret == 1} {
+          $v\::log "\nM $filename"
+        }
+      } else {
+        $v\::log "\nU $filename"
+      }
+    }
+  }
+  gen_log:log T "LEAVE"
+}
+
+# for Log in Reports Menu
+proc rcs_log {args} {
+  global cvscfg
+  gen_log:log T "ENTER"
+
+  set filelist [join $args]
+  if {$filelist == ""} {
+    set filelist [glob -nocomplain -dir RCS *,v]
+  }
+  gen_log:log D "detail $cvscfg(ldetail)"
+  gen_log:log D "$filelist"
+
+  switch -- $cvscfg(ldetail) {
+   "verbose" { set commandline "rlog $filelist"}
+   "summary" { set commandline "rlog -R $filelist"}
+   "latest"  { set commandline "rlog -r $filelist"}
+  }
+
+  set v [viewer::new "RCS Log"]
+  $v\::do "$commandline"
+
   gen_log:log T "LEAVE"
 }
 
