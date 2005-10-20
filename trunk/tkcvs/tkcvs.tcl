@@ -226,6 +226,11 @@ if { ! [info exists cvscfg(cvsroot)] } {
 # This helps with Samba-mounted repositories
 set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
  
+set cvscfg(svnroot) ""
+if { [info exists env(SVNROOT)] } {
+  set cvscfg(svnroot) $env(SVNROOT)
+}
+
 if {![info exists cvscfg(ignore_file_filter)]} {
   set cvscfg(ignore_file_filter) ""
 }

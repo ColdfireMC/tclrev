@@ -316,6 +316,7 @@ proc modbrowse_run {} {
   global cvs
   global cmd
 
+  gen_log:log T "ENTER"
   # If a checkout is already running, abort it
   if {[info exists cmd(cvs_co)]} {
     catch {$cmd(cvs_co)\::abort}
@@ -336,6 +337,10 @@ proc modbrowse_run {} {
      pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
   }
 
+  #set root [.modbrowse.top.troot.e cget -text]
+  gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
+  gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
+
   busy_start .modbrowse
   wm deiconify .modbrowse
   .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
@@ -343,10 +348,14 @@ proc modbrowse_run {} {
   raise .modbrowse
   set svn_info [catch {eval exec svn info} ]
   set insvn [expr {$svn_info == 1} ? {0} : {1}]
+  # If the module browser was already up with a CVSROOT and you aren't
+  # in a SVN sandbox, detect a SVN URL
+  if {[regexp {://} $cvscfg(cvsroot)]} {
+     set cvscfg(svnroot) $cvscfg(cvsroot)
+     set insvn 1
+  }
   if {$insvn} {
-    if {[info exists env(SVNROOT)] && $env(SVNROOT) != "" } {
-      set cvscfg(svnroot) $env(SVNROOT)
-    } else {
+    if {! [info exists cvscfg(svnroot)] } {
       read_svn_dir .
     }
     .modbrowse.top.lroot configure -text "SVNROOT"

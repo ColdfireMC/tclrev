@@ -505,11 +505,9 @@ proc add_dialog {args} {
     pack .add.binary -side top
   } elseif {$insvn} {
     .add.down.add configure -command {
-      -command {
-        grab release .add
-        destroy .add
-        svn_add [workdir_list_files]
-      }
+      grab release .add
+      destroy .add
+      svn_add [workdir_list_files]
     }
   }
 
