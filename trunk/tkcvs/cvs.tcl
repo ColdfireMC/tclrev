@@ -1167,7 +1167,6 @@ proc cvs_check {directory} {
   }
 
   set commandline "$cvs -n -q update $cvscfg(checkrecursive) $directory"
-  #gen_log:log C "$commandline"
   set check_cmd [viewer::new "Directory Status Check"]
   $check_cmd\::do $commandline 0 status_colortags
 

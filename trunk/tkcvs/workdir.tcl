@@ -372,7 +372,11 @@ proc workdir_menus {} {
   menu .workdir.menubar.file
   .workdir.menubar add cascade -label "CVS" -menu .workdir.menubar.cvs -underline 0
   menu .workdir.menubar.cvs
-  .workdir.menubar add cascade -label "Reports" -menu .workdir.menubar.reports -underline 0
+  .workdir.menubar add cascade -label "SVN" -menu .workdir.menubar.svn -underline 0
+  menu .workdir.menubar.svn
+  .workdir.menubar add cascade -label "RCS" -menu .workdir.menubar.rcs -underline 0
+  menu .workdir.menubar.rcs
+  .workdir.menubar add cascade -label "Reports" -menu .workdir.menubar.reports -underline 2
   menu .workdir.menubar.reports
   .workdir.menubar add cascade -label "Options" -menu .workdir.menubar.options -underline 0
   menu .workdir.menubar.options
@@ -392,6 +396,8 @@ proc workdir_menus {} {
   #
   # Create the Menus
   #
+
+  # File
   .workdir.menubar.file add command -label "Open" -underline 0 \
      -command { workdir_edit_file [workdir_list_files] }
   .workdir.menubar.file add command -label "Print" -underline 0 \
@@ -408,12 +414,13 @@ proc workdir_menus {} {
   .workdir.menubar.file add command -label Exit -underline 1 \
      -command { exit_cleanup 1 }
 
+  # CVS
   .workdir.menubar.cvs add command -label "Update" -underline 0 \
      -command { \
         cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Update with Options" -underline 7 \
      -command update_run
-  .workdir.menubar.cvs add command -label "Commit" -underline 0 \
+  .workdir.menubar.cvs add command -label "Commit/Checkin" -underline 0 \
      -command cvs_commit_dialog
   .workdir.menubar.cvs add command -label "Add Files" -underline 0 \
      -command { add_dialog [workdir_list_files] }
@@ -433,7 +440,7 @@ proc workdir_menus {} {
      -command { cvs_unedit [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Tag Files" -underline 0 \
      -command { file_tag_dialog "no" }
-  .workdir.menubar.cvs add command -label "Revision Tree" \
+  .workdir.menubar.cvs add command -label "Browse the Log Diagram" \
      -command { cvs_logcanvas [pwd] [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Resolve Conflicts" \
      -command { cvs_merge_conflict [workdir_list_files] }
@@ -444,6 +451,28 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add command -label "Import WD into Repository" -underline 0 \
      -command import_run
 
+  # SVN
+  .workdir.menubar.svn add command -label "Update" -underline 0 \
+     -command {svn_update [workdir_list_files]}
+  .workdir.menubar.svn add command -label "Commit/Checkin" -underline 0 \
+     -command svn_commit_dialog
+  .workdir.menubar.svn add command -label "Add Files" -underline 0 \
+     -command { add_dialog [workdir_list_files] }
+  .workdir.menubar.svn add command -label "Remove Files" -underline 0 \
+     -command { subtract_dialog [workdir_list_files] }
+  .workdir.menubar.svn add command -label "Browse the Log Diagram" \
+     -command { svn_branches [pwd] [workdir_list_files] }
+
+  # RCS
+  .workdir.menubar.rcs add command -label "Checkout" -underline 0 \
+     -command { rcs_checkout [workdir_list_files] }
+  .workdir.menubar.rcs add command -label "Checkin" -underline 0 \
+     -command rcs_commit_dialog
+  .workdir.menubar.rcs add command -label "Browse the Log Diagram" \
+     -command { rcs_filelog [workdir_list_files] }
+
+  # These commands will vary according to revision system.  Does it still make sense to
+  # keep them in their own menu?
   .workdir.menubar.reports add command -label "Check Directory" -underline 0
   .workdir.menubar.reports add command -label "Status" -underline 0
   .workdir.menubar.reports add command -label "Log" -underline 0
@@ -537,24 +566,26 @@ proc workdir_menus {} {
      -variable cvscfg(rdetail) -value "terse" -selectcolor $selcolor
 
   menu .workdir.menubar.options.logfile_detail
-  .workdir.menubar.options.logfile_detail add radiobutton -label "Latest" \
-     -variable cvscfg(ldetail) -value "latest" -selectcolor $selcolor
   .workdir.menubar.options.logfile_detail add radiobutton -label "Summary" \
      -variable cvscfg(ldetail) -value "summary" -selectcolor $selcolor
+  .workdir.menubar.options.logfile_detail add radiobutton -label "Latest" \
+     -variable cvscfg(ldetail) -value "latest" -selectcolor $selcolor
   .workdir.menubar.options.logfile_detail add radiobutton -label "Verbose" \
      -variable cvscfg(ldetail) -value "verbose" -selectcolor $selcolor
 
   .workdir.menubar.goto add command -label "Go Home" \
      -command {change_dir $cvscfg(home)}
-     .workdir.menubar.goto add command -label "Add Bookmark" \
-         -command add_bookmark
-      .workdir.menubar.goto add command -label "Delete Bookmark" \
-         -command delete_bookmark_dialog
-      .workdir.menubar.goto add separator
-      foreach mark [lsort [array names bookmarks]] {
-        .workdir.menubar.goto add command -label "$mark" \
-           -command "change_dir \"$mark\""
-      }
+  .workdir.menubar.goto add command -label "Add Bookmark" \
+     -command add_bookmark
+  .workdir.menubar.goto add command -label "Delete Bookmark" \
+     -command delete_bookmark_dialog
+  .workdir.menubar.goto add separator
+  foreach mark [lsort [array names bookmarks]] {
+    # Backward compatibility.  Value used to be a placeholder, is now a revsystem type
+    if {$bookmarks($mark) == "t"} {set bookmarks($mark) ""}
+    .workdir.menubar.goto add command -label "$mark $bookmarks($mark)" \
+       -command "change_dir \"$mark\""
+  }
 
 
   #
@@ -732,68 +763,89 @@ proc workdir_view_file {args} {
 
 # Let the user mark directories they visit often
 proc add_bookmark { } {
-  variable w
+  global incvs inrcs insvn
   global bookmarks
 
+  gen_log:log T "ENTER"
   set dir [pwd]
   regsub -all {\$} $dir {\$} dir
-  set bookmarks($dir) t
-  .workdir.menubar.goto add command -label "$dir" \
+
+  if {[info exists bookmarks($dir)]} {
+    .workdir.menubar.goto delete "$dir"
+  }
+  set rtype ""
+  if {$inrcs} {
+    set rtype "(RCS)"
+  } elseif {$incvs} {
+    set rtype "(CVS)"
+  } elseif {$insvn} {
+    set rtype "(SVN)"
+  }
+  set bookmarks($dir) $rtype
+  .workdir.menubar.goto add command -label "$dir $rtype" \
      -command "change_dir \"$dir\""
+
+  gen_log:log T "LEAVE"
 }
 
 # A listbox to choose a bookmark to delete
 proc delete_bookmark_dialog { } {
-   variable w
    global cvscfg
    global bookmarks
 
+   gen_log:log T "ENTER"
    set maxlbl 0
    foreach mark [array names bookmarks] {
-     set len [string length $mark]
+   gen_log:log D "  $mark $bookmarks($mark)"
+     set len [string length "$mark $bookmarks($mark)"]
      if {$len > $maxlbl} {
         set maxlbl $len
      }
    }
 
-   set mname .workdir.bookmarkedit
-   toplevel $mname
-   grab set $mname
-   wm title $mname "Delete Bookmarks"
-   listbox $mname.lbx -selectmode multiple \
+   set wname .workdir.bookmarkedit
+   toplevel $wname
+   grab set $wname
+   wm title $wname "Delete Bookmarks"
+   listbox $wname.lbx -selectmode multiple \
      -font $cvscfg(listboxfont) -width $maxlbl
-   pack $mname.lbx -ipadx 10 -ipady 10 -expand y -fill both
+   pack $wname.lbx -ipadx 10 -ipady 10 -expand y -fill both
    foreach mark [lsort [array names bookmarks]] {
-     $mname.lbx insert end $mark
+     $wname.lbx insert end "$mark $bookmarks($mark)"
    }
-   frame $mname.buttons
-   pack $mname.buttons -side top -fill x
-   button $mname.delete -text "Delete" \
-     -command [namespace code "delete_bookmark $mname"]
+   frame $wname.buttons
+   pack $wname.buttons -side top -fill x
+   button $wname.delete -text "Delete" \
+     -command "delete_bookmark $wname"
         
-   button $mname.close -text "Done" \
-     -command [namespace code "
-       grab release $mname
-       destroy $mname
-       exit_cleanup 0"]
-   pack $mname.delete $mname.close -in $mname.buttons \
+   button $wname.close -text "Done" \
+     -command "
+       grab release $wname
+       destroy $wname
+       exit_cleanup 0"
+   pack $wname.delete $wname.close -in $wname.buttons \
      -side right -ipadx 2 -ipady 2 -padx 4 -pady 4 \
      -expand y
+
+   gen_log:log T "LEAVE"
 }
 
 # Do the actual deletion of the bookmark
-proc delete_bookmark {mname} {
+proc delete_bookmark {w} {
   global bookmarks
-  variable w
 
-  set items [$mname.lbx curselection]
+  gen_log:log T "ENTER ($w)"
+  set items [$w.lbx curselection]
   foreach item $items {
-    set itemstring [$mname.lbx get $item]
-    #gen_log:log D "selection is \"$itemstring\""
-    unset bookmarks($itemstring)
-    $mname.lbx delete $item
-    .workdir.menubar.goto delete "$itemstring"
+    set itemstring [$w.lbx get $item]
+    set dir [lindex $itemstring 0]
+    gen_log:log D "$item \"$itemstring\""
+    gen_log:log D "  directory \"$dir\""
+    unset bookmarks($dir)
+    $w.lbx delete $item
+    .workdir.menubar.goto delete $itemstring
   }
+   gen_log:log T "LEAVE"
 }
 
 proc change_dir {new_dir} {
@@ -866,6 +918,8 @@ proc setup_dir { } {
     .workdir.top.bmodbrowse configure -image Modules
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bcheckdir configure -state normal \
+      -command { rcs_check }
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { rcs_filelog [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
@@ -874,7 +928,17 @@ proc setup_dir { } {
       -command rcs_commit_dialog
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
-    .workdir.menubar entryconfigure "Reports" -state disabled
+    .workdir.menubar entryconfigure "SVN" -state disabled
+    .workdir.menubar entryconfigure "RCS" -state normal
+    # Reports Menu
+    # Check Directory (log & rdiff)
+    .workdir.menubar.reports entryconfigure 1 -state normal \
+       -command { rcs_check }
+    .workdir.menubar.reports entryconfigure 2 -state disabled
+    # Log (rlog)
+    .workdir.menubar.reports entryconfigure 3 -state normal \
+       -command { rcs_log [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure 4 -state disabled
   } elseif {$insvn} {
     # Top
     .workdir.top.lcvsroot configure -text "SVN URL"
@@ -898,14 +962,21 @@ proc setup_dir { } {
       -command svn_merge_conflict
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
-    .workdir.menubar entryconfigure "Reports" -state normal
-    # svn status
-    .workdir.menubar.reports entryconfigure 1 -command { svn_check {} }
-    .workdir.menubar.reports entryconfigure 2 -command { svn_check [workdir_list_files] }
-    # svn log
-    .workdir.menubar.reports entryconfigure 3 -command { svn_log [workdir_list_files] }
-    # svn blame
-    .workdir.menubar.reports entryconfigure 4 -command { svn_annotate BASE [workdir_list_files] }
+    .workdir.menubar entryconfigure "SVN" -state normal
+    .workdir.menubar entryconfigure "RCS" -state disabled
+    # Reports Menu
+    # Check Directory (svn status)
+    .workdir.menubar.reports entryconfigure 1 -state normal \
+       -command { svn_check {} }
+    # Status (svn status <filelist>)
+    .workdir.menubar.reports entryconfigure 2 -state normal \
+       -command { svn_check [workdir_list_files] }
+    # Log (svn log)
+    .workdir.menubar.reports entryconfigure 3 -state normal \
+       -command { svn_log [workdir_list_files] }
+    # Annotate/Blame (svn blame)
+    .workdir.menubar.reports entryconfigure 4 -state normal \
+       -command { svn_annotate BASE [workdir_list_files] }
   } elseif {$incvs} {
     # Top
     .workdir.top.lcvsroot configure -text "CVSROOT"
@@ -926,16 +997,30 @@ proc setup_dir { } {
       -command cvs_merge_conflict
     # Menus
     .workdir.menubar entryconfigure "CVS" -state normal
-    .workdir.menubar entryconfigure "Reports" -state normal
-    # cvs -n -q update
-    .workdir.menubar.reports entryconfigure 1 -command { cvs_check {} }
-    # cvs -Q status
-    .workdir.menubar.reports entryconfigure 2 -command { cvs_status [workdir_list_files] }
-    # cvs log
-    .workdir.menubar.reports entryconfigure 3 -command { cvs_log [workdir_list_files] }
-    # cvs annotate
-    .workdir.menubar.reports entryconfigure 4 -command \
-      { cvs_annotate $current_tagname [workdir_list_files] }
+    .workdir.menubar entryconfigure "SVN" -state disabled
+    .workdir.menubar entryconfigure "RCS" -state disabled
+    # Reports Menu
+    # Check Directory (cvs -n -q update)
+    .workdir.menubar.reports entryconfigure 1 -state normal \
+       -command { cvs_check {} }
+    # Status (cvs -Q status)
+    .workdir.menubar.reports entryconfigure 2 -state normal \
+       -command { cvs_status [workdir_list_files] }
+    # Log (cvs log)
+    .workdir.menubar.reports entryconfigure 3 -state normal \
+       -command { cvs_log [workdir_list_files] }
+    # Annotate/Blame (cvs annotate)
+    .workdir.menubar.reports entryconfigure 4 -state normal \
+       -command { cvs_annotate $current_tagname [workdir_list_files] }
+  } else {
+    # Menus
+    .workdir.menubar entryconfigure "CVS" -state normal
+    .workdir.menubar entryconfigure "SVN" -state normal
+    .workdir.menubar entryconfigure "RCS" -state normal
+    .workdir.menubar.reports entryconfigure 1 -state disabled
+    .workdir.menubar.reports entryconfigure 2 -state disabled
+    .workdir.menubar.reports entryconfigure 3 -state disabled
+    .workdir.menubar.reports entryconfigure 4 -state disabled
   }
 
   DirCanvas:create .workdir.main \
@@ -1045,7 +1130,7 @@ proc directory_list { filenames } {
 
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs"
   if {$incvs} {
-    set cvsglb(econtrol) $cvscfg(econtrol)
+    #set cvsglb(econtrol) $cvscfg(econtrol)
     DirCanvas:headtext .workdir.main "editors"
     cvs_workdir_status
   }
@@ -1058,7 +1143,7 @@ proc directory_list { filenames } {
 
   if {$insvn} {
     #set cvsglb(econtrol) $cvscfg(econtrol)
-    set cvsglb(econtrol) true
+    #set cvsglb(econtrol) true
     DirCanvas:headtext .workdir.main "author"
     svn_workdir_status
   }
@@ -1488,7 +1573,7 @@ proc save_options { } {
     }
     foreach mark [lsort [array names bookmarks]] {
       gen_log:log D "Adding bookmark \"$mark\""
-      puts $fo "set \"bookmarks($mark)\" t"
+      puts $fo "set \"bookmarks($mark)\" \"$bookmarks($mark)\""
     }
 
     close $fi

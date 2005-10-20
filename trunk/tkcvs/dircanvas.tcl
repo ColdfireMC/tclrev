@@ -713,7 +713,7 @@ proc DirCanvas:build {w} {
       }
      "<directory:SVN>" {
        set DirList($w:$f:icon) svndir
-       set DirList($w:$f:popup) cvsdir_pop
+       set DirList($w:$f:popup) folder_pop
       }
      "<directory:RCS>" {
        set DirList($w:$f:icon) rcsdir
@@ -721,9 +721,13 @@ proc DirCanvas:build {w} {
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
-       set DirList($w:$f:popup) stat_ok_pop
-       if {[string match "*-kb*" $DirList($w:$f:option)]} {
-         set DirList($w:$f:icon) stat_kb
+       if {$incvs} {
+         set DirList($w:$f:popup) stat_cvsok_pop
+         if {[string match "*-kb*" $DirList($w:$f:option)]} {
+           set DirList($w:$f:icon) stat_kb
+         }
+       } elseif {$insvn} {
+         set DirList($w:$f:popup) stat_svnok_pop
        }
       }
      "Needs Checkout" {
@@ -1168,6 +1172,7 @@ proc DirCanvas:toggle_col {w col} {
 proc DirCanvas:makepopup {w} {
 #
 # Context-sensitive popups for list items
+# We build them all at once here, then bindcanvas items to them as appropriate
 #
   gen_log:log T "ENTER ($w)"
 
@@ -1193,27 +1198,20 @@ proc DirCanvas:makepopup {w} {
   menu $w.cvsdir_pop -tearoff 0
   $w.cvsdir_pop add command -label "Open" \
     -command { workdir_edit_file [workdir_list_files] }
-  $w.cvsdir_pop add command -label "Check Directory" \
-     -command { cvs_check [workdir_list_files] }
-  $w.cvsdir_pop add command -label "Remove Recursively" \
-    -command { subtractdir_dialog [workdir_list_files] }
-  $w.cvsdir_pop add command -label "Update" \
-    -command { \
-        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
-  $w.cvsdir_pop add command -label "Update with Options" \
-    -command update_run
   $w.cvsdir_pop add command -label "Release" \
     -command { release_dialog [workdir_list_files] }
+  $w.cvsdir_pop add command -label "Delete" \
+    -command { workdir_delete_file [workdir_list_files] }
 
   # For CVS files
-  menu $w.stat_ok_pop -tearoff 0
-  $w.stat_ok_pop add command -label "Open" \
+  menu $w.stat_cvsok_pop -tearoff 0
+  $w.stat_cvsok_pop add command -label "Open" \
     -command { workdir_edit_file [workdir_list_files] }
-  $w.stat_ok_pop add command -label "Log Browse" \
+  $w.stat_cvsok_pop add command -label "Browse the Log Diagram" \
     -command { cvs_logcanvas [pwd] [workdir_list_files] }
-  $w.stat_ok_pop add command -label "Annotate" \
+  $w.stat_cvsok_pop add command -label "Annotate" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
-  $w.stat_ok_pop add command -label "Remove" \
+  $w.stat_cvsok_pop add command -label "Remove" \
     -command { subtract_dialog [workdir_list_files] }
 
   # For CVS files that are not up-to-date
@@ -1232,7 +1230,7 @@ proc DirCanvas:makepopup {w} {
     -command { comparediff [workdir_list_files] }
   $w.stat_merge_pop add command -label "Annotate" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
-  $w.stat_merge_pop add command -label "Log Browse" \
+  $w.stat_merge_pop add command -label "Browse the Log Diagram" \
     -command { cvs_logcanvas [pwd] [workdir_list_files] }
 
   # For CVS files that are modified
@@ -1259,14 +1257,29 @@ proc DirCanvas:makepopup {w} {
     -command { cvs_merge_conflict [workdir_list_files] }
   $w.stat_conf_pop add command -label "Annotate" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
-  $w.stat_conf_pop add command -label "Log Browse" \
+  $w.stat_conf_pop add command -label "Browse the Log Diagram" \
     -command { cvs_logcanvas [pwd] [workdir_list_files] }
 
+  # For RCS files
   menu $w.rcs_pop -tearoff 0
   $w.rcs_pop add command -label "Open" \
     -command { workdir_edit_file [workdir_list_files] }
+  $w.rcs_pop add command -label "Browse the Log Diagram" \
+    -command { rcs_filelog [workdir_list_files] }
   $w.rcs_pop add command -label "Delete" \
     -command { workdir_delete_file [workdir_list_files] }
+
+  # For SVN files
+  menu $w.stat_svnok_pop -tearoff 0
+  $w.stat_svnok_pop add command -label "Open" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
+    -command { svn_branches [pwd] [workdir_list_files] }
+  $w.stat_svnok_pop add command -label "Annotate/Blame" \
+    -command { svn_annotate $current_tagname [workdir_list_files] }
+  $w.stat_svnok_pop add command -label "Remove" \
+    -command { subtract_dialog [workdir_list_files] }
+
 
   gen_log:log T "LEAVE"
 }
