@@ -509,7 +509,7 @@ proc svn_log {args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_merge_conflict {args} {
+proc svn_merge_conflict {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
@@ -558,6 +558,23 @@ proc cvs_merge_conflict {args} {
   if {$cvscfg(auto_status)} {
     setup_dir
   }
+  gen_log:log T "LEAVE"
+}
+
+proc svn_revert {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
+
+  gen_log:log D "Reverting $filelist"
+  set cmd [exec::new "svn revert $filelist"]
+
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir
+  }
+
   gen_log:log T "LEAVE"
 }
 
