@@ -1726,6 +1726,33 @@ proc cvs_binary { args } {
   gen_log:log T "LEAVE"
 }
 
+# Revert a file to checked-in version by removing the local
+# copy and updating it
+proc cvs_revert {args} {
+  global incvs
+  global cvscfg
+  global cvs
+
+  gen_log:log T "ENTER ($args)"
+  if {! $incvs} {
+    cvs_notincvs
+    return 1
+  }
+
+  set filelist [join $args]
+
+  gen_log:log D "Reverting $filelist"
+  file delete $filelist
+  set cmd [exec::new "$cvs update $filelist"]
+
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir
+  }
+
+  gen_log:log T "LEAVE"
+}
+
 proc read_cvs_dir {dirname} {
 #
 # Reads a CVS "bookkeeping" directory

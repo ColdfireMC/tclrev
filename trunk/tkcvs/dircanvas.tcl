@@ -330,7 +330,7 @@ proc DirCanvas:flash {w y} {
 
 proc DirCanvas:unflash {w y f} {
   global DirList
-  
+
   # Don't unflash if this is one that is selected:
   if { ! $DirList($w:$f:selected) } {
   	DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
@@ -404,16 +404,16 @@ proc DirCanvas:clearTextHBox {w id} {
 # set a text highligh box (used by set/clearselection)
 proc DirCanvas:setTextHBox {w id} {
    global cvsglb
-   
+
    # get the bounding box for the text id
    set bbox [$w.filecol.list bbox $id]
    if {[llength $bbox]==4} {
     # create rectangle with fill, tagged with the same ID as the text, so we can delete it later
-    set i [eval $w.filecol.list create rectangle $bbox -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"] 
-    
+    set i [eval $w.filecol.list create rectangle $bbox -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
+
     $w.filecol.list itemconfigure $id -fill $cvsglb(hlfg)
     $w.filecol.list lower $i
-  } 
+  }
 }
 
 
@@ -468,7 +468,7 @@ proc DirCanvas:addrange {w y f} {
   if {[lsearch -exact $DirList($w:selection) $f] == -1} {
     lappend DirList($w:selection) "$f"
   }
-  
+
   set cvsglb(current_selection) $DirList($w:selection)
   gen_log:log D "selection is \"$cvsglb(current_selection)\""
   gen_log:log T "LEAVE"
@@ -606,6 +606,16 @@ proc DirCanvas:build {w} {
     set sortsense "-decreasing"
   }
 
+  set rtype ""
+  if {$inrcs} {
+    set rtype "RCS"
+  } elseif {$incvs} {
+    set rtype "CVS"
+  } elseif {$insvn} {
+    set rtype "SVN"
+  }
+  gen_log:log D "Directory Type: $rtype"
+
   gen_log:log D "sortcol=$sortcol  sortsense=$sortsense"
 
   set AllColumns {}
@@ -705,7 +715,14 @@ proc DirCanvas:build {w} {
      }
      "<directory>" {
        set DirList($w:$f:icon) folder
-       set DirList($w:$f:popup) folder_pop
+       switch -- $rtype {
+         "CVS" {
+            set DirList($w:$f:popup) incvs_folder_pop
+          }
+          default {
+            set DirList($w:$f:popup) folder_pop
+          }
+        }
       }
      "<directory:CVS>" {
        set DirList($w:$f:icon) cvsdir
@@ -721,14 +738,20 @@ proc DirCanvas:build {w} {
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
-       if {$incvs} {
-         set DirList($w:$f:popup) stat_cvsok_pop
-         if {[string match "*-kb*" $DirList($w:$f:option)]} {
-           set DirList($w:$f:icon) stat_kb
-         }
-       } elseif {$insvn} {
-         set DirList($w:$f:popup) stat_svnok_pop
-       }
+       switch -- $rtype {
+          "CVS" {
+            set DirList($w:$f:popup) stat_cvsok_pop
+            if {[string match "*-kb*" $DirList($w:$f:option)]} {
+              set DirList($w:$f:icon) stat_kb
+            }
+          }
+          "SVN" {
+            set DirList($w:$f:popup) stat_svnok_pop
+          }
+          default {
+            set DirList($w:$f:popup) paper_pop
+          }
+        }
       }
      "Needs Checkout" {
        # Prepending ./ to the filename prevents tilde expansion
@@ -916,7 +939,7 @@ proc DirCanvas:build {w} {
   set maxcolwid 200
   gen_log:log D "filecol width $DirList($w:filecolwidth)"
   if {$wid < $maxcolwid} {
-    $flist configure -width $DirList($w:filecolwidth) 
+    $flist configure -width $DirList($w:filecolwidth)
   } else {
     gen_log:log D "Reducing filecol width from $wid to $maxcolwid"
     $flist configure -width $maxcolwid
@@ -937,7 +960,7 @@ proc DirCanvas:build {w} {
   set wid [font measure $cvscfg(listboxfont) -displayof $w $longdate]
   set DirList($w:datecolwidth) [expr {$wid + 6}]
   if {$wid < $maxcolwid} {
-    $w.datecol.list configure -width $DirList($w:datecolwidth) 
+    $w.datecol.list configure -width $DirList($w:datecolwidth)
   } else {
     gen_log:log D "Reducing datecol width from $wid to $maxcolwid"
     $w.datecol.list configure -width $maxcolwid
@@ -981,7 +1004,7 @@ proc DirCanvas:build {w} {
 
     $flist config -scrollregion $fbbox
     $flist yview moveto 0
-    
+
     if {$cvscfg(showdatecol)} {
       set fbbox [$w.datecol.list bbox all]
       set botx [lindex $fbbox 0]
@@ -1172,46 +1195,53 @@ proc DirCanvas:toggle_col {w col} {
 proc DirCanvas:makepopup {w} {
 #
 # Context-sensitive popups for list items
-# We build them all at once here, then bindcanvas items to them as appropriate
+# We build them all at once here, then bind canvas items to them as appropriate
 #
   gen_log:log T "ENTER ($w)"
 
   # For plain files
   menu $w.paper_pop -tearoff 0
-  $w.paper_pop add command -label "Open" \
+  $w.paper_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.paper_pop add command -label "Add" \
     -command { add_dialog [workdir_list_files] }
-  $w.paper_pop add command -label "Delete" \
+  $w.paper_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For plain directories
   menu $w.folder_pop -tearoff 0
-  $w.folder_pop add command -label "Open" \
+  $w.folder_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
-  $w.folder_pop add command -label "Add Recursively" \
-    -command { addir_dialog [workdir_list_files] }
-  $w.folder_pop add command -label "Delete" \
+  $w.folder_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
-  # For CVS directories
+  # For plain directories in CVS
+  menu $w.incvs_folder_pop -tearoff 0
+  $w.incvs_folder_pop add command -label "Edit" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.incvs_folder_pop add command -label "Add Recursively" \
+    -command { addir_dialog [workdir_list_files] }
+  $w.incvs_folder_pop add command -label "Delete Locally" \
+    -command { workdir_delete_file [workdir_list_files] }
+
+  # For CVS directories, when cwd isn't in CVS
   menu $w.cvsdir_pop -tearoff 0
-  $w.cvsdir_pop add command -label "Open" \
+  $w.cvsdir_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.cvsdir_pop add command -label "Release" \
     -command { release_dialog [workdir_list_files] }
-  $w.cvsdir_pop add command -label "Delete" \
+  $w.cvsdir_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For CVS files
   menu $w.stat_cvsok_pop -tearoff 0
-  $w.stat_cvsok_pop add command -label "Open" \
+  $w.stat_cvsok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Browse the Log Diagram" \
     -command { cvs_logcanvas [pwd] [workdir_list_files] }
-  $w.stat_cvsok_pop add command -label "Annotate" \
+  $w.stat_cvsok_pop add command -label "CVS Annotate" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
-  $w.stat_cvsok_pop add command -label "Remove" \
+  $w.stat_cvsok_pop add command -label "CVS Remove" \
     -command { subtract_dialog [workdir_list_files] }
 
   # For CVS files that are not up-to-date
@@ -1224,7 +1254,7 @@ proc DirCanvas:makepopup {w} {
 
   # For CVS files that need merging
   menu $w.stat_merge_pop -tearoff 0
-  $w.stat_merge_pop add command -label "Open" \
+  $w.stat_merge_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_merge_pop add command -label "Diff" \
     -command { comparediff [workdir_list_files] }
@@ -1235,23 +1265,25 @@ proc DirCanvas:makepopup {w} {
 
   # For CVS files that are modified
   menu $w.stat_mod_pop -tearoff 0
-  $w.stat_mod_pop add command -label "Open" \
+  $w.stat_mod_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_mod_pop add command -label "Diff" \
     -command { comparediff [workdir_list_files] }
   $w.stat_mod_pop add command -label "Commit" \
     -command { cvs_commit_dialog }
+  $w.stat_mod_pop add command -label "Revert" \
+    -command { cvs_revert [workdir_list_files] }
 
   # For CVS files that have been added or removed but not commited
   menu $w.stat_plus_pop -tearoff 0
-  $w.stat_plus_pop add command -label "Open" \
+  $w.stat_plus_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_plus_pop add command -label "Commit" \
     -command { cvs_commit_dialog }
 
   # For CVS files with conflicts
   menu $w.stat_conf_pop -tearoff 0
-  $w.stat_conf_pop add command -label "Open" \
+  $w.stat_conf_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_conf_pop add command -label "Merge Conflict" \
     -command { cvs_merge_conflict [workdir_list_files] }
@@ -1262,16 +1294,16 @@ proc DirCanvas:makepopup {w} {
 
   # For RCS files
   menu $w.rcs_pop -tearoff 0
-  $w.rcs_pop add command -label "Open" \
+  $w.rcs_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.rcs_pop add command -label "Browse the Log Diagram" \
     -command { rcs_filelog [workdir_list_files] }
-  $w.rcs_pop add command -label "Delete" \
+  $w.rcs_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For SVN files
   menu $w.stat_svnok_pop -tearoff 0
-  $w.stat_svnok_pop add command -label "Open" \
+  $w.stat_svnok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
     -command { svn_branches [pwd] [workdir_list_files] }

@@ -770,8 +770,13 @@ proc add_bookmark { } {
   set dir [pwd]
   regsub -all {\$} $dir {\$} dir
 
+  gen_log:log D "directory $dir"
+  foreach mark [array names bookmarks] {
+    gen_log:log D "  $mark \"$bookmarks($mark)\""
+  }
+
   if {[info exists bookmarks($dir)]} {
-    .workdir.menubar.goto delete "$dir"
+    .workdir.menubar.goto delete "$dir $bookmarks($dir)"
   }
   set rtype ""
   if {$inrcs} {
