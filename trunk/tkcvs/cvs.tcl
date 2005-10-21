@@ -1734,11 +1734,6 @@ proc cvs_revert {args} {
   global cvs
 
   gen_log:log T "ENTER ($args)"
-  if {! $incvs} {
-    cvs_notincvs
-    return 1
-  }
-
   set filelist [join $args]
 
   gen_log:log D "Reverting $filelist"
