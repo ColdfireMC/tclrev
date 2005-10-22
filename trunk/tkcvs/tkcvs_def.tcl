@@ -10,12 +10,16 @@
 # over-ride this file.
 #
 
-# If you want to use "cvs edit", uncomment this.
-set cvscfg(econtrol) true
-# If you want to see the status column, uncomment this
+# If you want to use "cvs edit"
+set cvscfg(econtrol) false
+# If you want to use cvs in locking mode
+set cvscfg(cvslock) false
+# If you want to see the status column
 set cvscfg(showstatcol) true
-# If you want to see the date column, uncomment this
+# If you want to see the date column
 set cvscfg(showdatecol) true
+# If you want to see the editors/author/lockers column
+set cvscfg(showeditcol) true
 
 # Number of tags you want to see for each revision on the branching
 # diagram before it says "more..."
@@ -215,9 +219,9 @@ if {$tcl_platform(platform) == "windows"} {
     set cvscfg(print_cmd)          "lpr"
     # Commands to change file attributes.
     # 12-Jan-2000 lcs
-    set cvscfg(chmod_ro_cmd)   "chmod a-w"
-    set cvscfg(chmod_rw_cmd)   "chmod u+w"
-    set cvscfg(allow_abort)    "yes"
+    set cvscfg(chmod_ro_cmd) "chmod a-w"
+    set cvscfg(chmod_rw_cmd) "chmod u+w"
+    set cvscfg(allow_abort)  "yes"
     # What do you want to happen when you ask for a shell?
     set cvscfg(shell) "xterm -name tkcvsxterm -n {TkCVS xterm}"
 
