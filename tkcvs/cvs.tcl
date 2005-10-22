@@ -99,7 +99,7 @@ proc cvs_workdir_status {} {
 
   set cmd(cvs_status) [exec::new "$cvs -n -q status -l"]
   set status_lines [split [$cmd(cvs_status)\::output] "\n"]
-  if {$cvscfg(econtrol)} {
+  if {$cvscfg(showeditcol)} {
     set cmd(cvs_editors) [exec::new "$cvs -n -q editors -l"]
     set editors_lines [split [$cmd(cvs_editors)\::output] "\n"]
   }

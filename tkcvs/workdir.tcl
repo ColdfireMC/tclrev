@@ -134,34 +134,44 @@ proc workdir_setup {} {
 
   frame .workdir.bottom.buttons -relief groove -bd 2
   frame .workdir.bottom.buttons.funcs -relief groove -bd 2
+  frame .workdir.bottom.buttons.dirfuncs -relief groove -bd 2
+  frame .workdir.bottom.buttons.filefuncs -relief groove -bd 2
   frame .workdir.bottom.buttons.cvsfuncs -relief groove -bd 2
+  frame .workdir.bottom.buttons.oddfuncs -relief groove -bd 2
   frame .workdir.bottom.buttons.close -relief groove -bd 2
   pack .workdir.bottom.buttons -side top -fill x -expand yes
   pack .workdir.bottom.buttons.close -side right -padx 10
   pack .workdir.bottom.buttons.funcs -side left
+  pack .workdir.bottom.buttons.dirfuncs -side left -expand yes
+  pack .workdir.bottom.buttons.filefuncs -side left -expand yes
   pack .workdir.bottom.buttons.cvsfuncs -side left -expand yes
+  pack .workdir.bottom.buttons.oddfuncs -side left -expand yes
 
   #
   # Action buttons along the bottom of the screen.
   #
-  button .workdir.bottom.buttons.cvsfuncs.bcheckdir -image Check
   button .workdir.bottom.buttons.funcs.bedit_files -image Fileedit \
      -command { workdir_edit_file [workdir_list_files] }
   button .workdir.bottom.buttons.funcs.bview_files -image Fileview \
      -command { workdir_view_file [workdir_list_files] }
   button .workdir.bottom.buttons.funcs.bdelete_file -image Delete \
      -command { workdir_delete_file [workdir_list_files] }
-  button .workdir.bottom.buttons.funcs.bmkdir -image Dir_new \
-     -command { file_input_and_do "New Directory" workdir_newdir}
-  button .workdir.bottom.buttons.funcs.brefresh -image Refresh \
+
+  button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh \
      -command { change_dir [pwd] }
-  button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict \
+  button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
+  button .workdir.bottom.buttons.dirfuncs.bjoin -image DirBranches \
+     -command { cvs_joincanvas }
+
+  button .workdir.bottom.buttons.filefuncs.blogfile -image Branches \
+     -command { cvs_logcanvas [pwd] [workdir_list_files] }
+  button .workdir.bottom.buttons.filefuncs.bannotate -image Annotate \
+     -command { cvs_annotate $current_tagname [workdir_list_files] }
+  button .workdir.bottom.buttons.filefuncs.bdiff -image Diff \
+     -command { comparediff [workdir_list_files] }
+  button .workdir.bottom.buttons.filefuncs.bconflict -image Conflict \
      -command { cvs_merge_conflict [workdir_list_files] }
 
-  button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches \
-     -command { cvs_logcanvas [pwd] [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bjoin -image DirBranches \
-     -command { cvs_joincanvas }
   button .workdir.bottom.buttons.cvsfuncs.btag -image Tag \
      -command { file_tag_dialog "no" }
   button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag \
@@ -170,21 +180,20 @@ proc workdir_setup {} {
      -command { add_dialog [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bremove -image Remove \
      -command { subtract_dialog [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bdiff -image Diff \
-     -command { comparediff [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bcheckin -image Checkin \
       -command cvs_commit_dialog
   button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout
-  button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate \
-     -command { cvs_annotate $current_tagname [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bupdateopts -image CheckoutOpts \
      -command { update_run }
   button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert \
      -command { cvs_revert [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bcvsedit_files -image Edit \
+
+  button .workdir.bottom.buttons.oddfuncs.bcvsedit_files -image Edit \
      -command { cvs_edit [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bunedit_files -image Unedit \
+  button .workdir.bottom.buttons.oddfuncs.bunedit_files -image Unedit \
      -command { cvs_unedit [workdir_list_files] }
+  button .workdir.bottom.buttons.oddfuncs.block -image Lock
+  button .workdir.bottom.buttons.oddfuncs.bunlock -image UnLock
   button .workdir.close -text "Close" \
       -command {
         global cvscfg
@@ -194,46 +203,52 @@ proc workdir_setup {} {
       }
 
   # These buttons work in any directory
-  grid columnconf .workdir.bottom.buttons.funcs 2 -weight 1
-  grid rowconf .workdir.bottom.buttons.funcs 1 -weight 1
-  grid .workdir.bottom.buttons.funcs.bdelete_file -column 0 -row 0
-  grid .workdir.bottom.buttons.funcs.bmkdir -column 0 -row 1
+  grid .workdir.bottom.buttons.funcs.bdelete_file -column 0 -row 0 \
+    -rowspan 2 -sticky ns
   grid .workdir.bottom.buttons.funcs.bedit_files -column 1 -row 0 \
      -ipadx 2
   grid .workdir.bottom.buttons.funcs.bview_files -column 1 -row 1 \
      -ipadx 2
-  grid .workdir.bottom.buttons.funcs.brefresh -column 2 -row 0 \
-     -rowspan 2 -ipadx 2 -ipady 2 -sticky ns
 
-  # These buttons are only good in a versioned directory
-  grid columnconf .workdir.bottom.buttons.cvsfuncs 9 -weight 1
-  grid rowconf .workdir.bottom.buttons.cvsfuncs    1 -weight 1
-  grid .workdir.bottom.buttons.cvsfuncs.bcheckdir      -column 1 -row 0 \
-     -rowspan 2 -ipadx 2 -ipady 2 -sticky ns
-  grid .workdir.bottom.buttons.cvsfuncs.blogfile       -column 2 -row 0
-  grid .workdir.bottom.buttons.cvsfuncs.bjoin          -column 2 -row 1
+  # Directory functions
+  grid .workdir.bottom.buttons.dirfuncs.brefresh       -column 0 -row 0 \
+     -ipadx 4 -ipady 4
+  grid .workdir.bottom.buttons.dirfuncs.bcheckdir      -column 1 -row 0 \
+     -ipadx 4 -ipady 4
+  grid .workdir.bottom.buttons.dirfuncs.bjoin          -column 2 -row 0 \
+     -ipadx 4 -ipady 4
 
-  grid .workdir.bottom.buttons.cvsfuncs.bannotate      -column 3 -row 1
+  # File functions
+  grid .workdir.bottom.buttons.filefuncs.blogfile      -column 0 -row 0 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.filefuncs.bannotate     -column 0 -row 1 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.filefuncs.bdiff         -column 1 -row 0 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.filefuncs.bconflict     -column 1 -row 1 \
+    -ipadx 6
 
-  grid .workdir.bottom.buttons.cvsfuncs.bdiff          -column 4 -row 0
-  grid .workdir.bottom.buttons.cvsfuncs.bconflict      -column 4 -row 1
+  # Revcontrol functions
+  grid .workdir.bottom.buttons.cvsfuncs.bupdate        -column 0 -row 0 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.cvsfuncs.bcheckin       -column 0 -row 1 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.cvsfuncs.bupdateopts    -column 1 -row 0 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.cvsfuncs.brevert        -column 1 -row 1 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.cvsfuncs.badd_files     -column 2 -row 0
+  grid .workdir.bottom.buttons.cvsfuncs.bremove        -column 2 -row 1
+  grid .workdir.bottom.buttons.cvsfuncs.btag           -column 3 -row 0 \
+    -ipadx 6
+  grid .workdir.bottom.buttons.cvsfuncs.bbranchtag     -column 3 -row 1 \
+    -ipadx 6
 
-  grid .workdir.bottom.buttons.cvsfuncs.bupdate        -column 5 -row 0 \
-    -ipadx 8
-  grid .workdir.bottom.buttons.cvsfuncs.bcheckin       -column 5 -row 1 \
-    -ipadx 8
-  grid .workdir.bottom.buttons.cvsfuncs.bupdateopts    -column 6 -row 0 \
-    -ipadx 8
-  grid .workdir.bottom.buttons.cvsfuncs.brevert        -column 6 -row 1 \
-    -ipadx 8
-  grid .workdir.bottom.buttons.cvsfuncs.badd_files     -column 7 -row 0
-  grid .workdir.bottom.buttons.cvsfuncs.bremove        -column 7 -row 1
-  grid .workdir.bottom.buttons.cvsfuncs.btag           -column 8 -row 0
-  grid .workdir.bottom.buttons.cvsfuncs.bbranchtag     -column 8 -row 1
-  grid .workdir.bottom.buttons.cvsfuncs.bcvsedit_files -column 9 -row 0 \
-     -sticky w
-  grid .workdir.bottom.buttons.cvsfuncs.bunedit_files  -column 9 -row 1 \
-     -sticky w
+  # These are specialized an not always available
+  grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
+  grid .workdir.bottom.buttons.oddfuncs.bunlock        -column 0 -row 1
+  grid .workdir.bottom.buttons.oddfuncs.bcvsedit_files -column 1 -row 0
+  grid .workdir.bottom.buttons.oddfuncs.bunedit_files  -column 1 -row 1
 
   pack .workdir.close -in .workdir.bottom.buttons.close \
     -side right -fill both -expand yes
@@ -246,16 +261,23 @@ proc workdir_setup {} {
      {"View the selected files"}
   set_tooltips .workdir.bottom.buttons.funcs.bdelete_file \
      {"Delete the selected files from the current directory"}
-  set_tooltips .workdir.bottom.buttons.funcs.bmkdir \
-     {"Make a new directory"}
-  set_tooltips .workdir.bottom.buttons.funcs.brefresh \
+
+  set_tooltips .workdir.bottom.buttons.dirfuncs.brefresh \
      {"Re-read the current directory"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bconflict \
-     {"Merge Conflicts using TkDiff"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.blogfile \
-     {"Revision Log and Branch Diagram of the selected files"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bjoin \
+  set_tooltips .workdir.bottom.buttons.dirfuncs.bjoin \
      {"Directory Branch Diagram and Merge Tool"}
+  set_tooltips .workdir.bottom.buttons.dirfuncs.bcheckdir \
+     {"Check the status of the directory"}
+
+  set_tooltips .workdir.bottom.buttons.filefuncs.blogfile \
+     {"Revision Log and Branch Diagram of the selected files"}
+  set_tooltips .workdir.bottom.buttons.filefuncs.bannotate \
+     {"View revision where each line was modified"}
+  set_tooltips .workdir.bottom.buttons.filefuncs.bdiff \
+     {"Compare the selected files with the repository version"}
+  set_tooltips .workdir.bottom.buttons.filefuncs.bconflict \
+     {"Merge Conflicts using TkDiff"}
+
   set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
      {"Add the selected files to the repository"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.btag \
@@ -266,22 +288,22 @@ proc workdir_setup {} {
      {"Remove the selected files from the repository"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bcheckin \
      {"Check in (commit) the selected files to the repository"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bcheckdir \
-     {"Check the status of the directory"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdate \
      {"Update (checkout, patch) the selected files from the repository"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.brevert \
      {"Revert the selected files, discarding local edits"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdateopts \
      {"Update with options (-A, -r, -f, -d, -kb)"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bannotate \
-     {"View revision where each line was modified"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bcvsedit_files \
+
+  set_tooltips .workdir.bottom.buttons.oddfuncs.block \
+     {"Lock the selected files"}
+  set_tooltips .workdir.bottom.buttons.oddfuncs.bunlock \
+     {"Unlock the selected files"}
+  set_tooltips .workdir.bottom.buttons.oddfuncs.bcvsedit_files \
      {"Set the Edit flag on the selected files"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bunedit_files \
+  set_tooltips .workdir.bottom.buttons.oddfuncs.bunedit_files \
      {"Reset the Edit flag on the selected files"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bdiff \
-     {"Compare the selected files with the repository version"}
+
   set_tooltips .workdir.top.bmodbrowse \
      {"Open the Module Browser"}
   set_tooltips .workdir.close \
@@ -322,8 +344,6 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) annotate.gif]
   image create photo Delete \
     -format gif -file [file join $cvscfg(bitmapdir) delete.gif]
-  image create photo Dir_new \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_new.gif]
   image create photo Refresh \
     -format gif -file [file join $cvscfg(bitmapdir) loop-glasses.gif]
   image create photo Branches \
@@ -350,7 +370,10 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) modbrowse_cvs.gif]
   image create photo Modules_svn \
     -format gif -file [file join $cvscfg(bitmapdir) modbrowse_svn.gif]
-
+  image create photo Lock \
+    -format gif -file [file join $cvscfg(bitmapdir) locked.gif]
+  image create photo UnLock \
+    -format gif -file [file join $cvscfg(bitmapdir) unlocked.gif]
   image create photo Tags \
     -format gif -file [file join $cvscfg(bitmapdir) tags.gif]
   image create photo Mergebranch \
@@ -414,6 +437,8 @@ proc workdir_menus {} {
      -command { workdir_edit_file [workdir_list_files] }
   .workdir.menubar.file add command -label "Print" -underline 0 \
      -command { workdir_print_file  [workdir_list_files ] }
+  .workdir.menubar.file add command -label "New Directory" -underline 0 \
+     -command { file_input_and_do "New Directory" workdir_newdir}
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label "Browse Modules" -underline 0 \
      -command modbrowse_run
@@ -502,9 +527,9 @@ proc workdir_menus {} {
      -selectcolor $selcolor
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Editors Column" \
-     -variable cvscfg(econtrol) -onvalue true -offvalue false \
+     -variable cvscfg(showeditcol) -onvalue true -offvalue false \
      -selectcolor $selcolor \
-     -command { if {($incvs || $insvn || $inrcs) && $cvscfg(econtrol)} {
+     -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
                   DirCanvas:map_column .workdir.main editcol
                 } else {
                   pack forget .workdir.main.editcol
@@ -513,7 +538,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Status Column" \
      -variable cvscfg(showstatcol) -onvalue true -offvalue false \
      -selectcolor $selcolor \
-     -command { if {($incvs || $inrcs) && $cvscfg(showstatcol)} {
+     -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
                   DirCanvas:map_column .workdir.main statcol
                 } else {
                   pack forget .workdir.main.statcol
@@ -896,7 +921,6 @@ proc setup_dir { } {
 
   gen_log:log T "ENTER"
 
-  set cvsglb(econtrol) $cvscfg(econtrol)
   if { ! [winfo exists .workdir.main] } {
     workdir_setup
     return
@@ -920,13 +944,17 @@ proc setup_dir { } {
   foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
 
   set bstate [expr {$incvs ? {normal} : {disabled}}]
+  foreach widget [grid slaves .workdir.bottom.buttons.filefuncs ] {
+    $widget configure -state $bstate
+  }
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
     $widget configure -state $bstate
   }
-  if {! $cvsglb(econtrol)} {
-    .workdir.bottom.buttons.cvsfuncs.bcvsedit_files configure -state disabled
-    .workdir.bottom.buttons.cvsfuncs.bunedit_files configure -state disabled
+  foreach widget [grid slaves .workdir.bottom.buttons.oddfuncs ] {
+    $widget configure -state $bstate
   }
+  .workdir.bottom.buttons.dirfuncs.bjoin configure -state disabled
+
   gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
   if {$inrcs} {
     # Top
@@ -934,15 +962,19 @@ proc setup_dir { } {
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
     .workdir.top.bmodbrowse configure -image Modules
     # Buttons
-    .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
-    .workdir.bottom.buttons.cvsfuncs.bcheckdir configure -state normal \
+    .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { rcs_check }
-    .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
+    .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { rcs_filelog [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { rcs_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command { rcs_checkin [workdir_list_files] }
+    .workdir.bottom.buttons.oddfuncs.block configure -state normal \
+      -command { rcs_lock workdir_list_files] }
+    .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
+      -command { rcs_unlock workdir_list_files] }
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "SVN" -state disabled
@@ -962,23 +994,23 @@ proc setup_dir { } {
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     .workdir.top.bmodbrowse configure -image Modules_svn
     # Buttons
-    .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
-    .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
+    .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
+      -command { svn_check [workdir_list_files] }
+    .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
+    .workdir.bottom.buttons.filefuncs.bannotate configure -state normal \
+      -command { svn_annotate BASE [workdir_list_files] }
+    .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \
+      -command { svn_merge_conflict [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
-    .workdir.bottom.buttons.cvsfuncs.bcheckdir configure -state normal \
-      -command { svn_check [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { svn_update [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
-      -command { svn_annotate BASE [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command svn_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
       -command { svn_revert [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
-      -command { svn_merge_conflict [workdir_list_files] }
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "SVN" -state normal
@@ -1002,20 +1034,25 @@ proc setup_dir { } {
     .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
     .workdir.top.bmodbrowse configure -image Modules_cvs
     # Buttons
+    .workdir.bottom.buttons.dirfuncs.bcheckdir configure \
+      -command { cvs_check [workdir_list_files] }
+    .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal
+    .workdir.bottom.buttons.filefuncs.bconflict configure \
+      -command { cvs_merge_conflict [workdir_list_files] }
+    .workdir.bottom.buttons.filefuncs.bannotate configure \
+      -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -command { \
        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bcheckdir configure \
-      -command { cvs_check [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bannotate configure \
-      -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure \
       -command cvs_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.brevert configure \
       -command {cvs_revert [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.blogfile configure \
+    .workdir.bottom.buttons.filefuncs.blogfile configure \
       -command { cvs_logcanvas [pwd] [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bconflict configure \
-      -command { cvs_merge_conflict [workdir_list_files] }
+    if {$cvscfg(econtrol)} {
+      .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
+      .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal
+    }
     # Menus
     .workdir.menubar entryconfigure "CVS" -state normal
     .workdir.menubar entryconfigure "SVN" -state disabled
@@ -1042,6 +1079,8 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 2 -state disabled
     .workdir.menubar.reports entryconfigure 3 -state disabled
     .workdir.menubar.reports entryconfigure 4 -state disabled
+    # Buttons
+    .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   }
 
   DirCanvas:create .workdir.main \
@@ -1151,20 +1190,16 @@ proc directory_list { filenames } {
 
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs"
   if {$incvs} {
-    #set cvsglb(econtrol) $cvscfg(econtrol)
     DirCanvas:headtext .workdir.main "editors"
     cvs_workdir_status
   }
 
   if {$inrcs} {
-    set cvsglb(econtrol) true
     DirCanvas:headtext .workdir.main "locked by"
     rcs_workdir_status
   }
 
   if {$insvn} {
-    #set cvsglb(econtrol) $cvscfg(econtrol)
-    #set cvsglb(econtrol) true
     DirCanvas:headtext .workdir.main "author"
     svn_workdir_status
   }
@@ -1500,7 +1535,7 @@ proc save_options { } {
 
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt econtrol \
-                 showstatcol showdatecol auto_tag \
+                 showstatcol showdatecol showautcol auto_tag \
                  status_filter checkrecursive recurse logging }
   set STRGopts { file_filter ignore_file_filter clean_these \
                  printer rdetail ldetail log_classes lastdir \

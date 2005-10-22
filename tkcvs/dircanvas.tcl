@@ -120,7 +120,7 @@ proc DirCanvas:column {w column headtext} {
   global arr
 
   gen_log:log T "ENTER ($w $column headtext)"
-  gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) econtrol $cvsglb(econtrol)"
+  gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) showeditcol $cvscfg(showauthcol)"
 
   $w.$column.list configure -yscrollcommand "$w.yscroll set"
   bind $w.$column.list <Next>  "DirCanvas:scroll_windows $w scroll  1 pages"
@@ -151,14 +151,6 @@ proc DirCanvas:column {w column headtext} {
      -command "$w.$column.list xview"
   pack $w.$column.xscroll -side bottom -fill x
 
-  if {$column == "statcol"} {
-    if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
-      DirCanvas:map_column $w statcol
-    } else {
-      gen_log:log T "LEAVE (skipping statcol)"
-    }
-    return
-  }
   if {$column == "datecol"} {
     if {$cvscfg(showdatecol)} {
       DirCanvas:map_column $w datecol
@@ -167,8 +159,16 @@ proc DirCanvas:column {w column headtext} {
     }
     return
   }
+  if {$column == "statcol"} {
+    if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
+      DirCanvas:map_column $w statcol
+    } else {
+      gen_log:log T "LEAVE (skipping statcol)"
+    }
+    return
+  }
   if {$column == "editcol"} {
-    if {($incvs || $inrcs) && $cvsglb(econtrol)} {
+    if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
       DirCanvas:map_column $w editcol
     } else {
       gen_log:log T "LEAVE (skipping editcol)"
@@ -911,7 +911,7 @@ proc DirCanvas:build {w} {
     } else {
       pack forget $w.statcol
     }
-    if {$cvsglb(econtrol)} {
+    if {$cvscfg(showeditcol)} {
       DirCanvas:map_column $w editcol
     } else {
       pack forget $w.editcol
@@ -1037,7 +1037,7 @@ proc DirCanvas:build {w} {
         $w.statcol.list yview moveto 0
       }
 
-      if {$cvsglb(econtrol)} {
+      if {$cvscfg(showeditcol)} {
         set fbbox [$w.editcol.list bbox all]
         set botx [lindex $fbbox 0]
         set boty [lindex $fbbox 1]
@@ -1101,7 +1101,7 @@ proc DirCanvas:scroll_windows {w args} {
     if {$cvscfg(showstatcol)} {
       eval $w.statcol.list yview $args
     }
-    if {$cvsglb(econtrol)} {
+    if {$cvscfg(showeditcol)} {
       eval $w.editcol.list yview $args
     }
   }
@@ -1130,7 +1130,7 @@ proc DirCanvas:drag_windows {w W y} {
     if {$cvscfg(showstatcol)} {
       eval $w.statcol.list yview moveto $yfrac
     }
-    if {$cvsglb(econtrol)} {
+    if {$cvscfg(showeditcol)} {
       eval $w.editcol.list yview moveto $yfrac
     }
   }
