@@ -46,6 +46,25 @@ proc rcs_checkout {files} {
   gen_log:log T "LEAVE"
 }
 
+proc rcs_lock {do files} {
+  global cvscfg
+
+  if {$files == {}} {
+    cvsfail "Please select one or more files!" .workdir
+    return
+  }
+  switch -- $do {
+    lock { set commandline "rcs -l $files"}
+    unlock { set commandline "rcs -u $files"}
+  }
+  set cmd [::exec::new "$commandline"]
+  
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir
+  }
+}
+
 # RCS checkin.  Have to use terminal, because ci -m won't take
 # a message with a newline
 proc rcs_checkin {args} {
@@ -243,4 +262,24 @@ proc rcs_log {args} {
 
   gen_log:log T "LEAVE"
 }
+
+# Revert a file to checked-in version by removing the local
+# copy and updating it
+proc rcs_revert {args} {
+  global cvscfg
+        
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
+
+  gen_log:log D "Reverting $filelist"
+  file delete $filelist
+  set cmd [exec::new "co $filelist"]
+        
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir 
+  }     
+        
+  gen_log:log T "LEAVE"
+}     
 

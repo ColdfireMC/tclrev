@@ -99,9 +99,13 @@ proc cvs_workdir_status {} {
 
   set cmd(cvs_status) [exec::new "$cvs -n -q status -l"]
   set status_lines [split [$cmd(cvs_status)\::output] "\n"]
-  if {$cvscfg(showeditcol)} {
+  if {$cvscfg(econtrol)} {
     set cmd(cvs_editors) [exec::new "$cvs -n -q editors -l"]
     set editors_lines [split [$cmd(cvs_editors)\::output] "\n"]
+  }
+  if {$cvscfg(cvslock)} {
+    set cmd(cvs_lockers) [exec::new "$cvs log"]
+    set lockers_lines [split [$cmd(cvs_lockers)\::output] "\n"]
   }
   if {[info exists cmd(cvs_status)]} {
     #gen_log:log F "processing files that CVS knows about"
@@ -198,6 +202,28 @@ proc cvs_workdir_status {} {
     }
     if {$filename != {}} {
       set Filelist($filename:editors) $editors
+    }
+  }
+
+  if {[info exists cmd(cvs_lockers)]} {
+    set filename {}
+    set lockers {}
+    unset cmd(cvs_lockers)
+    foreach line $lockers_lines {
+      if {[string match "Working file: *" $line]} {
+        gen_log:log D "$line"
+        regsub "Working file: " $line "" filename
+      }
+      if {[string match "*locked by:*" $line]} {
+        gen_log:log D "$line"
+        if {$filename != {}} {
+          set p [lindex $line 4]
+          set r [lindex $line 1]
+          set p [string trimright $p {;}]
+          gen_log:log D " $filename   $p\($r\)"
+          append Filelist($filename:editors) $p\($r\)
+        }
+      }
     }
   }
   gen_log:log T "LEAVE"
@@ -1838,5 +1864,25 @@ proc parse_cvsmodules {modules_file} {
   }
 
   gen_log:log T "LEAVE"
+}
+
+proc cvs_lock {do files} {
+  global cvscfg
+  global cvscfg
+
+  if {$files == {}} {
+    cvsfail "Please select one or more files!" .workdir
+    return
+  }
+  switch -- $do {
+    lock { set commandline "cvs admin -l $files"}
+    unlock { set commandline "cvs admin -u $files"}
+  }
+  set cmd [::exec::new "$commandline"]
+  
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir
+  }
 }
 

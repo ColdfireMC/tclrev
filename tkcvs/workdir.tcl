@@ -469,11 +469,11 @@ proc workdir_menus {} {
      -command { subtractdir_dialog [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Set Binary Flag" \
      -command { cvs_binary [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Set ASCII Flag" \
+  .workdir.menubar.cvs add command -label "Unset Binary Flag" \
      -command { cvs_ascii [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Set Edit Flag (Edit)" -underline 15 \
      -command { cvs_edit [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Reset Edit Flag (Unedit)" -underline 11 \
+  .workdir.menubar.cvs add command -label "Unset Edit Flag (Unedit)" -underline 11 \
      -command { cvs_unedit [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Tag Files" -underline 0 \
      -command { file_tag_dialog "no" }
@@ -526,7 +526,7 @@ proc workdir_menus {} {
      -variable cvscfg(confirm_prompt) -onvalue true -offvalue false \
      -selectcolor $selcolor
   .workdir.menubar.options add separator
-  .workdir.menubar.options add checkbutton -label "Editors Column" \
+  .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
      -selectcolor $selcolor \
      -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
@@ -942,20 +942,30 @@ proc setup_dir { } {
   ::picklist::used directory [pwd]
 
   foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+  gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
 
-  set bstate [expr {$incvs ? {normal} : {disabled}}]
+  # Start with the revision-control menus disabled
+  .workdir.menubar entryconfigure "CVS" -state normal
+  .workdir.menubar entryconfigure "SVN" -state normal
+  .workdir.menubar entryconfigure "RCS" -state normal
+  .workdir.menubar.reports entryconfigure 1 -state disabled
+  .workdir.menubar.reports entryconfigure 2 -state disabled
+  .workdir.menubar.reports entryconfigure 3 -state disabled
+  .workdir.menubar.reports entryconfigure 4 -state disabled
+  # Start with the revision-control buttons disabled
+  .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
+  .workdir.bottom.buttons.dirfuncs.bjoin configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.filefuncs ] {
-    $widget configure -state $bstate
+    $widget configure -state disabled
   }
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
-    $widget configure -state $bstate
+    $widget configure -state disabled
   }
   foreach widget [grid slaves .workdir.bottom.buttons.oddfuncs ] {
-    $widget configure -state $bstate
+    $widget configure -state disabled
   }
-  .workdir.bottom.buttons.dirfuncs.bjoin configure -state disabled
 
-  gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
+  # Now enable them depending on where we are
   if {$inrcs} {
     # Top
     .workdir.top.lcvsroot configure -text "RCS *,v"
@@ -971,10 +981,12 @@ proc setup_dir { } {
       -command { rcs_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command { rcs_checkin [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
+      -command { rcs_revert [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.block configure -state normal \
-      -command { rcs_lock workdir_list_files] }
+      -command { rcs_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
-      -command { rcs_unlock workdir_list_files] }
+      -command { rcs_lock unlock [workdir_list_files] }
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "SVN" -state disabled
@@ -1034,24 +1046,37 @@ proc setup_dir { } {
     .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
     .workdir.top.bmodbrowse configure -image Modules_cvs
     # Buttons
-    .workdir.bottom.buttons.dirfuncs.bcheckdir configure \
+    .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal
-    .workdir.bottom.buttons.filefuncs.bconflict configure \
+    .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }
-    .workdir.bottom.buttons.filefuncs.bannotate configure \
+    .workdir.bottom.buttons.filefuncs.bannotate configure -state normal \
       -command { cvs_annotate $current_tagname [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bupdate configure -command { \
+    .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
+       -command { \
        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bcheckin configure \
+    .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command cvs_commit_dialog
-    .workdir.bottom.buttons.cvsfuncs.brevert configure \
+    .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
       -command {cvs_revert [workdir_list_files] }
-    .workdir.bottom.buttons.filefuncs.blogfile configure \
+    .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
+    .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { cvs_logcanvas [pwd] [workdir_list_files] }
     if {$cvscfg(econtrol)} {
       .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
       .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal
+    }
+    if {$cvscfg(cvslock)} {
+      .workdir.bottom.buttons.oddfuncs.block configure -state normal \
+        -command { cvs_lock lock [workdir_list_files] }
+      .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
+        -command { cvs_lock unlock [workdir_list_files] }
     }
     # Menus
     .workdir.menubar entryconfigure "CVS" -state normal
@@ -1070,17 +1095,6 @@ proc setup_dir { } {
     # Annotate/Blame (cvs annotate)
     .workdir.menubar.reports entryconfigure 4 -state normal \
        -command { cvs_annotate $current_tagname [workdir_list_files] }
-  } else {
-    # Menus
-    .workdir.menubar entryconfigure "CVS" -state normal
-    .workdir.menubar entryconfigure "SVN" -state normal
-    .workdir.menubar entryconfigure "RCS" -state normal
-    .workdir.menubar.reports entryconfigure 1 -state disabled
-    .workdir.menubar.reports entryconfigure 2 -state disabled
-    .workdir.menubar.reports entryconfigure 3 -state disabled
-    .workdir.menubar.reports entryconfigure 4 -state disabled
-    # Buttons
-    .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   }
 
   DirCanvas:create .workdir.main \
@@ -1534,8 +1548,8 @@ proc save_options { } {
   gen_log:log T "ENTER"
 
   # There are two kinds of options we can set
-  set BOOLopts { allfiles auto_status confirm_prompt econtrol \
-                 showstatcol showdatecol showautcol auto_tag \
+  set BOOLopts { allfiles auto_status confirm_prompt \
+                 showstatcol showdatecol showeditcol auto_tag \
                  status_filter checkrecursive recurse logging }
   set STRGopts { file_filter ignore_file_filter clean_these \
                  printer rdetail ldetail log_classes lastdir \
