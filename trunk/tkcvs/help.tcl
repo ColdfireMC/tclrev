@@ -286,7 +286,7 @@ The current directory display shows:
 
 *  If cvscfg(showdatecol) is set, the modification time of the file is shown. The format of the date column may be specified with cvscfg(dateformat). The default one sorts the same way alphabetically as chronologically.
 
-*  If cvscfg(econtrol) is set, a list of people editing the files. This column is only useful if your site uses "cvs watch" and/or "cvs edit".
+*  If cvscfg(showeditcol) is set, a list of people editing the files. This column is only useful if your site uses "cvs watch" and/or "cvs edit".
 
 You can move into a directory by double-clicking on it.
 
@@ -337,7 +337,7 @@ The file is a directory.
 
 <h2>Editors Display</h2>
 
-If the option cvscfg(econtrol) has been set then an extra column will appear in the current directory display labeled "editors". This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
+If the option cvscfg(econtrol) has been set then a column labeled "editors" may have entries. This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
 
 <h2>File Filters</h2>
 
@@ -746,7 +746,7 @@ Ask for confirmation before performing an operation(true or false)
 <h3>cvscfg(dateformat)</h3>
 Format for the date string shown in the "Date" column, for example "%Y/%m/%d %H:%M"
 <h3>cvscfg(econtrol)</h3>
-Set this to true to turn on an extra column in the directory browser showing the current editors of each file. Set to false to turn off this feature.
+Set this to true to turn on the ability to use CVS Edit and Unedit, if your site is configured to allow the feature.
 <h3>cvscfg(editor)</h3>
 Preferred default editor
 <h3>cvscfg(editors)</h3>
