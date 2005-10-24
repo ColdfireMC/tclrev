@@ -80,8 +80,11 @@ gen_log:log T "ENTER ($relpath $filename)"
         variable revdate
         variable revtime
         variable revcomment
+        variable revkind
+        variable revname
         variable tags
         variable branchrevs
+        variable allrevs
         variable revbranches
         variable logstate
         variable cwd
@@ -97,6 +100,8 @@ gen_log:log T "ENTER ($relpath $filename)"
         catch { unset tags }
         catch { unset branchrevs }
         catch { unset revbranches }
+        catch { unset revkind }
+        catch { unset revname }
         set cwd [pwd]
 
         # might as well put someting in there
@@ -107,17 +112,27 @@ gen_log:log T "ENTER ($relpath $filename)"
 puts "Trunk"
         set tags(trunk) {}
         set branchrevs(trunk) {}
-        # if the file was added on a branch, this will error out
-        # Come to think of it, there's nothing especially privileged about the trunk
+        # if the file was added on a branch, this will error out.
+        # Come to think of it, there's nothing especially privileged
+        #  about the trunk
         set command "svn log $cvscfg(svnroot)/trunk/$relpath/$filename"
         gen_log:log C "$command"
-        #set trunk_log [::exec::new $command]
-        #set trunk_lines [split [$trunk_log\::output] "\n"]
-        set ret [catch {eval exec $command} trunk_log]
+        set ret [catch {eval exec $command} log_output]
         if {$ret == 0} {
-          set trunk_lines [split $trunk_log "\n"]
-          parse_svnlog $trunk_lines trunk
+          set trunk_lines [split $log_output "\n"]
+          set rr [parse_svnlog $trunk_lines trunk]
+        } else {
+          cvsfail "$log_output"
+          return
         }
+        foreach r $branchrevs(trunk) {
+          puts " $r $revdate($r) ($revcomment($r))"
+          gen_log:log D " $r $revdate($r) ($revcomment($r))"
+          set revkind($r) "revision"
+        }
+        set revkind($rr) "root"
+        set revname($rr) "trunk"
+puts "branchrevs(trunk) $branchrevs(trunk)"
 
         # Branches
 puts "Branches"
@@ -127,41 +142,69 @@ puts "Branches"
           set branch [string trimright $branch "/"]
 puts " $branch"
           set tags($branch) {}
-# FIXME: can't we combine these two log commands?
-          #set command \
-            #"svn log -q --stop-on-copy $cvscfg(svnroot)/branches/$branch/$relpath/$filename"
-          #set branch_nocross_log [::exec::new $command]
-          #set branch_nocross_lines [split [$branch_nocross_log\::output] "\n"]
-          set command \
-            "svn log --stop-on-copy $cvscfg(svnroot)/branches/$branch/$relpath/$filename"
-          set ret [catch {eval exec $command} branch_nocross_log]
+          set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
+          set command "svn log --stop-on-copy $path"
+          gen_log:log C "$command"
+          set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
-            continue
+            cvsfail "$log_output"
+            return
           }
-          set branch_nocross_lines [split $branch_nocross_log "\n"]
-          # Find the last revnum
-          #set branchpoint_line_num \
-            #[expr [llength $branch_nocross_lines] - 3]
-#gen_log:log D "branchpoint line # $branchpoint_line_num"
-          #set branchline [lindex $branch_nocross_lines $branchpoint_line_num]
-          #set rp [lindex $branchline 0]
-#gen_log:log D "branchpoint: $rp"
-          #set p [string trimleft $rp "r"]
-          #incr p -1
-          #set rp "r$p"
+          set loglines [split $log_output "\n"]
+          set rb [parse_svnlog $loglines $branch]
+          foreach r $branchrevs($branch) {
+            puts "  $r $revdate($r) ($revcomment($r))"
+            gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+            set revkind($r) "revision"
+          }
+          set revkind($rb) "branch"
+          set revname($rb) "$branch"
 
-          #set command \
-            #"svn log --stop-on-copy $cvscfg(svnroot)/branches/$branch/$relpath/$filename"
-          #set branch_nocross_log [::exec::new $command]
-          #set branch_nocross_lines [split [$branch_nocross_log\::output] "\n"]
-          set rp [parse_svnlog $branch_nocross_lines $branch]
-gen_log:log D "branchpoint: $rp"
-          set p [string trimleft $rp "r"]
-          incr p -1
-          set rp "r$p"
-          gen_log:log D "set revbranches($rp) $branch"
-          puts " set revbranches($rp) $branch"
-          set revbranches($rp) $branch
+          set command "svn log -q $path"
+          gen_log:log C "$command"
+          set ret [catch {eval exec $command} log_output]
+          if {$ret != 0} {
+            cvsfail "$log_output"
+            return
+          }
+          set loglines [split $log_output "\n"]
+#puts $loglines
+          parse_q $loglines $branch
+puts "branchrevs($branch) $branchrevs($branch)"
+puts "allrevs($branch)    $allrevs($branch)"
+puts [llength $branchrevs($branch)]
+puts [llength $allrevs($branch)]
+set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
+          set revbranches($bp) $branch
+puts " revbranches($bp) $branch"
+        } 
+if 0 {
+        # Tags
+puts "Tags"
+        set command "svn list $cvscfg(svnroot)/tags"
+        set ret [catch {eval "exec $command"} tagout]
+        foreach tag $tagout {
+          set tag [string trimright $tag "/"]
+          set command \
+            "svn log --stop-on-copy $cvscfg(svnroot)/tags/$tag/$relpath/$filename"
+          gen_log:log C "$command"
+          set ret [catch {eval exec $command} log_output]
+          if {$ret != 0} {
+            cvsfail "$log_output"
+            return
+          }
+          set loglines [split $log_output "\n"]
+          set rt [parse_svnlog $loglines $tag]
+          set tags($rt) $tag
+          set revkind($rt) "tag"
+          puts " $rt $revdate($rt) ($revcomment($rt))"
+          gen_log:log D " $rt $revdate($rt) ($revcomment($rt))"
+        }
+} ; #end if 0
+        puts "\nList of Revisions"
+        foreach r [lsort -dictionary [array names revkind]] {
+          puts " revkind $r $revkind($r)"
+          gen_log:log D " revkind $r $revkind($r)"
         }
 
         [namespace current]::sort_it_all_out
@@ -174,7 +217,6 @@ gen_log:log D "branchpoint: $rp"
         variable revdate
         variable revtime
         variable revcomment
-        variable revbranches
         variable branchrevs
 
         set i 0
@@ -190,13 +232,11 @@ gen_log:log D "branchpoint: $rp"
             set splitline [split $line "|"]
             set revnum [string trim [lindex $splitline 0]]
             lappend branchrevs($r) $revnum
-            puts "  branchrevs($r) $branchrevs($r)"
             set revwho($revnum) [string trim [lindex $splitline 1]]
             set date_and_time [string trim [lindex $splitline 2]]
             set revdate($revnum) [lindex $date_and_time 0]
             set revtime($revnum) [lindex $date_and_time 1]
             set notelen [lindex [string trim [lindex $splitline 3]] 0]
-#puts "  Revision $revnum"
             gen_log:log D "revnum $revnum"
             gen_log:log D "revwho($revnum) $revwho($revnum)"
             gen_log:log D "revdate($revnum) $revdate($revnum)"
@@ -205,18 +245,35 @@ gen_log:log D "branchpoint: $rp"
             
             incr i 2
             set revcomment($revnum) ""
-            set revbranches($revnum) ""
             set c 0
             while {$c < $notelen} {
               append revcomment($revnum) "[lindex $lines [expr $c + $i]]\n"
-gen_log:log D "c $c  i $i $revcomment($revnum)"
               incr c
             }
+            set revcomment($revnum) [string trimright $revcomment($revnum)]
             gen_log:log D "revcomment($revnum) $revcomment($revnum)"
           }
           incr i
         }
         return $revnum
+      }
+
+      proc parse_q {lines r} {
+        variable allrevs
+
+        set allrevs($r) ""
+        foreach line $lines {
+puts $line
+          gen_log:log D "$line"
+          if [regexp {^r} $line] {
+            set splitline [split $line "|"]
+puts "$splitline"
+            set revnum [string trim [lindex $splitline 0]]
+puts "revnum $revnum"
+            lappend allrevs($r) $revnum
+          }
+        }
+puts "allrevs($r) $allrevs($r)"
       }
 
       proc sort_it_all_out {} {
@@ -228,6 +285,8 @@ gen_log:log D "c $c  i $i $revcomment($revnum)"
         variable revdate
         variable revtime
         variable revcomment
+        variable revkind
+        variable revname
         variable tags
         variable branchrevs
         variable revbranches
@@ -246,12 +305,25 @@ gen_log:log D "c $c  i $i $revcomment($revnum)"
         set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin -1}]]
 
         # Sort the revision and branch lists and remove duplicates
-puts "sort_it_all_out: array names branchrevs:  [array names branchrevs]"
-        foreach r [array names branchrevs] {
-          set branchrevs($r) \
-            [lsort -unique -decreasing $branchrevs($r)]
+puts "\nsort_it_all_out"
+
+        foreach r [lsort -dictionary [array names revkind]] {
+           puts "$r $revkind($r)"
+           if {$revkind($r) == "root" || $revkind($r) == "branch"} {
+             puts "New index $r"
+             set root $r
+             set newlist($root) ""
+           } elseif {$revkind($r) == "revision"} {
+             lappend newlist($root) $r
+           }
         }
-puts "sorted branchrevs($r) $branchrevs($r)"
+#puts "\nnewlist"
+        #unset branchrevs
+        #foreach a [lsort -dictionary [array names newlist]] {
+          #puts " $a $newlist($a)"
+          #puts " $a $revname($a)"
+          #set branchrevs($revname($a)) [concat $a $newlist($a)]
+        #}
 
         # Find out where to put the working revision icon (if anywhere)
         variable directory
@@ -259,8 +331,11 @@ puts "sorted branchrevs($r) $branchrevs($r)"
           set command "svn status -v $filename"
           set cmd [exec::new $command]
           set svnstat [$cmd\::output]
-          set revnum(current) [lindex [string trim $svnstat] 0]
+          set svnstat [string trimleft $svnstat]
+          set revnum(current) [lindex $svnstat 1]
+          set revnum(current) "r$revnum(current)"
           gen_log:log D "revnum(current) $revnum(current)"
+          puts "revnum(current) $revnum(current)"
         } else {
           gen_log:log D "$filename"
         }
@@ -547,7 +622,8 @@ puts "sorted branchrevs($r) $branchrevs($r)"
         variable tags
 
         gen_log:log T "ENTER ($x $y $box_width $root_rev $branch)"
-        set root_text $root_info
+puts "DrawRoot $x $y"
+        set root_text "$root_info"
         set btag [lindex $tags($branch) 0]
         # draw the box
         set rheight [expr {$curr(pady,2) + [llength $root_text] * $font_norm_h}]
@@ -564,7 +640,7 @@ puts "sorted branchrevs($r) $branchrevs($r)"
            -fill blue
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
-        gen_log:log D "[subst $root_text]"
+        gen_log:log D "$root_text"
         foreach s [subst $root_text] {
           $branch_canvas.canvas create text \
             $tx $ty \
@@ -669,7 +745,8 @@ if {$revision == ""} {return}
         variable fromprefix
         variable toprefix
 
-        gen_log:log T "ENTER ($x $y $tag_width $box_width $height $revision)"
+        #puts "ENTER ($x $y $tag_width $box_width $height $revision)"
+        gen_log:log T "DrawRevision $revision)"
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -751,41 +828,11 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         variable box_height
         variable revbranches
         variable branchrevs
-        variable remaining_branches
+        variable revnum
 
         gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
-puts "DrawBranch ($x $y \"$root_rev\" $branch)"
-        # What revisions to show on this branch?
-        if {$branchrevs($branch) == {}} {
-          set revlist {}
-puts " No revisions on this branch"
-        } else {
-          # Always have the head revision
-          #set revlist [lindex $branchrevs($branch) 0]
-#gen_log:log D "revlist: $revlist"
-          foreach r $branchrevs($branch) {
-puts "revision $r of $branch"
-gen_log:log D "$r"
-            if {! [info exists branchrevs($r)]} {continue}    
-            if {$opt(show_inter_revs)
-            || ($opt(show_empty_branches) && $branchrevs($r) != {})} {
-              lappend revlist $r
-            } else {
-              # Only if there are non-empty branches off this revision
-              foreach b $branchrevs($r) {
-                if {$branchrevs($b) != {}} {
-                  lappend revlist $r
-                  break
-                }
-              }
-            }
-          }
-          if {[llength $branchrevs($branch)] > 1} {
-            # Always have the first revision on a branch
-            #lappend revlist [lindex $branchrevs($branch) end]
-            set revlist $branchrevs($branch)
-          }
-        }
+        puts "\nDrawBranch ($branch)"
+
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
         if {$branch == {current}} {
@@ -796,7 +843,7 @@ gen_log:log D "$r"
         set height [expr {$root_height + $curr(spcy)}]
         set rdata {}
 
-        if {! [info exists revlist]} {return}
+        set revlist [lsort -dictionary -decreasing $branchrevs($branch)]
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
@@ -848,13 +895,11 @@ gen_log:log D "$r"
         # Draw the branch
         set midx [expr {$x + $box_width/2}]
         set last_y {}
-        # The lowest revision is actually not a diff-able revision,
-        # but the base of the branch
-puts "\nrevlist $revlist"
+puts "set last_y {}"
+puts "revlist $revlist"
 gen_log:log D "revlist $revlist"
-puts "        [lrange $revlist 0 end-1]"
         foreach revision [lrange $revlist 0 end] {rtag_width rheight} $rdata {
-          if {$revision == ""} {continue}
+          #if {$revision == ""} {continue}
           incr y $curr(spcy)
           incr y $rheight
           # For each branch off this revision, draw it to the right of this
@@ -863,21 +908,22 @@ puts "        [lrange $revlist 0 end-1]"
           set y2 [expr {$y - $box_height/2 - $curr(boff)}]
           set brevs {}
           set bxys {}
-puts "  revbranches($revision) \"$revbranches($revision)\""
-          foreach r2 $revbranches($revision) {
-puts " Yes - revbranches($revision) $r2"
-gen_log:log D "revbranches($revision): $r2"
-            #if {! [info exists revbranches($r2)]} {continue}
-            # Do we display the branch if it is empty?
-            # If it's the you-are-here, we do anyway
-            #if {$revbranches($r2) == {} && $r2 != {current} && !\
-                #$opt(show_empty_branches)} {
-              #continue
-            #}
-            lappend brevs $r2
-            foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
-              lappend bxys $lx $lbw $rh $lly
-              break
+          if [info exists revbranches($revision)] {
+            foreach r2 $revbranches($revision) {
+              puts " revbranches($revision) $r2"
+              gen_log:log D " revbranches($revision): $r2"
+              #if {! [info exists revbranches($r2)]} {continue}
+              # Do we display the branch if it is empty?
+              # If it's the you-are-here, we do anyway
+              #if {$revbranches($r2) == {} && $r2 != {current} && !\
+                  #$opt(show_empty_branches)} {
+                #continue
+              #}
+              lappend brevs $r2
+              foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
+                lappend bxys $lx $lbw $rh $lly
+                break
+              }
             }
             set x2 [expr {$lx + $lbw + $curr(spcx)}]
           }
@@ -895,9 +941,6 @@ gen_log:log D "revbranches($revision): $r2"
                 -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
                 -tags [list A$revision B$b delta active]
             }
-            #if {$b == {current}} {
-              #DrawCurrent $bx $by $bw $rh $revision
-            #}
             # We could draw this with -smooth 1 but without anti-aliasing
             # the curves look yukky :-(
             $branch_canvas.canvas lower [ \
@@ -917,31 +960,26 @@ gen_log:log D "revbranches($revision): $r2"
               -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
               -tags [list A$revision B$last_rev delta active]
           }
-          if {$revision == {current}} {
-            DrawCurrent $x $y $box_width $rheight $revision
-          } else {
-            DrawRevision $x $y $rtag_width $box_width $rheight $revision
-          }
+          DrawRevision $x $y $rtag_width $box_width $rheight $revision
+          #if {$revision == $revnum(current)} {
+            #set y [expr {$y - $box_height}]
+            #DrawCurrent $x $y $box_width $box_height $revision
+          #}
           if {$opt(update_drawing) < 1} {
             UpdateBndBox
           }
+puts "set last_y $y"
           set last_y $y
           set last_rev $revision
         }
         incr y $curr(spcy)
         if {[info exists revision]} {
           DrawRoot $x $y $box_width $revision $branch
-puts "Finished $branch"
+puts "Finished $branch\n"
           if {$opt(update_drawing) < 2} {
             UpdateBndBox
           }
         }
-        foreach b [array names branchrevs] {
-          if {! [string match $branch $b]} {
-            lappend remaining_branches $b
-          }
-        }
-#puts "These branches remain: $remaining_branches"
         gen_log:log T "LEAVE"
         return [list $x [expr {$y + $root_height + $curr(spcy)}] \
           $box_width $root_height $last_y]
@@ -1025,6 +1063,7 @@ puts "Finished $branch"
         variable boxwidth
 
         gen_log:log T "ENTER ($now)"
+puts "DrawTree"
         catch {after cancel $after_id_draw}
         if {$now != {now} && [info exists logcfg(draw_delay)]} {
           set after_id_draw \
@@ -1042,7 +1081,6 @@ puts "Finished $branch"
           variable font_bold_h
           variable revbranches
           variable branchrevs
-          variable remaining_branches
 
           busy_start $branch_canvas
           set view_xoff [lindex [$branch_canvas.canvas xview] 0]
@@ -1052,9 +1090,9 @@ puts "Finished $branch"
           if {$opt(show_root_rev)} {
             append root_info {$branch}
           }
-          if {$opt(show_root_tags)} {
-            append root_info {$tags($branch)}
-          }
+          #if {$opt(show_root_tags)} {
+            #append root_info {$tags($branch)}
+          #}
           set rev_info {}
           if {$opt(show_box_revtime)} {
             append rev_info {"$revtime($revision)" }
@@ -1068,8 +1106,8 @@ puts "Finished $branch"
           if {$opt(show_box_rev)} {
             append rev_info {$revision }
           }
-puts "rev_info $rev_info"
-gen_log:log D "rev_info $rev_info"
+#puts "rev_info $rev_info"
+#gen_log:log D "rev_info $rev_info"
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
           set my_size [expr {round($logcfg(font_size) * $opt(scale))}]
@@ -1097,22 +1135,14 @@ gen_log:log D "rev_info $rev_info"
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info] * $font_norm_h}]
-          #catch {unset remaining_branches}
           
+          #foreach i [lsort -dictionary [array names revkind]] {
+            #DrawRevision $x $y $rtag_width $box_width $rheight $revision
+          #}
           if {[info exists branchrevs(trunk)]} {
             DrawBranch 0 0 {} trunk
             UpdateBndBox
           }
-          # DrawBranch is recursive, so we shouldn't really have something left over here
-if {[info exists remaining_branches]} {
-puts "Done, but these branches remain: $remaining_branches"
-foreach orphan $remaining_branches {
-          if {[info exists branchrevs($orphan)]} {
-            DrawBranch 0 0 {} $orphan
-            UpdateBndBox
-          }
-     }
-}
 
           if {$opt(show_merges)} {
             foreach from $fromtags {
@@ -1547,4 +1577,3 @@ foreach orphan $remaining_branches {
     }
   }
 }
-

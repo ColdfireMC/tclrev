@@ -41,6 +41,10 @@ proc read_svn_dir {dirname} {
                 set type $word
                 set state W
               }
+              "tags" {
+                set type $word
+                set state W
+              }
               default { append root "$word/" }
              }
           }
@@ -55,13 +59,18 @@ proc read_svn_dir {dirname} {
         }
       }
       #puts $current_tagname
-      #puts "***"
+      puts "***"
       set cvscfg(svnroot) [string trimright $root "/"]
       gen_log:log D "SVN URL: $cvscfg(url)"
+      puts "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
+      puts "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) $relp
       gen_log:log D "relpath: $cvsglb(relpath)"
+      puts "relpath: $cvsglb(relpath)"
       gen_log:log D "tagname: $current_tagname"
+      puts "tagname: $current_tagname"
+      puts "***"
     }
   }
   gen_log:log T "LEAVE"
@@ -409,6 +418,8 @@ proc parse_svnmodules {svnroot} {
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
   }
+  set branches ""
+  set tags ""
   foreach item $contents {
     gen_log:log D "$item"
     switch -exact -- $item {
@@ -416,7 +427,6 @@ proc parse_svnmodules {svnroot} {
           set modval(trunk) "trunk"
        }
       "branches/" {
-        set branches ""
         set command "svn list $svnroot/branches"
         set cmd(svnlist) [exec::new "$command"]
         if {[info exists cmd(svnlist)]} {
@@ -431,7 +441,6 @@ proc parse_svnmodules {svnroot} {
         }
       }
       "tags/" {
-        set tags ""
         set command "svn list $svnroot/tags"
         set cmd(svnlist) [exec::new "$command"]
         if {[info exists cmd(svnlist)]} {
