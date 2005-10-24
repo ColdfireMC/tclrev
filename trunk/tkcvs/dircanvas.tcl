@@ -269,6 +269,8 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) dir_ques.gif]
   image create photo dir_plus \
     -format gif -file [file join $cvscfg(bitmapdir) dir_plus.gif]
+  image create photo dir_minus \
+    -format gif -file [file join $cvscfg(bitmapdir) dir_minus.gif]
 
   image create photo stat_ques \
     -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
@@ -707,6 +709,10 @@ proc DirCanvas:build {w} {
      }
      "<dir> Locally Added" {
        set DirList($w:$f:icon) dir_plus
+       set DirList($w:$f:popup) folder_pop
+     }
+     "<dir> Locally Removed" {
+       set DirList($w:$f:icon) dir_minus
        set DirList($w:$f:popup) folder_pop
      }
      "<directory>" {

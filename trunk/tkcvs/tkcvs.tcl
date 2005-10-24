@@ -241,6 +241,7 @@ set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
 set incvs 0
 set insvn 0
 set inrcs 0
+foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
 
 #foreach c [lsort [array names cvscfg]] {
   #gen_log:log D "cvscfg($c) $cvscfg($c)"
@@ -268,15 +269,14 @@ image create photo Branchtag \
 # Create a window
 if {$cvscfg(startwindow) == "module"} {
   wm withdraw .
-  if {[file isdirectory CVS]} {
-    read_cvs_dir CVS
-  }
+  #if {[file isdirectory CVS]} {
+    #read_cvs_dir CVS
+  #}
   modbrowse_run
 } elseif {$cvscfg(startwindow) == "log"} {
   wm withdraw .
-  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
   if {$incvs} {
-    read_cvs_dir CVS
+    #read_cvs_dir CVS
     cvs_logcanvas [pwd] \"$lcfile"\
   } elseif {$inrcs} {
     set cwd [pwd]
