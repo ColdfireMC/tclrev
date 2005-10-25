@@ -481,11 +481,12 @@ proc workdir_menus {} {
      -command { cvs_logcanvas [pwd] [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Resolve Conflicts" \
      -command { cvs_merge_conflict [workdir_list_files] }
+  .workdir.menubar.cvs add separator
   .workdir.menubar.cvs add command -label "Release" \
      -command { release_dialog [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Join (Merge) Directory" -underline 0 \
      -command { cvs_joincanvas }
-  .workdir.menubar.cvs add command -label "Import WD into Repository" -underline 0 \
+  .workdir.menubar.cvs add command -label "Import CWD into Repository" -underline 0 \
      -command import_run
 
   # SVN
@@ -499,6 +500,9 @@ proc workdir_menus {} {
      -command { subtract_dialog [workdir_list_files] }
   .workdir.menubar.svn add command -label "Browse the Log Diagram" \
      -command { svn_branches [pwd] [workdir_list_files] }
+  .workdir.menubar.svn add separator
+  .workdir.menubar.svn add command -label "Import CWD into Repository" -underline 0 \
+     -command svn_import_run
 
   # RCS
   .workdir.menubar.rcs add command -label "Checkout" -underline 0 \

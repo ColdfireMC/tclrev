@@ -11,6 +11,7 @@
 proc import_run {} {
   global cwd
   global incvs
+  global insvn
   global cvsglb
 
   gen_log:log T "ENTER"
@@ -18,6 +19,10 @@ proc import_run {} {
   cvsroot_check [pwd]
   if {$incvs} {
     cvsok "This directory is already in CVS.\nCan\'t import here!" .import
+    gen_log:log T "LEAVE"
+    return
+  } elseif {$insvn} {
+    cvsok "There are Subversion directories here.\nPlease remove them first." .import
     gen_log:log T "LEAVE"
     return
   }
@@ -44,14 +49,13 @@ proc import_run {} {
 
   message .import.top.explain -justify left -width 500 -relief groove \
     -text "This will import the current directory and its sub-directories\
-          into CVS, creating a new module."
+          into CVS, creating a new module.  If you haven't created a CVS repository,\
+          you must do that first with \"cvs init.\""
   label .import.top.lnewcode -text "New Module Name"  -anchor w
   label .import.top.lnewdir  -text "New Module path relative to \$CVSROOT" -anchor w
   label .import.top.lnewdesc -text "Descriptive Title" -anchor w
   label .import.top.lnewvers  -text "Version Number" -anchor w
 
-#  entry .import.top.tnewcode -textvariable cvsglb(newcode) -width 40 \
-#    -state disabled -borderwidth 1
   entry .import.top.tnewcode -textvariable cvsglb(newcode) -width 40 
   entry .import.top.tnewdir -textvariable cvsglb(newdir) -width 40
   entry .import.top.tnewdesc -textvariable cvsglb(newdesc) -width 40
