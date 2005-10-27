@@ -133,6 +133,7 @@ namespace eval ::logcanvas {
         # Splits the rcs file up and parses it using a simple state machine.
         #
         global module_dir
+        global inrcs
         variable filename
         variable localfile
         variable logcanvas
@@ -166,8 +167,12 @@ namespace eval ::logcanvas {
                 }
                 set fname [file join $module_dir $fname]
                 wm title $logcanvas "CVS Log: $fname"
+                if {$inrcs && [file isdir RCS]} {
+                   set fname [file join RCS $fname]
+                }
                 $logcanvas.up.rfname delete 0 end
-                $logcanvas.up.rfname insert end $fname
+                $logcanvas.up.rfname insert end "$fname,v"
+                $logcanvas.up.rfname configure -state readonly
               } elseif {[string match {Working file: *} $logline]} {
                 # If we care about a working copy we need to look
                 # at the name of the working file here. It may be
@@ -1494,8 +1499,8 @@ namespace eval ::logcanvas {
       gen_log:log D "module_dir $module_dir"
       label $logcanvas.up.lfname -text "CVS Path" \
         -width 12 -anchor w
-      entry $logcanvas.up.rfname -font $textfont
-      $logcanvas.up.rfname configure -bg $disbg
+      entry $logcanvas.up.rfname -font $textfont -relief groove
+      #$logcanvas.up.rfname configure -bg $disbg
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
@@ -1644,6 +1649,7 @@ namespace eval ::logcanvas {
         $logcanvas.delta configure -state disabled
       }
       if {$inrcs} {
+        $logcanvas.up.lfname configure -text "RCS File"
         $logcanvas.view configure -state disabled
         $logcanvas.annotate configure -state disabled
         $logcanvas.join configure -state disabled

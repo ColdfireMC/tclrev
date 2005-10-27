@@ -217,14 +217,12 @@ proc modbrowse_menus {} {
   #
   .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.file -label "File" -underline 0
   menu .modbrowse.modmenu.file
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.checkouts -label "Checkouts" -underline 0
-  menu .modbrowse.modmenu.checkouts
+  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.cvs -label "CVS" -underline 0
+  menu .modbrowse.modmenu.cvs
+  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.svn -label "SVN" -underline 0
+  menu .modbrowse.modmenu.svn
   .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.options -label "Options" -underline 0
   menu .modbrowse.modmenu.options
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.patch -label "Patch" -underline 0
-  menu .modbrowse.modmenu.patch
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.tag -label "Tag" -underline 0
-  menu .modbrowse.modmenu.tag
 
   #
   # Create the menus
@@ -232,20 +230,36 @@ proc modbrowse_menus {} {
   set selcolor [option get .modbrowse selectColor selectColor]
   .modbrowse.modmenu.file add command -label "Browse Working Directory" -underline 0 \
      -command workdir_setup
-  .modbrowse.modmenu.file add command -label "Module File" \
-     -command module_file
-  .modbrowse.modmenu.file add separator
-  .modbrowse.modmenu.file add command -label "Import To A New Module" -underline 0 \
-     -command { import_run }
-  .modbrowse.modmenu.file add command -label "Import To An Existing Module" -underline 0 \
-     -command { import2_run }
-  .modbrowse.modmenu.file add command -label "Vendor Merge" -underline 0 \
-     -command {merge_run $modbrowse_module}
-  .modbrowse.modmenu.file add separator
   .modbrowse.modmenu.file add command -label "Exit" -underline 1 \
      -command { module_exit; exit_cleanup 1 }
 
-  .modbrowse.modmenu.options add checkbutton -label "Group Aliases in a Folder" \
+  .modbrowse.modmenu.cvs add command -label "Tag Module" -underline 0 \
+     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
+  .modbrowse.modmenu.cvs add command -label "Branch Tag Module" -underline 0 \
+     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
+  .modbrowse.modmenu.cvs add command -label "Make Patch File" -underline 0 \
+     -command { ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 0 }
+  .modbrowse.modmenu.cvs add command -label "View Patch Summary" -underline 0 \
+     -command { ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 1 }
+  .modbrowse.modmenu.cvs add separator
+  .modbrowse.modmenu.cvs add command -label "Import CWD to A New Module" -underline 0 \
+     -command { import_run }
+  .modbrowse.modmenu.cvs add command -label "Import CWD to An Existing Module" -underline 0 \
+     -command { import2_run }
+  .modbrowse.modmenu.cvs add command -label "Vendor Merge" -underline 0 \
+     -command {merge_run $modbrowse_module}
+  .modbrowse.modmenu.cvs add separator
+  .modbrowse.modmenu.cvs add command -label "Show My Checkouts" -underline 0 \
+     -command {cvs_history me ""}
+  .modbrowse.modmenu.cvs add command -label "Show Checkouts of Selected Module" -underline 0 \
+     -command {cvs_history all $modbrowse_module}
+  .modbrowse.modmenu.cvs add command -label "Show All Checkouts" -underline 0 \
+     -command {cvs_history all ""}
+
+  .modbrowse.modmenu.svn add command -label "Import CWD into Repository" \
+     -command svn_import_run
+
+  .modbrowse.modmenu.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
      -variable cvscfg(aliasfolder) -onvalue true -offvalue false \
      -selectcolor $selcolor -command {
         ModTree:delitem .modbrowse.treeframe.pw /
@@ -277,30 +291,6 @@ proc modbrowse_menus {} {
      -variable logclass(D) -onvalue "D" -offvalue "" \
      -selectcolor $selcolor -command gen_log:changeclass
 
-  .modbrowse.modmenu.checkouts add command -label "My Checkouts" -underline 0 \
-     -command {cvs_history me ""}
-  .modbrowse.modmenu.checkouts add command -label "Checkouts of Selected Module" -underline 0 \
-     -command {cvs_history all $modbrowse_module}
-  .modbrowse.modmenu.checkouts add command -label "All Checkouts" -underline 0 \
-     -command {cvs_history all ""}
-
-  .modbrowse.modmenu.patch add command -label "Make Patch File" -underline 0 \
-     -command {
-      ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 0
-    }
-  .modbrowse.modmenu.patch add command -label "View Patch Summary" -underline 0 \
-     -command {
-      ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 1
-    }
-
-  .modbrowse.modmenu.tag add command -label "Tag Module" -underline 0 \
-     -command {
-        rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no"
-    }
-  .modbrowse.modmenu.tag add command -label "Branch Tag Module" -underline 0 \
-     -command {
-      rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes"
-    }
 
   menu_std_help .modbrowse.modmenu
 
@@ -343,8 +333,6 @@ proc modbrowse_run {} {
 
   busy_start .modbrowse
   wm deiconify .modbrowse
-  .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
-    -command { svn_list $modbrowse_path }
   raise .modbrowse
   set svn_info [catch {eval exec svn info} ]
   set insvn [expr {$svn_info == 1} ? {0} : {1}]
@@ -384,11 +372,15 @@ proc modbrowse_run {} {
     $widget configure -state $bstate
   }
   if {$insvn} {
-  .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
-    -command { svn_list $modbrowse_path }
+    .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
+      -command { svn_list $modbrowse_path }
+    .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
+     -command { import_run }
   } else {
-  .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
-    -command { browse_files $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
+      -command { browse_files $modbrowse_module }
+    .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
+     -command { svn_import_run }
   }
 
   # Populate the tree

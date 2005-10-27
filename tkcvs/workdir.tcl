@@ -77,7 +77,8 @@ proc workdir_setup {} {
      -command modbrowse_run
 
   label .workdir.top.lcvsroot -text "CVSROOT"
-  label .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) -anchor w -relief groove
+  entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) -relief groove -state readonly \
+     -font $cvscfg(guifont)
 
   if {[regexp {://} $cvscfg(cvsroot)]} {
      set cvscfg(url) $cvscfg(cvsroot)
