@@ -106,6 +106,7 @@ gen_log:log T "ENTER ($relpath $filename)"
 
         # might as well put someting in there
         $branch_canvas.up.rfname insert end "$relpath/$filename"
+        $branch_canvas.up.rfname configure -state readonly
 
         busy_start $branch_canvas
         # The trunk
@@ -117,6 +118,7 @@ puts "Trunk"
         #  about the trunk
         set command "svn log $cvscfg(svnroot)/trunk/$relpath/$filename"
         gen_log:log C "$command"
+puts "$command"
         set ret [catch {eval exec $command} log_output]
         if {$ret == 0} {
           set trunk_lines [split $log_output "\n"]
@@ -139,12 +141,15 @@ puts "Branches"
         set command "svn list $cvscfg(svnroot)/branches"
         set ret [catch {eval "exec $command"} branches]
         foreach branch $branches {
+          # There can be files such as "README" here that aren't branches
+          if {![string match {$/} $branch]} {continue}
           set branch [string trimright $branch "/"]
 puts " $branch"
           set tags($branch) {}
           set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
+puts "$command"
           set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
             cvsfail "$log_output"
@@ -162,6 +167,7 @@ puts " $branch"
 
           set command "svn log -q $path"
           gen_log:log C "$command"
+puts "$command"
           set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
             cvsfail "$log_output"
@@ -188,6 +194,7 @@ puts "Tags"
           set command \
             "svn log --stop-on-copy $cvscfg(svnroot)/tags/$tag/$relpath/$filename"
           gen_log:log C "$command"
+puts "$command"
           set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
             cvsfail "$log_output"
@@ -1365,8 +1372,8 @@ puts "DrawTree"
       set disbg [lindex [$branch_canvas.up configure -background] 4]
       label $branch_canvas.up.lfname -text "SVN Path" \
         -width 12 -anchor w
-      entry $branch_canvas.up.rfname -font $textfont
-      $branch_canvas.up.rfname configure -bg $disbg
+      entry $branch_canvas.up.rfname -font $textfont -relief groove
+      #$branch_canvas.up.rfname configure -bg $disbg
       button $branch_canvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $branch_canvas.up -side top -fill x
       foreach fm {A B} {
