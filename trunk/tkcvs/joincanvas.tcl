@@ -241,9 +241,7 @@ namespace eval joincanvas {
           # Find its parent
           set alist [split $rev "."]
           set alength [llength $alist]
-          #gen_log:log D "  alength $alength"
-          #gen_log:log D "  remainder [expr $alength % 2]"
-          set isodd [expr $alength % 2]
+          set isodd [expr {$alength % 2}]
           set parent($rev) [join [lrange $alist 0 [expr {$alength - 3}]] "."]
           #gen_log:log D " parent $parent($rev)"
           set parentbranch [join [lrange $alist 0 [expr {$alength - 5}]] "."]
@@ -275,9 +273,7 @@ namespace eval joincanvas {
           # Find its parent
           set alist [split $rev "."]
           set alength [llength $alist]
-          #gen_log:log D "  alength $alength"
-          #gen_log:log D "  remainder [expr $alength % 2]"
-          set isodd [expr $alength % 2]
+          set isodd [expr {$alength % 2}]
           set parent($rev) [join [lrange $alist 0 [expr {$alength - 3}]] "."]
           #gen_log:log D " parent $parent($rev)"
           set parentbranch [join [lrange $alist 0 [expr {$alength - 5}]] "."]
@@ -343,7 +339,6 @@ namespace eval joincanvas {
           set alength [llength $alist]
           # Round up instead of down
           set ind [expr {($alength +1)/ 2}]
-          #gen_log:log D "  remainder [expr $alength % 2]"
           set pind [expr {$ind - 1}]
 
           if {! [info exists py($ind)]} {

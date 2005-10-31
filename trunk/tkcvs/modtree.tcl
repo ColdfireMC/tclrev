@@ -473,12 +473,12 @@ proc ModTree:panedwindow_grab {w} {
 
 proc ModTree:panedwindow_drag {w x} {
   # Where we are now, relative to the west side of $w
-  set relX [expr $x - [winfo rootx $w]]
+  set relX [expr {$x - [winfo rootx $w]}]
   # How far we can go to the right relative to the west side of $w
   set maxX [winfo width $w]
   # minX is 0
   # Our position as a fraction of the traversible space
-  set frac [expr double($relX) / $maxX]
+  set frac [expr {double($relX) / $maxX}]
   # Rails to keep us from going any further
   if {$frac < 0.05} {
     set frac 0.05

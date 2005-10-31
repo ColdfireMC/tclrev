@@ -92,6 +92,8 @@ namespace eval ::exec {
 
             [namespace current]::err_handler
 
+            if {! [info exists command]} {set command ""}
+            if {! [info exists status]} {set status ""}
             if {$errmsg == ""} {set errmsg "$command exited status $status"}
             if {[string length $errmsg] < 256} {
                cvsfail $errmsg .

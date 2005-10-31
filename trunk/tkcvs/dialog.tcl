@@ -12,455 +12,174 @@ if {[catch "image type arr_dn"]} {
   workdir_images
 }
 
-namespace eval ::dialog {
-  variable instance 0
+# Creates the widgets for the dynamic form dialog
+proc dialog_FormCreate { title form_data } {
   global cvscfg
-
-  variable font_star $cvscfg(dialogfont)
-  variable font_normal $cvscfg(listboxfont)
-  variable font_bold $cvscfg(dialogfont)
-  #variable font_italic [list [concat $font_normal italic]]
-  variable font_italic \
-    [font create -family Helvetica -size -12 -slant italic]
-
-  #gen_log:log D "font_star $cvscfg(dialogfont)"
-  #gen_log:log D "font_normal $cvscfg(listboxfont)"
-  #gen_log:log D "font_bold $cvscfg(dialogfont)"
-  #gen_log:log D "font_italic $font_italic"
-}
-
-proc ::dialog::FormCreate { title form_data } {
+  global dynamic_dialog
+  global dialog_action
   gen_log:log T "ENTER ($form_data)"
 
-  variable instance
-  set my_idx $instance
-  incr instance
+  set font_star $cvscfg(dialogfont)
+  set font_normal $cvscfg(listboxfont)
+  set font_bold $cvscfg(dialogfont)
+  set font_italic [font create -family Helvetica -size -12 -slant italic]
 
-  namespace eval $my_idx {
-    set my_idx [uplevel {concat $my_idx}]
-    variable w .dialog$my_idx
-    variable title [uplevel {concat $title}]
-    variable form_data [uplevel {concat $form_data}]
+  if {[winfo exists .dynamic_dialog]} {
+    destroy .dynamic_dialog
+  }
+  set w .dynamic_dialog
+  toplevel $w
 
-    variable form_sect
+  frame $w.form
+  pack $w.form -side top -fill x
 
-    toplevel $w
-
-    frame $w.form
-    pack $w.form -side top -fill x
-
-    set wcol1 0
-    foreach {field picklist req type text data} $form_data {
-      if {$type == {h}} {
-        set form_sect($field) $data
-        checkbutton $w.form.h$field -anchor w -font $::dialog::font_bold \
-          -text $text -variable [namespace current]::form_sect($field) \
-          -command "::dialog::FormLayout [namespace current] [list $form_data]"
-      } else {
-        label $w.form.p$field -anchor w -padx 10
-        label $w.form.l$field -anchor w -padx 2 \
-          -font $::dialog::font_normal -text $text
-        set l [font measure $::dialog::font_normal -displayof $w $text]
-        incr l 2
-        if {$l > $wcol1} {
-          set wcol1 $l
+  set row 0
+  foreach {field req type labeltext data} $form_data {
+    # If you wanted another default, set it in the calling function
+    if {! [info exists dynamic_dialog($field)]} {
+      set dynamic_dialog($field) {}
+    }
+    if {$type == {l}} {
+      # Section label
+      frame $w.form.rule$field -relief groove -borderwidth 2 -height 4
+      label $w.form.l$field -font $font_bold -text $labeltext
+      grid  $w.form.rule$field -column 0 -row [incr row] -columnspan 3 -sticky ew
+      grid  $w.form.l$field -column 0 -row [incr row] -sticky w
+    } else {
+      # It's something else.  It has a label and a req though.
+      label $w.form.l$field -anchor w -text "    $labeltext"
+      label $w.form.r$field -anchor e -foreground red \
+          -font $font_star -text [expr {$req ? "*" : " "}]
+        grid  $w.form.l$field -column 0 -row [incr row] -sticky w
+        grid  $w.form.r$field -column 1 -row $row -sticky w
+      if {$type == {t}} {
+        # It's an entry
+        entry $w.form.e$field -width 65 \
+           -textvariable dynamic_dialog($field)
+        grid  $w.form.e$field -column 2 -row $row -sticky w
+      } elseif {$type == {r}} {
+        # It's a radiobutton
+        frame $w.form.f$field
+        set k 1
+        foreach {text value} $data {
+          radiobutton $w.form.f$field$k -text $text -value $value \
+              -variable dynamic_dialog($field)
+          pack $w.form.f$field$k -in $w.form.f$field -side left
+          incr k
         }
-        label $w.form.r$field -anchor e -foreground red \
-          -font $::dialog::font_star -text [expr {$req ? "*" : " "}]
-        if {$type == {t}} {
-          if {$picklist == {}} {
-            frame $w.form.f$field
-            entry $w.form.f$field.e -width 65 \
-              -textvariable [namespace current]::$field
-            pack $w.form.f$field.e -side left -expand 1 -fill x
-          } else {
-            ::picklist::entry $w.form.f$field [namespace current]::$field $picklist
-            # FIXME: we are using knowledge of picklist entry internals.
-            # There has to be a better way?
-            $w.form.f$field.e configure -width 65
-          }
-        } elseif {$type == {r}} {
-          frame $w.form.f$field
-          set k 1
-          foreach {text value} $data {
-            radiobutton $w.form.t$field$k -text $text -value $value \
-              -variable [namespace current]::$field
-            pack $w.form.t$field$k -in $w.form.f$field -side left
-            incr k
-          }
-        } elseif {$type == {b}} {
-          foreach {image value} $data { break }
-          button $w.form.f$field -image $image \
-            -command [namespace code $value]
-        }
+        grid $w.form.f$field -column 2 -row $row -sticky ew
       }
     }
-    grid columnconfigure $w.form 1 -minsize [expr {$wcol1 + 6}]
-
-    set nrows [expr {[llength $form_data] / 5}]
-    label $w.form.xstar -anchor e -foreground red \
-      -font $::dialog::font_star -text "*"
-    label $w.form.xdesc -anchor w -foreground red \
-      -font $::dialog::font_italic -text "= required field"
-    grid $w.form.xstar -column 2 -row $nrows -sticky e
-    grid $w.form.xdesc -column 3 -row $nrows -sticky ew
-
-    ::dialog::FormLayout [namespace current] $form_data
-
-    frame $w.buttons -relief groove -bd 2
-    pack $w.buttons -side top -fill x
-
-    button $w.ok -text "OK" \
-      -command [namespace code "
-        if {\[::dialog::FormComplete [namespace current] [list $form_data]\] \
-        && (\[info procs valid\] == {} || \[valid\])} {
-          destroy $w
-          namespace delete [namespace current]
-          if {\[info procs action\] != {}} {
-            action
-          }
-          exit_cleanup 0
-        }
-      "]
-
-    button $w.apply -text "Apply" \
-      -command [namespace code "
-        if {\[::dialog::FormComplete [namespace current] [list $form_data]\] \
-        && (\[info procs valid\] == {} || \[valid\])} {
-          if {\[info procs action\] != {}} {
-            action
-          }
-        }
-      "]
-
-    button $w.close -text "Cancel" \
-      -command [namespace code {
-        destroy $w
-        namespace delete [namespace current]
-        exit_cleanup 0
-      }]
-
-    pack $w.close $w.apply $w.ok -in $w.buttons -side right \
-      -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-
-    wm title $w $title
-    wm minsize $w 1 1
-
-    gen_log:log T "LEAVE"
-    return [namespace current]
   }
+  
+  incr row
+  label $w.form.xstar -anchor e -foreground red \
+    -font $font_italic -text "* = required field"
+  grid $w.form.xstar -column 1 -columnspan 2 -row $row -sticky w
+
+  frame $w.buttons -relief groove -bd 2
+  pack $w.buttons -side top -fill x
+
+  button $w.ok -text "OK" \
+    -command "
+    if {\[dialog_FormComplete $w [list $form_data]\] } {
+      destroy $w
+      $dialog_action
+      exit_cleanup 0
+    }
+    "
+
+  button $w.apply -text "Apply" \
+    -command "
+    if {\[dialog_FormComplete $w [list $form_data]\] } {
+      $dialog_action
+    }
+    "
+
+  button $w.close -text "Cancel" \
+    -command "
+      destroy $w
+      exit_cleanup 0
+    "
+
+  pack $w.close $w.apply $w.ok -in $w.buttons -side right \
+    -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  wm title $w $title
+  wm minsize $w 1 1
+
+  gen_log:log T "LEAVE"
+  return
 }
 
-proc ::dialog::FormLayout { ns form_data } {
-  namespace eval $ns {
-    variable ns [uplevel {concat $ns}]
-    variable form_data [uplevel {concat $form_data}]
-    variable w
-    variable form_sect
+proc dialog_FormComplete { w form_data } {
+  global dynamic_dialog
 
-    set row 0
-    set show 1
-    foreach {field picklist req type text data} $form_data {
-      if {$type == {h}} {
-        set show $form_sect($field)
-        grid $w.form.h$field -column 0 -row $row -sticky w -columnspan 3
-        incr row
-      } else {
-        grid forget $w.form.p$field $w.form.l$field \
-          $w.form.r$field $w.form.f$field
-        if {$show} {
-          grid $w.form.p$field -column 0 -row $row -sticky w
-          grid $w.form.l$field -column 1 -row $row -sticky w
-          grid $w.form.r$field -column 2 -row $row -sticky e
-          grid $w.form.f$field -column 3 -row $row \
-            -sticky [expr {$type == {b} ? {w} : {ew}}]
-          incr row
-        }
+  gen_log:log T "ENTER ($w <data suppressed>)"
+
+  foreach a [array names dynamic_dialog] {
+    gen_log:log D "$a $dynamic_dialog($a)"
+  }
+
+  set section {}
+  foreach {field req type labeltext data} $form_data {
+    if {$type == {l}} {
+      set section $dynamic_dialog($field)
+    } else {
+      if {$req && [set dynamic_dialog($field)] == {}} {
+        cvsok "$field may not be blank" $w.form
+        return 0
       }
     }
-    return
   }
+  return 1
 }
 
-proc ::dialog::FormFocus { ns form_data which } {
-  namespace eval $ns {
-    variable ns [uplevel {concat $ns}]
-    variable form_data [uplevel {concat $form_data}]
-    variable which [uplevel {concat $which}]
-    variable w
-    variable form_sect
-
-    set section {}
-    foreach {field picklist req type text data} $form_data {
-      if {$type == {h}} {
-        set section $field
-      } else {
-        if {$field == $which} {
-          if {$section != {} && $form_sect($section) == 0} {
-            set form_sect($section) 1
-            ::dialog::FormLayout [namespace current] $form_data
-          }
-          focus $w.form.f$field.e
-          return
-        }
-      }
-    }
-    return
-  }
-}
-proc ::dialog::FormComplete { ns form_data } {
-  namespace eval $ns {
-    variable ns [uplevel {concat $ns}]
-    variable form_data [uplevel {concat $form_data}]
-    variable w
-    variable form_sect
-
-    set section {}
-    foreach {field picklist req type text data} $form_data {
-      if {$type == {h}} {
-        set section $field
-      } else {
-        if {$req && [set [namespace current]::$field] == {}} {
-          if {$section != {} && $form_sect($section) == 0} {
-            set form_sect($section) 1
-            ::dialog::FormLayout [namespace current] $form_data
-          }
-          focus $w.form.f$field.e
-          cvsok "$text may not be blank" $w.form
-          return 0
-        }
-      }
-    }
-    return 1
-  }
-}
-
-
-# field     req type text                 data
-set ::dialog::form_checkout {
-  1          {}        0     h {CVS Repository}        1
-  cvsroot    cvsroot   1     t {CVSROOT}               {}
-  2          {}        0     h {Module}                1
-  module     module    1     t {Name/Path}             {}
-  revtag     {}        0     t {Revision/Tag}          {}
-  date       {}        0     t {Date}                  {}
-  3          {}        0     h {Destination}           1
-  dir        directory 1     t {Current Directory}     {}
-  target     directory 0     t {Working Directory}     {}
-  4          {}        0     h {Merge }                0
-  mtag1      {}        0     t {Old tag}               {}
-  mtag2      {}        0     t {New tag}               {}
-  5          {}        0     h {Advanced}              0
-  prune      {}        0     r {Empty Directories}     {{Create}                    {}
-                                                        {Don't create}              {-P}
-                                                       }
-  kflag      {}        0     r {Keyword Expansion}     {{Default}                   {}
-                                                        {Keep as-is}                {-ko}
-                                                        {Treat files as binary}     {-kb}
-                                                        {Keywords only}             {-kk}
-                                                       }
-}
-
-proc ::dialog::checkout { cvsroot module {revtag {}} } {
+# Check out a CVS module from the Module Browser
+proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   global cvscfg
+  global dynamic_dialog
+  global dialog_action
 
   gen_log:log T "ENTER ($cvsroot $module $revtag)"
+  set dir [pwd]
+  set dynamic_dialog(cvsroot) $cvsroot
+  set dynamic_dialog(module) $module
+  set dynamic_dialog(revtag) $revtag
+  set dynamic_dialog(dir) [pwd]
+  set dynamic_dialog(prune) {-P}
+  set dynamic_dialog(kflag) {}
 
-  set form [::dialog::FormCreate \
-    "Checkout Module" \
-    $::dialog::form_checkout \
-  ]
-
-  # Set defaults
-  namespace eval $form {
-    variable cvsroot [uplevel {concat $cvsroot}]
-    variable module [uplevel {concat $module}]
-    variable revtag [uplevel {concat $revtag}]
-    variable date ""
-    variable dir [pwd]
-    variable target ""
-    variable mtag1 ""
-    variable mtag2 ""
-    # FIXME: should defaults for these be config options?
-    variable prune "-P"
-    variable kflag ""
-
-    proc valid { } {
-      variable revtag
-      variable date
-      if {$revtag != {} && $date != {}} {
-        ::dialog::FormFocus [namespace current] $::dialog::form_checkout "revtag"
-        cvsok "Only one of Revision/Tag and Date may be specified." \
-            $::dialog::form_checkout
-        return 0
-      }
-      return 1
-    }
-
-    proc action { } {
-      variable dir
-      variable cvsroot
-      variable prune
-      variable kflag
-      variable revtag
-      variable date
-      variable target
-      variable mtag1
-      variable mtag2
-      variable module
-
-      cvs_checkout $dir $cvsroot $prune $kflag $revtag $date $target \
-        $mtag1 $mtag2 $module
-    }
+  # field  req type labeltext          data
+  set dialog_form_checkout {
+    1       0   l  {CVS Repository}    1
+    cvsroot 1   t  {CVSROOT}           {}
+    2       0   l  {Module}            1
+    module  1   t  {Name/Path}         {}
+    revtag  0   t  {Revision/Tag}      {}
+    date    0   t  {Date}              {}
+    3       0   l  {Destination}       1
+    dir     1   t  {Current Directory} {}
+    target  0   t  {Working Directory} {}
+    4       0   l  {Merge }            0
+    mtag1   0   t  {Old tag}           {}
+    mtag2   0   t  {New tag}           {}
+    5       0   l  {Advanced}          0
+    prune   0   r  {Empty Directories} {{Create} {}
+                                        {Don't Create} {-P}}
+    kflag   0   r  {Keyword Expansion} {{Default} {}
+                                        {Keep as-is} {-ko}
+                                        {Treat files as binary} {-kb}
+                                        {Keywords only} {-kk}}
+  }
+  set dialog_action {cvs_checkout $dynamic_dialog(dir) \
+     $dynamic_dialog(cvsroot) \
+     $dynamic_dialog(prune) $dynamic_dialog(kflag) \
+     $dynamic_dialog(revtag) $dynamic_dialog(date) $dynamic_dialog(target) \
+     $dynamic_dialog(mtag1) $dynamic_dialog(mtag2) $dynamic_dialog(module)
   }
 
-  gen_log:log T "LEAVE"
-  return
-}
-
-
-# field     req type text                 data
-set ::dialog::form_export {
-  1          {}        0     h {CVS Repository}        1
-  cvsroot    cvsroot   1     t {CVSROOT}               {}
-  2          {}        0     h {Module}                1
-  module     module    1     t {Name/Path}             {}
-  revtag     {}        0     t {Revision/Tag}          {}
-  date       {}        0     t {Date}                  {}
-  3          {}        0     h {Destination}           1
-  dir        directory 1     t {Current Directory}     {}
-  target     directory 0     t {Target Directory}      {}
-  4          {}        0     h {Advanced}              0
-  kflag      {}        0     r {Keyword Expansion}     {{Default}                   {}
-                                                        {Keep as-is}                {-ko}
-                                                        {Treat files as binary}     {-kb}
-                                                        {Keywords only}             {-kk}
-                                                       }
-}
-
-proc ::dialog::export { cvsroot module {revtag {}} } {
-  global cvscfg
-
-  gen_log:log T "ENTER ($cvsroot $module $revtag)"
-
-  set form [::dialog::FormCreate \
-    "Export Module" \
-    $::dialog::form_export \
-  ]
-
-  # Set defaults
-  namespace eval $form {
-    variable cvsroot [uplevel {concat $cvsroot}]
-    variable module [uplevel {concat $module}]
-    variable revtag [uplevel {concat $revtag}]
-    variable date ""
-    variable dir [pwd]
-    variable target ""
-    # FIXME: should defaults for these be config options?
-    variable kflag ""
-
-    proc valid { } {
-      variable revtag
-      variable date
-      if {$revtag == {} && $date == {}} {
-        ::dialog::FormFocus [namespace current] $::dialog::form_checkout "revtag"
-        cvsok "One of Revision/Tag or Date must be specified." \
-            $::dialog::form_checkout
-        return 0
-      }
-      if {$revtag != {} && $date != {}} {
-        ::dialog::FormFocus [namespace current] $::dialog::form_checkout "revtag"
-        cvsok "Only one of Revision/Tag and Date may be specified." \
-            $::dialog::form_checkout
-        return 0
-      }
-      return 1
-    }
-
-    proc action { } {
-      variable dir
-      variable cvsroot
-      variable kflag
-      variable revtag
-      variable date
-      variable target
-      variable module
-
-      cvs_export $dir $cvsroot $kflag $revtag $date $target $module
-    }
-  }
-
-  gen_log:log T "LEAVE"
-  return
-}
-
-# field              req type text                 data
-set ::dialog::form_patch {
-  1          {}      0     h {CVS Repository}        1
-  cvsroot    cvsroot 1     t {CVSROOT}               {}
-  2          {}      0     h {Module}                1
-  module     module  1     t {Name/Path}             {}
-  3          {}      0     h {Destination}           1
-  outmode    {}      0     r {Output Mode}           {{To Screen} 0 {To File} 1}
-  outfile    {}      0     t {Output File}           {outfile}
-  4          {}      0     h {Old Revision}          1
-  revtagA    {}      0     t {Revision/Tag}          {}
-  dateA      {}      0     t {Date}                  {}
-  5          {}      0     h {New Revision}          1
-  revtagB    {}      0     t {Revision/Tag}          {}
-  dateB      {}      0     t {Date}                  {}
-  6          {}      0     h {Format}                1
-  difffmt    {}      0     r {Diff Format}           {{Default}            {}
-                                                      {Context diff}       {-c}
-                                                      {Unidiff}            {-u}
-                                                      {One liner}          {-s}
-                                                     }
-}
-
-proc ::dialog::patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
-  global cvscfg
-
-  gen_log:log T "ENTER ($cvsroot $module $summary $revtagA $revtagB)"
-
-  set form [::dialog::FormCreate \
-    "Create Patch" \
-    $::dialog::form_patch \
-  ]
-
-  # Set defaults
-  namespace eval $form {
-    variable cvsroot [uplevel {concat $cvsroot}]
-    variable module [uplevel {concat $module}]
-    variable outmode 1
-    variable outfile "[file join [pwd] [file tail $module]].pat"
-    variable revtagA [uplevel {concat $revtagA}]
-    variable dateA ""
-    variable revtagB [uplevel {concat $revtagB}]
-    variable dateB ""
-    variable difffmt ""
-
-    if {[uplevel {concat $summary}]} {
-      set outmode 0
-      set difffmt {-s}
-    }
-
-    proc action { } {
-      variable cvsroot
-      variable difffmt
-      variable outfile
-      variable outmode
-      variable revtagA
-      variable dateA
-      variable revtagB
-      variable dateB
-      variable module
-
-      cvs_patch $cvsroot $module $difffmt $revtagA $dateA $revtagB $dateB $outmode $outfile
-    }
-  }
-
-  gen_log:log T "LEAVE"
-  return
+  set form [dialog_FormCreate "Checkout Module" $dialog_form_checkout]
 }
 
 proc add_dialog {args} {
@@ -528,7 +247,6 @@ proc merge_dialog { from since file {fromtag {}} } {
   global cvs
   global current_tagname
 
-  namespace eval ::merge_dialog {
     set from [uplevel {concat $from}]
     set since [uplevel {concat $since}]
     set file [uplevel {concat $file}]
@@ -563,10 +281,10 @@ proc merge_dialog { from since file {fromtag {}} } {
 
     # Construct tag names
     set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat)]
-    set totagend [expr $totagbegin + 8]
-    set toprefix [string range $cvscfg(mergetoformat) 0 [expr $totagbegin - 1]]
+    set totagend [expr {$totagbegin + 8}]
+    set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1]}]
     set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat)]
-    set fromprefix [string range $cvscfg(mergefromformat) 0 [expr $fromtagbegin - 1]]
+    set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1]}]
     set datef [string range $cvscfg(mergetoformat) $totagend end]
     set today [clock format [clock seconds] -format "$datef"]
 
@@ -611,20 +329,15 @@ proc merge_dialog { from since file {fromtag {}} } {
     pack .merge.top.f.ent -side left
     pack .merge.top.m2 -side top -fill x -expand y
     gen_log:log T "LEAVE"
-  }
 }
 
 proc file_tag_dialog {branch} {
-  global incvs
+  global incvs insvn inrcs
   global cvscfg
   global branchflag
 
   gen_log:log T "ENTER"
 
-  if {! $incvs} {
-    cvs_notincvs
-    return 1
-  }
   set branchflag $branch
 
   toplevel .tag
@@ -661,19 +374,31 @@ proc file_tag_dialog {branch} {
   grid .tag.top.lbl -column 0 -row 1 -sticky nw
   grid .tag.top.entry -column 1 -row 1 -sticky ew
   grid .tag.top.branch -column 1 -row 2 -sticky w
+if {$incvs} {
   grid .tag.top.force -column 1 -row 3 -sticky w
+}
 
   pack .tag.mid -side top
   pack .tag.mid.upd
 
   frame .tag.down -relief groove -bd 2
   pack .tag.down -side bottom -fill x -expand 1
-  button .tag.down.tag -text "Tag" \
-    -command {
+  button .tag.down.tag -text "Tag"
+  if {$incvs} {
+    .tag.down.tag configure -command {
+      cvs_tag $usertagname $forceflag $branchflag $updflag \
+          [workdir_list_files]
       grab release .tag
       destroy .tag
-      cvs_tag $usertagname $forceflag $branchflag $updflag [workdir_list_files]
     }
+  } elseif {$insvn} {
+    .tag.down.tag configure -command {
+      svn_tag $usertagname no $branchflag $updflag \
+          [workdir_list_files]
+      grab release .tag
+      destroy .tag
+    }
+  }
   button .tag.down.cancel -text "Cancel" \
     -command { grab release .tag; destroy .tag }
 
@@ -697,7 +422,6 @@ proc rtag_dialog { cvsroot module branch } {
 
   gen_log:log T "ENTER ($cvsroot $module $branch)"
 
-  namespace eval ::rtag_dialog {
     set cvsroot [uplevel {list $cvsroot}]
     set module [uplevel {list $module}]
     set branch [uplevel {list $branch}]
@@ -713,15 +437,15 @@ proc rtag_dialog { cvsroot module branch } {
              If you fill in \"Existing Tag\", the revisions having that tag will get\
              the new tag.  Otherwise, the head revision will be tagged."
     label .modtag.top.olbl -text "Existing Tag" -anchor w
-    entry .modtag.top.oentry -textvariable [namespace current]::otag \
+    entry .modtag.top.oentry -textvariable otag \
       -relief sunken
     label .modtag.top.nlbl -text "New Tag" -anchor w
-    entry .modtag.top.nentry -textvariable [namespace current]::ntag \
+    entry .modtag.top.nentry -textvariable ntag \
       -relief sunken
     checkbutton .modtag.top.branch -text "Branch tag (-b)" \
-       -variable [namespace current]::branch -onvalue "yes" -offvalue "no"
+       -variable branch -onvalue "yes" -offvalue "no"
     checkbutton .modtag.top.force -text "Move existing (-F)" \
-       -variable [namespace current]::force -onvalue "yes" -offvalue "no"
+       -variable force -onvalue "yes" -offvalue "no"
 
     grid columnconf .modtag.top 1 -weight 1
     grid rowconf .modtag.top 4 -weight 1
@@ -737,28 +461,26 @@ proc rtag_dialog { cvsroot module branch } {
     pack .modtag.down -side top -fill x
 
     button .modtag.down.tag -text "Tag" \
-      -command [namespace code {
+      -command {
                  .modtag.down.cancel invoke
                  cvs_rtag $cvsroot $module $branch $force $otag $ntag
                }]
 
     button .modtag.down.cancel -text "Cancel" \
-      -command [namespace code {
+      -command {
                  grab release .modtag
                  destroy .modtag
-#                namespace delete ::rtag_dialog
                }]
 
     pack .modtag.down.tag .modtag.down.cancel -in .modtag.down -side left \
       -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
     bind .modtag.top.nentry <Return> \
-      [namespace code { .modtag.down.tag invoke }]
+      { .modtag.down.tag invoke }]
 
     wm title .modtag "Tag Module"
     wm minsize .modtag 1 1
     gen_log:log T "LEAVE"
-  }
 }
 
 proc subtract_dialog {args} {

@@ -575,7 +575,9 @@ proc svn_revert {args} {
 
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
-
+  if {$filelist == ""} {
+    set filelist "-R ."
+  }
   gen_log:log D "Reverting $filelist"
   set cmd [exec::new "svn revert $filelist"]
 
@@ -584,6 +586,55 @@ proc svn_revert {args} {
     setup_dir
   }
 
+  gen_log:log T "LEAVE"
+}
+
+proc svn_tag {tagname force branch update args} {
+#
+# This tags a file or directory.
+#
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER ($tagname $force $branch $update $args)"
+
+  if {$tagname == ""} {
+    cvsfail "You must enter a tag name!" .workdir
+    return 1
+  }
+
+  set filelist [join $args]
+  if {$filelist == ""} {
+    set filelist "."
+  }
+
+  set command "svn copy $filelist "
+  # Can't use file join or it will mess up the URL
+  if {$branch == "yes"} {
+    set to_path "$cvscfg(svnroot)/branches/$tagname"
+    set comment "Branched"
+  } else {
+    set to_path "$cvscfg(svnroot)/tags/$tagname"
+    set comment "Tagged"
+  }
+  append command " $to_path -m \"$comment\""
+  gen_log:log C "$command"
+
+  set v [viewer::new "CVS Tag"]
+  $v\::do "$command"
+  $v\::wait
+
+  if {$update == "yes"} {
+    # update so we're on the branch
+    set command "svn switch $to_path"
+    #gen_log:log C "$command"
+    $v\::do "$command" 0 status_colortags
+    $v\::wait
+  }
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
   gen_log:log T "LEAVE"
 }
 

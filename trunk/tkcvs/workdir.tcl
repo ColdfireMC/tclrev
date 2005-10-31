@@ -70,15 +70,17 @@ proc workdir_setup {} {
   label .workdir.top.tmodule -textvariable module_dir -anchor w -relief groove
 
   label .workdir.top.ltagname -text "Tag"
-  label .workdir.top.ttagname -textvariable current_tagname -anchor w -relief groove
+  label .workdir.top.ttagname -textvariable current_tagname \
+     -anchor w -relief groove
 
   # Make the Module Browser button prominent
   button .workdir.top.bmodbrowse -image Modules \
      -command modbrowse_run
 
   label .workdir.top.lcvsroot -text "CVSROOT"
-  entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) -relief groove -state readonly \
-     -font $cvscfg(guifont)
+  entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) \
+     -relief groove -state readonly \
+     -font $cvscfg(guifont) -readonlybackground $cvsglb(robg)
 
   if {[regexp {://} $cvscfg(cvsroot)]} {
      set cvscfg(url) $cvscfg(cvsroot)
@@ -91,9 +93,11 @@ proc workdir_setup {} {
   grid columnconf .workdir.top 1 -weight 1
   grid rowconf .workdir.top 3 -weight 1
   grid .workdir.top.updir_btn -column 0 -row 0 -sticky s
-  grid .workdir.top.tcwd -column 1 -row 0 -columnspan 2 -sticky sew -padx 4 -pady 1
+  grid .workdir.top.tcwd -column 1 -row 0 -columnspan 2 \
+    -sticky sew -padx 4 -pady 1
   grid .workdir.top.lmodule -column 0 -row 1 -sticky nw
-  grid .workdir.top.tmodule -column 1 -row 1 -columnspan 2 -padx 4 -pady 1 -sticky new
+  grid .workdir.top.tmodule -column 1 -row 1 -columnspan 2\
+     -padx 4 -pady 1 -sticky new
   grid .workdir.top.bmodbrowse -column 2 -row 2 -rowspan 2 -sticky w
   grid .workdir.top.ltagname -column 0 -row 2 -sticky nw
   grid .workdir.top.ttagname -column 1 -row 2 -padx 4 -pady 1 -sticky new
@@ -143,7 +147,7 @@ proc workdir_setup {} {
   pack .workdir.bottom.buttons -side top -fill x -expand yes
   pack .workdir.bottom.buttons.close -side right -padx 10
   pack .workdir.bottom.buttons.funcs -side left
-  pack .workdir.bottom.buttons.dirfuncs -side left -expand yes
+  pack .workdir.bottom.buttons.dirfuncs -side left -expand yes -fill y
   pack .workdir.bottom.buttons.filefuncs -side left -expand yes
   pack .workdir.bottom.buttons.cvsfuncs -side left -expand yes
   pack .workdir.bottom.buttons.oddfuncs -side left -expand yes
@@ -163,6 +167,8 @@ proc workdir_setup {} {
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
   button .workdir.bottom.buttons.dirfuncs.bjoin -image DirBranches \
      -command { cvs_joincanvas }
+  button .workdir.bottom.buttons.dirfuncs.bimport -image Import \
+     -command { import_run }
 
   button .workdir.bottom.buttons.filefuncs.blogfile -image Branches \
      -command { cvs_logcanvas [pwd] [workdir_list_files] }
@@ -205,7 +211,7 @@ proc workdir_setup {} {
 
   # These buttons work in any directory
   grid .workdir.bottom.buttons.funcs.bdelete_file -column 0 -row 0 \
-    -rowspan 2 -sticky ns
+    -ipadx 2 -rowspan 4 -sticky ns
   grid .workdir.bottom.buttons.funcs.bedit_files -column 1 -row 0 \
      -ipadx 2
   grid .workdir.bottom.buttons.funcs.bview_files -column 1 -row 1 \
@@ -213,11 +219,13 @@ proc workdir_setup {} {
 
   # Directory functions
   grid .workdir.bottom.buttons.dirfuncs.brefresh       -column 0 -row 0 \
-     -ipadx 4 -ipady 4
+     -ipadx 2 -rowspan 2 -sticky ns
   grid .workdir.bottom.buttons.dirfuncs.bcheckdir      -column 1 -row 0 \
-     -ipadx 4 -ipady 4
+     -ipadx 2 -rowspan 2 -sticky ns
   grid .workdir.bottom.buttons.dirfuncs.bjoin          -column 2 -row 0 \
-     -ipadx 4 -ipady 4
+     -ipadx 4
+  grid .workdir.bottom.buttons.dirfuncs.bimport        -column 2 -row 1 \
+     -ipadx 4
 
   # File functions
   grid .workdir.bottom.buttons.filefuncs.blogfile      -column 0 -row 0 \
@@ -269,6 +277,8 @@ proc workdir_setup {} {
      {"Directory Branch Diagram and Merge Tool"}
   set_tooltips .workdir.bottom.buttons.dirfuncs.bcheckdir \
      {"Check the status of the directory"}
+  set_tooltips .workdir.bottom.buttons.dirfuncs.bimport \
+     {"Import the current directory into the repository"}
 
   set_tooltips .workdir.bottom.buttons.filefuncs.blogfile \
      {"Revision Log and Branch Diagram of the selected files"}
@@ -485,10 +495,10 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add separator
   .workdir.menubar.cvs add command -label "Release" \
      -command { release_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Join (Merge) Directory" -underline 0 \
-     -command { cvs_joincanvas }
-  .workdir.menubar.cvs add command -label "Import CWD into Repository" -underline 0 \
-     -command import_run
+  .workdir.menubar.cvs add command -label "Join (Merge) Directory" \
+     -underline 0 -command { cvs_joincanvas }
+  .workdir.menubar.cvs add command -label "Import CWD into Repository" \
+     -underline 0 -command import_run
 
   # SVN
   .workdir.menubar.svn add command -label "Update" -underline 0 \
@@ -502,8 +512,8 @@ proc workdir_menus {} {
   .workdir.menubar.svn add command -label "Browse the Log Diagram" \
      -command { svn_branches [pwd] [workdir_list_files] }
   .workdir.menubar.svn add separator
-  .workdir.menubar.svn add command -label "Import CWD into Repository" -underline 0 \
-     -command svn_import_run
+  .workdir.menubar.svn add command -label "Import CWD into Repository" \
+     -underline 0 -command svn_import_run
 
   # RCS
   .workdir.menubar.rcs add command -label "Checkout" -underline 0 \
@@ -1013,6 +1023,8 @@ proc setup_dir { } {
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check [workdir_list_files] }
+    .workdir.bottom.buttons.dirfuncs.bimport configure -state normal \
+      -command { svn_import_run }
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
@@ -1028,6 +1040,7 @@ proc setup_dir { } {
       -command svn_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
       -command { svn_revert [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "SVN" -state normal
@@ -1053,6 +1066,8 @@ proc setup_dir { } {
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check [workdir_list_files] }
+    .workdir.bottom.buttons.dirfuncs.bimport configure -state normal \
+      -command { import_run }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \
