@@ -139,13 +139,16 @@ puts "branchrevs(trunk) $branchrevs(trunk)"
         # Branches
 puts "Branches"
         set command "svn list $cvscfg(svnroot)/branches"
+        gen_log:log C "$command"
         set ret [catch {eval "exec $command"} branches]
         foreach branch $branches {
+          gen_log:log D "$branch"
           # There can be files such as "README" here that aren't branches
-          if {![string match {$/} $branch]} {continue}
+          if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
 puts " $branch"
           set tags($branch) {}
+          # Can't use file join or it will mess up the URL
           set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
@@ -184,12 +187,16 @@ set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
           set revbranches($bp) $branch
 puts " revbranches($bp) $branch"
         } 
-if 0 {
+if 1 {
         # Tags
 puts "Tags"
         set command "svn list $cvscfg(svnroot)/tags"
+        gen_log:log C "$command"
         set ret [catch {eval "exec $command"} tagout]
         foreach tag $tagout {
+          gen_log:log D $tag
+          # There can be files such as "README" here that aren't tags
+          if {![string match {*/} $tag]} {continue}
           set tag [string trimright $tag "/"]
           set command \
             "svn log --stop-on-copy $cvscfg(svnroot)/tags/$tag/$relpath/$filename"
@@ -234,7 +241,7 @@ puts "$command"
           if [regexp {^--*$} $line] {
             # Next line is new revision
             incr i
-            if {[expr $l - $i] <= 1} {break}
+            if {[expr {$l - $i}] <= 1} {break}
             set line [lindex $lines $i]
             set splitline [split $line "|"]
             set revnum [string trim [lindex $splitline 0]]
@@ -254,7 +261,7 @@ puts "$command"
             set revcomment($revnum) ""
             set c 0
             while {$c < $notelen} {
-              append revcomment($revnum) "[lindex $lines [expr $c + $i]]\n"
+              append revcomment($revnum) "[lindex $lines [expr {$c + $i}]]\n"
               incr c
             }
             set revcomment($revnum) [string trimright $revcomment($revnum)]
@@ -640,7 +647,7 @@ puts "DrawRoot $x $y"
           [expr {$x + $box_width}] [expr {$y - $rheight}] \
             -width $curr(width) -fill gray90 -outline blue
         set mx [expr {$x + $box_width/2}]
-        set my [expr $y - $rheight]
+        set my [expr {$y - $rheight}]
         $branch_canvas.canvas create line \
            $mx $my $mx [expr {$my - $curr(boff)}] \
            -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
@@ -851,6 +858,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         set rdata {}
 
         set revlist [lsort -dictionary -decreasing $branchrevs($branch)]
+        set revlist [lrange $revlist 0 end-1]
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0

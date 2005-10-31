@@ -24,7 +24,6 @@ namespace eval ::logcanvas {
     variable instance
     set my_idx $instance
     incr instance
-    global incvs
     global inrcs
     global current_tagname
 
@@ -134,6 +133,7 @@ namespace eval ::logcanvas {
         #
         global module_dir
         global inrcs
+        global cvsglb
         variable filename
         variable localfile
         variable logcanvas
@@ -172,7 +172,7 @@ namespace eval ::logcanvas {
                 }
                 $logcanvas.up.rfname delete 0 end
                 $logcanvas.up.rfname insert end "$fname,v"
-                $logcanvas.up.rfname configure -state readonly
+                $logcanvas.up.rfname configure -state readonly -bg $cvsglb(robg)
               } elseif {[string match {Working file: *} $logline]} {
                 # If we care about a working copy we need to look
                 # at the name of the working file here. It may be

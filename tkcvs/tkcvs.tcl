@@ -116,6 +116,7 @@ if {! [get_cde_params]} {
   set cvsglb(textfg) [lindex [.testent configure -foreground] 4]
   set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
+  set cvsglb(robg) [lindex [.testent configure -background] 4]
   destroy .testent
 
   # Find out what the default gui font is
@@ -185,18 +186,18 @@ set usage "Usage: tkcvs \[-dir directory\] \[-root cvsroot\] \[-win workdir|modu
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
   set val [lindex $argv [expr {$i+1}]]
-  switch -glob -- $arg {
-    -dir {
+  switch -regexp -- $arg {
+    {--*d.*} {
       set dir $val; incr i
       cd $val
     }
-    -root {
+    {--*r.*} {
       set cvscfg(cvsroot) $val; incr i
     }
-    -win {
+    {--*w.*} {
       set cvscfg(startwindow) $val; incr i
     }
-    -log {
+    {--*l.*} {
       set cvscfg(startwindow) log
       set lcfile $val; incr i
     }
@@ -204,7 +205,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
       # Ignore the Carbon Process Serial Number
       incr i
     }
-    -h* {
+    {--*h.*} {
       puts $usage
       exit 0
     }
@@ -223,12 +224,20 @@ if { ! [info exists cvscfg(cvsroot)] } {
     set cvscfg(cvsroot) $env(CVSROOT)
   }
 }
-# This helps with Samba-mounted repositories
-set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
+if {[regexp {://} $cvscfg(cvsroot)]} {
+  set cvscfg(url) $cvscfg(cvsroot)
+  set cvscfg(svnroot) $cvscfg(url)
+} else {
+  # This helps with Samba-mounted CVS repositories
+  set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
+}
  
-set cvscfg(svnroot) ""
-if { [info exists env(SVNROOT)] } {
-  set cvscfg(svnroot) $env(SVNROOT)
+if {! [info exists cvscfg(svnroot)] } {
+  if { [info exists env(SVNROOT)] } {
+    set cvscfg(svnroot) $env(SVNROOT)
+  } else {
+    set cvscfg(svnroot) ""
+  }
 }
 
 if {![info exists cvscfg(ignore_file_filter)]} {
@@ -265,25 +274,22 @@ image create photo Tag \
   -format gif -file [file join $cvscfg(bitmapdir) tag.gif]
 image create photo Branchtag \
    -format gif -file [file join $cvscfg(bitmapdir) branchtag.gif]
+image create photo Import \
+   -format gif -file [file join $cvscfg(bitmapdir) import.gif]
 
 # Create a window
-if {$cvscfg(startwindow) == "module"} {
+if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
-  #if {[file isdirectory CVS]} {
-    #read_cvs_dir CVS
-  #}
   modbrowse_run
 } elseif {$cvscfg(startwindow) == "log"} {
   wm withdraw .
   if {$incvs} {
-    #read_cvs_dir CVS
     cvs_logcanvas [pwd] \"$lcfile"\
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
     rcs_filelog $lcfile
   } elseif {$insvn} {
-    #read_svn_dir .
     svn_branches $lcfile
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"

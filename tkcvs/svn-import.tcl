@@ -9,9 +9,7 @@
 #
 
 proc svn_import_run {} {
-  global cwd
-  global incvs
-  global insvn
+  global incvs insvn
   global cvsglb
   global cvscfg
 
@@ -29,7 +27,7 @@ proc svn_import_run {} {
   }
 
   # This is just a default.  The user can change it.
-  set cvsglb(newdir) [file tail $cwd]
+  set cvsglb(imdir) [file tail [pwd]]
   
   if {[winfo exists .import]} {
     wm deiconify .import
@@ -49,15 +47,16 @@ proc svn_import_run {} {
           into SVN.  If you haven't created a Subversion repository,\
           you must do that first with \"svnadmin create.\""
   label .import.top.lsvnroot  -text "URL of SVN Repository" -anchor w
-  label .import.top.lnewdir  -text "New Project path relative to SVN repository" -anchor w
+  #label .import.top.lnewdir  -text "New Project path relative to SVN repository" -anchor w
 
-  entry .import.top.tsvnroot -textvariable cvscfg(svnroot) -width 40 
-  entry .import.top.tnewdir -textvariable cvsglb(newdir) -width 40
-  
+  # Can't use file join or it will mess up the URL
+  set cvsglb(imtop) "$cvscfg(svnroot)/trunk"
+  entry .import.top.tsvnroot -textvariable cvsglb(imtop) -width 40 
+  #entry .import.top.tnewdir -textvariable cvsglb(newdir) -width 40
 
   grid .import.top.explain -column 0 -row 0 -columnspan 3 -sticky ew
-  grid .import.top.lnewdir -column 0 -row 1 -sticky w
-  grid .import.top.tnewdir -column 1 -row 1 -sticky ew
+  #grid .import.top.lnewdir -column 0 -row 1 -sticky w
+  #grid .import.top.tnewdir -column 1 -row 1 -sticky ew
   grid .import.top.lsvnroot -column 0 -row 2 -sticky e
   grid .import.top.tsvnroot -column 1 -row 2 -sticky ew
 
@@ -67,7 +66,7 @@ proc svn_import_run {} {
     -command {
       grab release .import
       wm withdraw .import
-      svn_do_import
+      svn_do_import $cvsglb(imtop) $cvsglb(imdir)
     }
   button .import.down.quit -text "Cancel" \
     -command {
@@ -87,31 +86,21 @@ proc svn_import_run {} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_do_import {} {
-  global cvs
+proc svn_do_import {imtop imdir} {
   global cvsglb
   global cvscfg
-  global cwd
-  global modlist_sorted
-  global modval
-  global modtitle
-  global ExModList ExModDirList
 
   gen_log:log T "ENTER"
   set imdir [pwd]
+  set cwd [pwd]
 
   # Error checks
   if { $cvscfg(svnroot) == "" } {
     cvsok "Subversion URL missing." .import
     return 1
   }
-  if { $cvsglb(newdir) == "" } {
-    cvsok "You must type in a path." .import
-    return 1
-  }
   
-  set svnpath "$cvscfg(svnroot)/trunk/$cvsglb(newdir)"
-  set commandline "svn import . $svnpath -m \"Imported using TkCVS\""
+  set commandline "svn import . $imtop -m \"Imported using TkCVS\""
 
   set v [viewer::new "Import Project"]
   $v\::log "\nSVN Import\n"
@@ -130,17 +119,14 @@ proc svn_do_import {} {
      file delete -force -- $imdir.orig
   }
   file rename $imdir $imdir.orig
-  set commandline "svn checkout $svnpath"
+  set commandline "svn checkout $imtop $imdir"
 
   $v\::log "\nSVN Checkout\n"
   $v\::do "$commandline"
   $v\::wait
   
-  # cd to the checked out module. $cwd is the correct directory to cd to
-  # only if the name of the new module is the same as the directory name
-  # where the source code is in. Define ckmoddir to be used instead.
-  
-  if { [catch "cd $imdir" err]} {
+  if {[catch "cd $imdir" err]} {
+    # If we didn't check out the new dir sucessfully, put the old one back
     file rename $imdir.orig $imdir
     cvsok "$err" .import
   } else {

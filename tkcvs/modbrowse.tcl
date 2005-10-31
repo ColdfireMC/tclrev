@@ -94,11 +94,11 @@ proc modbrowse_setup {} {
     }
   button .modbrowse.bottom.buttons.modfuncs.checkout -image Checkout \
     -command { 
-       ::dialog::checkout $cvscfg(cvsroot) $modbrowse_module
+       dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module
     }
   button .modbrowse.bottom.buttons.modfuncs.export -image Export \
     -command {
-       ::dialog::export $cvscfg(cvsroot) $modbrowse_module
+       cvs_export_dialog $cvscfg(cvsroot) $modbrowse_module
     }
   button .modbrowse.bottom.buttons.modfuncs.tag -image Tag \
     -command {
@@ -193,8 +193,6 @@ proc modbrowse_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) rdiff.gif]
   image create photo Patchfile \
     -format gif -file [file join $cvscfg(bitmapdir) patchfile.gif]
-  image create photo Import \
-    -format gif -file [file join $cvscfg(bitmapdir) import.gif]
   image create photo Who \
     -format gif -file [file join $cvscfg(bitmapdir) who.gif]
   if {[catch "image type arr_dn"]} {
@@ -374,13 +372,17 @@ proc modbrowse_run {} {
   if {$insvn} {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
       -command { svn_list $modbrowse_path }
+    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+      -command { svn_checkout_dialog $cvscfg(svnroot) $modbrowse_module }
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
-     -command { import_run }
+      -command { svn_import_run }
+    .modbrowse.bottom.buttons.cvsfuncs.export configure -state normal \
+      -command { svn_export_dialog $cvscfg(svnroot) $modbrowse_module }
   } else {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
-     -command { svn_import_run }
+      -command { import_run }
   }
 
   # Populate the tree
@@ -544,12 +546,12 @@ proc modbrowse_select_code {yposition} {
 }
 
 proc module_exit { } {
+  global incvs
   global cvscfg
   global cvs
   global cmd
 
   gen_log:log T "ENTER"
-
 
   if {[info exists cmd(cvs_co)]} {
     catch {$cmd(cvs_co)\::abort}
