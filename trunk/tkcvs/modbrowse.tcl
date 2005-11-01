@@ -85,29 +85,17 @@ proc modbrowse_setup {} {
   button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files \
     -command { browse_files $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches \
-    -command {
-       ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 1
-    }
+    -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 1 }
   button .modbrowse.bottom.buttons.modfuncs.patchfile -image Patchfile \
-    -command {
-       ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 0
-    }
+    -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   button .modbrowse.bottom.buttons.modfuncs.checkout -image Checkout \
-    -command { 
-       dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module
-    }
+    -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.export -image Export \
-    -command {
-       cvs_export_dialog $cvscfg(cvsroot) $modbrowse_module
-    }
+    -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.tag -image Tag \
-    -command {
-       rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no"
-    }
+    -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
   button .modbrowse.bottom.buttons.modfuncs.branchtag -image Branchtag \
-    -command {
-       rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes"
-    }
+    -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
   button .modbrowse.bottom.buttons.cvsfuncs.import -image Import \
      -command { import_run }
   button .modbrowse.bottom.buttons.cvsfuncs.who -image Who \
@@ -214,13 +202,13 @@ proc modbrowse_menus {} {
   # Create the Menu bar
   #
   .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.file -label "File" -underline 0
-  menu .modbrowse.modmenu.file
+  menu .modbrowse.modmenu.file -tearoff 0
   .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.cvs -label "CVS" -underline 0
-  menu .modbrowse.modmenu.cvs
+  menu .modbrowse.modmenu.cvs -tearoff 0
   .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.svn -label "SVN" -underline 0
-  menu .modbrowse.modmenu.svn
+  menu .modbrowse.modmenu.svn -tearoff 0
   .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.options -label "Options" -underline 0
-  menu .modbrowse.modmenu.options
+  menu .modbrowse.modmenu.options -tearoff 0
 
   #
   # Create the menus
@@ -231,14 +219,18 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.file add command -label "Exit" -underline 1 \
      -command { module_exit; exit_cleanup 1 }
 
+  .modbrowse.modmenu.cvs add command -label "CVS Checkout" \
+      -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module}
+  .modbrowse.modmenu.cvs add command -label "CVS Export" \
+      -command { dialog_svn_export $cvscfg(cvsroot) $modbrowse_module}
   .modbrowse.modmenu.cvs add command -label "Tag Module" -underline 0 \
      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
   .modbrowse.modmenu.cvs add command -label "Branch Tag Module" -underline 0 \
      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
   .modbrowse.modmenu.cvs add command -label "Make Patch File" -underline 0 \
-     -command { ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 0 }
+     -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   .modbrowse.modmenu.cvs add command -label "View Patch Summary" -underline 0 \
-     -command { ::dialog::patch $cvscfg(cvsroot) $modbrowse_module 1 }
+     -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 1 }
   .modbrowse.modmenu.cvs add separator
   .modbrowse.modmenu.cvs add command -label "Import CWD to A New Module" -underline 0 \
      -command { import_run }
@@ -254,6 +246,11 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.cvs add command -label "Show All Checkouts" -underline 0 \
      -command {cvs_history all ""}
 
+  .modbrowse.modmenu.svn add command -label "SVN Checkout" \
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
+  .modbrowse.modmenu.svn add command -label "SVN Export" \
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+  .modbrowse.modmenu.svn add separator
   .modbrowse.modmenu.svn add command -label "Import CWD into Repository" \
      -command svn_import_run
 
@@ -372,17 +369,23 @@ proc modbrowse_run {} {
   if {$insvn} {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
       -command { svn_list $modbrowse_path }
-    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-      -command { svn_checkout_dialog $cvscfg(svnroot) $modbrowse_module }
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
       -command { svn_import_run }
-    .modbrowse.bottom.buttons.cvsfuncs.export configure -state normal \
-      -command { svn_export_dialog $cvscfg(svnroot) $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
+    .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
   } else {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+      -command { cvs_checkout_dialog $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
       -command { import_run }
+    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+      -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
+      -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
   }
 
   # Populate the tree

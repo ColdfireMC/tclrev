@@ -638,3 +638,35 @@ proc svn_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
+# SVN Checkout or Export.  Called from Module Browser
+proc svn_checkout {dir url rev target cmd} {
+  gen_log:log T "ENTER ($dir $url $rev $target $cmd)"
+
+  foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
+  if {$insvn} { 
+    set mess "This is already a SVN controlled directory.  Are you\
+              sure that you want to export into this directory?"
+    if {[cvsconfirm $mess .modbrowse] != "ok"} {
+      return
+    }
+  }
+
+  set command "svn $cmd $url/$rev"
+  if {$target != {} } {
+    append command " $target"
+  }
+  gen_log:log C "$command"
+
+  set v [viewer::new "SVN Export"]
+  set cwd [pwd]
+  cd $dir
+  $v\::do "$command"
+  $v\::wait
+  cd $cwd
+  gen_log:log T "LEAVE"
+}
+
+proc svn_merge_conflict {} {
+  puts "TBD"
+}
+

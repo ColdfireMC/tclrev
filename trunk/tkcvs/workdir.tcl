@@ -80,7 +80,7 @@ proc workdir_setup {} {
   label .workdir.top.lcvsroot -text "CVSROOT"
   entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) \
      -relief groove -state readonly \
-     -font $cvscfg(guifont) -readonlybackground $cvsglb(robg)
+     -font $cvscfg(guifont) -bg $cvsglb(robg)
 
   if {[regexp {://} $cvscfg(cvsroot)]} {
      set cvscfg(url) $cvscfg(cvsroot)
@@ -415,27 +415,27 @@ proc workdir_menus {} {
   # Create the Menu bar
   #
   .workdir.menubar add cascade -label "File" -menu .workdir.menubar.file -underline 0
-  menu .workdir.menubar.file
+  menu .workdir.menubar.file -tearoff 0
   .workdir.menubar add cascade -label "CVS" -menu .workdir.menubar.cvs -underline 0
-  menu .workdir.menubar.cvs
+  menu .workdir.menubar.cvs -tearoff 0
   .workdir.menubar add cascade -label "SVN" -menu .workdir.menubar.svn -underline 0
-  menu .workdir.menubar.svn
+  menu .workdir.menubar.svn -tearoff 0
   .workdir.menubar add cascade -label "RCS" -menu .workdir.menubar.rcs -underline 0
-  menu .workdir.menubar.rcs
+  menu .workdir.menubar.rcs -tearoff 0
   .workdir.menubar add cascade -label "Reports" -menu .workdir.menubar.reports -underline 2
-  menu .workdir.menubar.reports
+  menu .workdir.menubar.reports -tearoff 0
   .workdir.menubar add cascade -label "Options" -menu .workdir.menubar.options -underline 0
-  menu .workdir.menubar.options
+  menu .workdir.menubar.options -tearoff 0
 
   if { [info exists cvsmenu] || \
        [info exists usermenu] || \
        [info exists execmenu]} {
     .workdir.menubar add cascade -label "User Defined" -menu .workdir.menubar.user -underline 0
-    menu .workdir.menubar.user
+    menu .workdir.menubar.user -tearoff 0
     gen_log:log T "Adding user defined menu"
   }
   .workdir.menubar add cascade -label "Go" -menu .workdir.menubar.goto -underline 0
-  menu .workdir.menubar.goto
+  menu .workdir.menubar.goto -tearoff 0
 
   menu_std_help .workdir.menubar
 

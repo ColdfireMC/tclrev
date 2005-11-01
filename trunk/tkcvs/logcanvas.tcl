@@ -1340,7 +1340,7 @@ namespace eval ::logcanvas {
   
       $logcanvas.menubar add cascade -label "File"\
          -menu $logcanvas.menubar.file -underline 0
-      menu $logcanvas.menubar.file
+      menu $logcanvas.menubar.file -tearoff 0
       $logcanvas.menubar.file add command -label "Close" -underline 0 \
         -command [namespace code {$logcanvas.close invoke}]
       $logcanvas.menubar.file add separator
@@ -1352,7 +1352,7 @@ namespace eval ::logcanvas {
       set selcolor [option get $logcanvas selectColor selectColor]
       $logcanvas.menubar add cascade -label "View"\
          -menu $logcanvas.menubar.view -underline 0
-      menu $logcanvas.menubar.view
+      menu $logcanvas.menubar.view -tearoff 0
       $logcanvas.menubar.view add cascade -label "Update When Drawing" \
         -menu $logcanvas.menubar.view.update
       menu $logcanvas.menubar.view.update
