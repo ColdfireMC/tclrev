@@ -382,14 +382,18 @@ proc patch_colortags {exec line} {
 
   gen_log:log T "ENTER ($exec \"$line\")"
 
+  set tag default
   # Return the type of the line being output
-  if {[regexp { is new; } $line]} {
-      set tag added
-  } elseif {[regexp { changed from } $line]} {
-      set tag modified
-  } elseif {[regexp { is removed; } $line]} {
-      set tag removed
+  switch -regexp -- $line {
+    { is new;}       { set tag added }
+    { changed from } { set tag modified }
+    { is removed;}   { set tag removed }
+    {^\+}            { set tag added }
+    {^\-}            { set tag removed }
+    {^Index}         { set tag modified }
+    default          { set tag default }
   }
+
   return [list $tag $line]
 }
 

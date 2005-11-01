@@ -1234,7 +1234,7 @@ puts "DrawTree"
   
       $branch_canvas.menubar add cascade -label "File"\
          -menu $branch_canvas.menubar.file -underline 0
-      menu $branch_canvas.menubar.file
+      menu $branch_canvas.menubar.file -tearoff 0
       $branch_canvas.menubar.file add command -label "Close" -underline 0 \
         -command [namespace code {$branch_canvas.close invoke}]
       $branch_canvas.menubar.file add separator
@@ -1246,7 +1246,7 @@ puts "DrawTree"
       set selcolor [option get $branch_canvas selectColor selectColor]
       $branch_canvas.menubar add cascade -label "View"\
          -menu $branch_canvas.menubar.view -underline 0
-      menu $branch_canvas.menubar.view
+      menu $branch_canvas.menubar.view -tearoff 0
       $branch_canvas.menubar.view add cascade -label "Update When Drawing" \
         -menu $branch_canvas.menubar.view.update
       menu $branch_canvas.menubar.view.update

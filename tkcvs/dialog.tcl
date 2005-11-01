@@ -17,7 +17,6 @@ proc dialog_FormCreate { title form_data } {
   global cvscfg
   global dynamic_dialog
   global dialog_action
-  gen_log:log T "ENTER ($form_data)"
 
   set font_star $cvscfg(dialogfont)
   set font_normal $cvscfg(listboxfont)
@@ -108,7 +107,6 @@ proc dialog_FormCreate { title form_data } {
   wm title $w $title
   wm minsize $w 1 1
 
-  gen_log:log T "LEAVE"
   return
 }
 
@@ -137,16 +135,20 @@ proc dialog_FormComplete { w form_data } {
 
 # Check out a CVS module from the Module Browser
 proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
-  global cvscfg
   global dynamic_dialog
   global dialog_action
 
   gen_log:log T "ENTER ($cvsroot $module $revtag)"
+
+  # Remember tags from last time
+  if {$revtag == {} && [info exists dynamic_dialog(revtag)]} {
+    set revtag $dynamic_dialog(revtag)
+  }
   set dir [pwd]
   set dynamic_dialog(cvsroot) $cvsroot
   set dynamic_dialog(module) $module
   set dynamic_dialog(revtag) $revtag
-  set dynamic_dialog(dir) [pwd]
+  set dynamic_dialog(dir) $dir
   set dynamic_dialog(prune) {-P}
   set dynamic_dialog(kflag) {}
 
@@ -172,6 +174,7 @@ proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
                                         {Treat files as binary} {-kb}
                                         {Keywords only} {-kk}}
   }
+  # Action function
   set dialog_action {cvs_checkout $dynamic_dialog(dir) \
      $dynamic_dialog(cvsroot) \
      $dynamic_dialog(prune) $dynamic_dialog(kflag) \
@@ -180,13 +183,152 @@ proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   }
 
   set form [dialog_FormCreate "Checkout Module" $dialog_form_checkout]
+  gen_log:log T "LEAVE"
+}
+
+# Export a CVS module from the Module Browser
+proc dialog_cvs_export { cvsroot module {revtag {}} } {
+  global dynamic_dialog
+  global dialog_action
+
+  gen_log:log T "ENTER ($cvsroot $module $revtag)"
+
+  # Remember tags from last time
+  if {$revtag == {} && [info exists dynamic_dialog(revtag)]} {
+    set revtag $dynamic_dialog(revtag)
+  }
+  set dir [pwd]
+  set dynamic_dialog(cvsroot) $cvsroot
+  set dynamic_dialog(module) $module
+  set dynamic_dialog(revtag) $revtag
+  set dynamic_dialog(dir) $dir
+
+  # field  req type labeltext          data
+  set dialog_form_export {
+    1       0   l {CVS Repository}     1
+    cvsroot 1   t {CVSROOT}            {}
+    2       0   l {Module}             1
+    module  1   t {Name/Path}          {}
+    revtag  0   t {Revision/Tag}       {}
+    date    0   t {Date}               {}
+    3       0   l {Destination}        1
+    dir     1   t {Current Directory}  {}
+    target  0   t {Target Directory}   {}
+    4       0   l {Advanced}           0
+    kflag   0   r {Keyword Expansion}  {{Default} {}
+                                        {Keep as-is} {-ko}
+                                        {Treat files as binary} {-kb}
+                                        {Keywords only} {-kk}}
+  }
+
+  set dialog_action {cvs_export  $dynamic_dialog(dir) \
+     $dynamic_dialog(cvsroot) $dynamic_dialog(kflag) \
+     $dynamic_dialog(revtag) $dynamic_dialog(date) $dynamic_dialog(target) \
+     $dynamic_dialog(module)
+  }
+
+  set form [dialog_FormCreate "Export Module" $dialog_form_export]
+  gen_log:log T "LEAVE"
+}
+
+# Checkout or Export a SVN module from the Module Browser
+proc dialog_svn_checkout { svnroot revtag command } {
+  global dynamic_dialog
+  global dialog_action
+
+  set dir [pwd]
+  # The "tag" is what we selected, ie the "module"
+  set dynamic_dialog(revtag) $revtag
+  set dynamic_dialog(svnroot) $svnroot
+  set dynamic_dialog(command) $command
+  set dynamic_dialog(dir) $dir
+
+  # field  req type labeltext          data
+  set dialog_form_export {
+    1       0   l {SVN Repository}     1
+    svnroot 1   t {SVN URL}            {}
+    revtag  1   t {Path in Repository} {}
+    2       0   l {Destination}        1
+    dir     1   t {Current Directory}  {}
+    target  0   t {Target Directory}   {}
+    3       0   l {Working Copy or Unversioned Copy} {}
+    command 0   r {Versioning}         {{Versioned (Checkout)}  {checkout}
+                                        {Un-Versioned (Export)} {export}}
+  }
+
+  set dialog_action {svn_checkout $dynamic_dialog(dir) \
+     $dynamic_dialog(svnroot) $dynamic_dialog(revtag) $dynamic_dialog(target) \
+     $dynamic_dialog(command)
+  }
+
+  set form [dialog_FormCreate "Checkout or Export" $dialog_form_export]
+  gen_log:log T "LEAVE"
+}
+
+# Compare two revisions of a module, from the module browser
+# Can make a patch file or send a summary to the screen
+proc dialog_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
+  global dynamic_dialog
+  global dialog_action
+
+  gen_log:log T "ENTER ( $cvsroot $module $summary $revtagA $revtagB )"
+
+  # Remember tags
+  if {$revtagA == {} && [info exists dynamic_dialog(revtagA)]} {
+    set revtagA $dynamic_dialog(revtagA)
+  }
+  if {$revtagB == {} && [info exists dynamic_dialog(revtagB)]} {
+    set revtagB $dynamic_dialog(revtagB)
+  }
+
+  set dynamic_dialog(cvsroot) $cvsroot
+  set dynamic_dialog(module) $module
+  set dynamic_dialog(revtagA) $revtagA
+  set dynamic_dialog(revtagB) $revtagB
+  if {$summary} {
+    set dynamic_dialog(outmode) 0
+    set dynamic_dialog(difffmt) {-s}
+  } else {
+    set dynamic_dialog(outmode) 1
+    set dynamic_dialog(difffmt) {}
+  }
+
+  # field  req type labeltext          data
+  set dialog_form_patch {
+  1         0     l {CVS Repository}   1
+  cvsroot   1     t {CVSROOT}          {}
+  2         0     l {Module}           1
+  module    1     t {Name/Path}        {}
+  3         0     l {Destination}      1
+  outmode   0     r {Output Mode}      {{To Screen} 0 {To File} 1}
+  outfile   0     t {Output File}      {outfile}
+  4         0     l {Old Revision}     1
+  revtagA   0     t {Revision/Tag}     {}
+  dateA     0     t {Date}             {}
+  5         0     l {New Revision}     1
+  revtagB   0     t {Revision/Tag}     {}
+  dateB     0     t {Date}             {}
+  6         0     l {Format}           1
+  difffmt   0     r {Diff Format}      {{Default}            {}
+                                        {Context diff}       {-c}
+                                        {Unidiff}            {-u}
+                                        {One liner}          {-s}}
+  }
+
+  set dialog_action {cvs_patch $dynamic_dialog(cvsroot) \
+   $dynamic_dialog(module) $dynamic_dialog(difffmt) \
+   $dynamic_dialog(revtagA) $dynamic_dialog(dateA) \
+   $dynamic_dialog(revtagB) $dynamic_dialog(dateB) $dynamic_dialog(outmode) $dynamic_dialog(outfile)
+  }
+
+  set form [dialog_FormCreate "Checkout Module" $dialog_form_patch]
+  gen_log:log T "LEAVE"
 }
 
 proc add_dialog {args} {
   global cvs
   global incvs
   global insvn
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
 
@@ -484,10 +626,8 @@ proc rtag_dialog { cvsroot module branch } {
 }
 
 proc subtract_dialog {args} {
-  global cvs
   global incvs
   global insvn
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
 
@@ -548,9 +688,7 @@ proc subtract_dialog {args} {
 }
 
 proc edit_dialog {args} {
-  global cvs
   global incvs
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -598,9 +736,7 @@ proc edit_dialog {args} {
 }
 
 proc unedit_dialog {args} {
-  global cvs
   global incvs
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -651,7 +787,6 @@ proc unedit_dialog {args} {
 # Set up a small(?) update dialog.
 #
 proc update_run {} {
-  global cvscfg
   global cvsglb
 
   gen_log:log T "ENTER"
@@ -912,7 +1047,6 @@ proc update_with_options {} {
 proc addir_dialog {args} {
   global cvs
   global incvs
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -968,7 +1102,6 @@ proc addir_dialog {args} {
 proc subtractdir_dialog {args} {
   global cvs
   global incvs
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {

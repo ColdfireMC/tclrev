@@ -1209,7 +1209,7 @@ proc cvs_checkout { dir cvsroot prune kflag revtag date target mtag1 mtag2 modul
 
   gen_log:log T "ENTER ($dir $cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
 
-  foreach {incvs inrcs module_dir} [cvsroot_check $dir] { break }
+  foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
   if {$incvs} {
     set mess "This is already a CVS controlled directory.  Are you\
               sure that you want to check out another module in\
@@ -1290,7 +1290,7 @@ proc cvs_export { dir cvsroot kflag revtag date target module } {
 
   gen_log:log T "ENTER ($dir $cvsroot $kflag $revtag $date $target $module)"
     
-  foreach {incvs inrcs module_dir} [cvsroot_check $dir] { break }
+  foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
   if {$incvs} { 
     set mess "This is already a CVS controlled directory.  Are you\
               sure that you want to export a module in to this directory?"
@@ -1462,8 +1462,6 @@ proc cvs_merge_conflict {args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_merge_conflict {} {
-}
 proc cvs_gettaglist {filename parent} {
   global cvs
   global cvscfg
