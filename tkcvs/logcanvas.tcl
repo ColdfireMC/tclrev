@@ -661,7 +661,7 @@ namespace eval ::logcanvas {
         set ty [expr {$y - $box_height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
-          -fill gray90 \
+          -width $curr(width) -fill gray90 -outline red3 \
           -tags [list box active]
         if {$revstate(current) == {dead}} {
           $logcanvas.canvas create line \
@@ -671,10 +671,10 @@ namespace eval ::logcanvas {
             $tx $y $x $ty -fill red -width $curr(width) \
             -tags [list box active]
         }
-        $logcanvas.canvas create rectangle \
-          $x $y $tx $ty \
-          -width $curr(width) \
-          -tags [list box rect active]
+        #$logcanvas.canvas create rectangle \
+          #$x $y $tx $ty \
+          #-width $curr(width) \
+          #-tags [list box rect active]
         set pad \
           [expr {($box_width - [image width Man] \
             - [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
@@ -736,7 +736,7 @@ namespace eval ::logcanvas {
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
             -width $curr(width) \
-            -fill gray90 \
+            -fill gray90 -outline blue \
             -tags [list T$btag A$root_rev B$last_rev delta active]
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]

@@ -581,19 +581,13 @@ puts "\nsort_it_all_out"
         variable curr_y
 
         gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
-        set curr_x $x
-        set curr_y $y
+puts "DrawCurrent ($revision) x=$x y=$y"
         # draw the box
         set tx [expr {$x + $box_width}]
         set ty [expr {$y - $box_height}]
         $branch_canvas.canvas create rectangle \
           $x $y $tx $ty \
-          -fill gray90 \
-          -tags [list box active]
-        $branch_canvas.canvas create rectangle \
-          $x $y $tx $ty \
-          -width $curr(width) \
-          -tags [list box rect active]
+          -width $curr(width) -fill gray90 -outline red3
         set pad \
           [expr {($box_width - [image width Man] \
             - [font measure $font_bold -displayof $branch_canvas.canvas {You are}]) \
@@ -650,6 +644,7 @@ puts "\nsort_it_all_out"
         variable tags
 
         gen_log:log T "ENTER ($x $y $box_width $root_rev $branch)"
+puts "DrawRoot ($branch) x=$x y=$y"
         set root_text "$root_info"
         set btag [lindex $tags($branch) 0]
         # draw the box
@@ -749,7 +744,7 @@ if {$revision == ""} {return}
         return [list $tag_width $box_width $height]
       }
 
-      proc DrawRevision { x y tag_width box_width height revision} {
+      proc DrawRevision { x y tag_width box_width height revision btm} {
         global cvscfg
         variable curr
         variable box_height
@@ -772,8 +767,8 @@ if {$revision == ""} {return}
         variable fromprefix
         variable toprefix
 
-        #puts "ENTER ($x $y $tag_width $box_width $height $revision)"
-        gen_log:log T "DrawRevision $revision)"
+        gen_log:log T "ENTER ($x $y $tag_width $box_width $height $revision)"
+        puts "DrawRevision ($revision) x=$x y=$y"
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -824,13 +819,13 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         # draw the box...
         set tx [expr {$x + $box_width}]
         set ty [expr {$y - $box_height}]
+        #$branch_canvas.canvas create rectangle \
+          #$x $y $tx $ty \
+          #-fill gray90 \
+          #-tags [list box R$revision active]
         $branch_canvas.canvas create rectangle \
           $x $y $tx $ty \
-          -fill gray90 \
-          -tags [list box R$revision active]
-        $branch_canvas.canvas create rectangle \
-          $x $y $tx $ty \
-          -width $curr(width) \
+          -width $curr(width) -fill gray90 \
           -tags [list box R$revision rect$revision active]
         # ...and add the contents
         set tx [expr {$x + $box_width/2}]
@@ -853,12 +848,13 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         variable opt
         variable curr
         variable box_height
+        variable font_norm_h
         variable revbranches
         variable branchrevs
         variable revnum
 
         gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
-        puts "\nDrawBranch ($branch)"
+        puts "\nDrawBranch ($branch) x=$x y=$y"
 
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
@@ -923,11 +919,12 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         # Draw the branch
         set midx [expr {$x + $box_width/2}]
         set last_y {}
-puts "set last_y {}"
-puts "revlist $revlist"
-gen_log:log D "revlist $revlist"
+        gen_log:log D "revlist $revlist"
+        set rl [llength $revlist]
+        set c 0
         foreach revision [lrange $revlist 0 end] {rtag_width rheight} $rdata {
           #if {$revision == ""} {continue}
+          incr c
           incr y $curr(spcy)
           incr y $rheight
           # For each branch off this revision, draw it to the right of this
@@ -938,7 +935,6 @@ gen_log:log D "revlist $revlist"
           set bxys {}
           if [info exists revbranches($revision)] {
             foreach r2 $revbranches($revision) {
-              puts " revbranches($revision) $r2"
               gen_log:log D " revbranches($revision): $r2"
               #if {! [info exists revbranches($r2)]} {continue}
               # Do we display the branch if it is empty?
@@ -950,6 +946,7 @@ gen_log:log D "revlist $revlist"
               lappend brevs $r2
               foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
                 lappend bxys $lx $lbw $rh $lly
+                puts "   bxys $bxys"
                 break
               }
             }
@@ -960,17 +957,9 @@ gen_log:log D "revlist $revlist"
           set y [expr {$y2 + $box_height/2 + $curr(boff)}]
           set rx [expr {$x + $box_width}]
           set ry [expr {$y - $box_height/2}]
-          set by [expr {$ry - $curr(boff)}]
+          set by [expr {$ry - $box_height/2 + 2}]
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
-            if {$ly != {}} {
-              $branch_canvas.canvas create line \
-                $mx $ly $mx [expr {$by - $rh}] \
-                -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
-                -tags [list A$revision B$b delta active]
-            }
-            # We could draw this with -smooth 1 but without anti-aliasing
-            # the curves look yukky :-(
             $branch_canvas.canvas lower [ \
               $branch_canvas.canvas create line \
                 $rx $ry $mx $ry $mx $by \
@@ -988,15 +977,20 @@ gen_log:log D "revlist $revlist"
               -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
               -tags [list A$revision B$last_rev delta active]
           }
-          DrawRevision $x $y $rtag_width $box_width $rheight $revision
-          #if {$revision == $revnum(current)} {
-            #set y [expr {$y - $box_height}]
-            #DrawCurrent $x $y $box_width $box_height $revision
-          #}
+          if {$revision == $revnum(current)} {
+            foreach {box_width curr_height} [CalcCurrent $branch] { break }
+            DrawCurrent $x $y $box_width $curr_height $revision
+            $branch_canvas.canvas create line \
+              $midx [expr {$y + $curr(spcy)}] $midx $y \
+              -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
+            incr y $curr(spcy)
+            incr y $rheight
+          }
+          set btm [ expr {$c == $rl} ? {1} : {0} ]
+          DrawRevision $x $y $rtag_width $box_width $rheight $revision $btm
           if {$opt(update_drawing) < 1} {
             UpdateBndBox
           }
-puts "set last_y $y"
           set last_y $y
           set last_rev $revision
         }
@@ -1134,8 +1128,6 @@ puts "DrawTree"
           if {$opt(show_box_rev)} {
             append rev_info {$revision }
           }
-#puts "rev_info $rev_info"
-#gen_log:log D "rev_info $rev_info"
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
           set my_size [expr {round($logcfg(font_size) * $opt(scale))}]
@@ -1164,9 +1156,6 @@ puts "DrawTree"
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info] * $font_norm_h}]
           
-          #foreach i [lsort -dictionary [array names revkind]] {
-            #DrawRevision $x $y $rtag_width $box_width $rheight $revision
-          #}
           if {[info exists branchrevs(trunk)]} {
             DrawBranch 0 0 {} trunk
             UpdateBndBox
@@ -1241,6 +1230,7 @@ puts "DrawTree"
         set opt($key) $value
       }
       toplevel $branch_canvas
+      wm withdraw $branch_canvas
       wm title $branch_canvas "SVN Log"
       $branch_canvas configure -menu $branch_canvas.menubar
       menu $branch_canvas.menubar
@@ -1328,7 +1318,7 @@ puts "DrawTree"
           set opt(show_box_revwho) [\
           set opt(show_box_revdate) [\
           set opt(show_box_revtime) [\
-          ]]]]]]
+          set opt(show_box_revstate) 1]]]]]
           DrawTree
         }]
       $branch_canvas.menubar.view.rev add command -label "Turn all options off" \
@@ -1338,7 +1328,7 @@ puts "DrawTree"
           set opt(show_box_revwho) [\
           set opt(show_box_revdate) [\
           set opt(show_box_revtime) [\
-          ]]]]]]
+          set opt(show_box_revstate) 0]]]]]
           DrawTree
         }]
       $branch_canvas.menubar.view.rev add separator
@@ -1559,6 +1549,7 @@ puts "DrawTree"
         #wm geometry $branch_canvas $winloc
         wm geometry $branch_canvas $cvscfg(loggeom)
       }
+      wm deiconify $branch_canvas
   
       $branch_canvas.canvas bind active <Enter> \
         "$branch_canvas.canvas config -cursor hand2"
