@@ -282,6 +282,10 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
   modbrowse_run
 } elseif {$cvscfg(startwindow) == "log"} {
+  if {! [file exists $lcfile]} {
+    puts "ERROR: $lcfile doesn't exist!"
+    exit 1
+  }
   wm withdraw .
   if {$incvs} {
     cvs_logcanvas [pwd] \"$lcfile"\

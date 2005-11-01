@@ -104,8 +104,13 @@ gen_log:log T "ENTER ($relpath $filename)"
         catch { unset revname }
         set cwd [pwd]
 
-        # might as well put someting in there
-        $branch_canvas.up.rfname insert end "$relpath/$filename"
+        # Can't use file join or it will mess up the URL
+        if { $relpath == {} } {
+          set path "$cvscfg(svnroot)/trunk/$filename"
+        } else {
+          set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
+        }
+        $branch_canvas.up.rfname insert end "$path"
         $branch_canvas.up.rfname configure -state readonly
 
         busy_start $branch_canvas
@@ -116,7 +121,7 @@ puts "Trunk"
         # if the file was added on a branch, this will error out.
         # Come to think of it, there's nothing especially privileged
         #  about the trunk
-        set command "svn log $cvscfg(svnroot)/trunk/$relpath/$filename"
+        set command "svn log $path"
         gen_log:log C "$command"
 puts "$command"
         set ret [catch {eval exec $command} log_output]
@@ -147,9 +152,13 @@ puts "Branches"
           if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
 puts " $branch"
-          set tags($branch) {}
           # Can't use file join or it will mess up the URL
-          set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
+          if { $relpath == {} } {
+            set path "$cvscfg(svnroot)/branches/$branch/$filename"
+          } else {
+            set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
+          }
+          set tags($branch) {}
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
 puts "$command"
@@ -198,8 +207,14 @@ puts "Tags"
           # There can be files such as "README" here that aren't tags
           if {![string match {*/} $tag]} {continue}
           set tag [string trimright $tag "/"]
+          # Can't use file join or it will mess up the URL
+          if { $relpath == {} } {
+            set path "$cvscfg(svnroot)/tags/$tag/$filename"
+          } else {
+            set path "$cvscfg(svnroot)/tags/$tag/$relpath/$filename"
+          }
           set command \
-            "svn log --stop-on-copy $cvscfg(svnroot)/tags/$tag/$relpath/$filename"
+            "svn log --stop-on-copy $path"
           gen_log:log C "$command"
 puts "$command"
           set ret [catch {eval exec $command} log_output]
@@ -561,7 +576,6 @@ puts "\nsort_it_all_out"
         variable font_bold
         variable font_bold_h
         variable branch_canvas
-        variable root_info
         variable tags
         variable curr_x
         variable curr_y
@@ -636,7 +650,6 @@ puts "\nsort_it_all_out"
         variable tags
 
         gen_log:log T "ENTER ($x $y $box_width $root_rev $branch)"
-puts "DrawRoot $x $y"
         set root_text "$root_info"
         set btag [lindex $tags($branch) 0]
         # draw the box
@@ -654,7 +667,7 @@ puts "DrawRoot $x $y"
            -fill blue
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
-        gen_log:log D "$root_text"
+        gen_log:log D "root_text $root_text"
         foreach s [subst $root_text] {
           $branch_canvas.canvas create text \
             $tx $ty \
@@ -1102,9 +1115,9 @@ puts "DrawTree"
           set view_yoff [lindex [$branch_canvas.canvas yview] 0]
           $branch_canvas.canvas delete all
           set root_info {}
-          if {$opt(show_root_rev)} {
+          #if {$opt(show_root_rev)} {
             append root_info {$branch}
-          }
+          #}
           #if {$opt(show_root_tags)} {
             #append root_info {$tags($branch)}
           #}
@@ -1381,7 +1394,6 @@ puts "DrawTree"
       label $branch_canvas.up.lfname -text "SVN Path" \
         -width 12 -anchor w
       entry $branch_canvas.up.rfname -font $textfont -relief groove
-      #$branch_canvas.up.rfname configure -bg $disbg
       button $branch_canvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $branch_canvas.up -side top -fill x
       foreach fm {A B} {
@@ -1481,17 +1493,6 @@ puts "DrawTree"
                      [$branch_canvas.up.revB_rvers cget -text] \
                      [list $filename]
                  }]
-      button $branch_canvas.viewtags -image Tags \
-        -command [namespace code {
-                   variable tags
-                   set taglist {}
-                   foreach r [ \
-                     lsort [array names tags] \
-                   ] {
-                     append taglist "$r: $tags($r)\n"
-                   }
-                   view_output::new Tags $taglist
-                 }]
       button $branch_canvas.close -text "Close" \
         -padx 0 -pady 0 \
         -command [namespace code {
@@ -1509,7 +1510,6 @@ puts "DrawTree"
            $branch_canvas.diff \
            $branch_canvas.join \
            $branch_canvas.delta \
-           $branch_canvas.viewtags \
         -in $branch_canvas.down -side left \
         -ipadx 1 -ipady 1 -fill both -expand 1
       pack $branch_canvas.close \
@@ -1520,12 +1520,12 @@ puts "DrawTree"
                  svn_cat [$branch_canvas.up.revA_rvers cget -text] $filename
                }]
         $branch_canvas.join configure -state disabled
-        #$branch_canvas.annotate configure \
-        #-command [namespace code {
-                   #svn_annotate [$branch_canvas.up.revA_rvers cget-text] $filename "svn"
-                 #}]
+        $branch_canvas.annotate configure \
+          -command [namespace code {
+                   svn_annotate [$branch_canvas.up.revA_rvers cget -text] $filename
+                 }]
         $branch_canvas.join configure -state disabled
-        #$branch_canvas.delta configure -state disabled
+        $branch_canvas.delta configure -state disabled
   
       set_tooltips $branch_canvas.refresh \
         {"Re-read the log information"}
@@ -1541,8 +1541,6 @@ puts "DrawTree"
          {"Merge branch to current"}
       set_tooltips $branch_canvas.delta \
          {"Merge changes to current"}
-      set_tooltips $branch_canvas.viewtags \
-         {"List all the file\'s tags"}
   
       #
       # Put the canvas on to the display.
