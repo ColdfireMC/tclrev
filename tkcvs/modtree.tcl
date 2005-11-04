@@ -8,12 +8,13 @@
 #
 # Create a new two-paned widget for the modules.
 #
-proc ModTree:create {w} {
+proc ModTree:create {w {open_func {}} } {
   global Tree
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($w)"
+  gen_log:log T "ENTER ($w $open_func)"
+  set Tree(open_function) $open_func
 
   if {[catch "image type ModTree:closedbm"]} {
     ModTree:loadimages
@@ -293,7 +294,14 @@ proc ModTree:buildlayer {w v in} {
          ModTree:buildlayer $w $vx/$c [expr {$in+$Tree(vsize)+8}]
       } else {
          set k [$w.tree.list create image $in $y -image ModTree:closedbm]
-         $w.tree.list bind $k <1> "set Tree($w:$vx/$c:open) 1; ModTree:build $w"
+         if {$Tree(open_function) == {} } {
+           $w.tree.list bind $k <1> "set Tree($w:$vx/$c:open) 1; \
+                                    ModTree:build $w"
+         } else {
+           $w.tree.list bind $k <1> "set Tree($w:$vx/$c:open) 1; \
+                                    $Tree(open_function) $w $vx/$c; \
+                                    ModTree:build $w"
+         }
       }
     }
   }

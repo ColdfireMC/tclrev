@@ -158,8 +158,6 @@ proc modbrowse_setup {} {
 
   frame .modbrowse.treeframe
   pack .modbrowse.treeframe -side bottom -fill both -expand yes
-  ModTree:create .modbrowse.treeframe.pw
-  pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
 
   set screenWidth [winfo vrootwidth .]
   set screenHeight [winfo vrootheight .]
@@ -318,8 +316,6 @@ proc modbrowse_run {} {
   } else {
      ModTree:delitem .modbrowse.treeframe.pw /
      destroy .modbrowse.treeframe.pw
-     ModTree:create .modbrowse.treeframe.pw
-     pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
   }
 
   #set root [.modbrowse.top.troot.e cget -text]
@@ -343,8 +339,11 @@ proc modbrowse_run {} {
     }
     .modbrowse.top.lroot configure -text "SVNROOT"
     .modbrowse.top.troot.e configure -textvariable cvscfg(svnroot)
+    # Call ModTree with the just-in-time level maker
+    ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
+    pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
     ::picklist::used cvsroot $cvscfg(svnroot)
-    parse_svnmodules $cvscfg(svnroot)
+    parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
   } else {
     if { $cvscfg(cvsroot) != "" } {
       set cmd(cvs_co) \
@@ -352,6 +351,8 @@ proc modbrowse_run {} {
     }
     .modbrowse.top.lroot configure -text "CVSROOT"
     .modbrowse.top.troot.e configure -textvariable cvscfg(cvsroot)
+    ModTree:create .modbrowse.treeframe.pw
+    pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
     ::picklist::used cvsroot $cvscfg(cvsroot)
     if {[info exists cmd(cvs_co)]} {
       parse_cvsmodules [$cmd(cvs_co)\::output]
@@ -401,7 +402,7 @@ proc modbrowse_run {} {
     set newlist [lsort $newlist]
     set newlist [concat {"branches"} {"tags"} $newlist]
 
-    modbrowse_tree $newlist "/"
+    #modbrowse_tree $newlist "/"
   } else {
     modbrowse_tree [lsort [array names modval]] "/"
   }
