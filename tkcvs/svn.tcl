@@ -434,7 +434,9 @@ proc svn_jit_listdir { tf into } {
     gen_log:log D "$logline"
     if [string match {*/} $logline] {
       set item [lrange $logline 5 end]
-      lappend dirs [string trimright $item "/"]
+      set item [string trimright $item "/"]
+      lappend dirs "$item"
+      set info($item) [lrange $logline 0 4]
     } else {
       set item [lrange $logline 6 end]
       lappend fils "$item"
@@ -464,8 +466,8 @@ proc svn_jit_dircmd { tf dir } {
   gen_log:log T "ENTER ($tf $dir)"
   puts "\nEntering svn_jit_dircmd ($dir)"
 
-  # Here we are just figuring out if the top level directory is empty or
-  # not.  We don't have to collect any other information, so no -v flag
+  # Here we are just figuring out if the top level directory is empty or not.
+  # We don't have to collect any other information, so no -v flag
   set command "svn list \"$cvscfg(svnroot)/$dir\""
   puts "$command"
   set cmd(svnlist) [exec::new "$command"]
@@ -488,16 +490,14 @@ proc svn_jit_dircmd { tf dir } {
   }
 
   if {$dirs == {} && $fils == {}} {
-    puts "  $dir is empty"
+    #puts "  $dir is empty"
     catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder"
   } else {
-    puts "  $dir has contents"
+    #puts "  $dir has contents"
     set r [catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder" err]
     if {! $r} {
       puts "-> newitem /$dir/d"
-      catch "Tree:newitem $tf \"/$dir/d\" d d -image {}" $err
-    } else {
-puts $err
+      catch "Tree:newitem $tf \"/$dir/d\" d d -image {}"
     }
   }
 
