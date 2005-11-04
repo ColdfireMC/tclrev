@@ -96,11 +96,19 @@ proc svn_workdir_status {} {
     
     set varcols [string range $logline 8 end]
     if {[llength $varcols] > 1} {
+      #012345678
+      # M           965       938 kfogel       wc/bar.c
+      #       *     965       922 sussman      wc/foo.c
+      #A  +         965       687 joe          wc/qax.c
+      #             965       687 joe          wc/zig.c
       set wrev [lindex $varcols 0]
       set crev [lindex $varcols 1]
       set cauthor [lindex $varcols 2]
+      set filename [lrange $varcols 3 end]
+    } else {
+      #?                                       newfile
+      set filename [lrange $logline 1 end]
     }
-    set filename [lindex $varcols end]
     set modstat [string range $logline 0 7]
     set m1 [string index $modstat 0]
     set displaymod ""
@@ -371,17 +379,6 @@ proc svn_commit {comment args} {
 
 }
 
-# Called from module browser filebrowse button
-proc svn_list {module} {
-  global env
-  global cvscfg
-
-  gen_log:log T "ENTER ($module)"
-  set v [viewer::new "SVN list -R"]
-  $v\::do "svn list -Rv $cvscfg(svnroot)/$module"
-  gen_log:log T "LEAVE"
-}
-
 # Called from workdir browser annotate button
 proc svn_annotate {revision args} {
   global cvscfg
@@ -407,62 +404,192 @@ proc svn_annotate {revision args} {
   gen_log:log T "LEAVE"
 }
 
-# called from module browser - list branches & tags
-proc parse_svnmodules {svnroot} {
-  global modval
+# Called from module browser filebrowse button
+proc svn_list {module} {
+  global cvscfg
 
-  gen_log:log T "Enter ($svnroot)"
+  gen_log:log T "ENTER ($module)"
+  set v [viewer::new "SVN list -R"]
+  $v\::do "svn list -Rv \"$cvscfg(svnroot)/$module\""
+  gen_log:log T "LEAVE"
+}
 
-  set command "svn list $svnroot"
+proc svn_jit_listdir { tf into } {
+  global cvscfg
+
+  gen_log:log T "ENTER ($tf $into)"
+  puts "\nEntering svn_jit_listdir ($into)"
+  set dir [string trimleft $into / ]
+  set command "svn list -v \"$cvscfg(svnroot)/$dir\""
+  puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
   }
-  set branches ""
-  set tags ""
-  foreach item $contents {
-    gen_log:log D "$item"
-    switch -exact -- $item {
-      "trunk/" {
-          set modval(trunk) "trunk"
-       }
-      "branches/" {
-        set command "svn list $svnroot/branches"
-        set cmd(svnlist) [exec::new "$command"]
-        if {[info exists cmd(svnlist)]} {
-          set branch_ret [$cmd(svnlist)\::output]
-        }
-        foreach branch $branch_ret {
-          gen_log:log D "  $branch"
-          if { [string match {*/} $branch] } {
-             set modval($branch) "branches/$branch"
-             lappend branches $branch
-          }
-        }
-      }
-      "tags/" {
-        set command "svn list $svnroot/tags"
-        set cmd(svnlist) [exec::new "$command"]
-        if {[info exists cmd(svnlist)]} {
-          set tags_ret [$cmd(svnlist)\::output]
-        }
-        foreach tag $tags_ret {
-          gen_log:log D "  $tag"
-          if { [string match {*/} $tag] } {
-             lappend tags $tag
-             set modval($tag) "tags/$tag"
-          }
-        }
-      }
-      default {
-        set modval($item) $item
-      }
+  set dirs {}
+  set fils {}
+  foreach logline [split $contents "\n"] {
+    if {$logline == "" } continue
+    gen_log:log D "$logline"
+    if [string match {*/} $logline] {
+      set item [lrange $logline 5 end]
+      set item [string trimright $item "/"]
+      lappend dirs "$item"
+      set info($item) [lrange $logline 0 4]
+    } else {
+      set item [lrange $logline 6 end]
+      lappend fils "$item"
+      set info($item) [lrange $logline 0 5]
     }
   }
-  set modval(branches) "[llength $branches] branches"
-  set modval(tags) "[llength $tags] tags"
-  gen_log:log D "BRANCHES $modval(branches)"
-  gen_log:log D "TAGS $modval(tags)"
+
+  ModTree:close $tf /$dir
+  puts "<- delitem /$dir/d"
+  ModTree:delitem $tf /$dir/d
+  foreach f $fils {
+    set command "ModTree:newitem $tf \"/$dir/$f\" \"$f\" \"$info($f)\" -image Fileview"
+    set r [catch "$command" err]
+  }
+  foreach d $dirs {
+    svn_jit_dircmd $tf $dir/$d
+  }
+  ModTree:open $tf /$dir
+
+  puts "\nLeaving svn_jit_listdir"
+  gen_log:log T "LEAVE"
+}
+
+proc svn_jit_dircmd { tf dir } {
+  global cvscfg
+
+  gen_log:log T "ENTER ($tf $dir)"
+  puts "\nEntering svn_jit_dircmd ($dir)"
+  set command "svn list -v \"$cvscfg(svnroot)/$dir\""
+  puts "$command"
+  set cmd(svnlist) [exec::new "$command"]
+  if {[info exists cmd(svnlist)]} {
+    set contents [$cmd(svnlist)\::output]
+  }
+  set dirs {}
+  set fils {}
+  foreach logline [split $contents "\n"] {
+    if {$logline == "" } continue
+    gen_log:log D "$logline"
+    if [string match {*/} $logline] {
+      set item [lrange $logline 5 end]
+      lappend dirs [string trimright $item "/"]
+    } else {
+      set item [lrange $logline 6 end]
+      lappend fils $item
+      set info($item) [lrange $logline 0 5]
+puts "info($item) $info($item)"
+    }
+  }
+
+  ModTree:close $tf /$dir
+  puts "<- delitem /$dir/d"
+  ModTree:delitem $tf /$dir/d
+  foreach f $fils {
+    set command "ModTree:newitem $tf \"/$dir/$f\" \"$f\" \"$info($f)\" -image Fileview"
+    set r [catch "$command" err]
+  }
+  foreach d $dirs {
+    svn_jit_dircmd $tf $dir/$d
+  }
+  ModTree:open $tf /$dir
+
+  puts "\nLeaving svn_jit_listdir"
+  gen_log:log T "LEAVE"
+}
+
+proc svn_jit_dircmd { tf dir } {
+  global cvscfg
+
+  gen_log:log T "ENTER ($tf $dir)"
+  puts "\nEntering svn_jit_dircmd ($dir)"
+
+  # Here we are just figuring out if the top level directory is empty or not.  We don't
+  # have to collect any other information, so no -v flag
+  set command "svn list \"$cvscfg(svnroot)/$dir\""
+  puts "$command"
+  set cmd(svnlist) [exec::new "$command"]
+  if {[info exists cmd(svnlist)]} {
+    set contents [$cmd(svnlist)\::output]
+  }
+
+  set dirs {}
+  set fils {}
+  foreach logline $contents] {
+    gen_log:log D "$logline"
+    if [string match {*/} $logline] {
+      set item [lrange $logline 5 end]
+      set item [string trimright $item "/"]
+      lappend dirs $item
+    } else {
+      set item [lrange $logline 6 end]
+      lappend fils $item
+    }
+  }
+
+  if {$dirs == {} && $fils == {}} {
+    #puts "  $dir is empty"
+    set command "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Fileview"
+    set r [catch "$command" err]
+    catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder"
+  } else {
+    #puts "  $dir has contents"
+    set r [catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder" err]
+    if {! $r} {
+      puts "-> newitem /$dir/d"
+      catch "Tree:newitem $tf \"/$dir/d\" d d -image {}"
+    }
+  }
+
+  gen_log:log T "LEAVE"
+  puts "Leaving svn_jit_dircmd\n"
+}
+
+# called from module browser - list branches & tags
+proc parse_svnmodules {tf svnroot} {
+  global cvscfg
+  global modval
+
+  gen_log:log T "ENTER ($tf $svnroot)"
+
+  if {[catch "image type fileview"]} {
+    workdir_images
+  }
+
+  set cvscfg(svnroot) $svnroot
+  set command "svn list -v $svnroot"
+  puts "$command"
+  set cmd(svnlist) [exec::new "$command"]
+  if {[info exists cmd(svnlist)]} {
+    set contents [$cmd(svnlist)\::output]
+  }
+  set dirs {}
+  set fils {}
+
+  foreach logline [split $contents "\n"] {
+    if {$logline == "" } continue
+    gen_log:log D "$logline"
+    if [string match {*/} $logline] {
+      set item [lrange $logline 5 end]
+      lappend dirs [string trimright $item "/"]
+    } else {
+      set item [lrange $logline 6 end]
+      lappend fils $item
+      set info($item) [lrange $logline 0 5]
+    }
+  }
+
+  foreach f $fils {
+    catch "ModTree:newitem $tf \"/$f\" \"$f\" \"$info($f)\" -image Fileview"
+  }
+  foreach d $dirs {
+    svn_jit_dircmd $tf $d
+  }
+
   gen_log:log T "LEAVE"
 }
 

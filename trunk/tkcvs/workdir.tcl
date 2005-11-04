@@ -345,6 +345,8 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) arrow_hl_dn.gif]
   image create photo updir \
     -format gif -file [file join $cvscfg(bitmapdir) updir.gif]
+  image create photo Folder \
+    -format gif -file [file join $cvscfg(bitmapdir) dir.gif]
   image create photo Check \
     -format gif -file [file join $cvscfg(bitmapdir) check.gif]
   image create photo Fileview \
