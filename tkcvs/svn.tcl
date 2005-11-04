@@ -414,6 +414,7 @@ proc svn_list {module} {
   gen_log:log T "LEAVE"
 }
 
+# This is the callback for the folder-opener in ModTree
 proc svn_jit_listdir { tf into } {
   global cvscfg
 
@@ -433,9 +434,7 @@ proc svn_jit_listdir { tf into } {
     gen_log:log D "$logline"
     if [string match {*/} $logline] {
       set item [lrange $logline 5 end]
-      set item [string trimright $item "/"]
-      lappend dirs "$item"
-      set info($item) [lrange $logline 0 4]
+      lappend dirs [string trimright $item "/"]
     } else {
       set item [lrange $logline 6 end]
       lappend fils "$item"
@@ -464,52 +463,9 @@ proc svn_jit_dircmd { tf dir } {
 
   gen_log:log T "ENTER ($tf $dir)"
   puts "\nEntering svn_jit_dircmd ($dir)"
-  set command "svn list -v \"$cvscfg(svnroot)/$dir\""
-  puts "$command"
-  set cmd(svnlist) [exec::new "$command"]
-  if {[info exists cmd(svnlist)]} {
-    set contents [$cmd(svnlist)\::output]
-  }
-  set dirs {}
-  set fils {}
-  foreach logline [split $contents "\n"] {
-    if {$logline == "" } continue
-    gen_log:log D "$logline"
-    if [string match {*/} $logline] {
-      set item [lrange $logline 5 end]
-      lappend dirs [string trimright $item "/"]
-    } else {
-      set item [lrange $logline 6 end]
-      lappend fils $item
-      set info($item) [lrange $logline 0 5]
-puts "info($item) $info($item)"
-    }
-  }
 
-  ModTree:close $tf /$dir
-  puts "<- delitem /$dir/d"
-  ModTree:delitem $tf /$dir/d
-  foreach f $fils {
-    set command "ModTree:newitem $tf \"/$dir/$f\" \"$f\" \"$info($f)\" -image Fileview"
-    set r [catch "$command" err]
-  }
-  foreach d $dirs {
-    svn_jit_dircmd $tf $dir/$d
-  }
-  ModTree:open $tf /$dir
-
-  puts "\nLeaving svn_jit_listdir"
-  gen_log:log T "LEAVE"
-}
-
-proc svn_jit_dircmd { tf dir } {
-  global cvscfg
-
-  gen_log:log T "ENTER ($tf $dir)"
-  puts "\nEntering svn_jit_dircmd ($dir)"
-
-  # Here we are just figuring out if the top level directory is empty or not.  We don't
-  # have to collect any other information, so no -v flag
+  # Here we are just figuring out if the top level directory is empty or
+  # not.  We don't have to collect any other information, so no -v flag
   set command "svn list \"$cvscfg(svnroot)/$dir\""
   puts "$command"
   set cmd(svnlist) [exec::new "$command"]
@@ -532,16 +488,18 @@ proc svn_jit_dircmd { tf dir } {
   }
 
   if {$dirs == {} && $fils == {}} {
-    #puts "  $dir is empty"
-    set command "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Fileview"
-    set r [catch "$command" err]
+    puts "  $dir is empty"
+set command "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Fileview"
+set r [catch "$command" err]
     catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder"
   } else {
-    #puts "  $dir has contents"
+    puts "  $dir has contents"
     set r [catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder" err]
     if {! $r} {
       puts "-> newitem /$dir/d"
-      catch "Tree:newitem $tf \"/$dir/d\" d d -image {}"
+      catch "Tree:newitem $tf \"/$dir/d\" d d -image {}" $err
+    } else {
+puts $err
     }
   }
 
@@ -676,15 +634,15 @@ proc svn_merge_conflict {args} {
     }
     # Invoke tkdiff with the proper option for a conflict file
     # and have it write to the original file
-    set commandline "$cvscfg(tkdiff) -conflict -o \"$filename\" \"$filename\""
+    set commandline "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
     gen_log:log C "$commandline"
     set ret [catch {eval "exec $commandline"} view_this]
     if {$ret == 0} {
-      set mess "Mark $filename resolved?"
+      set mess "Mark $file resolved?"
       if {[cvsconfirm $mess .workdir] != "ok"} {
         continue
       }
-      set commandline "svn resolved $filename"
+      set commandline "svn resolved $file"
       exec::new $commandline
     } else {
       cvsfail "$view_this" .workdir
@@ -793,7 +751,9 @@ proc svn_checkout {dir url rev target cmd} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_merge_conflict {} {
-  puts "TBD"
+# List a directory in the SVN repository on demand, for the Module
+# Browser
+proc svn_listdir {w dir} {
+  gen_log:log T "ENTER ($w $dir)"
+  puts "svn_listdir ($w $dir)"
 }
-
