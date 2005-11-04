@@ -489,8 +489,6 @@ proc svn_jit_dircmd { tf dir } {
 
   if {$dirs == {} && $fils == {}} {
     puts "  $dir is empty"
-set command "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Fileview"
-set r [catch "$command" err]
     catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder"
   } else {
     puts "  $dir has contents"
