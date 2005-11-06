@@ -106,6 +106,10 @@ proc ModTree:newitem {w v name title args} {
   set dir [file dirname $v]
   set n [file tail $v]
 
+  #puts "MTNewitem: dir $dir (dirname $v)   n $n (file tail $v)"
+  # If a plain file starts with ~ file tail returns ./~ which is the
+  # right thing for filesystem commands but not for this
+  regsub {^\./} $n {} n
   if {![info exists Tree($w:$dir:open)]} {
     cvsfail "parent item \"$dir\" is missing" .modbrowse
   }
@@ -355,7 +359,6 @@ proc ModTree:setselection {w v} {
   global Tree
   global modbrowse_module
   global modbrowse_path
-  global cvsglb
 
   gen_log:log T "ENTER ($w \"$v\")"
 
@@ -394,7 +397,7 @@ proc ModTree:clearselection {w} {
 
 proc ModTree:flash {widg v} {
   global Tree
-  global cvsglb
+#puts "Flash: $v"
 
   set j $Tree($widg:$v:tag)
   ModTree:setTextHBox $widg $widg.tree.list.tx$j
@@ -402,7 +405,6 @@ proc ModTree:flash {widg v} {
 
 proc ModTree:unflash {widg v} {
   global Tree
-  global cvsglb
 
   set j $Tree($widg:$v:tag)
 
@@ -410,7 +412,6 @@ proc ModTree:unflash {widg v} {
   if { $Tree($widg:selection) != $v  } {
   	ModTree:clearTextHBox $widg $widg.tree.list.tx$j
   }
-
 }
 
 proc ModTree:scroll_windows {w args} {

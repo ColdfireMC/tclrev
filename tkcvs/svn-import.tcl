@@ -17,91 +17,86 @@ proc svn_import_run {} {
   
   cvsroot_check [pwd]
   if {$insvn} {
-    cvsok "This directory is already in Subversion.\nCan\'t import here!" .import
+    cvsok "This directory is already in Subversion.\nCan\'t import here!" .svn_import
     gen_log:log T "LEAVE"
     return
   } elseif {$incvs} {
-    cvsok "There are CVS directories here.\nPlease remove them first." .import
+    cvsok "There are CVS directories here.\nPlease remove them first." .svn_import
     gen_log:log T "LEAVE"
     return
   }
 
-  # This is just a default.  The user can change it.
   set cvsglb(imdir) [file tail [pwd]]
+  # This is just a default.  The user can change it.
+  if {[info exists cvscfg(svnroot)] && $cvscfg(svnroot) != ""} {
+     set cvsglb(imtop) $cvscfg(svnroot)
+  } else {
+     set cvsglb(imtop) "< URL Required >"
+  }
+  # Can't use file join or it will mess up the URL
+  set cvsglb(imtop) "$cvsglb(imtop)/trunk"
   
-  if {[winfo exists .import]} {
-    wm deiconify .import
-    raise .import
-    grab set .import
+  if {[winfo exists .svn_import]} {
+    wm deiconify .svn_import
+    raise .svn_import
+    grab set .svn_import
     gen_log:log T "LEAVE"
     return
   }
 
-  toplevel .import
-  grab set .import
+  toplevel .svn_import
+  grab set .svn_import
 
-  frame .import.top
+  frame .svn_import.top
 
-  message .import.top.explain -justify left -width 500 -relief groove \
+  message .svn_import.top.explain -justify left -width 500 -relief groove \
     -text "This will import the current directory and its sub-directories\
           into SVN.  If you haven't created a Subversion repository,\
           you must do that first with \"svnadmin create.\""
-  label .import.top.lsvnroot  -text "URL of SVN Repository" -anchor w
-  #label .import.top.lnewdir  -text "New Project path relative to SVN repository" -anchor w
+  label .svn_import.top.lsvnroot  -text "URL of SVN Repository" -anchor w
 
-  # Can't use file join or it will mess up the URL
-  set cvsglb(imtop) "$cvscfg(svnroot)/trunk"
-  entry .import.top.tsvnroot -textvariable cvsglb(imtop) -width 40 
-  #entry .import.top.tnewdir -textvariable cvsglb(newdir) -width 40
+  entry .svn_import.top.tsvnroot -textvariable cvsglb(imtop)
 
-  grid .import.top.explain -column 0 -row 0 -columnspan 3 -sticky ew
-  #grid .import.top.lnewdir -column 0 -row 1 -sticky w
-  #grid .import.top.tnewdir -column 1 -row 1 -sticky ew
-  grid .import.top.lsvnroot -column 0 -row 2 -sticky e
-  grid .import.top.tsvnroot -column 1 -row 2 -sticky ew
+  grid .svn_import.top.explain -column 0 -row 0 -columnspan 3 -sticky ew
+  #grid .svn_import.top.lnewdir -column 0 -row 1 -sticky w
+  #grid .svn_import.top.tnewdir -column 1 -row 1 -sticky ew
+  grid .svn_import.top.lsvnroot -column 0 -row 2 -sticky e
+  grid .svn_import.top.tsvnroot -column 1 -row 2 -sticky ew
 
 
-  frame .import.down -relief groove -border 2
-  button .import.down.ok -text "OK" \
+  frame .svn_import.down -relief groove -border 2
+  button .svn_import.down.ok -text "OK" \
     -command {
-      grab release .import
-      wm withdraw .import
+      grab release .svn_import
+      wm withdraw .svn_import
       svn_do_import $cvsglb(imtop) $cvsglb(imdir)
     }
-  button .import.down.quit -text "Cancel" \
+  button .svn_import.down.quit -text "Cancel" \
     -command {
-      grab release .import
-      wm withdraw .import
+      grab release .svn_import
+      wm withdraw .svn_import
     }
 
-  pack .import.down -side bottom -expand yes -fill x
-  pack .import.top -side top -expand yes -fill x
-  pack .import.down.ok -side left -expand yes
-  pack .import.down.quit -side left -expand yes
+  pack .svn_import.down -side bottom -expand yes -fill x
+  pack .svn_import.top -side top -expand yes -fill x
+  pack .svn_import.down.ok -side left -expand yes
+  pack .svn_import.down.quit -side left -expand yes
 
 
-  wm title .import "Import a Project into Subversion"
-  wm minsize .import 1 1
+  wm title .svn_import "Import a Project into Subversion"
+  wm minsize .svn_import 1 1
 
   gen_log:log T "LEAVE"
 }
 
 proc svn_do_import {imtop imdir} {
-  global cvsglb
   global cvscfg
 
   gen_log:log T "ENTER"
   set imdir [pwd]
   set cwd [pwd]
 
-  # Error checks
-  if { $cvscfg(svnroot) == "" } {
-    cvsok "Subversion URL missing." .import
-    return 1
-  }
-  
   set commandline "svn import . $imtop -m \"Imported using TkCVS\""
-
   set v [viewer::new "Import Project"]
   $v\::log "\nSVN Import\n"
   $v\::do "$commandline"
@@ -128,7 +123,7 @@ proc svn_do_import {imtop imdir} {
   if {[catch "cd $imdir" err]} {
     # If we didn't check out the new dir sucessfully, put the old one back
     file rename $imdir.orig $imdir
-    cvsok "$err" .import
+    cvsok "$err" .isvn_mport
   } else {
     gen_log:log F "CD [pwd]"
   }

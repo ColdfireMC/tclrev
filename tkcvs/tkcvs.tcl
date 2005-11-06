@@ -93,6 +93,7 @@ set optfile [file join $cvscfg(home) .tkcvs]
 if {[file exists $optfile]} {
   source $optfile
 }
+::picklist::load
 
 # Set some defaults
 set cvsglb(sort_pref) { filecol -decreasing }
