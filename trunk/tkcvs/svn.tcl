@@ -8,8 +8,8 @@ proc read_svn_dir {dirname} {
   gen_log:log T "ENTER ($dirname)"
   # svn info gets the URL
   set cmd(info) [exec::new "svn info"]
-  set info_lines [split [$cmd(info)\::output] "\n"]
-  foreach infoline $info_lines {
+  set info_lines [$cmd(info)\::output]
+  foreach infoline [split $info_lines "\n"] {
     if {[string match "URL:*" $infoline]} {
       #gen_log:log D "$infoline"
       set cvscfg(url) [lrange $infoline 1 end]
@@ -419,17 +419,17 @@ proc svn_jit_listdir { tf into } {
   global cvscfg
 
   gen_log:log T "ENTER ($tf $into)"
-  puts "\nEntering svn_jit_listdir ($into)"
+  #puts "\nEntering svn_jit_listdir ($into)"
   set dir [string trimleft $into / ]
   set command "svn list -v \"$cvscfg(svnroot)/$dir\""
-  puts "$command"
+  #puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
-    set contents [$cmd(svnlist)\::output]
+    set contents [split [$cmd(svnlist)\::output] "\n"]
   }
   set dirs {}
   set fils {}
-  foreach logline [split $contents "\n"] {
+  foreach logline $contents {
     if {$logline == "" } continue
     gen_log:log D "$logline"
     if [string match {*/} $logline] {
@@ -445,7 +445,7 @@ proc svn_jit_listdir { tf into } {
   }
 
   ModTree:close $tf /$dir
-  puts "<- delitem /$dir/d"
+  #puts "<- delitem /$dir/d"
   ModTree:delitem $tf /$dir/d
   foreach f $fils {
     set command "ModTree:newitem $tf \"/$dir/$f\" \"$f\" \"$info($f)\" -image Fileview"
@@ -454,9 +454,10 @@ proc svn_jit_listdir { tf into } {
   foreach d $dirs {
     svn_jit_dircmd $tf $dir/$d
   }
+gen_log:log D "ModTree:open $tf /$dir"
   ModTree:open $tf /$dir
 
-  puts "\nLeaving svn_jit_listdir"
+  #puts "\nLeaving svn_jit_listdir"
   gen_log:log T "LEAVE"
 }
 
@@ -464,45 +465,45 @@ proc svn_jit_dircmd { tf dir } {
   global cvscfg
 
   gen_log:log T "ENTER ($tf $dir)"
-  puts "\nEntering svn_jit_dircmd ($dir)"
+  #puts "\nEntering svn_jit_dircmd ($dir)"
 
   # Here we are just figuring out if the top level directory is empty or not.
   # We don't have to collect any other information, so no -v flag
   set command "svn list \"$cvscfg(svnroot)/$dir\""
-  puts "$command"
+  #puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
   }
+  set lbl "[file tail $dir]/"
 
   set dirs {}
   set fils {}
-  foreach logline $contents] {
+  foreach logline [split $contents "\n"] {
+    if {$logline == ""} continue
     gen_log:log D "$logline"
     if [string match {*/} $logline] {
-      set item [lrange $logline 5 end]
-      set item [string trimright $item "/"]
+      set item [string trimright $logline "/"]
       lappend dirs $item
     } else {
-      set item [lrange $logline 6 end]
-      lappend fils $item
+      lappend fils $logline
     }
   }
 
   if {$dirs == {} && $fils == {}} {
     #puts "  $dir is empty"
-    catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder"
+    catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$lbl\" -image Folder"
   } else {
     #puts "  $dir has contents"
-    set r [catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$dir\" -image Folder" err]
+    set r [catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$lbl\" -image Folder" err]
     if {! $r} {
-      puts "-> newitem /$dir/d"
-      catch "Tree:newitem $tf \"/$dir/d\" d d -image {}"
+      #puts "-> newitem /$dir/d"
+      catch "ModTree:newitem $tf \"/$dir/d\" d d -image {}"
     }
   }
 
   gen_log:log T "LEAVE"
-  puts "Leaving svn_jit_dircmd\n"
+  #puts "Leaving svn_jit_dircmd\n"
 }
 
 # called from module browser - list branches & tags
@@ -518,7 +519,7 @@ proc parse_svnmodules {tf svnroot} {
 
   set cvscfg(svnroot) $svnroot
   set command "svn list -v $svnroot"
-  puts "$command"
+  #puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
@@ -549,6 +550,7 @@ proc parse_svnmodules {tf svnroot} {
   gen_log:log T "LEAVE"
 }
 
+# Sends files to the SVN branch browser one at a time
 proc svn_branches {files} {
   global cvscfg
   global cvsglb
@@ -564,6 +566,7 @@ proc svn_branches {files} {
   gen_log:log D "Relative Path: $cvsglb(relpath)"
 
   foreach file $files {
+    regsub -all { } $file {%20} file
     ::branch_canvas::new $cvsglb(relpath) $file
   }
 
@@ -753,5 +756,5 @@ proc svn_checkout {dir url rev target cmd} {
 # Browser
 proc svn_listdir {w dir} {
   gen_log:log T "ENTER ($w $dir)"
-  puts "svn_listdir ($w $dir)"
+  #puts "svn_listdir ($w $dir)"
 }

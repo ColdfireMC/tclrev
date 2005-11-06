@@ -333,8 +333,7 @@ proc DirCanvas:unflash {w y f} {
   if { ! $DirList($w:$f:selected) } {
   	DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
   }
-
- }
+}
 
 #
 # Change the selection to the indicated item

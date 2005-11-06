@@ -132,7 +132,10 @@ proc ::picklist::load { } {
     variable data
 
     while {[gets $file name] > 0} {
+      set c 0
       while {[gets $file item] > 0} {
+        # FIXME: number of items saved should be a preference
+        if {$c > 10} {break}
         lappend data($name) $item
       }
     }
