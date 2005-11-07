@@ -189,15 +189,25 @@ proc svn_remove {args} {
 }
 
 # called from the workdir browser checkmark button
-proc svn_check {directory} {
+proc svn_check {directory {v {0}} } {
   global cvscfg
 
-  gen_log:log T "ENTER ($directory)"
+  gen_log:log T "ENTER ($directory $v)"
 
   busy_start .workdir.main
 
-  set commandline "svn status $cvscfg(checkrecursive) $directory"
-  set check_cmd [viewer::new "Directory Status Check"]
+  set flags ""
+  if {$v} {
+    append flags "uv"
+  }
+  if {! $cvscfg(recurse)} {
+    append flags "N"
+  }
+  if {$flags != ""} {
+    set flags "-$flags"
+  }
+  set commandline "svn status $flags $directory"
+  set check_cmd [viewer::new "SVN Status Check"]
   $check_cmd\::do $commandline 0 status_colortags
 
   busy_done .workdir.main
@@ -706,7 +716,7 @@ proc svn_tag {tagname force branch update args} {
   append command " $to_path -m \"$comment\""
   gen_log:log C "$command"
 
-  set v [viewer::new "CVS Tag"]
+  set v [viewer::new "SVN Tag (Copy)"]
   $v\::do "$command"
   $v\::wait
 

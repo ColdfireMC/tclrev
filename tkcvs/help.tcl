@@ -32,7 +32,7 @@ proc aboutbox {} {
   frame .about.top
 
   message .about.top.msg1 -width 400 -justify c \
-    -text "\nTkCVS Version 7.3\n" -font $cvscfg(guifont)
+    -text "\nTkCVS Version 8.0\n" -font $cvscfg(guifont)
   pack .about.top -side top -expand 1 -fill both
 
   image create photo Tclfish -format gif -file \
@@ -337,7 +337,7 @@ The file is a directory.
 
 <h2>Editors Display</h2>
 
-If the option cvscfg(econtrol) has been set then a column labeled "editors" may have entries. This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
+If the option cvscfg(showeditcol) has been set then a column labeled "editors" may have entries. This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
 
 <h2>File Filters</h2>
 
@@ -739,8 +739,6 @@ Set this to false to see normal files only in the directory browser. Set it to t
 Set the default for automatic status-refresh of a CVS controlled directory. Automatic updates are done when a directory is entered and after some operations.
 <h3>cvscfg(auto_tag)</h3>
 Whether to tag the merged-from revision when using TkCVS to merge different revisions of files by default.  A dialog still lets you change your mind, regardless of the default.
-<h3>cvscfg(checkrecursive)</h3>
-Report Check recursively (onvalue {}, offvalue -l)
 <h3>cvscfg(confirm_prompt)</h3>
 Ask for confirmation before performing an operation(true or false)
 <h3>cvscfg(dateformat)</h3>

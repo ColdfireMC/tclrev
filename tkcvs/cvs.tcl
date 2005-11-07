@@ -1192,9 +1192,14 @@ proc cvs_check {directory} {
     set directory ""
   }
 
-  set commandline "$cvs -n -q update $cvscfg(checkrecursive) $directory"
-  set check_cmd [viewer::new "Directory Status Check"]
-  $check_cmd\::do $commandline 0 status_colortags
+  if $cvscfg(recurse) {
+    set checkrecursive ""
+  } else {
+    set checkrecursive "-l"
+  }
+  set commandline "$cvs -n -q update $checkrecursive $directory"
+  set check_cmd [viewer::new "CVS Directory Status Check"]
+  $check_cmd\::do $commandline 1 status_colortags
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"

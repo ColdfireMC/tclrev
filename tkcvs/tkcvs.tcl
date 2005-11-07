@@ -66,7 +66,6 @@ if {! [info exists cvscfg(editorargs)]} {
 }
 set auto_path [linsert $auto_path 0 $TCDIR]
 set cvscfg(allfiles) false
-set cvscfg(checkrecursive) {}
 if {! [info exists cvscfg(startwindow)]} {
   set cvscfg(startwindow) "workdir"
 }
@@ -117,7 +116,6 @@ if {! [get_cde_params]} {
   set cvsglb(textfg) [lindex [.testent configure -foreground] 4]
   set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
-  set cvsglb(robg) [lindex [.testent configure -background] 4]
   destroy .testent
 
   # Find out what the default gui font is
