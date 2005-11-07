@@ -60,7 +60,7 @@ gen_log:log T "ENTER ($relpath $filename)"
       variable branchrevs
       variable revbranches
       variable revcomment
-      variable tags
+      variable revtags
       variable sel_tag
       set sel_tag(A) {}
       set sel_tag(B) {}
@@ -81,7 +81,7 @@ gen_log:log T "ENTER ($relpath $filename)"
         variable revcomment
         variable revkind
         variable revname
-        variable tags
+        variable revtags
         variable branchrevs
         variable allrevs
         variable revbranches
@@ -89,6 +89,7 @@ gen_log:log T "ENTER ($relpath $filename)"
         variable cwd
         variable relpath
         variable filename
+        variable opt
 
         gen_log:log T "ENTER"
         catch { $branch_canvas.canvas delete all }
@@ -96,7 +97,7 @@ gen_log:log T "ENTER ($relpath $filename)"
         catch { unset revdate }
         catch { unset revtime }
         catch { unset revcomment }
-        catch { unset tags }
+        catch { unset revtags }
         catch { unset branchrevs }
         catch { unset revbranches }
         catch { unset revkind }
@@ -114,15 +115,14 @@ gen_log:log T "ENTER ($relpath $filename)"
 
         busy_start $branch_canvas
         # The trunk
-puts "Trunk"
-        set tags(trunk) {}
+puts "\nTrunk"
+        set revtags(trunk) {}
         set branchrevs(trunk) {}
         # if the file was added on a branch, this will error out.
         # Come to think of it, there's nothing especially privileged
         #  about the trunk
         set command "svn log $path"
         gen_log:log C "$command"
-puts "$command"
         set ret [catch {eval exec $command} log_output]
         if {$ret == 0} {
           set trunk_lines [split $log_output "\n"]
@@ -132,14 +132,12 @@ puts "$command"
           return
         }
         foreach r $branchrevs(trunk) {
-          puts " $r $revdate($r) ($revcomment($r))"
+          puts " $r $revdate($r)"
           gen_log:log D " $r $revdate($r) ($revcomment($r))"
           set revkind($r) "revision"
         }
         set revkind($rr) "root"
         set revname($rr) "trunk"
-puts "$rr:  kind $revkind($rr)  name $revname($rr)"
-puts "branchrevs(trunk) $branchrevs(trunk)"
 
         # Branches
 puts "Branches"
@@ -158,19 +156,20 @@ puts " $branch"
           } else {
             set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
           }
-          set tags($branch) {}
+          set revtags($branch) {}
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
-puts "$command"
           set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
-            cvsfail "$log_output"
-            return
+            # This can happen a lot -let's not let it stop us
+            gen_log:log E "$tag_output"
+            puts "$log_output"
+            continue
           }
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
           foreach r $branchrevs($branch) {
-            puts "  $r $revdate($r) ($revcomment($r))"
+            puts "   $r $revdate($r)"
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
           }
@@ -179,61 +178,71 @@ puts "$command"
 
           set command "svn log -q $path"
           gen_log:log C "$command"
-puts "$command"
           set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
             cvsfail "$log_output"
             return
           }
           set loglines [split $log_output "\n"]
-#puts $loglines
           parse_q $loglines $branch
-puts "branchrevs($branch) $branchrevs($branch)"
-puts "allrevs($branch)    $allrevs($branch)"
-puts [llength $branchrevs($branch)]
-puts [llength $allrevs($branch)]
-set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
+puts " branchrevs($branch) $branchrevs($branch)"
+          set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
           set revbranches($bp) $branch
 puts " revbranches($bp) $branch"
+          update idletasks
         } 
-if 1 {
         # Tags
+        if {$opt(show_tags)} {
 puts "Tags"
-        set command "svn list $cvscfg(svnroot)/tags"
-        gen_log:log C "$command"
-        set ret [catch {eval "exec $command"} tagout]
-        foreach tag $tagout {
-          gen_log:log D $tag
-          # There can be files such as "README" here that aren't tags
-          if {![string match {*/} $tag]} {continue}
-          set tag [string trimright $tag "/"]
-          # Can't use file join or it will mess up the URL
-          if { $relpath == {} } {
-            set path "$cvscfg(svnroot)/tags/$tag/$filename"
-          } else {
-            set path "$cvscfg(svnroot)/tags/$tag/$relpath/$filename"
-          }
-          set command \
-            "svn log --stop-on-copy $path"
+          set command "svn list $cvscfg(svnroot)/tags"
           gen_log:log C "$command"
-puts "$command"
-          set ret [catch {eval exec $command} log_output]
-          if {$ret != 0} {
-            cvsfail "$log_output"
-            return
-          }
-          set loglines [split $log_output "\n"]
-          set rt [parse_svnlog $loglines $tag]
-          set tags($rt) $tag
-          set revkind($rt) "tag"
-          puts " $rt $revdate($rt) ($revcomment($rt))"
-          gen_log:log D " $rt $revdate($rt) ($revcomment($rt))"
-        }
-} ; #end if 0
-        puts "\nList of Revisions"
-        foreach r [lsort -dictionary [array names revkind]] {
-          puts " revkind $r $revkind($r)"
-          gen_log:log D " revkind $r $revkind($r)"
+          set ret [catch {eval "exec $command"} out]
+          foreach tag $out {
+            gen_log:log D "$tag"
+            # There can be files such as "README" here that aren't tags
+            if {![string match {*/} $tag]} {continue}
+            set tag [string trimright $tag "/"]
+puts " $tag"
+            # Can't use file join or it will mess up the URL
+            if { $relpath == {} } {
+              set path "$cvscfg(svnroot)/tags/$tag/$filename"
+            } else {
+              set path "$cvscfg(svnroot)/tags/$tag/$relpath/$filename"
+            }
+            set command "svn log --stop-on-copy $path"
+            gen_log:log C "$command"
+            set ret [catch {eval exec $command} log_output]
+            if {$ret != 0} {
+              # This can happen a lot -let's not let it stop us
+              gen_log:log E "$tag_output"
+              puts "$log_output"
+              continue
+            }
+            set loglines [split $log_output "\n"]
+            set rb [parse_svnlog $loglines $tag]
+            foreach r $branchrevs($tag) {
+              puts "   $r $revdate($r)"
+              gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+              set revkind($r) "revision"
+            }
+            set revkind($rb) "tag"
+            set revname($rb) "$tag"
+  
+            set command "svn log -q $path"
+            gen_log:log C "$command"
+            set ret [catch {eval exec $command} log_output]
+            if {$ret != 0} {
+              cvsfail "$log_output"
+              return
+            }
+            set loglines [split $log_output "\n"]
+            parse_q $loglines $tag
+puts " branchrevs($tag) $branchrevs($tag)"
+            set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
+            set revtags($bp) $tag
+puts " revtags($bp) $tag"
+            update idletasks
+          } 
         }
 
         [namespace current]::sort_it_all_out
@@ -292,17 +301,16 @@ puts "$command"
 
         set allrevs($r) ""
         foreach line $lines {
-puts $line
+#puts $line
           gen_log:log D "$line"
           if [regexp {^r} $line] {
             set splitline [split $line "|"]
-puts "$splitline"
+#puts "$splitline"
             set revnum [string trim [lindex $splitline 0]]
-puts "revnum $revnum"
+#puts "revnum $revnum"
             lappend allrevs($r) $revnum
           }
         }
-puts "allrevs($r) $allrevs($r)"
       }
 
       proc sort_it_all_out {} {
@@ -316,7 +324,7 @@ puts "allrevs($r) $allrevs($r)"
         variable revcomment
         variable revkind
         variable revname
-        variable tags
+        variable revtags
         variable branchrevs
         variable revbranches
         variable logstate
@@ -423,10 +431,10 @@ puts "\nsort_it_all_out"
         # that marks the root of this branch. If we can't find it we can't
         # use tags in this delta selection.
         if {$btag != {}} {
-          variable tags
+          variable revtags
           append atag $btag {-root}
-          if {![info exists tags($arev)] \
-          || [lsearch -exact $tags($arev) $atag] < 0} {
+          if {![info exists revtags($arev)] \
+          || [lsearch -exact $revtags($arev) $atag] < 0} {
             foreach {atag btag} {{} {}} { break }
           }
         }
@@ -442,7 +450,7 @@ puts "\nsort_it_all_out"
       #
         global cvscfg
         variable branch_canvas
-        variable tags
+        variable revtags
         foreach tag [$branch_canvas.canvas gettags current] {
           if {[string index $tag 0] == {R}} {
             set rev [string range $tag 1 end]
@@ -458,7 +466,7 @@ puts "\nsort_it_all_out"
           toplevel $mname
           wm title $mname "Tags: $rev"
           wm transient $mname $branch_canvas.canvas
-          set ntags [llength $tags($rev)]
+          set ntags [llength $revtags($rev)]
           set h [expr {400 / [font metrics $cvscfg(listboxfont)\
               -displayof $mname -linespace]}]
           if {$h > $ntags} {
@@ -473,7 +481,7 @@ puts "\nsort_it_all_out"
             # unless you close and reopen the pop up :-(
             listbox $mname.lbx -font $cvscfg(listboxfont) \
               -width 0 -height $h
-            foreach tag $tags($rev) {
+            foreach tag $revtags($rev) {
               $mname.lbx insert end $tag
             }
           }
@@ -484,23 +492,23 @@ puts "\nsort_it_all_out"
           pack $mname.scroll -side right -fill y
           pack $mname.lbx -ipadx 10 -ipady 10 -expand y -fill both
           bind $mname.lbx <Button-1> [namespace code "
-          variable tags
-          set i \[$mname.lbx nearest %y\]
-          SetSelection A \[lindex \$tags($rev) \$i\] $rev
-          $mname.lbx selection clear 0 end
-          $mname.lbx selection set \$i"]
+                variable revtags
+                set i \[$mname.lbx nearest %y\]
+                SetSelection A \[lindex \$tags($rev) \$i\] $rev
+                $mname.lbx selection clear 0 end
+                $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-2> [namespace code "
-          variable tags
-          set i \[$mname.lbx nearest %y\]
-          SetSelection A \[lindex \$tags($rev) \$i\] $rev
-          $mname.lbx selection clear 0 end
-          $mname.lbx selection set \$i"]
+                variable revtags
+                set i \[$mname.lbx nearest %y\]
+                SetSelection A \[lindex \$tags($rev) \$i\] $rev
+                $mname.lbx selection clear 0 end
+                $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-3> [namespace code "
-          variable tags
-          set i \[$mname.lbx nearest %y\]
-          SetSelection B \[lindex \$tags($rev) \$i\] $rev
-          $mname.lbx selection clear 0 end
-          $mname.lbx selection set \$i"]
+                variable revtags
+                set i \[$mname.lbx nearest %y\]
+                SetSelection B \[lindex \$tags($rev) \$i\] $rev
+                $mname.lbx selection clear 0 end
+                $mname.lbx selection set \$i"]
           # We need it to get laid out before we query its geometry.
           update
         }
@@ -556,12 +564,12 @@ puts "\nsort_it_all_out"
         variable font_bold
         variable font_bold_h
         variable branch_canvas
-        variable tags
+        variable revtags
         variable curr_x
         variable curr_y
 
         gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
-puts "DrawCurrent ($revision) x=$x y=$y"
+#puts "DrawCurrent ($revision) x=$x y=$y"
         # draw the box
         set tx [expr {$x + $box_width}]
         set ty [expr {$y - $box_height}]
@@ -596,7 +604,6 @@ puts "DrawCurrent ($revision) x=$x y=$y"
         variable font_bold
         variable branch_canvas
         variable root_info
-        variable tags
 
         gen_log:log T "ENTER ($branch)"
         set box_width 0
@@ -621,12 +628,12 @@ puts "DrawCurrent ($revision) x=$x y=$y"
         variable font_bold
         variable branch_canvas
         variable root_info
-        variable tags
+        variable revtags
 
         gen_log:log T "ENTER ($x $y $box_width $root_rev $branch)"
-puts "DrawRoot ($branch) x=$x y=$y"
+#puts "DrawRoot ($branch) x=$x y=$y"
         set root_text "$root_info"
-        set btag [lindex $tags($branch) 0]
+        set btag [lindex $revtags($branch) 0]
         # draw the box
         set rheight [expr {$curr(pady,2) + [llength $root_text] * $font_norm_h}]
         incr y $rheight
@@ -668,7 +675,7 @@ puts "DrawRoot ($branch) x=$x y=$y"
         variable font_norm_h
         variable font_bold
         variable branch_canvas
-        variable tags
+        variable revtags
         variable tlist
 
         gen_log:log T "ENTER ($revision)"
@@ -677,12 +684,12 @@ if {$revision == ""} {return}
         set tag_width 0
         set box_width 0
         set tlist($revision) {}
-        if {$opt(show_tags) && [info exists tags($revision)]} {
+        if {$opt(show_tags) && [info exists revtags($revision)]} {
           # We want to show all the coloured tags plus others to take
           # the total to at least cvscfg(tagdepth)
           set tag_colour {}
           set tag_black {}
-          foreach tag $tags($revision) {
+          foreach tag $revtags($revision) {
             if {[info exists cvscfg(tagcolour,$tag)]} {
               lappend tag_colour $tag
             } else {
@@ -726,6 +733,7 @@ if {$revision == ""} {return}
 
       proc DrawRevision { x y tag_width box_width height revision btm} {
         global cvscfg
+        variable opt
         variable curr
         variable box_height
         variable rev_info
@@ -737,7 +745,8 @@ if {$revision == ""} {return}
         variable font_bold
         variable branch_canvas
         variable tlist
-        variable tags
+        variable revtags
+        variable branchrevs
         variable fromtags
         variable totags
         variable fromtag_branch
@@ -748,61 +757,62 @@ if {$revision == ""} {return}
         variable toprefix
 
         gen_log:log T "ENTER ($x $y $tag_width $box_width $height $revision)"
-        puts "DrawRevision ($revision) x=$x y=$y"
+        #puts "DrawRevision ($revision) x=$x y=$y"
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
-        foreach tag $tlist($revision) {
-          if {[string match "${fromprefix}_*" $tag]} {
-            lappend fromtags $tag
-            set boxwidth($tag) $box_width
-            set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
-            set lsplit [lrange [split $revision {.}] 0 end-1]
-            if {[llength $lsplit] > 1} {
-              set fromtag_branch($tag) $tags([join $lsplit {.}])
-            } else {
-              set fromtag_branch($tag) "trunk"
+        if {$opt(show_tags)} {
+          foreach tag $tlist($revision) {
+            if {[string match "${fromprefix}_*" $tag]} {
+              lappend fromtags $tag
+              set boxwidth($tag) $box_width
+              set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
+              set lsplit [lrange [split $revision {.}] 0 end-1]
+              if {[llength $lsplit] > 1} {
+                set fromtag_branch($tag) $revtags([join $lsplit {.}])
+              } else {
+                set fromtag_branch($tag) "trunk"
+              }
+              gen_log:log D "  fromtag($tag) $revision - $fromtag_branch($tag)"
+              
             }
-            gen_log:log D "  fromtag($tag) - $revision - $fromtag_branch($tag)"
-            
-          }
-          if {[string match "${toprefix}_*" $tag]} {
-            lappend totags $tag
-            set boxwidth($tag) $box_width
-            set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
-            set lsplit [lrange [split $revision {.}] 0 end-1]
-            if {[llength $lsplit] > 1} {
-              set totag_branch($tag) $tags([join $lsplit {.}])
-            } else {
-              set totag_branch($tag) "trunk"
+            if {[string match "${toprefix}_*" $tag]} {
+              lappend totags $tag
+              set boxwidth($tag) $box_width
+              set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
+              set lsplit [lrange [split $revision {.}] 0 end-1]
+              if {[llength $lsplit] > 1} {
+                set totag_branch($tag) $revtags([join $lsplit {.}])
+              } else {
+                set totag_branch($tag) "trunk"
+              }
+              gen_log:log D "  totag($tag) $revision - $totag_branch($tag)"
             }
-            gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
+            set my_font $font_norm
+            set tagcolour black
+            set brev $branchrevs($tag)
+            set trev [string trimleft $brev r]
+            set taglist [list T$tag R$revision box active]
+            set text_taglist [list T$trev R$brev box active]
+            if {$tag == {more...}} {
+              set my_font $font_bold
+              set taglist [list R$revision tag active]
+            } elseif {[info exists cvscfg(tagcolour,$tag)]} {
+              set tagcolour $cvscfg(tagcolour,$tag)
+            }
+            $branch_canvas.canvas create text \
+              $tx $ty \
+              -text $tag \
+              -anchor se -fill $tagcolour \
+              -font $my_font \
+              -tags $text_taglist
+            incr ty -$font_norm_h
           }
-          set my_font $font_norm
-          set tagcolour black
-          set taglist [list T$tag R$revision box active]
-          if {$tag == {more...}} {
-            set my_font $font_bold
-            set taglist [list R$revision tag active]
-          } elseif {[info exists cvscfg(tagcolour,$tag)]} {
-            set tagcolour $cvscfg(tagcolour,$tag)
-          }
-          $branch_canvas.canvas create text \
-            $tx $ty \
-            -text $tag \
-            -anchor se -fill $tagcolour \
-            -font $my_font \
-            -tags $taglist
-          incr ty -$font_norm_h
         }
 gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         # draw the box...
         set tx [expr {$x + $box_width}]
         set ty [expr {$y - $box_height}]
-        #$branch_canvas.canvas create rectangle \
-          #$x $y $tx $ty \
-          #-fill gray90 \
-          #-tags [list box R$revision active]
         $branch_canvas.canvas create rectangle \
           $x $y $tx $ty \
           -width $curr(width) -fill gray90 \
@@ -834,7 +844,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         variable revnum
 
         gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
-        puts "\nDrawBranch ($branch) \"$root_rev\" x=$x y=$y"
+        #puts "\nDrawBranch ($branch) \"$root_rev\" x=$x y=$y"
 
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
@@ -847,9 +857,6 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         set rdata {}
 
         set revlist [lsort -dictionary -decreasing $branchrevs($branch)]
-puts "REVLIST {$revlist}"
-        #set revlist [lrange $revlist 0 end-1]
-#puts "REVLIST {$revlist}"
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
@@ -928,7 +935,6 @@ puts "REVLIST {$revlist}"
               lappend brevs $r2
               foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
                 lappend bxys $lx $lbw $rh $lly
-                puts "   bxys $bxys"
                 break
               }
             }
@@ -1141,7 +1147,6 @@ puts "root_info $root_info"
           set box_height [expr {$curr(pady,2) + [llength $rev_info] * $font_norm_h}]
           
           if {[info exists branchrevs(trunk)]} {
-puts "BRANCHREVS(trunk) {$branchrevs(trunk)}"
             DrawBranch 0 0 {} trunk
             UpdateBndBox
           }
@@ -1452,14 +1457,14 @@ puts "BRANCHREVS(trunk) {$branchrevs(trunk)}"
                }]
       button $branch_canvas.join -image Mergebranch \
         -command [namespace code {
-                   variable tags
+                   variable revtags
                    set rv [$branch_canvas.up.revA_rvers cget -text]
                    set rt [join [lrange [split $rv {.}] 0 end-1] {.}]
                    merge_dialog \
                      [$branch_canvas.up.revA_rvers cget -text] \
                      "" \
                      [list $filename] \
-                     [lindex $tags($rt) 0]
+                     [lindex $revtags($rt) 0]
                  }]
       button $branch_canvas.delta -image Mergediff \
         -command [namespace code {
