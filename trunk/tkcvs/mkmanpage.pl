@@ -4,9 +4,9 @@ open(HELP, "help.tcl") || die("Can't open helpl.tcl");
   
 #print ".\\\" \$Id: mkmanpage.pl,v 1.13 2005/07/19 18:16:22 dorothyr Exp $\n";
 #print ".\\\"\n";
-print ".TH TkCVS 1 Release 7.3\n";
+print ".TH TkCVS 1 Release 8.0\n";
 print ".SH NAME\n";
-print "TkCVS \- a Tk/Tcl Graphical Interface to CVS\n";
+print "TkCVS \- a Tk/Tcl Graphical Interface to CVS and Subversion\n";
 print ".SH SYNOPSIS\n";
 print ".B tkcvs\n";
 print "[\\-dir directory] [\\-root cvsroot] [\\-win workdir|module] [\\-log file]\n";

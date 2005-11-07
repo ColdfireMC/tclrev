@@ -80,7 +80,7 @@ proc workdir_setup {} {
   label .workdir.top.lcvsroot -text "CVSROOT"
   entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) \
      -relief groove -state readonly \
-     -font $cvscfg(guifont) -bg $cvsglb(robg)
+     -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
 
   if {[regexp {://} $cvscfg(cvsroot)]} {
      set cvscfg(url) $cvscfg(cvsroot)
@@ -574,10 +574,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Report->Check Shows Unknown Files" \
      -variable cvscfg(status_filter) -onvalue false -offvalue true \
      -selectcolor $selcolor
-  .workdir.menubar.options add checkbutton -label "Report->Check is Recursive" \
-     -variable cvscfg(checkrecursive) -onvalue {} -offvalue -l \
-     -selectcolor $selcolor
-  .workdir.menubar.options add checkbutton -label "Report->Status is Recursive" \
+  .workdir.menubar.options add checkbutton -label "Report->Check/Status are Recursive" \
      -variable cvscfg(recurse) -onvalue true -offvalue false \
      -selectcolor $selcolor
   .workdir.menubar.options add cascade -label "CVS Status Detail" \
@@ -965,10 +962,10 @@ proc setup_dir { } {
   .workdir.menubar entryconfigure "CVS" -state normal
   .workdir.menubar entryconfigure "SVN" -state normal
   .workdir.menubar entryconfigure "RCS" -state normal
+  .workdir.menubar.reports entryconfigure 0 -state disabled
   .workdir.menubar.reports entryconfigure 1 -state disabled
   .workdir.menubar.reports entryconfigure 2 -state disabled
   .workdir.menubar.reports entryconfigure 3 -state disabled
-  .workdir.menubar.reports entryconfigure 4 -state disabled
   # Start with the revision-control buttons disabled
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   .workdir.bottom.buttons.dirfuncs.bjoin configure -state disabled
@@ -1010,13 +1007,13 @@ proc setup_dir { } {
     .workdir.menubar entryconfigure "RCS" -state normal
     # Reports Menu
     # Check Directory (log & rdiff)
-    .workdir.menubar.reports entryconfigure 1 -state normal \
+    .workdir.menubar.reports entryconfigure 0 -state normal \
        -command { rcs_check }
-    .workdir.menubar.reports entryconfigure 2 -state disabled
+    .workdir.menubar.reports entryconfigure 1 -state disabled
     # Log (rlog)
-    .workdir.menubar.reports entryconfigure 3 -state normal \
+    .workdir.menubar.reports entryconfigure 2 -state normal \
        -command { rcs_log [workdir_list_files] }
-    .workdir.menubar.reports entryconfigure 4 -state disabled
+    .workdir.menubar.reports entryconfigure 3 -state disabled
   } elseif {$insvn} {
     # Top
     .workdir.top.lcvsroot configure -text "SVN URL"
@@ -1049,16 +1046,16 @@ proc setup_dir { } {
     .workdir.menubar entryconfigure "RCS" -state disabled
     # Reports Menu
     # Check Directory (svn status)
-    .workdir.menubar.reports entryconfigure 1 -state normal \
-       -command { svn_check {} }
+    .workdir.menubar.reports entryconfigure 0 -state normal \
+       -command { svn_check {} 0 }
     # Status (svn status <filelist>)
-    .workdir.menubar.reports entryconfigure 2 -state normal \
-       -command { svn_check [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure 1 -state normal \
+       -command { svn_check [workdir_list_files] 1}
     # Log (svn log)
-    .workdir.menubar.reports entryconfigure 3 -state normal \
+    .workdir.menubar.reports entryconfigure 2 -state normal \
        -command { svn_log [workdir_list_files] }
     # Annotate/Blame (svn blame)
-    .workdir.menubar.reports entryconfigure 4 -state normal \
+    .workdir.menubar.reports entryconfigure 3 -state normal \
        -command { svn_annotate BASE [workdir_list_files] }
   } elseif {$incvs} {
     # Top
@@ -1106,16 +1103,16 @@ proc setup_dir { } {
     .workdir.menubar entryconfigure "RCS" -state disabled
     # Reports Menu
     # Check Directory (cvs -n -q update)
-    .workdir.menubar.reports entryconfigure 1 -state normal \
+    .workdir.menubar.reports entryconfigure 0 -state normal \
        -command { cvs_check {} }
     # Status (cvs -Q status)
-    .workdir.menubar.reports entryconfigure 2 -state normal \
+    .workdir.menubar.reports entryconfigure 1 -state normal \
        -command { cvs_status [workdir_list_files] }
     # Log (cvs log)
-    .workdir.menubar.reports entryconfigure 3 -state normal \
+    .workdir.menubar.reports entryconfigure 2 -state normal \
        -command { cvs_log [workdir_list_files] }
     # Annotate/Blame (cvs annotate)
-    .workdir.menubar.reports entryconfigure 4 -state normal \
+    .workdir.menubar.reports entryconfigure 3 -state normal \
        -command { cvs_annotate $current_tagname [workdir_list_files] }
   }
 

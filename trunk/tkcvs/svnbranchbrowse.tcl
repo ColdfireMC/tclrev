@@ -72,7 +72,6 @@ gen_log:log T "ENTER ($relpath $filename)"
       proc reloadLog { } {
         global cvscfg
         #global current_tagname
-        variable directory
         variable command
         variable cmd_log
         variable branch_canvas
@@ -139,6 +138,7 @@ puts "$command"
         }
         set revkind($rr) "root"
         set revname($rr) "trunk"
+puts "$rr:  kind $revkind($rr)  name $revname($rr)"
 puts "branchrevs(trunk) $branchrevs(trunk)"
 
         # Branches
@@ -335,39 +335,19 @@ puts "allrevs($r) $allrevs($r)"
 
         # Sort the revision and branch lists and remove duplicates
 puts "\nsort_it_all_out"
-
         foreach r [lsort -dictionary [array names revkind]] {
-           puts "$r $revkind($r)"
-           if {$revkind($r) == "root" || $revkind($r) == "branch"} {
-             puts "New index $r"
-             set root $r
-             set newlist($root) ""
-           } elseif {$revkind($r) == "revision"} {
-             lappend newlist($root) $r
-           }
+           puts "$r \"$revkind($r)\""
         }
-#puts "\nnewlist"
-        #unset branchrevs
-        #foreach a [lsort -dictionary [array names newlist]] {
-          #puts " $a $newlist($a)"
-          #puts " $a $revname($a)"
-          #set branchrevs($revname($a)) [concat $a $newlist($a)]
-        #}
 
         # Find out where to put the working revision icon (if anywhere)
-        variable directory
-        if {$filename != "no file"} {
-          set command "svn status -v $filename"
-          set cmd [exec::new $command]
-          set svnstat [$cmd\::output]
-          set svnstat [string trimleft $svnstat]
-          set revnum(current) [lindex $svnstat 1]
-          set revnum(current) "r$revnum(current)"
-          gen_log:log D "revnum(current) $revnum(current)"
-          puts "revnum(current) $revnum(current)"
-        } else {
-          gen_log:log D "$filename"
-        }
+        set command "svn status -v $filename"
+        set cmd [exec::new $command]
+        set svnstat [$cmd\::output]
+        set svnstat [string trimleft $svnstat]
+        set revnum(current) [lindex $svnstat 1]
+        set revnum(current) "r$revnum(current)"
+        gen_log:log D "revnum(current) $revnum(current)"
+        puts "revnum(current) $revnum(current)"
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         DrawTree now
@@ -854,7 +834,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         variable revnum
 
         gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
-        puts "\nDrawBranch ($branch) x=$x y=$y"
+        puts "\nDrawBranch ($branch) \"$root_rev\" x=$x y=$y"
 
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
@@ -867,7 +847,9 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         set rdata {}
 
         set revlist [lsort -dictionary -decreasing $branchrevs($branch)]
-        set revlist [lrange $revlist 0 end-1]
+puts "REVLIST {$revlist}"
+        #set revlist [lrange $revlist 0 end-1]
+#puts "REVLIST {$revlist}"
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
@@ -1109,12 +1091,14 @@ puts "DrawTree"
           set view_yoff [lindex [$branch_canvas.canvas yview] 0]
           $branch_canvas.canvas delete all
           set root_info {}
+puts "root_info $root_info"
           #if {$opt(show_root_rev)} {
             append root_info {$branch}
           #}
           #if {$opt(show_root_tags)} {
             #append root_info {$tags($branch)}
           #}
+puts "root_info $root_info"
           set rev_info {}
           if {$opt(show_box_revtime)} {
             append rev_info {"$revtime($revision)" }
@@ -1157,6 +1141,7 @@ puts "DrawTree"
           set box_height [expr {$curr(pady,2) + [llength $rev_info] * $font_norm_h}]
           
           if {[info exists branchrevs(trunk)]} {
+puts "BRANCHREVS(trunk) {$branchrevs(trunk)}"
             DrawBranch 0 0 {} trunk
             UpdateBndBox
           }
@@ -1380,10 +1365,10 @@ puts "DrawTree"
         [namespace code {$branch_canvas.close invoke}]
       frame $branch_canvas.up -relief groove -border 2
       set textfont $cvscfg(listboxfont)
-      set disbg [lindex [$branch_canvas.up configure -background] 4]
       label $branch_canvas.up.lfname -text "SVN Path" \
         -width 12 -anchor w
-      entry $branch_canvas.up.rfname -font $textfont -relief groove
+      entry $branch_canvas.up.rfname -font $textfont -relief groove \
+        -readonlybackground $cvsglb(textbg)
       button $branch_canvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $branch_canvas.up -side top -fill x
       foreach fm {A B} {

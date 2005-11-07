@@ -354,12 +354,12 @@ namespace eval ::viewer {
 proc status_colortags {exec line} {
   global cvscfg
 
-  gen_log:log T "ENTER ($exec \"$line\")"
-
   set tag default
   # Return the type of the line being output
   # Neat trick I found on clt: -> is a valid variable name!
   if {[regexp {^([PUARMC?]) (.*)} $line -> mode file]} {
+    gen_log:log D "$line"
+    gen_log:log D "mode $mode file $file"
     switch -exact -- $mode {
       U { set tag updated }
       A { set tag added }
@@ -373,7 +373,7 @@ proc status_colortags {exec line} {
   } elseif {[regexp {^cvs server: warning: .*} $line]} {
     set tag warning
   }
-  gen_log:log T "LEAVE: ($tag \"$line\")"
+  gen_log:log T "LEAVE: $tag"
   return [list $tag $line]
 }
 

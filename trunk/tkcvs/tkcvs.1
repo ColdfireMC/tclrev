@@ -1,6 +1,6 @@
-.TH TkCVS 1 Release 7.3
+.TH TkCVS 1 Release 8.0
 .SH NAME
-TkCVS - a Tk/Tcl Graphical Interface to CVS
+TkCVS - a Tk/Tcl Graphical Interface to CVS and Subversion
 .SH SYNOPSIS
 .B tkcvs
 [\-dir directory] [\-root cvsroot] [\-win workdir|module] [\-log file]
@@ -56,7 +56,7 @@ The current directory display shows:
 .LP
 *  If cvscfg(showdatecol) is set, the modification time of the file is shown. The format of the date column may be specified with cvscfg(dateformat). The default one sorts the same way alphabetically as chronologically.
 .LP
-*  If cvscfg(econtrol) is set, a list of people editing the files. This column is only useful if your site uses "cvs watch" and/or "cvs edit".
+*  If cvscfg(showeditcol) is set, a list of people editing the files. This column is only useful if your site uses "cvs watch" and/or "cvs edit".
 .LP
 You can move into a directory by double-clicking on it.
 .LP
@@ -105,7 +105,7 @@ The file is a directory which is maintained using SCCS.
 The file is a directory.
 .SS Editors Display
 .LP
-If the option cvscfg(econtrol) has been set then an extra column will appear in the current directory display labeled "editors". This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
+If the option cvscfg(showeditcol) has been set then a column labeled "editors" may have entries. This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
 .SS File Filters
 .LP
 You can specify file matching patterns to instruct TkCVS which files you wish to see. You can also specify patterns telling it which files to remove when you press the "Clean" button or select the \fBFile->Cleanup\fR menu item.
@@ -499,9 +499,6 @@ Set the default for automatic status-refresh of a CVS controlled directory. Auto
 .B cvscfg(auto_tag)
 Whether to tag the merged-from revision when using TkCVS to merge different revisions of files by default.  A dialog still lets you change your mind, regardless of the default.
 .TP
-.B cvscfg(checkrecursive)
-Report Check recursively (onvalue {}, offvalue -l)
-.TP
 .B cvscfg(confirm_prompt)
 Ask for confirmation before performing an operation(true or false)
 .TP
@@ -509,7 +506,7 @@ Ask for confirmation before performing an operation(true or false)
 Format for the date string shown in the "Date" column, for example "%Y/%m/%d %H:%M"
 .TP
 .B cvscfg(econtrol)
-Set this to true to turn on an extra column in the directory browser showing the current editors of each file. Set to false to turn off this feature.
+Set this to true to turn on the ability to use CVS Edit and Unedit, if your site is configured to allow the feature.
 .TP
 .B cvscfg(editor)
 Preferred default editor
