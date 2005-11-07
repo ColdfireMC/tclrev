@@ -222,7 +222,17 @@ proc svn_update {args} {
 
   set filelist [join $args]
 
-  set mess ""
+  if {$filelist == ""} {
+    append mess "\nThis will download from"
+    append mess " the repository to your local"
+    append mess " filespace ** ALL ** files which"
+    append mess " have changed in it."
+  } else {
+    append mess "\nThis will download from"
+    append mess " the repository to your local"
+    append mess " filespace these files which"
+    append mess " have changed:\n"
+  }
   foreach file $filelist {
     append mess "\n\t$file"
   }
