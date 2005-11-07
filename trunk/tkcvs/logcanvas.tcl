@@ -172,7 +172,7 @@ namespace eval ::logcanvas {
                 }
                 $logcanvas.up.rfname delete 0 end
                 $logcanvas.up.rfname insert end "$fname,v"
-                $logcanvas.up.rfname configure -state readonly -bg $cvsglb(robg)
+                $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
               } elseif {[string match {Working file: *} $logline]} {
                 # If we care about a working copy we need to look
                 # at the name of the working file here. It may be
