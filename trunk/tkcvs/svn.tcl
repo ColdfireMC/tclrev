@@ -772,9 +772,20 @@ proc svn_checkout {dir url rev target cmd} {
   gen_log:log T "LEAVE"
 }
 
-# List a directory in the SVN repository on demand, for the Module
-# Browser
-proc svn_listdir {w dir} {
-  gen_log:log T "ENTER ($w $dir)"
-  #puts "svn_listdir ($w $dir)"
+# SVN cat or ls.  Called from module browser
+proc svn_filecat {root path title} {
+  gen_log:log T "ENTER ($root $path $title)"
+  puts "svn_filecat ($root $path $title)"
+
+  # Should do cat if it's a file and ls if it's a path
+  if {[string match {*/} $title]} {
+    set commandline "svn ls $root/$path"
+    set wintitle "SVN ls"
+  } else {
+    set commandline "svn cat $root/$path"
+    set wintitle "SVN cat"
+  }
+
+  set v [viewer::new "$wintitle $root/$path"]
+  $v\::do "$commandline"
 }

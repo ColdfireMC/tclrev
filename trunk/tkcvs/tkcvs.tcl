@@ -215,6 +215,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
   }
 }
 
+# If CVSROOT envvar is set, use it
 if { ! [info exists cvscfg(cvsroot)] } {
   if { ! [info exists env(CVSROOT)] } {
     puts "warning: your \$CVSROOT environment variable is not set."
@@ -223,20 +224,21 @@ if { ! [info exists cvscfg(cvsroot)] } {
     set cvscfg(cvsroot) $env(CVSROOT)
   }
 }
-if {[regexp {://} $cvscfg(cvsroot)]} {
-  set cvscfg(url) $cvscfg(cvsroot)
-  set cvscfg(svnroot) $cvscfg(url)
-} else {
-  # This helps with Samba-mounted CVS repositories
-  set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
-}
- 
+# This helps with Samba-mounted CVS repositories
+set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
+# If SVNROOT is set, use that instead.  SVNROOT isn't
+# known by Subversion itself, so if it's set we must have
+# done it for the present purpose
 if {! [info exists cvscfg(svnroot)] } {
   if { [info exists env(SVNROOT)] } {
     set cvscfg(svnroot) $env(SVNROOT)
   } else {
     set cvscfg(svnroot) ""
   }
+}
+set cvsglb(root) $cvscfg(cvsroot)
+if {$cvscfg(svnroot) != ""} {
+  set cvsglb(root) $cvscfg(svnroot)
 }
 
 if {![info exists cvscfg(ignore_file_filter)]} {
@@ -279,7 +281,13 @@ image create photo Import \
 # Create a window
 if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
-  modbrowse_run
+  if {$insvn} {
+    set cvsglb(root) $cvscfg(svnroot)
+  } else {
+    set cvsglb(root) $cvscfg(cvsroot)
+  }
+  module_changedir [pwd]
+  #modbrowse_run
 } elseif {$cvscfg(startwindow) == "log"} {
   if {! [file exists $lcfile]} {
     puts "ERROR: $lcfile doesn't exist!"

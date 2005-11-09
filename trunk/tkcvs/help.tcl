@@ -116,7 +116,7 @@ proc wish_version {{parent {.}}} {
 
 proc put-text {tw txt} {
 
-    gen_log:log T "ENTER ($tw <text suppressed>)"
+    gen_log:log T "ENTER ($tw ...)"
     $tw configure -font -*-Times-Medium-R-Normal-*-14-*
 
     $tw tag configure bld -font -*-Times-Bold-R-Normal-*-14-*

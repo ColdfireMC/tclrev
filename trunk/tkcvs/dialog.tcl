@@ -113,7 +113,7 @@ proc dialog_FormCreate { title form_data } {
 proc dialog_FormComplete { w form_data } {
   global dynamic_dialog
 
-  gen_log:log T "ENTER ($w <data suppressed>)"
+  gen_log:log T "ENTER ($w ...)"
 
   foreach a [array names dynamic_dialog] {
     gen_log:log D "$a $dynamic_dialog($a)"

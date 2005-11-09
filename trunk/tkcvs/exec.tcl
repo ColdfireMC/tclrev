@@ -414,7 +414,7 @@ namespace eval ::view_output {
     set my_idx $instance
     incr instance
 
-    gen_log:log T "ENTER ($title <text suppressed>)"
+    gen_log:log T "ENTER ($title ...)"
     namespace eval $my_idx {
       global cvscfg
       variable my_idx [uplevel {concat $my_idx}]

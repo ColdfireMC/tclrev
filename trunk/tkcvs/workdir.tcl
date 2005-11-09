@@ -82,14 +82,6 @@ proc workdir_setup {} {
      -relief groove -state readonly \
      -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
 
-  if {[regexp {://} $cvscfg(cvsroot)]} {
-     set cvscfg(url) $cvscfg(cvsroot)
-     set cvscfg(svnroot) $cvscfg(url)
-    .workdir.top.lcvsroot configure -text "SVN URL"
-    .workdir.top.tcvsroot configure -textvariable cvscfg(url)
-    .workdir.top.bmodbrowse configure -image Modules_svn
-  }
-
   grid columnconf .workdir.top 1 -weight 1
   grid rowconf .workdir.top 3 -weight 1
   grid .workdir.top.updir_btn -column 0 -row 0 -sticky s
@@ -958,6 +950,9 @@ proc setup_dir { } {
   foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
   gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
 
+  .workdir.top.bmodbrowse configure -image Modules
+  .workdir.top.lmodule configure -text ""
+  .workdir.top.ltagname configure -text ""
   # Start with the revision-control menus disabled
   .workdir.menubar entryconfigure "CVS" -state normal
   .workdir.menubar entryconfigure "SVN" -state normal
@@ -966,7 +961,9 @@ proc setup_dir { } {
   .workdir.menubar.reports entryconfigure 1 -state disabled
   .workdir.menubar.reports entryconfigure 2 -state disabled
   .workdir.menubar.reports entryconfigure 3 -state disabled
-  # Start with the revision-control buttons disabled
+  # Start with the revision-control buttons disabled and the
+  # import button enabled
+  .workdir.bottom.buttons.dirfuncs.bimport configure -state normal
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   .workdir.bottom.buttons.dirfuncs.bjoin configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.filefuncs ] {
@@ -984,11 +981,11 @@ proc setup_dir { } {
     # Top
     .workdir.top.lcvsroot configure -text "RCS *,v"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
-    .workdir.top.bmodbrowse configure -image Modules
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { rcs_check }
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { rcs_filelog [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
@@ -1016,14 +1013,14 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 3 -state disabled
   } elseif {$insvn} {
     # Top
+    .workdir.top.bmodbrowse configure -image Modules_svn
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
-    .workdir.top.bmodbrowse configure -image Modules_svn
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check [workdir_list_files] }
-    .workdir.bottom.buttons.dirfuncs.bimport configure -state normal \
-      -command { svn_import_run }
+    .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
+     -command { svn_import_run }
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
@@ -1059,14 +1056,16 @@ proc setup_dir { } {
        -command { svn_annotate BASE [workdir_list_files] }
   } elseif {$incvs} {
     # Top
+    .workdir.top.bmodbrowse configure -image Modules_cvs
+    .workdir.top.lmodule configure -text "Module"
+    .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "CVSROOT"
     .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
-    .workdir.top.bmodbrowse configure -image Modules_cvs
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check [workdir_list_files] }
-    .workdir.bottom.buttons.dirfuncs.bimport configure -state normal \
-      -command { import_run }
+    .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
+     -command { import_run }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \

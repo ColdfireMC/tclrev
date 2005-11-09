@@ -1374,7 +1374,10 @@ puts "root_info $root_info"
         -width 12 -anchor w
       entry $branch_canvas.up.rfname -font $textfont -relief groove \
         -readonlybackground $cvsglb(textbg)
-      button $branch_canvas.up.bworkdir -image Workdir -command { workdir_setup }
+      button $branch_canvas.up.bmodbrowse -image Modules_svn \
+        -command {module_changedir [pwd]}
+      button $branch_canvas.up.bworkdir -image Workdir \
+        -command workdir_setup
       pack $branch_canvas.up -side top -fill x
       foreach fm {A B} {
         label $branch_canvas.up.rev${fm}_lvers -text "Revision $fm"
@@ -1402,6 +1405,8 @@ puts "root_info $root_info"
       grid $branch_canvas.up.rfname -column 1 -row 0 -columnspan 5 -sticky ew
       grid $branch_canvas.up.bworkdir -column 6 -row 0 -rowspan 2 -sticky e\
         -padx 2 -pady 1
+      grid $branch_canvas.up.bmodbrowse -column 7 -row 0 -rowspan 2 -sticky e\
+        -padx 2 -pady 1
       grid $branch_canvas.up.revA_lvers -column 0 -row 1 -sticky w
       grid $branch_canvas.up.revA_rvers -column 1 -row 1 -sticky w
       grid $branch_canvas.up.revA_ldate -column 2 -row 1 -sticky w
@@ -1409,7 +1414,7 @@ puts "root_info $root_info"
       grid $branch_canvas.up.revA_lwho -column 4 -row 1 -sticky w
       grid $branch_canvas.up.revA_rwho -column 5 -row 1 -sticky ew
       grid $branch_canvas.up.logA_lcomment -column 0 -row 2 -sticky nw
-      grid $branch_canvas.up.logA_rlogfm -column 1 -row 2 -columnspan 6 -sticky ew
+      grid $branch_canvas.up.logA_rlogfm -column 1 -row 2 -columnspan 7 -sticky ew
       pack $branch_canvas.up.logA_rlogfm.yscroll -side right -fill y
       pack $branch_canvas.up.logA_rlogfm.rcomment -side left -fill x -expand y
       grid $branch_canvas.up.revB_lvers -column 0 -row 3 -sticky w
@@ -1419,7 +1424,7 @@ puts "root_info $root_info"
       grid $branch_canvas.up.revB_lwho -column 4 -row 3 -sticky w
       grid $branch_canvas.up.revB_rwho -column 5 -row 3 -sticky ew
       grid $branch_canvas.up.logB_lcomment -column 0 -row 4 -sticky nw
-      grid $branch_canvas.up.logB_rlogfm -column 1 -row 4 -columnspan 6 -sticky ew
+      grid $branch_canvas.up.logB_rlogfm -column 1 -row 4 -columnspan 7 -sticky ew
       pack $branch_canvas.up.logB_rlogfm.yscroll -side right -fill y
       pack $branch_canvas.up.logB_rlogfm.rcomment -side left -fill x -expand y
       # Pack the bottom before the middle so it doesnt disappear if
