@@ -102,7 +102,7 @@ proc ModTree:dfltconfig {w v} {
 proc ModTree:newitem {w v name title args} {
   global Tree
 
-  gen_log:log T "ENTER ($w $v $name \"$title\" $args)"
+  #gen_log:log T "ENTER ($w $v $name \"$title\" $args)"
   set dir [file dirname $v]
   set n [file tail $v]
 
@@ -129,7 +129,7 @@ proc ModTree:newitem {w v name title args} {
     }
   }
   ModTree:buildwhenidle $w
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 #
@@ -139,7 +139,7 @@ proc ModTree:newitem {w v name title args} {
 proc ModTree:delitem {w v} {
   global Tree
 
-  gen_log:log T "ENTER ($w $v)"
+  #gen_log:log T "ENTER ($w $v)"
   if {![info exists Tree($w:$v:open)]} return
   if {[string compare $v /]==0} {
     # delete the whole widget
@@ -167,7 +167,7 @@ proc ModTree:delitem {w v} {
     }
   }
   ModTree:buildwhenidle $w
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 
@@ -240,7 +240,7 @@ proc ModTree:buildlayer {w v in} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($w $v $in)"
+  #gen_log:log T "ENTER ($w $v $in)"
   if {$v=="/"} {
     set vx {}
   } else {
@@ -312,7 +312,7 @@ proc ModTree:buildlayer {w v in} {
   if {![info exists y]} {return}
   set j [$w.tree.list create line $in $start $in [expr {$y+1}] -fill gray50 ]
   $w.tree.list lower $j
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # Open a branch of a tree
@@ -326,7 +326,6 @@ proc ModTree:open {w v} {
     set Tree($w:$v:open) 1
     ModTree:build $w
   }
-  gen_log:log T "LEAVE"
 }
 
 proc ModTree:close {w v} {
@@ -335,7 +334,6 @@ proc ModTree:close {w v} {
     set Tree($w:$v:open) 0
     ModTree:build $w
   }
-  gen_log:log T "LEAVE"
 }
 
 
@@ -359,26 +357,27 @@ proc ModTree:setselection {w v} {
   global Tree
   global modbrowse_module
   global modbrowse_path
+  global modbrowse_title
 
-  gen_log:log T "ENTER ($w \"$v\")"
-
+  #gen_log:log T "ENTER ($w \"$v\")"
   # Clear old selection
   set oldv $Tree($w:selection)
   if {$oldv != ""} {
     set j $Tree($w:$oldv:tag)
     ModTree:clearTextHBox $w $w.tree.list.tx$j
   }
+  #foreach a [array names Tree "$w:$v:*"] { puts "$a $Tree($a)" }
 
   # Hilight new selection
   if {$v != ""} {
     set Tree($w:selection) $v
     set j $Tree($w:$v:tag)
     ModTree:setTextHBox $w $w.tree.list.tx$j
-    gen_log:log D "$v   $Tree($w:$v:name)"
     set modbrowse_module $Tree($w:$v:name)
+    set modbrowse_title $Tree($w:$v:title)
     set modbrowse_path $v
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # Clear selection, invoked when clicking over a blank 
@@ -386,8 +385,8 @@ proc ModTree:clearselection {w} {
   global Tree
   global modbrowse_module
 
-  gen_log:log T "ENTER ($w)"
- # Don't clear unless we are'nt over anything
+  #gen_log:log T "ENTER ($w)"
+  # Don't clear unless we are'nt over anything
   if {[ $w.tree.list gettags current ] == "" } {
     set Tree($w.tree:selection) {}
     ModTree:setselection $w ""

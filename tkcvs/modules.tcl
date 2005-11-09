@@ -32,7 +32,7 @@ proc gather_mod_index {} {
   global modlist
   global modlist_sorted
 
-  gen_log:log T "ENTER ()"
+  #gen_log:log T "ENTER ()"
   set modlist {}
   set dlist {}
   if {! [info exists modtitle]} {
@@ -82,7 +82,7 @@ proc gather_mod_index {} {
       }
     }
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc find_filenames {mcode} {

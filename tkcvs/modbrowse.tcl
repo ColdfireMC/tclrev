@@ -7,6 +7,8 @@
 proc modbrowse_setup {} {
   global cwd
   global modbrowse_module
+  global modbrowse_path
+  global modbrowse_title
   global cvsglb
   global cvscfg
   global tcl_platform
@@ -46,14 +48,15 @@ proc modbrowse_setup {} {
   entry .modbrowse.top.tmcode -textvariable modbrowse_module
 
   label .modbrowse.top.lroot -text "CVSROOT"
-  ::picklist::entry .modbrowse.top.troot cvscfg(cvsroot) cvsroot
+  ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
   ::picklist::bind .modbrowse.top.troot <KeyPress-Return> modbrowse_run
 
   button .modbrowse.top.bworkdir -image Workdir -command {workdir_setup}
 
   label .modbrowse.top.lcwd -text "Current Directory"
-  entry .modbrowse.top.tcwd -textvariable cwd
-  bind .modbrowse.top.tcwd <Return> {module_changedir $cwd}
+  #entry .modbrowse.top.tcwd -textvariable cwd
+  ::picklist::entry .modbrowse.top.tcwd cwd directory
+  ::picklist::bind .modbrowse.top.tcwd <Return> {module_changedir $cwd}
 
   grid columnconf .modbrowse.top 1 -weight 1
   grid rowconf .modbrowse.top 3 -weight 1
@@ -82,6 +85,8 @@ proc modbrowse_setup {} {
   #
   # Create buttons
   #
+  button .modbrowse.bottom.buttons.modfuncs.filecat -image Fileview \
+    -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
   button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files \
     -command { browse_files $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches \
@@ -114,6 +119,8 @@ proc modbrowse_setup {} {
   grid columnconf .modbrowse.bottom.buttons.modfuncs 7 -weight 1
   grid rowconf .modbrowse.bottom.buttons.modfuncs 1 -weight 1
 
+  grid .modbrowse.bottom.buttons.modfuncs.filecat -column 0 -row 0 \
+     -ipadx 4 -ipady 4
   grid .modbrowse.bottom.buttons.modfuncs.filebrowse -column 1 -row 0 \
      -ipadx 4 -ipady 4
   grid .modbrowse.bottom.buttons.modfuncs.checkout -column 2 -row 0 \
@@ -142,6 +149,8 @@ proc modbrowse_setup {} {
      {"Branch all files in a module"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.filebrowse \
      {"Browse the files in a module"}
+  set_tooltips .modbrowse.bottom.buttons.modfuncs.filecat \
+     {"Show a file in the SVN repository"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.patchsummary \
      {"Show a summary of differences between versions"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.patchfile \
@@ -292,10 +301,10 @@ proc modbrowse_menus {} {
 
 proc modbrowse_run {} {
   global env
-  global incvs
-  global insvn
+  global svnurl
   global modval
   global cvscfg
+  global cvsglb
   global cvs
   global cmd
 
@@ -318,58 +327,57 @@ proc modbrowse_run {} {
      destroy .modbrowse.treeframe.pw
   }
 
-  #set root [.modbrowse.top.troot.e cget -text]
+  gen_log:log D "cvsglb(root) $cvsglb(root)"
   gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
   gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
   busy_start .modbrowse
   wm deiconify .modbrowse
   raise .modbrowse
-  set svn_info [catch {eval exec svn info} ]
-  set insvn [expr {$svn_info == 1} ? {0} : {1}]
-  # If the module browser was already up with a CVSROOT and you aren't
-  # in a SVN sandbox, detect a SVN URL
-  if {[regexp {://} $cvscfg(cvsroot)]} {
-     set cvscfg(svnroot) $cvscfg(cvsroot)
-     set insvn 1
+
+  set svnurl 0
+  # Detect a SVN URL
+  if {[regexp {://} $cvsglb(root)]} {
+     set cvscfg(svnroot) $cvsglb(root)
+     set svnurl 1
   }
-  if {$insvn} {
+  if {$svnurl} {
     if {! [info exists cvscfg(svnroot)] } {
       read_svn_dir .
     }
-    .modbrowse.top.lroot configure -text "SVNROOT"
-    .modbrowse.top.troot.e configure -textvariable cvscfg(svnroot)
+    .modbrowse.top.lroot configure -text "SVN URL"
+    .modbrowse.top.lmcode configure -text "Selection"
     # Call ModTree with the just-in-time level maker
     ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
     pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-    ::picklist::used cvsroot $cvscfg(svnroot)
     parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
   } else {
-    if { $cvscfg(cvsroot) != "" } {
+    if { $cvsglb(root) != "" } {
+      set cvscfg(cvsroot) $cvsglb(root)
       set cmd(cvs_co) \
         [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
     }
     .modbrowse.top.lroot configure -text "CVSROOT"
-    .modbrowse.top.troot.e configure -textvariable cvscfg(cvsroot)
+    .modbrowse.top.lmcode configure -text "Module"
     ModTree:create .modbrowse.treeframe.pw
     pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-    ::picklist::used cvsroot $cvscfg(cvsroot)
     if {[info exists cmd(cvs_co)]} {
       parse_cvsmodules [$cmd(cvs_co)\::output]
     }
     catch {unset cmd(cvs_co)}
   }
+  ::picklist::used cvsroot $cvsglb(root)
 
-  set bstate [expr {$insvn ? {disabled} : {normal}}]
+  set bstate [expr {$svnurl ? {disabled} : {normal}}]
   foreach widget [grid slaves .modbrowse.bottom.buttons.cvsfuncs ] {
     $widget configure -state $bstate
   }
   foreach widget [grid slaves .modbrowse.bottom.buttons.modfuncs ] {
     $widget configure -state $bstate
   }
-  if {$insvn} {
-    .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state normal \
-      -command { svn_list $modbrowse_path }
+  if {$svnurl} {
+    .modbrowse.bottom.buttons.modfuncs.filecat configure -state normal \
+      -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
       -command { svn_import_run }
     .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
@@ -390,7 +398,7 @@ proc modbrowse_run {} {
   }
 
   # Populate the tree
-  if {$insvn} {
+  if {$svnurl} {
     # Make sure branches and tags names come first, before any of their
     # contents, so we get the "# tags" and "# branches" labels
     set newlist ""
@@ -401,8 +409,6 @@ proc modbrowse_run {} {
     }
     set newlist [lsort $newlist]
     set newlist [concat {"branches"} {"tags"} $newlist]
-
-    #modbrowse_tree $newlist "/"
   } else {
     modbrowse_tree [lsort [array names modval]] "/"
   }
@@ -421,7 +427,7 @@ proc modbrowse_tree { mnames node } {
   global dcontents
   global Tree
 
-  gen_log:log T "ENTER ($mnames $node)"
+  gen_log:log T "ENTER (... $node)"
 
   if {! [info exists cvscfg(aliasfolder)]} {
     set cvscfg(aliasfolder) false
@@ -441,9 +447,9 @@ proc modbrowse_tree { mnames node } {
       # Its an alias module
       regsub {\-a } $modtitle($mname) "Alias for " title
       if {$cvscfg(aliasfolder)} {
-        gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
+        #gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
         if {! [info exists Tree($tf:/Aliases:children)]} {
-          gen_log:log D "Making Aliases"
+          #gen_log:log D "Making Aliases"
           ModTree:newitem $tf /Aliases Aliases "Aliases" -image "adir"
         }
         ModTree:newitem $tf /Aliases/$mname $mname "$title" -image "amod"
@@ -471,9 +477,9 @@ proc modbrowse_tree { mnames node } {
       } else {
         #gen_log:log D "* No modtitle($path)"
       }
-      gen_log:log D "path=$path pathtop=$pathtop pathroot=$pathroot"
+      #gen_log:log D "path=$path pathtop=$pathtop pathroot=$pathroot"
       if {! [info exists Tree($tf:$pathroot:children)]} {
-        gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
+        #gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
         if {[info exists modval($pathtop)]} { set dimage mdir }
         ModTree:newitem $tf $pathroot $pathtop "$title" -image $dimage
       }
@@ -504,7 +510,7 @@ proc modbrowse_tree { mnames node } {
             set newnode $mname
           }
           set dimage dir
-          gen_log:log D "2 Making $newnode for an intermediate node"
+          #gen_log:log D "2 Making $newnode for an intermediate node"
           lappend dcontents($pathroot) $newnode
           if {[info exists modval($newnode)]} {set dimage mdir}
           ModTree:newitem $tf $newpath $newnode "$title" -image $dimage
@@ -516,10 +522,10 @@ proc modbrowse_tree { mnames node } {
     }
     set treepath [file join $node $mname]
     if {[info exists Tree($tf:$treepath:children)]} {
-      gen_log:log D "  Already handled $treepath"
+      #gen_log:log D "  Already handled $treepath"
       continue
     }
-    gen_log:log D "3 Making $mname"
+    #gen_log:log D "3 Making $mname"
         if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
     ModTree:newitem $tf $treepath $mname $title -image $dimage
   }
@@ -528,29 +534,7 @@ proc modbrowse_tree { mnames node } {
   gen_log:log T "LEAVE"
 }
 
-proc modbrowse_select_code {yposition} {
-#
-# Do this when a code is clicked on.
-#
-  global modbrowse_ypos
-  global modbrowse_module
-
-  set modbrowse_ypos $yposition
-
-  selection clear
-  # This does the actual selection
-  .modbrowse.codelist select set \
-    [.modbrowse.codelist nearest $yposition]
-  set code [selection get]
-
-  # This will update the "Module Name" entry box.
-  set modbrowse_module [lindex $code 0]
-
-  return $code
-}
-
 proc module_exit { } {
-  global incvs
   global cvscfg
   global cvs
   global cmd
@@ -595,18 +579,22 @@ proc module_changedir {new_dir} {
 # Make sure a directory exists before trying to cd to it
   global cwd
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER ($new_dir)"
   if {[file exists $new_dir]} {
     cd $new_dir
+    set cwd $new_dir
     gen_log:log F "CD [pwd]"
     # If this directory has a different cvsroot, redo the tree
     if {[file isdirectory [file join $new_dir CVS]]} {
       set cvsdir [file join $new_dir CVS]
       read_cvs_dir $cvsdir
+      set cvsglb(root) $cvscfg(cvsroot)
       modbrowse_run
     } elseif {[file isdirectory [file join $new_dir .svn]]} {
       read_svn_dir $new_dir
+      set cvsglb(root) $cvscfg(svnroot)
       modbrowse_run
     }
 
@@ -614,10 +602,14 @@ proc module_changedir {new_dir} {
       ::picklist::used directory [pwd]
       setup_dir
     }
+    if {! [winfo exists .modbrowse]} {
+      modbrowse_run
+    }
   } else {
     set cwd [pwd]
     cvsfail "Directory $new_dir doesn\'t exist!" .modbrowse
   }
+  gen_log:log F "$cwd"
   gen_log:log T "LEAVE"
 }
 

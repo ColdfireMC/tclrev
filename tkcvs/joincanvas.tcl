@@ -55,7 +55,7 @@ namespace eval joincanvas {
         variable tags
         variable headrev
 
-        gen_log:log T "ENTER ($joincanvas <filelog suppressed>)"
+        gen_log:log T "ENTER ($joincanvas ...)"
         set loglist [split $filelog "\n"]
         set logstate "rcsfile"
         foreach logline $loglist {
