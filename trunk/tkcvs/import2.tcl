@@ -130,7 +130,7 @@ proc do_import2 {} {
 
   # We may have gotten here before opening the module browser
   if {! [info exists modlist_sorted]} {
-     modbrowse_run
+     modbrowse_run cvs
   }
 
   # See if all apropriate Directories in newdirname exist.  CVS import will
@@ -171,7 +171,7 @@ proc do_import2 {} {
   cd $cwd
   gen_log:log F "CD [pwd]"
 
-  #modbrowse_run
+  #modbrowse_run cvs
 
   # Now check out the new module
   cd ..

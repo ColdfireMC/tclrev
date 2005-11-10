@@ -124,7 +124,7 @@ proc do_import {} {
   
   # We may have gotten here before opening the module browser
   if {! [info exists modlist_sorted]} {
-     modbrowse_run
+     modbrowse_run cvs
   }
   # Make sure it isn't a duplicate key
   foreach {key value} [array get modval] {
@@ -195,7 +195,7 @@ proc do_import {} {
   $v\::do "$commandline"
   $v\::wait
 
-  modbrowse_run
+  modbrowse_run cvs
 
   # Now check out the new module
   cd ..

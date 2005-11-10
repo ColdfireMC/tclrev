@@ -129,7 +129,7 @@ proc svn_do_import {imtop imdir} {
   }
  
   setup_dir
-  modbrowse_run
+  modbrowse_run svn
   gen_log:log T "LEAVE"
 }
 
