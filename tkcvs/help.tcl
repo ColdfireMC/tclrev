@@ -37,27 +37,37 @@ proc aboutbox {} {
 
   image create photo Tclfish -format gif -file \
     [file join $cvscfg(bitmapdir) ticklefish_med.gif]
-  label .about.top.lbl -image Tclfish -bg "#EED1B9"
+  label .about.top.gif1 -image Tclfish
+  image create photo Anglerfish -format gif -file \
+    [file join $cvscfg(bitmapdir) anglerfish_med.gif]
+  label .about.top.gif2 -image Anglerfish
 
-  append prj_string "A friendly interface to CVS.\n"
-  append prj_string "Consult the Help menu to\n"
-  append prj_string "learn about its features.\n\n"
-  append prj_string "TkCVS was written by Del.\n"
+  append string1 "A friendly interface to CVS\n"
+  append string1 "and Subversion.\n"
 
   message .about.top.msg2 -width 400 -justify c \
-    -text $prj_string
+    -text $string1
+
+  append string2 "\nConsult the Help menu to\n"
+  append string2 "learn about its features.\n\n"
+  append string2 "TkCVS was written by Del.\n"
+
+  message .about.top.msg3 -width 400 -justify c \
+    -text $string2
 
   append about_string "Home page: http://www.twobarleycorns.net/tkcvs.html\n"
   append about_string "Source code: http://sourceforge.net/projects/tkcvs/\n"
 
-  message .about.top.msg3 -width 365 -justify c \
+  message .about.top.msg4 -width 365 -justify c \
     -text $about_string -font $cvscfg(listboxfont)
 
   pack .about.top -side top -expand 1 -fill both
   pack .about.top.msg1 -expand 1 -fill x
-  pack .about.top.lbl
+  pack .about.top.gif1
   pack .about.top.msg2 -expand 1 -fill x
+  pack .about.top.gif2
   pack .about.top.msg3 -expand 1 -fill x
+  pack .about.top.msg4 -expand 1 -fill x
 
   frame .about.down
   button .about.down.ok -text "OK" -command {destroy .about}

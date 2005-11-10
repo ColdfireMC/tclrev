@@ -287,7 +287,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     set cvsglb(root) $cvscfg(cvsroot)
   }
   module_changedir [pwd]
-  #modbrowse_run
 } elseif {$cvscfg(startwindow) == "log"} {
   if {! [file exists $lcfile]} {
     puts "ERROR: $lcfile doesn't exist!"

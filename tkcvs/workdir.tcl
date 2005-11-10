@@ -1013,7 +1013,8 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 3 -state disabled
   } elseif {$insvn} {
     # Top
-    .workdir.top.bmodbrowse configure -image Modules_svn
+    .workdir.top.bmodbrowse configure -image Modules_svn \
+      -command {modbrowse_run svn}
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
@@ -1056,7 +1057,8 @@ proc setup_dir { } {
        -command { svn_annotate BASE [workdir_list_files] }
   } elseif {$incvs} {
     # Top
-    .workdir.top.bmodbrowse configure -image Modules_cvs
+    .workdir.top.bmodbrowse configure -image Modules_cvs \
+      -command {modbrowse_run cvs}
     .workdir.top.lmodule configure -text "Module"
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "CVSROOT"
@@ -1568,7 +1570,7 @@ proc save_options { } {
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
                  showstatcol showdatecol showeditcol auto_tag \
-                 status_filter checkrecursive recurse logging }
+                 status_filter recurse logging }
   set STRGopts { file_filter ignore_file_filter clean_these \
                  printer rdetail ldetail log_classes lastdir \
                  workgeom modgeom loggeom tracgeom}

@@ -299,7 +299,7 @@ proc modbrowse_menus {} {
   gen_log:log T "LEAVE"
 }
 
-proc modbrowse_run {} {
+proc modbrowse_run { {CVSorSVN {}} } {
   global env
   global svnurl
   global modval
@@ -340,6 +340,15 @@ proc modbrowse_run {} {
   if {[regexp {://} $cvsglb(root)]} {
      set cvscfg(svnroot) $cvsglb(root)
      set svnurl 1
+  }
+  switch $CVSorSVN {
+    svn {
+      set cvsglb(root) $cvscfg(svnroot) 
+      set svnurl 1
+     }
+    cvs {
+      set cvsglb(root) $cvscfg(cvsroot) 
+     }
   }
   if {$svnurl} {
     if {! [info exists cvscfg(svnroot)] } {
