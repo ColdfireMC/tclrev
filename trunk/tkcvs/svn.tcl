@@ -437,8 +437,10 @@ proc svn_list {module} {
 # This is the callback for the folder-opener in ModTree
 proc svn_jit_listdir { tf into } {
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER ($tf $into)"
+  set cvscfg(svnroot) $cvsglb(root)
   #puts "\nEntering svn_jit_listdir ($into)"
   set dir [string trimleft $into / ]
   set command "svn list -v \"$cvscfg(svnroot)/$dir\""
@@ -464,6 +466,7 @@ proc svn_jit_listdir { tf into } {
     }
   }
 
+  busy_start $tf
   ModTree:close $tf /$dir
   #puts "<- delitem /$dir/d"
   ModTree:delitem $tf /$dir/d
@@ -474,10 +477,11 @@ proc svn_jit_listdir { tf into } {
   foreach d $dirs {
     svn_jit_dircmd $tf $dir/$d
   }
-gen_log:log D "ModTree:open $tf /$dir"
+  gen_log:log D "ModTree:open $tf /$dir"
   ModTree:open $tf /$dir
 
   #puts "\nLeaving svn_jit_listdir"
+  busy_done $tf
   gen_log:log T "LEAVE"
 }
 
@@ -744,7 +748,7 @@ proc svn_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
-# SVN Checkout or Export.  Called from Module Browser
+# SVN Checkout or Export.  Called from Repository Browser
 proc svn_checkout {dir url rev target cmd} {
   gen_log:log T "ENTER ($dir $url $rev $target $cmd)"
 

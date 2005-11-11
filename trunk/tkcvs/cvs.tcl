@@ -621,7 +621,7 @@ proc cvs_fileview_update {revision filename} {
 proc cvs_fileview_checkout {revision filename} {
 #
 # This looks at a revision of a file from the repository.
-# Called from Module Browser -> File Browse -> View
+# Called from Repository Browser -> File Browse -> View
 # For files not currently checked out
 #
   global cvs
@@ -1062,6 +1062,7 @@ proc cvs_join {from since fromtag totag args} {
 #
   global cvs
   global cvscfg
+  global cvsglb
   global current_tagname
 
   gen_log:log T "ENTER ($from $since $fromtag $totag $args)"
@@ -1086,7 +1087,8 @@ proc cvs_join {from since fromtag totag args} {
     message .reminder.m1 -aspect 600 -text \
       "When you are finished checking in your merges, \
       you should apply the tag"
-    entry .reminder.ent -width 32 -relief raised -bd 1
+    entry .reminder.ent -width 32 -relief groove -state readonly \
+       -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
     .reminder.ent insert end $totag 
     message .reminder.m2 -aspect 600 -text \
       "using the \"Tag the selected files\" button"
@@ -1550,7 +1552,7 @@ proc cvs_release {delflag directory} {
 proc cvs_rtag { cvsroot mcode branch force oldtag newtag } {
 #
 # This tags a module in the repository.
-# Called by the tag commands in the Module Browser
+# Called by the tag commands in the Repository Browser
 #
   global cvs
   global cvscfg

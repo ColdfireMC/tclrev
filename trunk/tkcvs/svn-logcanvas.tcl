@@ -19,7 +19,7 @@ namespace eval ::branch_canvas {
     # Creates a new log canvas.  If filename is not "no file" then it is
     # the file name in the local directory that this applies to.
     #
-gen_log:log T "ENTER ($relpath $filename)"
+    gen_log:log T "ENTER ($relpath $filename)"
     variable instance
     set my_idx $instance
     incr instance
@@ -34,13 +34,6 @@ gen_log:log T "ENTER ($relpath $filename)"
       #::repository::images
       modbrowse_images
     }
-    #if {![info exists current_tagname]} {
-      #set current_tagname ""
-      #if {$localfile != "no file"} {
-        #cvsroot_check $cwd
-        #read_cvs_dir [file join $cwd CVS]
-      #}
-    #}
 
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
@@ -144,6 +137,11 @@ puts "Branches"
         set command "svn list $cvscfg(svnroot)/branches"
         gen_log:log C "$command"
         set ret [catch {eval "exec $command"} branches]
+        if {$ret != 0} {
+            gen_log:log E "$branches"
+            puts "$branches"
+            set branches ""
+        }
         foreach branch $branches {
           gen_log:log D "$branch"
           # There can be files such as "README" here that aren't branches
@@ -162,7 +160,7 @@ puts " $branch"
           set ret [catch {eval exec $command} log_output]
           if {$ret != 0} {
             # This can happen a lot -let's not let it stop us
-            gen_log:log E "$tag_output"
+            gen_log:log E "$log_output"
             puts "$log_output"
             continue
           }
@@ -196,8 +194,13 @@ puts " revbranches($bp) $branch"
 puts "Tags"
           set command "svn list $cvscfg(svnroot)/tags"
           gen_log:log C "$command"
-          set ret [catch {eval "exec $command"} out]
-          foreach tag $out {
+          set ret [catch {eval "exec $command"} tags]
+          if {$ret != 0} {
+              gen_log:log E "$tags"
+              puts "$tags"
+              set tags ""
+          }
+          foreach tag $tags {
             gen_log:log D "$tag"
             # There can be files such as "README" here that aren't tags
             if {![string match {*/} $tag]} {continue}
@@ -214,7 +217,7 @@ puts " $tag"
             set ret [catch {eval exec $command} log_output]
             if {$ret != 0} {
               # This can happen a lot -let's not let it stop us
-              gen_log:log E "$tag_output"
+              gen_log:log E "$log_output"
               puts "$log_output"
               continue
             }

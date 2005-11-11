@@ -73,7 +73,7 @@ proc workdir_setup {} {
   label .workdir.top.ttagname -textvariable current_tagname \
      -anchor w -relief groove
 
-  # Make the Module Browser button prominent
+  # Make the Repository Browser button prominent
   button .workdir.top.bmodbrowse -image Modules \
      -command modbrowse_run
 
@@ -308,7 +308,7 @@ proc workdir_setup {} {
      {"Reset the Edit flag on the selected files"}
 
   set_tooltips .workdir.top.bmodbrowse \
-     {"Open the Module Browser"}
+     {"Open the Repository Browser"}
   set_tooltips .workdir.close \
      {"Close the Working Directory Browser"}
 
@@ -674,7 +674,7 @@ proc menu_std_help { w } {
   $w.help add command -label "Merge Tool" \
      -command directory_branch_viewer
   $w.help add separator
-  $w.help add command -label "Module Browser" \
+  $w.help add command -label "Repository Browser" \
      -command module_browser
   $w.help add command -label "Importing New Modules" \
      -command importing_new_modules
@@ -1022,6 +1022,8 @@ proc setup_dir { } {
       -command { svn_check [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
      -command { svn_import_run }
+    .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
+      -command svn_joincanvas
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
@@ -1067,8 +1069,9 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
-     -command { import_run }
-    .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal
+      -command { import_run }
+    .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
+      -command cvs_joincanvas
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }
@@ -1383,6 +1386,7 @@ proc workdir_print_file {args} {
 
 proc cvsroot_check { dir } {
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER ($dir)"
 
@@ -1390,6 +1394,7 @@ proc cvsroot_check { dir } {
 
   if {[file isfile [file join $dir CVS Root]]} {
     set incvs 1
+    read_cvs_dir [file join $dir CVS]
   } elseif {[file isfile [file join $dir .svn entries]]} {
     set insvn 1
     read_svn_dir $dir

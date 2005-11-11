@@ -18,8 +18,8 @@ proc modbrowse_setup {} {
 
   # Window manager stuff.
   toplevel .modbrowse
-  wm title .modbrowse "Module Browser"
-  wm iconname .modbrowse "CVS Modules"
+  wm title .modbrowse "TkCVS Repository Browser"
+  wm iconname .modbrowse "TkCVS Repository Browser"
   if {$tcl_platform(platform) != "windows"} {
     wm iconbitmap .modbrowse @$cvscfg(bitmapdir)/tkcvs48.xbm
   }
@@ -140,9 +140,9 @@ proc modbrowse_setup {} {
      -side right -fill both -expand yes
 
   set_tooltips .modbrowse.bottom.buttons.modfuncs.checkout \
-     {"Check out a module from the repository"}
+     {"Check out selection from the repository"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.export \
-     {"Export a module from the repository"}
+     {"Export selection from the repository"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.tag \
      {"Tag all files in a module"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.branchtag \
@@ -160,7 +160,7 @@ proc modbrowse_setup {} {
   set_tooltips .modbrowse.bottom.buttons.cvsfuncs.who \
      {"Show who has modules checked out"}
   set_tooltips .modbrowse.bottom.buttons.closefm.close \
-     {"Close the module browser"}
+     {"Close the repository browser"}
 
   set_tooltips .modbrowse.top.bworkdir \
     {"Open the Working Directory Browser"}
@@ -302,13 +302,14 @@ proc modbrowse_menus {} {
 proc modbrowse_run { {CVSorSVN {}} } {
   global env
   global svnurl
+  global insvn incvs inrcs
   global modval
   global cvscfg
   global cvsglb
   global cvs
   global cmd
 
-  gen_log:log T "ENTER"
+  gen_log:log T "ENTER ($CVSorSVN)"
   # If a checkout is already running, abort it
   if {[info exists cmd(cvs_co)]} {
     catch {$cmd(cvs_co)\::abort}
@@ -339,41 +340,68 @@ proc modbrowse_run { {CVSorSVN {}} } {
   # Detect a SVN URL
   if {[regexp {://} $cvsglb(root)]} {
      set cvscfg(svnroot) $cvsglb(root)
+puts "svn URL detected"
      set svnurl 1
   }
   switch $CVSorSVN {
     svn {
+puts "called with svn argument"
       set cvsglb(root) $cvscfg(svnroot) 
       set svnurl 1
-     }
+      if {! [info exists cvscfg(svnroot)] } {
+        read_svn_dir .
+      }
+      .modbrowse.top.lroot configure -text "SVN URL"
+      .modbrowse.top.lmcode configure -text "Selection"
+      # Call ModTree with the just-in-time level maker
+      ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
+      pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+      parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
+    }
     cvs {
-      set cvsglb(root) $cvscfg(cvsroot) 
-     }
-  }
-  if {$svnurl} {
-    if {! [info exists cvscfg(svnroot)] } {
-      read_svn_dir .
+puts "called with cvs argument"
+      set svnurl 0
+        set cvsglb(root) $cvscfg(cvsroot)
+        set cmd(cvs_co) \
+          [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
+      .modbrowse.top.lroot configure -text "CVSROOT"
+      .modbrowse.top.lmcode configure -text "Module"
+      ModTree:create .modbrowse.treeframe.pw
+      pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+      if {[info exists cmd(cvs_co)]} {
+        parse_cvsmodules [$cmd(cvs_co)\::output]
+      }
+      catch {unset cmd(cvs_co)}
     }
-    .modbrowse.top.lroot configure -text "SVN URL"
-    .modbrowse.top.lmcode configure -text "Selection"
-    # Call ModTree with the just-in-time level maker
-    ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
-    pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-    parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
-  } else {
-    if { $cvsglb(root) != "" } {
-      set cvscfg(cvsroot) $cvsglb(root)
-      set cmd(cvs_co) \
-        [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
+    default {
+puts "called with no argument"
+      if {$svnurl} {
+        set cvsglb(root) $cvscfg(svnroot) 
+        if {! [info exists cvscfg(svnroot)] } {
+          read_svn_dir .
+        }
+        .modbrowse.top.lroot configure -text "SVN URL"
+        .modbrowse.top.lmcode configure -text "Selection"
+        # Call ModTree with the just-in-time level maker
+        ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
+        pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+        parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
+      } else {
+        if { $cvsglb(root) != "" } {
+          set cvscfg(cvsroot) $cvsglb(root)
+          set cmd(cvs_co) \
+            [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
+        }
+        .modbrowse.top.lroot configure -text "CVSROOT"
+        .modbrowse.top.lmcode configure -text "Module"
+        ModTree:create .modbrowse.treeframe.pw
+        pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+        if {[info exists cmd(cvs_co)]} {
+            parse_cvsmodules [$cmd(cvs_co)\::output]
+        }
+        catch {unset cmd(cvs_co)}
+      }
     }
-    .modbrowse.top.lroot configure -text "CVSROOT"
-    .modbrowse.top.lmcode configure -text "Module"
-    ModTree:create .modbrowse.treeframe.pw
-    pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-    if {[info exists cmd(cvs_co)]} {
-      parse_cvsmodules [$cmd(cvs_co)\::output]
-    }
-    catch {unset cmd(cvs_co)}
   }
   ::picklist::used cvsroot $cvsglb(root)
 
@@ -404,6 +432,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
       -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
+  }
+  if {$insvn || $incvs || $inrcs} {
+    .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
   }
 
   # Populate the tree
@@ -591,20 +622,32 @@ proc module_changedir {new_dir} {
   global cvsglb
 
   gen_log:log T "ENTER ($new_dir)"
+  #if {! [winfo exists .modbrowse]} {
+    #modbrowse_setup
+  #}
   if {[file exists $new_dir]} {
     cd $new_dir
     set cwd $new_dir
     gen_log:log F "CD [pwd]"
+
+    foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+
     # If this directory has a different cvsroot, redo the tree
-    if {[file isdirectory [file join $new_dir CVS]]} {
-      set cvsdir [file join $new_dir CVS]
-      read_cvs_dir $cvsdir
-      set cvsglb(root) $cvscfg(cvsroot)
-      modbrowse_run
-    } elseif {[file isdirectory [file join $new_dir .svn]]} {
-      read_svn_dir $new_dir
-      set cvsglb(root) $cvscfg(svnroot)
-      modbrowse_run
+    if {$incvs} {
+      if {$cvscfg(cvsroot) != $cvsglb(root)} {
+        set cvsglb(root) $cvscfg(cvsroot)
+        modbrowse_run
+      }
+    } elseif {$insvn} {
+      if {$cvscfg(cvsroot) != $cvsglb(root)} {
+        set cvsglb(root) $cvscfg(cvsroot)
+        modbrowse_run
+      }
+    }
+    if {$insvn || $incvs || $inrcs} {
+      .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
+    } else {
+      .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal
     }
 
     if {[winfo exists .workdir]} {
@@ -620,14 +663,5 @@ proc module_changedir {new_dir} {
   }
   gen_log:log F "$cwd"
   gen_log:log T "LEAVE"
-}
-
-proc module_file { } {
-  global cvs
-  global cvscfg
-
-  set commandline "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"
-  set v [viewer::new "CVSROOT/modules"]
-  $v\::do "$commandline"
 }
 

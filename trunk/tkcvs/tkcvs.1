@@ -269,7 +269,7 @@ When the browser is displayed, it shows two columns. The first column is a tree 
 To select a module, click on it with the left mouse button. Only one module can be selected at a time. To clear the selection, click on the item again or click in an empty area of the module column.
 .LP
 The second column shows descriptive titles of the items in the repository, if you have added descriptions to the modules file with the #M syntax.
-.SS Module Browser Buttons
+.SS Repository Browser Buttons
 .LP
 The module browser contains the following buttons:
 .TP
@@ -301,7 +301,7 @@ This item displays a short summary of the differences between two versions of a 
 This item creates a Larry Wall format patch(1) file of the module selected.
 .TP
 .I Close:
-This button closes the Module Browser. If no other windows are open, TkCVS exits.
+This button closes the Repository Browser. If no other windows are open, TkCVS exits.
 .SP
 .SH IMPORTING NEW MODULES
 .LP
@@ -309,7 +309,7 @@ Before importing a new module, first check to make sure that you have write perm
 .LP
 To import a module you first need a directory where the module is located. Make sure that there is nothing in this directory except the files that you want to import.
 .LP
-Press the big "Module Browser" button in the top part of the tkcvs UI, or use CVS -> Import WD into Repository from the menu bar.
+Press the big "Repository Browser" button in the top part of the tkcvs UI, or use CVS -> Import WD into Repository from the menu bar.
 .LP
 In the module browser, press the Import button on the bottom, the one that shows a folder and an up arrow.
 .LP
@@ -345,9 +345,9 @@ To import to an existing module you first need a directory where the code is loc
 .LP
 nothing in this directory (including no CVS directory) except the files that you want to import.
 .LP
-Open up the Module Browser by selecting File/Browse Modules from the menu bar.
+Open up the Repository Browser by selecting File/Browse Modules from the menu bar.
 .LP
-In the Module Browser, select File/Import To An Existing Module from the menu bar.
+In the Repository Browser, select File/Import To An Existing Module from the menu bar.
 .LP
 In the dialog that pops up, press the Browse button and select the name of an existing module. Press the OK to\
 .LP
@@ -389,13 +389,13 @@ assumes that a separate module has already been defined for the local code for w
 .LP
 is to be applied to.
 .LP
-Start from an empty directory and invoke tkcvs. Open up the Module Browser by selecting File/Browse Modules from the menu bar.
+Start from an empty directory and invoke tkcvs. Open up the Repository Browser by selecting File/Browse Modules from the menu bar.
 .LP
 Checkout the module of the local code to be merged with changes from the vendor module. (Use the red icon with the\
 .LP
 down arrow)
 .LP
-In the Module Browser, after verifying that the Module entry box still has the name the module of the local code to which\
+In the Repository Browser, after verifying that the Module entry box still has the name the module of the local code to which\
 .LP
 the vendor code is to be merged into, select File/Vendor Merge from the menu bar.
 .LP

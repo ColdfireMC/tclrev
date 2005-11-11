@@ -133,7 +133,7 @@ proc dialog_FormComplete { w form_data } {
   return 1
 }
 
-# Check out a CVS module from the Module Browser
+# Check out a CVS module from the Repository Browser
 proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   global dynamic_dialog
   global dialog_action
@@ -186,7 +186,7 @@ proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   gen_log:log T "LEAVE"
 }
 
-# Export a CVS module from the Module Browser
+# Export a CVS module from the Repository Browser
 proc dialog_cvs_export { cvsroot module {revtag {}} } {
   global dynamic_dialog
   global dialog_action
@@ -231,7 +231,7 @@ proc dialog_cvs_export { cvsroot module {revtag {}} } {
   gen_log:log T "LEAVE"
 }
 
-# Checkout or Export a SVN module from the Module Browser
+# Checkout or Export a SVN module from the Repository Browser
 proc dialog_svn_checkout { svnroot revtag command } {
   global dynamic_dialog
   global dialog_action
@@ -516,9 +516,9 @@ proc file_tag_dialog {branch} {
   grid .tag.top.lbl -column 0 -row 1 -sticky nw
   grid .tag.top.entry -column 1 -row 1 -sticky ew
   grid .tag.top.branch -column 1 -row 2 -sticky w
-if {$incvs} {
-  grid .tag.top.force -column 1 -row 3 -sticky w
-}
+  if {$incvs} {
+    grid .tag.top.force -column 1 -row 3 -sticky w
+  }
 
   pack .tag.mid -side top
   pack .tag.mid.upd

@@ -283,10 +283,12 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
   if {$insvn} {
     set cvsglb(root) $cvscfg(svnroot)
+    modbrowse_run svn
   } else {
-    set cvsglb(root) $cvscfg(cvsroot)
+    puts $cvscfg(cvsroot)
+    #set cvsglb(root) $cvscfg(cvsroot)
+    modbrowse_run cvs
   }
-  module_changedir [pwd]
 } elseif {$cvscfg(startwindow) == "log"} {
   if {! [file exists $lcfile]} {
     puts "ERROR: $lcfile doesn't exist!"

@@ -313,8 +313,8 @@ set cvscfg(logging)    false
 # How many trace lines to save.  The debugging output can get very large.
 set cvscfg(trace_savelines) 5000
 
-# In the Module Browser, if true this will cause the alias modules to
-# be grouped in one folder.  Cleans up clutter if there are a lot of
+# In the Repository Browser, if true this will cause the alias modules
+# to be grouped in one folder.  Cleans up clutter if there are a lot of
 # aliases.  If it's false, they will be listed separately at the top
 # level.
 set cvscfg(aliasfolder) true
