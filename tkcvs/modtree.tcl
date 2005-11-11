@@ -115,7 +115,8 @@ proc ModTree:newitem {w v name title args} {
   }
   set i [lsearch -exact $Tree($w:$dir:children) $n]
   if {$i>=0} {
-    cvsfail "item \"$v\" already exists" .modbrowse
+    return
+    #cvsfail "item \"$v\" already exists" .modbrowse
   }
   lappend Tree($w:$dir:children) $n
   set Tree($w:$dir:children) [lsort $Tree($w:$dir:children)]
@@ -294,15 +295,16 @@ proc ModTree:buildlayer {w v in} {
     if {[string length $Tree($w:$vx/$c:children)]} {
       if {$Tree($w:$vx/$c:open)} {
          set k [$w.tree.list create image $in $y -image ModTree:openbm]
-         $w.tree.list bind $k <1> "set Tree($w:$vx/$c:open) 0; ModTree:build $w"
+         $w.tree.list bind $k <1> "set \"Tree($w:$vx/$c:open)\" 0; \
+                                   ModTree:build $w"
          ModTree:buildlayer $w $vx/$c [expr {$in+$Tree(vsize)+8}]
       } else {
          set k [$w.tree.list create image $in $y -image ModTree:closedbm]
          if {$Tree(open_function) == {} } {
-           $w.tree.list bind $k <1> "set Tree($w:$vx/$c:open) 1; \
+           $w.tree.list bind $k <1> "set \"Tree($w:$vx/$c:open)\" 1; \
                                     ModTree:build $w"
          } else {
-           $w.tree.list bind $k <1> "set Tree($w:$vx/$c:open) 1; \
+           $w.tree.list bind $k <1> "set \"Tree($w:$vx/$c:open)\" 1; \
                                     $Tree(open_function) $w $vx/$c; \
                                     ModTree:build $w"
          }

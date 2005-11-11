@@ -511,7 +511,7 @@ Instead of merging from the base of the branch, this button merges the changes t
 
 proc module_browser {} {
 
-  do_help "Module Browser" {
+  do_help "Repository Browser" {
 
 <h1>MODULE BROWSER</h1>
 
@@ -539,7 +539,7 @@ To select a module, click on it with the left mouse button. Only one module can 
 
 The second column shows descriptive titles of the items in the repository, if you have added descriptions to the modules file with the #M syntax.
 
-<h2>Module Browser Buttons</h2>
+<h2>Repository Browser Buttons</h2>
 
 The module browser contains the following buttons:
 
@@ -571,7 +571,7 @@ This item displays a short summary of the differences between two versions of a 
 This item creates a Larry Wall format patch(1) file of the module selected.
 
 <itl>Close:</itl>
-This button closes the Module Browser. If no other windows are open, TkCVS exits.
+This button closes the Repository Browser. If no other windows are open, TkCVS exits.
   }
 }
 
@@ -585,7 +585,7 @@ Before importing a new module, first check to make sure that you have write perm
 
 To import a module you first need a directory where the module is located. Make sure that there is nothing in this directory except the files that you want to import.
 
-Press the big "Module Browser" button in the top part of the tkcvs UI, or use CVS -> Import WD into Repository from the menu bar.
+Press the big "Repository Browser" button in the top part of the tkcvs UI, or use CVS -> Import WD into Repository from the menu bar.
 
 In the module browser, press the Import button on the bottom, the one that shows a folder and an up arrow.
 
@@ -624,9 +624,9 @@ Before importing to an existing module, first check to make sure that you have w
 To import to an existing module you first need a directory where the code is located. Make sure that there is\
 nothing in this directory (including no CVS directory) except the files that you want to import.
 
-Open up the Module Browser by selecting File/Browse Modules from the menu bar.
+Open up the Repository Browser by selecting File/Browse Modules from the menu bar.
 
-In the Module Browser, select File/Import To An Existing Module from the menu bar.
+In the Repository Browser, select File/Import To An Existing Module from the menu bar.
 
 In the dialog that pops up, press the Browse button and select the name of an existing module. Press the OK to\
 close this dialog box. Enter the version number of the code to be imported. 
@@ -666,12 +666,12 @@ distribution with the use of the "Import To A New Module" and "Import To An Exis
 assumes that a separate module has already been defined for the local code for which the vendor merge operation\
 is to be applied to.
 
-Start from an empty directory and invoke tkcvs. Open up the Module Browser by selecting File/Browse Modules from the menu bar.
+Start from an empty directory and invoke tkcvs. Open up the Repository Browser by selecting File/Browse Modules from the menu bar.
 
 Checkout the module of the local code to be merged with changes from the vendor module. (Use the red icon with the\
 down arrow)
 
-In the Module Browser, after verifying that the Module entry box still has the name the module of the local code to which\
+In the Repository Browser, after verifying that the Module entry box still has the name the module of the local code to which\
 the vendor code is to be merged into, select File/Vendor Merge from the menu bar.
 
 In the Module Level Merge With Vendor Code window, press the Browse button to select the module to be used as the vendor module.

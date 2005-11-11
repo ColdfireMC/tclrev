@@ -39,8 +39,6 @@ proc merge_run {mcode} {
     return
   }
 
-# FIXME: Why? It isn't returning anything? What globals does it set?
-# read_cvs_dir [file join $cwd CVS]
   toplevel .merge
   #grab set .merge
 
