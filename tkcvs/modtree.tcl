@@ -305,7 +305,7 @@ proc ModTree:buildlayer {w v in} {
                                     ModTree:build $w"
          } else {
            $w.tree.list bind $k <1> "set \"Tree($w:$vx/$c:open)\" 1; \
-                                    $Tree(open_function) $w $vx/$c; \
+                                    $Tree(open_function) $w \"$vx/$c\"; \
                                     ModTree:build $w"
          }
       }

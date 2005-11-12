@@ -1015,6 +1015,8 @@ proc setup_dir { } {
     # Top
     .workdir.top.bmodbrowse configure -image Modules_svn \
       -command {modbrowse_run svn}
+    .workdir.top.lmodule configure -text ""
+    .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
