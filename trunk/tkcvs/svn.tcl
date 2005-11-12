@@ -516,10 +516,10 @@ proc svn_jit_dircmd { tf dir } {
 
   if {$dirs == {} && $fils == {}} {
     #puts "  $dir is empty"
-    catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$lbl\" -image Folder"
+    catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$lbl\" -image Folder"
   } else {
     #puts "  $dir has contents"
-    set r [catch "ModTree:newitem $tf \"/$dir\" \"$dir\" \"$lbl\" -image Folder" err]
+    set r [catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$lbl\" -image Folder" err]
     if {! $r} {
       #puts "-> newitem /$dir/d"
       catch "ModTree:newitem $tf \"/$dir/d\" d d -image {}"
@@ -783,10 +783,10 @@ proc svn_filecat {root path title} {
 
   # Should do cat if it's a file and ls if it's a path
   if {[string match {*/} $title]} {
-    set commandline "svn ls $root/$path"
+    set commandline "svn ls \"$root/$path\""
     set wintitle "SVN ls"
   } else {
-    set commandline "svn cat $root/$path"
+    set commandline "svn cat \"$root/$path\""
     set wintitle "SVN cat"
   }
 

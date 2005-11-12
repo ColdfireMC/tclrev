@@ -55,6 +55,7 @@ namespace eval svnjoin {
         variable revname
         variable branchrevs
         variable revbranches
+        variable allrevs
 
         # The trunk
       puts "\nTrunk"
@@ -100,10 +101,10 @@ namespace eval svnjoin {
           set branch [string trimright $branch "/"]
       puts " $branch"
           # Can't use file join or it will mess up the URL
-          if { $cvsglb(relpath) == {} } {
-            set path "$cvscfg(svnroot)/branches/$branch/$filename"
+          if { $relpath == {} } {
+            set path "$cvscfg(svnroot)/branches/$branch"
           } else {
-            set path "$cvscfg(svnroot)/branches/$branch/$cvsglb(relpath)/$filename"
+            set path "$cvscfg(svnroot)/branches/$branch/$relpath"
           }
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
@@ -163,6 +164,23 @@ namespace eval svnjoin {
           incr i
         }
         return $revnum
+      }
+
+      proc parse_q {lines r} {
+        variable allrevs
+
+        set allrevs($r) ""
+        foreach line $lines {
+#puts $line
+          gen_log:log D "$line"
+          if [regexp {^r} $line] {
+            set splitline [split $line "|"]
+#puts "$splitline"
+            set revnum [string trim [lindex $splitline 0]]
+#puts "revnum $revnum"
+            lappend allrevs($r) $revnum
+          }
+        }
       }
 
       proc node {svnjoin rev x y} {
@@ -263,6 +281,7 @@ namespace eval svnjoin {
         variable revkind
         variable branchrevs
         variable revbranches
+        variable allrevs
         variable svnjoin
         variable cvscanv
         variable current_tagname
@@ -295,16 +314,16 @@ puts "revbranches: [array names revbranches]"
            -font {Helvetica -12 bold}
 
         # Then the rest
-        foreach branch [array names revbranches] {
-          gen_log:log D "$rev"
-          if {[info exists children($rev)]} {
-            foreach r $children($rev) {
+
+        foreach rev [array names revbranches] {
+          if {[info exists branchrevs($rev)]} {
+            foreach r $branchrevs($rev) {
               gen_log:log D "\tparent of $r"
             } 
-            set nchildren($rev) [llength $children($rev)]
+            set nchildren($rev) [llength $branchrevs($rev)]
             set kids [array names children $rev.*]
             foreach kid $kids {
-              set descendents $children($kid)
+              set descendents $branchrevs($kid)
               set ndescendents [llength $descendents]
               gen_log:log D "\tgranchildren: $descendents"
               incr nchildren($rev) $ndescendents
@@ -312,6 +331,8 @@ puts "revbranches: [array names revbranches]"
           } else {
             set nchildren($rev) 0
           }
+puts " $rev $revbranches($rev) has $nchildren($rev) children"
+continue
           gen_log:log D "\t$nchildren($rev) descendents"
           if {[info exists parent($rev)]} {
             gen_log:log D "\tchild of $parent($rev)"
