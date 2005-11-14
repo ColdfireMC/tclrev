@@ -639,13 +639,15 @@ puts "\nsort_it_all_out"
         set btag [lindex $revtags($branch) 0]
         # draw the box
         set rheight [expr {$curr(pady,2) + [llength $root_text] * $font_norm_h}]
+        set rootbox_height [expr {$curr(pady,2) + [llength $root_info] * $font_norm_h}]
         incr y $rheight
         $branch_canvas.canvas create rectangle \
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $rheight}] \
             -width $curr(width) -fill gray90 -outline blue
         set mx [expr {$x + $box_width/2}]
-        set my [expr {$y - $rheight}]
+        set my [expr {$y - $rootbox_height}]
+        # This is the short arrow above the rectangle
         $branch_canvas.canvas create line \
            $mx $my $mx [expr {$my - $curr(boff)}] \
            -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
@@ -847,7 +849,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         variable revnum
 
         gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
-        #puts "\nDrawBranch ($branch) \"$root_rev\" x=$x y=$y"
+        puts "\nDrawBranch ($branch) \"$root_rev\" x=$x y=$y"
 
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
@@ -922,7 +924,8 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
           # For each branch off this revision, draw it to the right of this
           # revision box and a little above the centre line of this box.
           set x2 [expr {$x + $box_width + $curr(spcx)}]
-          set y2 [expr {$y - $box_height/2 - $curr(boff)}]
+          #set y2 [expr {$y - $box_height/2 - $curr(boff)}]
+          set y2 [expr {$y - $box_height - $curr(boff)}]
           set brevs {}
           set bxys {}
           if [info exists revbranches($revision)] {
@@ -937,6 +940,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
               #}
               lappend brevs $r2
               foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
+                puts "bxys $lx $lbw $rh $lly"
                 lappend bxys $lx $lbw $rh $lly
                 break
               }
@@ -948,34 +952,34 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
           set y [expr {$y2 + $box_height/2 + $curr(boff)}]
           set rx [expr {$x + $box_width}]
           set ry [expr {$y - $box_height/2}]
-          set by [expr {$ry - $box_height/2 + 2}]
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
-            $branch_canvas.canvas lower [ \
-              $branch_canvas.canvas create line \
-                $rx $ry $mx $ry $mx $by \
+            set my [expr {$ly + $rh + $curr(spcy)}]
+            $branch_canvas.canvas create line \
+                $rx $ry   $mx $ry  $mx $my\
                 -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
                 -fill blue \
                 -tags [list A$revision B[lindex $branchrevs($b) 0] delta active]
-            ]
             if {$opt(update_drawing) < 1} {
               UpdateBndBox
             }
           }
-          if {$last_y != {}} {
-            $branch_canvas.canvas create line \
-              $midx $last_y $midx [expr {$y - $box_height}] \
-              -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
-              -tags [list A$revision B$last_rev delta active]
-          }
           if {$revision == $revnum(current)} {
             foreach {box_width curr_height} [CalcCurrent $branch] { break }
+            set y [expr {$y - $curr(spcy)}]
+            set y [expr {$y - $rheight}]
             DrawCurrent $x $y $box_width $curr_height $revision
             $branch_canvas.canvas create line \
               $midx [expr {$y + $curr(spcy)}] $midx $y \
               -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
             incr y $curr(spcy)
             incr y $rheight
+          }
+          if {$last_y != {}} {
+            $branch_canvas.canvas create line \
+              $midx $last_y $midx [expr {$y - $box_height}] \
+              -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
+              -tags [list A$revision B$last_rev delta active]
           }
           set btm [ expr {$c == $rl} ? {1} : {0} ]
           DrawRevision $x $y $rtag_width $box_width $rheight $revision $btm
@@ -994,8 +998,8 @@ puts "Finished $branch\n"
           }
         }
         gen_log:log T "LEAVE"
-        return [list $x [expr {$y + $root_height + $curr(spcy)}] \
-          $box_width $root_height $last_y]
+        set ret_y [expr {$y + $root_height + $curr(spcy)}]
+        return [list $x $ret_y $box_width $root_height $last_y]
       }
   
       proc UpdateBndBox {} {
