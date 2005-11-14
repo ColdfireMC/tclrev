@@ -120,17 +120,14 @@ puts "\nTrunk"
         if {$ret == 0} {
           set trunk_lines [split $log_output "\n"]
           set rr [parse_svnlog $trunk_lines trunk]
-        } else {
-          cvsfail "$log_output"
-          return
+          foreach r $branchrevs(trunk) {
+            puts " $r $revdate($r)"
+            gen_log:log D " $r $revdate($r) ($revcomment($r))"
+            set revkind($r) "revision"
+          }
+          set revkind($rr) "root"
+          set revname($rr) "trunk"
         }
-        foreach r $branchrevs(trunk) {
-          puts " $r $revdate($r)"
-          gen_log:log D " $r $revdate($r) ($revcomment($r))"
-          set revkind($r) "revision"
-        }
-        set revkind($rr) "root"
-        set revname($rr) "trunk"
 
         # Branches
 puts "Branches"
@@ -240,10 +237,10 @@ puts " $tag"
             }
             set loglines [split $log_output "\n"]
             parse_q $loglines $tag
-puts " branchrevs($tag) $branchrevs($tag)"
+#puts " branchrevs($tag) $branchrevs($tag)"
             set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
             set revtags($bp) $tag
-puts " revtags($bp) $tag"
+#puts " revtags($bp) $tag"
             update idletasks
           } 
         }
@@ -351,12 +348,13 @@ puts "\nsort_it_all_out"
         }
 
         # Find out where to put the working revision icon (if anywhere)
-        set command "svn status -v $filename"
+        #set command "svn status -v $filename"
+        set command "svn log -q --stop-on-copy $filename"
         set cmd [exec::new $command]
-        set svnstat [$cmd\::output]
-        set svnstat [string trimleft $svnstat]
-        set revnum(current) [lindex $svnstat 1]
-        set revnum(current) "r$revnum(current)"
+        set log_output [$cmd\::output]
+        set loglines [split $log_output "\n"]
+        set svnstat [lindex $loglines 1]
+        set revnum(current) [lindex $svnstat 0]
         gen_log:log D "revnum(current) $revnum(current)"
         puts "revnum(current) $revnum(current)"
         # We only needed these to place the you-are-here box.
@@ -736,7 +734,7 @@ if {$revision == ""} {return}
         return [list $tag_width $box_width $height]
       }
 
-      proc DrawRevision { x y tag_width box_width height revision btm} {
+      proc DrawRevision { x y tag_width box_width height revision} {
         global cvscfg
         variable opt
         variable curr
@@ -849,7 +847,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         variable revnum
 
         gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
-        puts "\nDrawBranch ($branch) \"$root_rev\" x=$x y=$y"
+        set top 1
 
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
@@ -885,12 +883,12 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
           $branch_canvas.canvas addtag ol_x overlapping \
             [expr {$x - $curr(spcx)}] [expr {$y - $height + $curr(yfudge)}] \
             [expr {$x + $tag_width + $box_width}] $y
-            set bbox [$branch_canvas.canvas bbox ol_x]
+          set bbox [$branch_canvas.canvas bbox ol_x]
           $branch_canvas.canvas dtag ol_x
           if {$bbox == {}} {
-          break
-        }
-        gen_log:log D "horizontal overlap with $bbox"
+            break
+          }
+          gen_log:log D "horizontal overlap with $bbox"
           # Move branch to rightmost point of overlapped objects plus some space
           # N.B. +1 because exactly equal counts as an overlap
           set x [expr {[lindex $bbox 2] + $curr(spcx) + 1}]
@@ -924,7 +922,6 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
           # For each branch off this revision, draw it to the right of this
           # revision box and a little above the centre line of this box.
           set x2 [expr {$x + $box_width + $curr(spcx)}]
-          #set y2 [expr {$y - $box_height/2 - $curr(boff)}]
           set y2 [expr {$y - $box_height - $curr(boff)}]
           set brevs {}
           set bxys {}
@@ -940,7 +937,6 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
               #}
               lappend brevs $r2
               foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
-                puts "bxys $lx $lbw $rh $lly"
                 lappend bxys $lx $lbw $rh $lly
                 break
               }
@@ -975,14 +971,15 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
             incr y $curr(spcy)
             incr y $rheight
           }
+          if {!$top} {incr y [expr {$box_height/2}]}
           if {$last_y != {}} {
             $branch_canvas.canvas create line \
               $midx $last_y $midx [expr {$y - $box_height}] \
               -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
               -tags [list A$revision B$last_rev delta active]
           }
-          set btm [ expr {$c == $rl} ? {1} : {0} ]
-          DrawRevision $x $y $rtag_width $box_width $rheight $revision $btm
+          DrawRevision $x $y $rtag_width $box_width $rheight $revision
+          set top 0
           if {$opt(update_drawing) < 1} {
             UpdateBndBox
           }
@@ -992,7 +989,7 @@ gen_log:log D "x y $x $y box_width $box_width box_height $box_height"
         incr y $curr(spcy)
         if {[info exists revision]} {
           DrawRoot $x $y $box_width $revision $branch
-puts "Finished $branch\n"
+#puts "Finished $branch\n"
           if {$opt(update_drawing) < 2} {
             UpdateBndBox
           }
@@ -1078,40 +1075,39 @@ puts "Finished $branch\n"
         variable toprefix
         variable xy
         variable boxwidth
+        variable view_xoff
+        variable view_yoff
+        variable curr
+        variable opt
+        variable rev_info
+        variable scale
+        variable font_norm
+        variable font_norm_h
+        variable font_bold
+        variable font_bold_h
+        variable revbranches
+        variable branchrevs
 
         gen_log:log T "ENTER ($now)"
-puts "DrawTree"
+#puts "DrawTree"
         catch {after cancel $after_id_draw}
         if {$now != {now} && [info exists logcfg(draw_delay)]} {
           set after_id_draw \
             [after $logcfg(draw_delay) [namespace code {DrawTree now}]]
         } else {
-          variable view_xoff
-          variable view_yoff
-          variable curr
-          variable opt
-          variable rev_info
-          variable scale
-          variable font_norm
-          variable font_norm_h
-          variable font_bold
-          variable font_bold_h
-          variable revbranches
-          variable branchrevs
-
           busy_start $branch_canvas
           set view_xoff [lindex [$branch_canvas.canvas xview] 0]
           set view_yoff [lindex [$branch_canvas.canvas yview] 0]
           $branch_canvas.canvas delete all
           set root_info {}
-puts "root_info $root_info"
+#puts "root_info $root_info"
           #if {$opt(show_root_rev)} {
             append root_info {$branch}
           #}
           #if {$opt(show_root_tags)} {
             #append root_info {$tags($branch)}
           #}
-puts "root_info $root_info"
+#puts "root_info $root_info"
           set rev_info {}
           if {$opt(show_box_revtime)} {
             append rev_info {"$revtime($revision)" }
@@ -1153,10 +1149,20 @@ puts "root_info $root_info"
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info] * $font_norm_h}]
           
-          if {[info exists branchrevs(trunk)]} {
+          if {$branchrevs(trunk) != ""} {
+            gen_log:log D "DrawBranch 0 0 {} trunk"
             DrawBranch 0 0 {} trunk
-            UpdateBndBox
+          } else {
+            foreach a [array names branchrevs] {
+              puts "   branchrevs($a) \"$branchrevs($a)\""
+              if {$branchrevs($a) != ""} {
+                gen_log:log D "DrawBranch 0 0 {} $a"
+                DrawBranch 0 0 {} $a
+                break
+              }
+            }
           }
+          UpdateBndBox
 
           if {$opt(show_merges)} {
             foreach from $fromtags {
