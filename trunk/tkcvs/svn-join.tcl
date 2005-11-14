@@ -132,10 +132,12 @@ namespace eval svnjoin {
           }
           set loglines [split $log_output "\n"]
           parse_q $loglines $branch
-      puts " branchrevs($branch) $branchrevs($branch)"
+puts " branchrevs($branch) $branchrevs($branch)"
           set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
           set revbranches($bp) $branch
-      puts " revbranches($bp) $branch"
+puts " revbranches($bp) $revbranches($bp)"
+set parent($revbranches($bp)) [lindex $branchrevs($branch) end]
+puts " parent($revbranches($bp)) $bp"
           update idletasks
         }
       
@@ -183,8 +185,9 @@ namespace eval svnjoin {
         }
       }
 
-      proc node {svnjoin rev x y} {
+      proc node {rev x y} {
         global cvscfg
+        variable join_canvas
         variable cvscanv
         variable tags
         upvar treelist treelist
@@ -192,12 +195,12 @@ namespace eval svnjoin {
         upvar ind ind
       
         gen_log:log T "ENTER ($rev $x $y)"
-        $svnjoin.canvas create line \
+        $join_canvas create line \
           [expr {$x + $cvscanv(midy)}] [expr {$y + $cvscanv(midy)}] \
           $x [expr {$y + $cvscanv(boxy)}] \
           $x [expr {$y + $cvscanv(space)}]
         if {$cvscfg(logging) && [regexp -nocase {d} $cvscfg(log_classes)] && $ind < 2} {
-          $svnjoin.canvas create text \
+          $join_canvas create text \
             [expr {$x + 4}] [expr {$y + 18}] \
             -text $rev \
             -fill red2 \
@@ -206,289 +209,387 @@ namespace eval svnjoin {
         gen_log:log T "LEAVE"
       }
 
-      proc rectangle {svnjoin rev x y} {
-        #
-        # Breaks out some of the code from the svnjoin procedure.
-        # Work out the width of the text to go in the box first, then draw a
-        # box wide enough.
-        #
+      proc sort_it_all_out {} {
         global cvscfg
-        variable cvscanv
-        variable tags
-        variable current_tagname
-        upvar x xpos
-
-        gen_log:log T "ENTER ($rev $x $y)"
-
-        set parts [split $rev "."]
-
-        set tagtext $tags($rev)
-        gen_log:log D "$tagtext\t$rev"
-        $svnjoin.canvas create text \
-           [expr {$x + 4}] [expr {$y + 2}] \
-           -text "$tagtext" \
-           -anchor nw -fill blue \
-           -font {Helvetica -12 bold} \
-           -tags b$rev
-
-        set tagwidth [font measure {Helvetica -12 bold} \
-           -displayof $svnjoin.canvas $tagtext]
-        if {$tagwidth < $cvscanv(boxmin)} { set tagwidth $cvscanv(boxmin) }
-
-        # Put the version number under the box if in debug mode.
-        if {$cvscfg(logging) && [regexp -nocase {d} $cvscfg(log_classes)]} {
-          $svnjoin.canvas create text \
-            [expr {$x + 4}] [expr {$y + 18}] \
-            -text $rev \
-            -fill red2 \
-            -anchor nw
-        }
-
-        # draw the box
-        set boxid [$svnjoin.canvas create rectangle \
-          $x $y \
-          [expr {$x + $tagwidth + 5}] [expr {$y + $cvscanv(boxy)}] \
-          -width 3 \
-          -fill gray90 \
-          -tags b$rev ]
-        # Drop the fill color below the text so the text isn't hidden
-        $svnjoin.canvas lower $boxid
-
-        # Bind button-presses to the rectangles.
-        if {$tags($rev) != ""} {
-        $svnjoin.canvas bind b$rev <ButtonPress-1> \
-           [namespace code "select_rectangle $tags($rev)"]
-        }
-
-        if {"$current_tagname" == "$tagtext"} {
-          you_are_here $rev $tagwidth $x $y
-        }
-        gen_log:log T "LEAVE"
-      }
-
-      proc select_rectangle {rev} {
-        global cvscfg
-        variable svnjoin
-
-        gen_log:log T "ENTER ($rev)"
-
-        $svnjoin.up.rversFrom delete 0 end
-        $svnjoin.up.rversFrom insert end $rev
-      }
-
-      proc fillcanvas {} {
-        global cvscfg
+        variable join_canvas
         variable revkind
+        variable revname
         variable branchrevs
         variable revbranches
-        variable allrevs
-        variable svnjoin
-        variable cvscanv
-        variable current_tagname
-       
-        gen_log:log T "ENTER "
+        variable logstate
+        variable revnum
+        variable rootbranch
+        variable revbranch
+  
+        gen_log:log T "ENTER"
 
-        catch {unset branches}
+        # Sort the revision and branch lists and remove duplicates
+puts "\nsort_it_all_out"
         foreach r [lsort -dictionary [array names revkind]] {
            puts "$r \"$revkind($r)\""
-           if {$revkind($r) == "root"} {set headrev $r}
-        }
-        if {[info exists branchrevs(trunk)]} {
-           puts "branchrevs(trunk) $branchrevs(trunk)"
-        }
-puts "revbranches: [array names revbranches]"
-        # Now prepare to draw the revision tree
-        # Root first
-        set y $cvscanv(space)
-        set px(0) 10
-        set x [font measure {Helvetica -12 bold} \
-           -displayof $svnjoin.canvas Trunk]
-
-        set px(1) [expr {$px(0) + $x / 2}]
-        set py(1) [expr {$cvscanv(boxy) - 4}]
-
-        $svnjoin.canvas create text \
-           $px(1) $y \
-           -text "ROOT" \
-           -anchor n -fill black \
-           -font {Helvetica -12 bold}
-
-        # Then the rest
-
-        foreach rev [array names revbranches] {
-          if {[info exists branchrevs($rev)]} {
-            foreach r $branchrevs($rev) {
-              gen_log:log D "\tparent of $r"
-            } 
-            set nchildren($rev) [llength $branchrevs($rev)]
-            set kids [array names children $rev.*]
-            foreach kid $kids {
-              set descendents $branchrevs($kid)
-              set ndescendents [llength $descendents]
-              gen_log:log D "\tgranchildren: $descendents"
-              incr nchildren($rev) $ndescendents
-            }
-          } else {
-            set nchildren($rev) 0
-          }
-puts " $rev $revbranches($rev) has $nchildren($rev) children"
-continue
-          gen_log:log D "\t$nchildren($rev) descendents"
-          if {[info exists parent($rev)]} {
-            gen_log:log D "\tchild of $parent($rev)"
-          }
-
-          set alist [split $rev "."]
-          set alength [llength $alist]
-          # Round up instead of down
-          set ind [expr {($alength +1)/ 2}]
-          set pind [expr {$ind - 1}]
-
-          if {! [info exists py($ind)]} {
-            gen_log:log D "  starting new column $ind"
-            set py($ind) $cvscanv(space)
-            set px($ind) [expr {$px($pind) + $cvscanv(midx) + $cvscanv(space)}]
-          }
-          if {[info exists parent($rev)] && $parent($rev) != ""} {
-            gen_log:log D "  this one has a parent in col >=1"
-            if {$py($ind) > $ylevel($parent($rev))} {
-              gen_log:log D "  jumping to level of parent"
-              set py($ind) $ylevel($parent($rev))
-              if {$ind > 2} {
-                # Give it a node if its parent isn't in column1
-                incr ylevel($parent($rev)) -$cvscanv(space)
-                set px($ind) [expr {$px($pind) + $cvscanv(boxx) + $cvscanv(space)}]
-                set py($ind) $ylevel($parent($rev))
-                node $svnjoin $rev \
-                  [expr {$px($pind) + $cvscanv(midx)}] \
-                  [expr {$py($ind) - 1}]
-              }
-            } else {
-              gen_log:log D "  parent not higher"
-              set py($ind) [expr {$py($ind) - $cvscanv(space)}]
-            }
-            set xlevel($rev) [expr {$px($ind) + $cvscanv(midx)}]
-          } else {
-            set py($ind) [expr {$py($ind) - $cvscanv(space)}]
-            gen_log:log D "  just stacking it above the last one"
-            set xlevel($rev) $px($ind)
-          }
-          set ylevel($rev) $py($ind)
-
-          # For column 1, just draw a nondescript node
-          if {$ind == 1} {
-            node $svnjoin $rev $px($ind) $py($ind)
-            set py($ind) [expr {$py($ind) - ($nchildren($rev) - 1) * $cvscanv(space)}]
-          } else {
-            if {! [info exists tags($rev)]} {
-              set tags($rev) ""
-            }
-            gen_log:log D "  tag:  $tags($rev)"
-            rectangle $svnjoin $rev $px($ind) $py($ind)
-            # Line linking it to parent
-            $svnjoin.canvas create line \
-              [expr {$xlevel($parent($rev)) + 10}] \
-              [expr {$ylevel($parent($rev)) + $cvscanv(midy)}] \
-              $px($ind) \
-              [expr {$py($ind) + $cvscanv(midy)}]
-            set py($ind) [expr {$py($ind) - $nchildren($rev) * $cvscanv(space)}]
-          }
         }
 
-        set py(1) [expr {$cvscanv(boxy) - 4}]
-        set maxyind 0
-        foreach i [array names py] {
-          if {$py($i) < $maxyind} {
-            set maxyind $py($i)
-          }
-        }
-
-        set tags($headrev) HEAD
-        gen_log:log D "HEAD  $headrev"
-        gen_log:log D "tagtext \"$tags($headrev)\""
-        # Make a box for top of trunk
-        set ylevel(trunk) [expr {$maxyind - $cvscanv(boxy)}]
-        set tagwidth [font measure {Helvetica -12 bold} \
-           -displayof $svnjoin.canvas Trunk]
-        set boxid [$svnjoin.canvas create rectangle \
-          [expr {$px(1) - $tagwidth / 2}] $ylevel(trunk) \
-          [expr {$px(1) + 5 + $tagwidth / 2}] \
-          [expr {$ylevel(trunk) - $cvscanv(boxy)}] \
-          -width 3 \
-          -fill gray90 \
-          -tags b$headrev]
-        $svnjoin.canvas lower $boxid
-        $svnjoin.canvas create text \
-           [expr {$px(1) + 2}] [expr {$ylevel(trunk) - 2}] \
-           -text "Trunk" \
-           -anchor s -justify center -fill blue \
-           -font {Helvetica -12 bold} \
-           -tags b$headrev
-        # Bottom then top
-        $svnjoin.canvas create line \
-           $px(1) [expr {$cvscanv(space) - 4}] \
-           $px(1) $ylevel(trunk)
-
-        # Bind button-press
-        $svnjoin.canvas bind b$headrev <ButtonPress-1> \
-           [namespace code "select_rectangle HEAD"]
-
-        # You are Here
-        if {$current_tagname == ""} {
-          you_are_here $headrev $tagwidth \
-            [expr {$px(1) - $tagwidth / 2 }] \
-            [expr {$ylevel(trunk) - $cvscanv(boxy)}]
-        }
-
-        # now calculate the bounding box using the canvas bbox function
-        set bbox [$svnjoin.canvas bbox all]
-        set boty [lindex $bbox 1]
-        set topy [lindex $bbox 3]
-        set bheight [expr {$topy - $boty}]
-
-        set origheight [lindex [$svnjoin.canvas config -height] 4]
-
-        set screenHeight [winfo vrootheight .]
-        if {$bheight > $screenHeight} {
-          set bheight $screenHeight
-        }
-        if {$bheight > $origheight} {
-          $svnjoin.canvas config -height $bheight
-        }
-
-        $svnjoin.canvas config -scrollregion $bbox
-        $svnjoin.canvas yview moveto 0
+        # Find out where to put the working revision icon (if anywhere)
+        set command "svn log -q --stop-on-copy ."
+        set cmd [exec::new $command]
+        set log_output [$cmd\::output]
+        set loglines [split $log_output "\n"]
+        set svnstat [lindex $loglines 1]
+        set revnum(current) [lindex $svnstat 0]
+        gen_log:log D "revnum(current) $revnum(current)"
+        puts "revnum(current) $revnum(current)"
+        # We only needed these to place the you-are-here box.
+        catch {unset rootbranch revbranch}
+        DrawTree
         gen_log:log T "LEAVE"
       }
 
-      proc you_are_here {rev offset hx hy} {
-        variable cvscanv
-        variable svnjoin
-        variable revname
+      proc DrawTree {} {
+        global cvscfg
+        variable branchrevs
+        variable join_canvas
+        variable cwd
+        variable box_height
+        variable xy
+        variable boxwidth
+        variable view_xoff
+        variable view_yoff
 
-        gen_log:log T "ENTER ($rev $offset $hx $hy)"
-        gen_log:log D "revname($rev) $revname($rev)"
-        $svnjoin.canvas create image \
-          [expr {$hx + $offset + 16}] [expr {$hy + $cvscanv(boxy)}] \
-          -image Man -anchor s \
-          -tag you_are_here_icon
-        $svnjoin.canvas create text \
-          [expr {$hx + $offset + 26}] [expr {$hy + $cvscanv(boxy)}] \
-          -text "You are\nhere" -anchor sw \
-          -fill red3 \
-          -font {Helvetica -10 bold} \
-          -tag you_are_here_icon
+        gen_log:log T "ENTER"
+#puts "DrawTree"
 
-        # Put the name in the "To" entry and disable it.  You can only
-        # merge to where you are.
-        $svnjoin.up.rversTo delete 0 end
-        $svnjoin.up.rversTo insert end $revname($rev)
-        set disbg [lindex [$svnjoin.up configure -background] 4]
-        $svnjoin.up.rversTo configure -bg $disbg -state disabled
-        $svnjoin.canvas bind b$rev <ButtonPress-1> {}
+        busy_start $join_canvas
+        set view_xoff [lindex [$join_canvas xview] 0]
+        set view_yoff [lindex [$join_canvas yview] 0]
+        $join_canvas delete all
+        set box_height [font metrics {Helvetica -10 bold} \
+            -displayof $join_canvas -linespace]
+          
+          if {$branchrevs(trunk) != ""} {
+            gen_log:log D "DrawBranch 0 0 {} trunk"
+            DrawBranch 0 0 {} trunk
+          } else {
+            foreach a [array names branchrevs] {
+              puts "   branchrevs($a) \"$branchrevs($a)\""
+              if {$branchrevs($a) != ""} {
+                gen_log:log D "DrawBranch 0 0 {} $a"
+                DrawBranch 0 0 {} $a
+                break
+              }
+            }
+          }
+          UpdateBndBox
+
+          # Reselect the previously selected revisions
+          #variable sel_tag
+          #variable sel_rev
+	  #foreach AorB {A B} {
+            #SetSelection $AorB $sel_tag($AorB) $sel_rev($AorB)
+          #}
+          busy_done $join_canvas
+        gen_log:log T "LEAVE"
+        return
       }
 
-      toplevel $svnjoin
+      proc DrawBranch { x y root_rev branch } {
+        variable join_canvas
+        variable box_height
+        variable font_norm_h
+        variable revbranches
+        variable branchrevs
+        variable revnum
+
+        gen_log:log T "ENTER ($x $y \"$root_rev\" $branch)"
+        set top 1
+
+        # Work out width and height of this limb, saving sizes of revisions
+        set tag_width 0
+        if {$branch == {current}} {
+          set box_width [CalcCurrent $branch]
+        } else {
+          set box_width [CalcRoot $branch]
+        }
+        set height $box_height
+        set rdata {}
+
+        set revlist [lsort -dictionary -decreasing $branchrevs($branch)]
+        foreach revision $revlist {
+            set rtw 0
+            set rbw $box_width
+            set rh $box_height
+          lappend rdata $rtw $rh
+          incr height 1
+          incr height $rh
+        }
+        # Position branch.
+        # Look for overlap horizontally
+        while {1} {
+          $join_canvas addtag ol_x overlapping \
+            [expr {$x - 1}] [expr {$y - $height }] \
+            [expr {$x + $tag_width + $box_width}] $y
+          set bbox [$join_canvas bbox ol_x]
+          $join_canvas dtag ol_x
+          if {$bbox == {}} {
+            break
+          }
+          gen_log:log D "horizontal overlap with $bbox"
+          # Move branch to rightmost point of overlapped objects plus some space
+          # N.B. +1 because exactly equal counts as an overlap
+          set x [expr {[lindex $bbox 2] + 1}]
+        }
+        # Look for overlap vertically
+        $join_canvas addtag ol_y overlapping \
+          $x [expr {$y - $height}] \
+          [expr {$x + $tag_width + $box_width}] [expr {$y - $height}]
+        set bbox [$join_canvas bbox ol_y]
+        $join_canvas dtag ol_y
+        if {$bbox != {}} {
+          # Move down to make space
+          gen_log:log D "vertical overlap with $bbox"
+          incr y [expr {[lindex $bbox 3] - ($y - $height)}]
+        }
+        # Position to top of branch
+        incr x $tag_width
+        incr y -$height
+        # Draw the branch
+        set midx [expr {$x + $box_width/2}]
+        set last_y {}
+        gen_log:log D "revlist $revlist"
+        set rl [llength $revlist]
+        set c 0
+        foreach revision [lrange $revlist 0 end] {rtag_width rheight} $rdata {
+          #if {$revision == ""} {continue}
+          incr c
+          incr y 1
+          incr y $rheight
+          # For each branch off this revision, draw it to the right of this
+          # revision box and a little above the centre line of this box.
+          set x2 [expr {$x + $box_width}]
+          set y2 [expr {$y - $box_height - 20}]
+          set brevs {}
+          set bxys {}
+          if [info exists revbranches($revision)] {
+            foreach r2 $revbranches($revision) {
+              gen_log:log D " revbranches($revision): $r2"
+              #if {! [info exists revbranches($r2)]} {continue}
+              # Do we display the branch if it is empty?
+              # If it's the you-are-here, we do anyway
+              lappend brevs $r2
+              foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
+                lappend bxys $lx $lbw $rh $lly
+                break
+              }
+            }
+            set x2 [expr {$lx + $lbw + 1}]
+          }
+          # y2 may have changed to accomodate a long branch. If so we need
+          # to figure out what our y should be
+          set y [expr {$y2 + $box_height/2 + 10}]
+          set rx [expr {$x + $box_width}]
+          set ry [expr {$y - $box_height/2}]
+          foreach b $brevs {bx bw rh ly} $bxys {
+            set mx [expr {$bx + $bw/2}]
+            set my [expr {$ly + $rh + 1}]
+            $join_canvas create line \
+                $rx $ry   $mx $ry  $mx $my\
+                -arrow last -arrowshape { 6 6.7 3 } -width 2 \
+                -fill blue \
+                -tags [list A$revision B[lindex $branchrevs($b) 0] delta active]
+          }
+          if {$revision == $revnum(current)} {
+            foreach {box_width curr_height} [CalcCurrent $branch] { break }
+            set y [expr {$y - 1}]
+            set y [expr {$y - $rheight}]
+            DrawCurrent $x $y $box_width $curr_height $revision
+            $join_canvas create line \
+              $midx [expr {$y + 1}] $midx $y \
+              -arrow last -arrowshape { 6 6.7 3 } -width 2
+            incr y 10
+            incr y $rheight
+          }
+          if {!$top} {incr y [expr {$box_height/2}]}
+          if {$last_y != {}} {
+            $join_canvas create line \
+              $midx $last_y $midx [expr {$y - $box_height}] \
+              -arrow first -arrowshape { 6 6.7 3 } -width 2 \
+              -tags [list A$revision B$last_rev delta active]
+          }
+          #DrawRevision $x $y $rtag_width $box_width $rheight $revision
+          set top 0
+          UpdateBndBox
+          set last_y $y
+          set last_rev $revision
+        }
+        incr y 10
+        if {[info exists revision]} {
+          DrawRoot $x $y $box_width $revision $branch
+#puts "Finished $branch\n"
+        }
+        gen_log:log T "LEAVE"
+        set ret_y [expr {$y + $box_height + 1}]
+        return [list $x $ret_y $box_width $box_height $last_y]
+      }
+
+      proc DrawRoot { x y box_width root_rev branch } {
+        global cvscfg
+        variable box_height
+        variable join_canvas
+
+        gen_log:log T "ENTER ($x $y $box_width $root_rev $branch)"
+#puts "DrawRoot ($branch) x=$x y=$y"
+        # draw the box
+        set rheight $box_height
+        incr y $rheight
+        $join_canvas create rectangle \
+          $x $y \
+          [expr {$x + $box_width}] [expr {$y - $rheight}] \
+            -width $box_width -fill gray90 -outline blue
+        set mx [expr {$x + $box_width/2}]
+        set my [expr {$y - $box_height}]
+        # This is the short arrow above the rectangle
+        $join_canvas create line \
+           $mx $my $mx [expr {$my - 10}] \
+           -arrow last -width 2 \
+           -fill blue
+        set tx [expr {$x + $box_width/2}]
+        set ty [expr {$y - 2}]
+        gen_log:log D "branch $branch"
+        $join_canvas create text \
+            $tx $ty \
+            -text $branch \
+            -anchor s \
+            -font {Helvetica -10 bold} -fill blue
+        gen_log:log T "LEAVE"
+        return
+      }
+
+      proc DrawCurrent { x y box_width box_height revision } {
+        variable join_canvas
+        variable revtags
+        variable curr_x
+        variable curr_y
+
+        gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
+#puts "DrawCurrent ($revision) x=$x y=$y"
+        # draw the box
+        set tx [expr {$x + $box_width}]
+        set ty [expr {$y - $box_height}]
+        $join_canvas create rectangle \
+          $x $y $tx $ty \
+          -width $box_width -fill gray90 -outline red3
+        set pad \
+          [expr {($box_width - [image width Man] \
+            - [font measure {Helvetica -10 bold} -displayof $join_canvas {You are}]) \
+            / 3}]
+        set ty [expr {$y - [expr {$box_height/2}]}]
+        # add the contents
+        $join_canvas create image \
+          [expr {$x + $pad}] $ty \
+          -image Man -anchor w \
+          -tags [list box active]
+        $join_canvas create text \
+          [expr {$x + $box_width - $pad}] $ty \
+          -text "You are\nhere" -anchor e \
+          -fill red3 \
+          -tags [list box active]
+        gen_log:log T "LEAVE"
+        return
+      }
+
+      proc CalcRoot { branch } {
+        global cvscfg
+        variable join_canvas
+
+        gen_log:log T "ENTER ($branch)"
+        set box_width 0
+        set w [font measure {Helvetica -10 bold} \
+            -displayof $join_canvas $branch]
+        if {$w > $box_width} {
+          set box_width $w
+        }
+        gen_log:log T "LEAVE"
+        return $box_width 
+      }
+
+      proc CalcCurrent { revision } {
+        variable curr
+        variable join_canvas
+
+        gen_log:log T "ENTER ($revision)"
+        set box_width \
+          [expr {[image width Man] \
+            + [font measure {Helvetica -10 bold} -displayof $join_canvas {You are}] }]
+        set box_height [image height Man]
+        set h [expr {2 * 10}]
+        if {$h > $box_height} {
+          set box_height $h
+        }
+        gen_log:log T "LEAVE"
+        return [list $box_width $box_height]
+      }
+
+
+      proc UpdateBndBox {} {
+        variable join_canvas
+        variable view_xoff
+        variable view_yoff
+        variable curr_x
+        variable curr_y
+
+        gen_log:log T "ENTER"
+        foreach {x1 y1 x2 y2} { 0 0 100 100 } { break }
+        foreach {x1 y1 x2 y2} [$join_canvas bbox all] { break }
+        $join_canvas configure \
+          -scrollregion [list \
+            [expr {$x1 - 5}] [expr {$y1 - 5}] \
+            [expr {$x2 + 5}] [expr {$y2 + 5}]
+          ]
+
+        if {[info exists curr_x]} {
+          set canv_width [$join_canvas cget -width]
+          set canv_height [$join_canvas cget -height]
+          gen_log:log D "visible width $canv_width"
+          gen_log:log D "visible height $canv_height"
+          gen_log:log D "x $curr_x"
+          gen_log:log D "y $curr_y"
+          set bbox [$join_canvas bbox all]
+          set llx [lindex $bbox 0]
+          set lly [lindex $bbox 1]
+          set urx [lindex $bbox 2]
+          set ury [lindex $bbox 3]
+          set bbox_width [expr {$urx - $llx}]
+          set bbox_height [expr {$ury - $lly}]
+          gen_log:log D "diagram width $bbox_width"
+          gen_log:log D "diagram height $bbox_height"
+          set curr_y [expr {$curr_y - [image height Man]}]
+          if {$curr_x > $canv_width} {
+            set curr_x [expr {$curr_x - 3 * [font measure {Helvetica -10 bold} \
+                     -displayof $join_canvas {You are}]}]
+            gen_log:log D "positioning x:  new x $curr_x"
+          } else {
+            gen_log:log D "not re-positioning x"
+            set curr_x 0
+          }
+          set abs_y [expr abs($curr_y)]
+          if {$abs_y > [expr {$bbox_height - $canv_height}]} {
+            set abs_y [expr {$canv_height - $curr_y}]
+            gen_log:log D "positioning y:  new y $abs_y"
+          } else {
+            gen_log:log D "not re-positioning y"
+            set curr_y 0
+          }
+          set view_xoff [expr {$curr_x / ($bbox_width * 1.0)}]
+          set view_yoff [expr {1 - ($abs_y / $bbox_height * 1.0)}]
+        }
+        gen_log:log D "set offset $view_xoff $view_yoff"
+        $join_canvas xview moveto $view_xoff
+        $join_canvas yview moveto $view_yoff
+        update
+        gen_log:log T "LEAVE"
+        return
+      }
+
+      toplevel .svnjoin$my_idx
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $svnjoin @$cvscfg(bitmapdir)/dirbranch.xbm
       }
@@ -520,13 +621,14 @@ continue
       pack $svnjoin.down -side bottom -fill x
 
       # The canvas for the big picture
-      canvas $svnjoin.canvas -relief sunken -border 2 \
+      set join_canvas $svnjoin.canvas
+      canvas $join_canvas -relief sunken -border 2 \
         -yscrollcommand "$svnjoin.yscroll set" \
         -xscrollcommand "$svnjoin.xscroll set"
       scrollbar $svnjoin.xscroll -relief sunken -orient horizontal \
-        -command "$svnjoin.canvas xview"
+        -command "$join_canvas xview"
       scrollbar $svnjoin.yscroll -relief sunken \
-        -command "$svnjoin.canvas yview"
+        -command "$join_canvas yview"
 
       #
       # Create buttons
@@ -576,9 +678,9 @@ continue
       #
       pack $svnjoin.xscroll -side bottom -fill x -padx 1 -pady 1
       pack $svnjoin.yscroll -side right -fill y -padx 1 -pady 1
-      pack $svnjoin.canvas -fill both -expand 1
+      pack $join_canvas -fill both -expand 1
 
-      $svnjoin.canvas delete all
+      $join_canvas delete all
 
       #
       # Window manager stuff.
@@ -587,10 +689,10 @@ continue
 
       wm title $svnjoin "Branches"
       scrollbindings Canvas
-      focus $svnjoin.canvas
+      focus $svnjoin
 
       do_log $relpath
-      fillcanvas
+      sort_it_all_out
 
       return [namespace current]
     }
