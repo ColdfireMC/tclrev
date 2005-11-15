@@ -424,9 +424,9 @@ proc merge_dialog { from since file {fromtag {}} } {
     # Construct tag names
     set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat)]
     set totagend [expr {$totagbegin + 8}]
-    set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1]}]
+    set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
     set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat)]
-    set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1]}]
+    set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1}]]
     set datef [string range $cvscfg(mergetoformat) $totagend end]
     set today [clock format [clock seconds] -format "$datef"]
 
