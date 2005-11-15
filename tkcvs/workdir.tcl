@@ -163,7 +163,7 @@ proc workdir_setup {} {
      -command { import_run }
 
   button .workdir.bottom.buttons.filefuncs.blogfile -image Branches \
-     -command { cvs_logcanvas [pwd] [workdir_list_files] }
+     -command { cvs_logcanvas [workdir_list_files] }
   button .workdir.bottom.buttons.filefuncs.bannotate -image Annotate \
      -command { cvs_annotate $current_tagname [workdir_list_files] }
   button .workdir.bottom.buttons.filefuncs.bdiff -image Diff \
@@ -483,7 +483,7 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add command -label "Tag Files" -underline 0 \
      -command { file_tag_dialog "no" }
   .workdir.menubar.cvs add command -label "Browse the Log Diagram" \
-     -command { cvs_logcanvas [pwd] [workdir_list_files] }
+     -command { cvs_logcanvas [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Resolve Conflicts" \
      -command { cvs_merge_conflict [workdir_list_files] }
   .workdir.menubar.cvs add separator
@@ -1092,7 +1092,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
-      -command { cvs_logcanvas [pwd] [workdir_list_files] }
+      -command { cvs_logcanvas [workdir_list_files] }
     if {$cvscfg(econtrol)} {
       .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
       .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal

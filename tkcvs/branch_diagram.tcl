@@ -2,11 +2,6 @@
 # TCL Library for TkCVS
 #
 
-#
-# $Id: logcanvas.tcl,v 1.74 2005/06/26 06:15:29 dorothyr Exp $
-#
-# Contains procedures used for the log canvas for tkCVS.
-#
 # This is a major rewrite over the previous version. It uses a
 # top down, recursive, branch-at-a-time, latest-revision-first
 # algorithm to layout the graph sensibly.
@@ -16,7 +11,7 @@
 namespace eval ::logcanvas {
   variable instance 0
 
-  proc new {directory filename localfile command} {
+  proc new {filename localfile command scope} {
     #
     # Creates a new log canvas.  If filename is not "no file" then it is
     # the file name in the local directory that this applies to.
@@ -26,6 +21,7 @@ namespace eval ::logcanvas {
     incr instance
     global inrcs
     global current_tagname
+    variable cwd
 
     set cwd [pwd]
     if {[catch "image type Fileview"]} {
@@ -36,26 +32,27 @@ namespace eval ::logcanvas {
       #::repository::images
       modbrowse_images
     }
-    if {![info exists current_tagname]} {
-      set current_tagname ""
-      if {$localfile != "no file"} {
-        cvsroot_check $cwd
-        read_cvs_dir [file join $cwd CVS]
-      }
-    }
+    #if {![info exists current_tagname]} {
+      #set current_tagname ""
+      #if {$localfile != "no file"} {
+        #cvsroot_check $cwd
+        #read_cvs_dir [file join $cwd CVS]
+      #}
+    #}
 
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
-      global cvscfg
-      global cvs
-      global tcl_platform
-      variable directory [uplevel {concat $directory}]
-      variable filename [uplevel {concat $filename}]
-      variable localfile [uplevel {concat $localfile}]
-      variable command [uplevel {concat $command}]
+      set filename [uplevel {concat $filename}]
+      set localfile [uplevel {concat $localfile}]
+      set command [uplevel {concat $command}]
+      set scope [uplevel {concat $scope}]
+      set cwd [uplevel {concat $cwd}]
       variable cmd_log
       # Global constants scaled by current scaling factor for this instance
       variable curr
+      global cvscfg
+      global cvs
+      global tcl_platform
       # User options for info display for this instance
       variable opt
       variable revwho
@@ -74,374 +71,6 @@ namespace eval ::logcanvas {
       set sel_rev(A) {}
       set sel_rev(B) {}
       variable logcanvas ".logcanvas$my_idx"
-
-      proc reloadLog { } {
-        variable directory
-        variable command
-        variable cmd_log
-        variable logcanvas
-        variable revwho
-        variable revdate
-        variable revtime
-        variable revlines
-        variable revstate
-        variable revcomment
-        variable tags
-        variable revbranches
-        variable branchrevs
-        variable logstate
-        variable cwd
-
-        gen_log:log T "ENTER"
-        catch { $logcanvas.canvas delete all }
-        catch { unset revwho }
-        catch { unset revdate }
-        catch { unset revtime }
-        catch { unset revlines }
-        catch { unset revstate }
-        catch { unset revcomment }
-        catch { unset tags }
-        catch { unset revbranches }
-        catch { unset branchrevs }
-        set cwd [pwd]
-        if {[catch {cd $directory}]} {
-          cvsfail "unable to access $directory" $logcanvas
-          gen_log:log T "LEAVE unable to access $directory"
-          return
-        }
-
-        busy_start $logcanvas
-        set tags(1) {}
-        set logstate {R}
-        set cmd_log [::exec::new $command {} 0 [namespace current]::ParseLog]
-        # wait for it to finish so our arrays are all populated
-        $cmd_log\::wait
-        if {[catch {cd $cwd}]} {
-          # FIXME: WTF do we do now?!?
-          gen_log:log T "LEAVE unable to return to $cwd"
-          return
-        }
-
-        [namespace current]::sort_it_all_out
-        gen_log:log T "LEAVE"
-        return
-      }
-
-      proc ParseLog { exec logline } {
-        #
-        # Splits the rcs file up and parses it using a simple state machine.
-        #
-        global module_dir
-        global inrcs
-        global cvsglb
-        variable filename
-        variable localfile
-        variable logcanvas
-        variable revwho
-        variable revdate
-        variable revtime
-        variable revlines
-        variable revstate
-        variable revcomment
-        variable tags
-        variable revbranches
-        variable branchrevs
-        variable logstate
-        variable revnum
-        variable rootbranch
-        variable revbranch
-
-        #gen_log:log D "$logline"
-        if {$logline != {}} {
-          switch -exact -- $logstate {
-            {R} {
-              # Look for the first text line which should give the file name.
-              if {[string match {RCS file: *} $logline]} {
-                # I think the whole path to the "RCS file" from the log isn't
-                # really what # we want here.  More like module_dir, so we know
-                # what to feed to cvs rdiff and rannotate.
-                set fname [string range $logline 10 end]
-                set fname [file tail $fname]
-                if {[string range $fname end-1 end] == {,v}} {
-                  set fname [string range $fname 0 end-2]
-                }
-                set fname [file join $module_dir $fname]
-                wm title $logcanvas "CVS Log: $fname"
-                if {$inrcs && [file isdir RCS]} {
-                   set fname [file join RCS $fname]
-                }
-                $logcanvas.up.rfname delete 0 end
-                $logcanvas.up.rfname insert end "$fname,v"
-                $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
-              } elseif {[string match {Working file: *} $logline]} {
-                # If we care about a working copy we need to look
-                # at the name of the working file here. It may be
-                # different from what we were given if we were invoked
-                # on a directory.
-                if {$localfile != "no file"} {
-                  set localfile [string range $logline 14 end]
-                }
-              } elseif {$logline == "symbolic names:"} {
-                set logstate {T}
-              }
-            }
-            {T} {
-              # Any line with a tab leader is a tag
-              if { [string index $logline 0] == "\t" } {
-                set parts [split $logline {:}]
-                set tagstring [string trim [lindex $parts 0]]
-                set revnum [string trim [lindex $parts 1]]
-  
-                set parts [split $revnum {.}]
-                if {[expr {[llength $parts] & 1}] == 1} {
-                  set parts [linsert $parts end-1 {0}]
-                  set revnum [join $parts {.}]
-                }
-                lappend tags($revnum) $tagstring
-  
-                if {[lindex $parts end-1] == 0} {
-                  set revnum [join [lreplace $parts end-1 end-1] {.}]
-                  set rootbranch($tagstring) [join [lrange $parts 0 end-2] {.}]
-                  set revbranch($tagstring) $revnum
-                  lappend tags($revnum) $tagstring
-                  lappend revbranches([join [lrange $parts 0 end-2] {.}]) \
-                    $revnum
-                  append branchrevs($revnum) {}
-                } else {
-                  # Is it possible that this tag is the only surviving
-                  # record that this revision ever existed?
-                  if {[llength $parts] == 2} {
-                    # A trunk revision but not necessarily 1.x because CVS allows
-                    # the first part of the revision number to be changed. We have
-                    # to assume that people always increase it if they change it
-                    # at all.
-                    lappend branchrevs(1) $revnum
-                  } else {
-                    lappend branchrevs([join [lrange $parts 0 end-1]\
-                        {.}]) $revnum
-                  }
-                  # Branches for this revision may have already been created
-                  # during tag parsing
-                  append revbranches($revnum) {}
-                  foreach "revwho($revnum) revdate($revnum) revtime($revnum)
-                    revlines($revnum) revstate($revnum) revcomment($revnum)" \
-                    {{} {} {} {} {dead} {}} \
-                    { break }
-                }
-              } else {
-                if {$logline == "description:"} {
-                  set logstate {S}
-                } elseif {$logline == "----------------------------"} {
-                  # Oops, missed something.
-                  set logstate {V}
-                }
-              }
-            }
-            {S} {
-              # Look for the line that starts a revision message.
-              if {$logline == "----------------------------"} {
-                set logstate {V}
-              }
-            }
-            {V} {
-              # Look for a revision number line
-              set revnum [lindex [split $logline] 1]
-              set parts [split $revnum {.}]
-              if {[llength $parts] == 2} {
-                # A trunk revision but not necessarily 1.x because CVS allows
-                # the first part of the revision number to be changed. We have
-                # to assume that people always increase it if they change it
-                # at all.
-                lappend branchrevs(1) $revnum
-              } else {
-                lappend branchrevs([join [lrange $parts 0 end-1] {.}]) $revnum
-              }
-              # Branches for this revision may have already been created
-              # during tag parsing
-              append revbranches($revnum) {}
-              foreach "revwho($revnum) revdate($revnum) revtime($revnum)
-                revlines($revnum) revstate($revnum) revcomment($revnum)" \
-                {{} {} {} {} {} {}} \
-                { break }
-              set logstate {D}
-            }
-            {D} {
-              # Look for a date line.  This also has the name of the author.
-              set parts [split $logline]
-	      if {[lindex $parts 4] == "author:"} {
-                foreach [list \
-                    revwho($revnum) revdate($revnum) revtime($revnum) \
-                    revlines($revnum) revstate($revnum) \
-                  ] \
-                  [list \
-                    [string trimright [lindex $parts 5] {;}] \
-                    [lindex $parts 1] \
-                    [string trimright [lindex $parts 2] {;}] \
-                    [lrange $parts 11 end] \
-                    [string trimright [lindex $parts 8] {;}] \
-                  ] \
-                  { break }
-	      } else {
-                foreach [list \
-                    revwho($revnum) revdate($revnum) revtime($revnum) \
-                    revlines($revnum) revstate($revnum) \
-                  ] \
-                  [list \
-                    [string trimright [lindex $parts 6] {;}] \
-                    [lindex $parts 1] \
-                    [string trimright [lindex $parts 2] {;}] \
-                    [lrange $parts 11 end] \
-                    [string trimright [lindex $parts 8] {;}] \
-                  ] \
-                  { break }
-	      }
-              set logstate {L}
-            }
-            {L} {
-              # See if there are branches off this revision
-              if {[string match "branches:*" $logline]} {
-                foreach br [lrange $logline 1 end] {
-                  set br [string trimright $br {;}]
-                  lappend revbranches($revnum) $br
-                  append tags($br) {}
-                }
-              } elseif {$logline == {----------------------------}} {
-                set logstate {V}
-              } elseif {$logline ==\
-  {=============================================================================}} {
-                set logstate {X}
-              } else {
-                append revcomment($revnum) $logline "\n"
-              }
-            }
-            {X} {
-              # ignore any further lines
-            }
-          }
-        }
-  
-        if {$logstate == {X}} {
-          gen_log:log D "********* Done parsing *********"
-        }
-        return [list {} $logline]
-      }
-
-      proc sort_it_all_out {} {
-        global cvscfg
-        global logcfg
-        global module_dir
-        variable filename
-        variable logcanvas
-        variable revwho
-        variable revdate
-        variable revtime
-        variable revlines
-        variable revstate
-        variable revcomment
-        variable tags
-        variable revbranches
-        variable branchrevs
-        variable logstate
-        variable revnum
-        variable rootbranch
-        variable revbranch
-        variable fromprefix
-        variable toprefix
-  
-        # Construct tag names
-        set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat) ]
-        set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
-        set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat) ]
-        set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin -1}]]
-
-        # Sort the revision and branch lists and remove duplicates
-        foreach r [array names branchrevs] {
-          set branchrevs($r) \
-            [lsort -unique -decreasing -command sortrevs $branchrevs($r)]
-          #gen_log:log D "branchrevs($r) $branchrevs($r)"
-        }
-        foreach r [array names revbranches] {
-          set revbranches($r) \
-            [lsort -unique -command sortrevs $revbranches($r)]
-          #gen_log:log D "revbranches($r) $revbranches($r)"
-        }
-        # Find out where to put the working revision icon (if anywhere)
-        # FIXME: we don't know that the log parsed was derived from the
-        # file in this directory. Maybe we should check CVS/{Root,Repository}?
-        # Maybe this check should be done elsewhere?
-        variable directory
-        if {$filename != "no file"} {
-          gen_log:log D "$filename is local. Reading CVS/Entries"
-          set basename [file tail $filename]
-          if {![catch {open [file join \
-                              $directory [file dirname $filename] {CVS}\
-                        {Entries}] \
-                        {r}} entries]} \
-          {
-            foreach line [split [read $entries] "\n"] {
-              # What does the entry for an added/deleted file look like?
-              set parts [split $line {/}]
-              if {[lindex $parts 1] == $basename} {
-                set revnum [lindex $parts 2]
-                if {[string index $revnum 0] == {-}} {
-                  # File has been locally removed and cvs removed but not
-                  # committed.
-                  set revstate(current) {dead}
-                  set revnum [string range $revnum 1 end]
-                } else {
-                  set revstate(current) {Exp}
-                }
-  
-                set root [join [lrange [split $revnum {.}] 0 end-1] {.}]
-                gen_log:log D "root $root"
-                set tag [string range [lindex $parts 5] 1 end]
-                if {$revnum == {0}} {
-                  # A locally added file has a revision of 0. Presumably
-                  # there is no log and no revisions to show.
-                  # FIXME: what if this is a resurrection?
-                  lappend branchrevs(1) {current}
-                  set revbranches(current) {}
-                } elseif {[info exists rootbranch($tag)] && \
-                    $rootbranch($tag) == $revnum} {
-                  # The sticky tag specifies a branch and the branch's
-                  # root is the same as the source revision. Place the
-                  # you-are-here box at the start of the branch.
-                  lappend branchrevs($revbranch($tag)) {current}
-                  set revbranches(current) {}
-                } else {
-                  if {[catch {info exists $branchrevs($root)}] == 0} {
-                    if {$revnum == [lindex $branchrevs($root) 0]} {
-                      # The revision we are working on is the latest on its
-                      # branch. Place the you-are-here box on the end of the
-                      # branch.
-                      set branchrevs($root) [linsert $branchrevs($root) 0\
-                        {current}]
-                      set revbranches(current) {}
-                    } else {
-                      # Otherwise we will place it as a branch off the
-                      # revision.
-                      set revbranches($revnum) [linsert $revbranches($revnum)\
-                        0 {current}]
-                    }
-                  }
-                }
-                foreach {revwho(current) revdate(current) revtime(current)
-                    revlines(current) revcomment(current)
-                    branchrevs(current)} \
-                    {{} {} {} {} {} {}} \
-                    { break }
-                  break
-                }
-              }
-              close $entries
-            }
-        } else {
-          gen_log:log D "$filename"
-        }
-        # We only needed these to place the you-are-here box.
-        catch {unset rootbranch revbranch}
-        DrawTree now
-      }
 
       proc ClearSelection {AorB} {
         variable logcanvas
@@ -772,6 +401,7 @@ namespace eval ::logcanvas {
         variable tags
         variable tlist
 
+puts "ENTER $revision"
         #gen_log:log T "ENTER ($revision)"
         set height $box_height
         set tag_width 0
@@ -939,13 +569,16 @@ namespace eval ::logcanvas {
         variable branchrevs
         variable revbranches
 
+        puts "DrawBranch ($x $y $root_rev $branch)"
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         # What revisions to show on this branch?
+puts " branchrevs($branch) $branchrevs($branch)"
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
           # Always have the head revision
           set revlist [lindex $branchrevs($branch) 0]
+puts "revlist $revlist"
           foreach r [lrange $branchrevs($branch) 1 end-1] {
             if {$opt(show_inter_revs)
             || ($opt(show_empty_branches) && $revbranches($r) != {})} {
@@ -974,7 +607,9 @@ namespace eval ::logcanvas {
         }
         set height [expr {$root_height + $curr(spcy)}]
         set rdata {}
+puts "revlist $revlist"
         foreach revision $revlist {
+puts " $revision"
           if {$revision == {current}} {
             set rtw 0
             foreach {rbw rh} [CalcCurrent $revision] { break }
@@ -1118,6 +753,7 @@ namespace eval ::logcanvas {
         variable curr_y
 
         #gen_log:log T "ENTER"
+
         foreach {x1 y1 x2 y2} [$logcanvas.canvas bbox all] { break }
         $logcanvas.canvas configure \
           -scrollregion [list \
@@ -1173,6 +809,7 @@ namespace eval ::logcanvas {
         global cvscfg
         global logcfg
         global module_dir
+        variable scope
         variable after_id_draw
         variable logcanvas
         variable cwd
@@ -1183,26 +820,70 @@ namespace eval ::logcanvas {
         variable fromtag_branch
         variable totag_branch
         variable toprefix
+        variable fromprefix
         variable xy
         variable boxwidth
+        variable view_xoff
+        variable view_yoff
+        variable curr
+        variable opt
+        variable rev_info
+        variable scale
+        variable font_norm
+        variable font_norm_h
+        variable font_bold
+        variable font_bold_h
+
+        variable revwho
+        variable revdate
+        variable revtime
+        variable revlines
+        variable revstate
+        variable revcomment
+        variable tags
+        variable revbranches
+        variable branchrevs
+
 
         gen_log:log T "ENTER ($now)"
+        foreach a [array names $scope\::revwho] {
+          set revwho($a) [set $scope\::revwho($a)]
+        }
+        foreach a [array names $scope\::revdate] {
+          set revdate($a) [set $scope\::revdate($a)]
+        }
+        foreach a [array names $scope\::revtime] {
+          set revtime($a) [set $scope\::revtime($a)]
+        }
+        foreach a [array names $scope\::revlines] {
+          set revlines($a) [set $scope\::revlines($a)]
+        }
+        foreach a [array names $scope\::revstate] {
+          set revstate($a) [set $scope\::revstate($a)]
+        }
+        foreach a [array names $scope\::revcomment] {
+          set revcomment($a) [set $scope\::revcomment($a)]
+        }
+        foreach a [array names $scope\::tags] {
+          set tags($a) [set $scope\::tags($a)]
+        }
+        foreach a [array names $scope\::revbranches] {
+          set revbranches($a) [set $scope\::revbranches($a)]
+        }
+        foreach a [array names $scope\::branchrevs] {
+          set branchrevs($a) [set $scope\::branchrevs($a)]
+        }
+
+        set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat) ]
+        set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat) ]
+        set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin -1}]]
+        set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
+
         catch {after cancel $after_id_draw}
         if {$now != {now} && [info exists logcfg(draw_delay)]} {
           set after_id_draw \
             [after $logcfg(draw_delay) [namespace code {DrawTree now}]]
         } else {
-          variable view_xoff
-          variable view_yoff
-          variable curr
-          variable opt
-          variable rev_info
-          variable scale
-          variable font_norm
-          variable font_norm_h
-          variable font_bold
-          variable font_bold_h
-
           busy_start $logcanvas
           set view_xoff [lindex [$logcanvas.canvas xview] 0]
           set view_yoff [lindex [$logcanvas.canvas yview] 0]
@@ -1260,7 +941,6 @@ namespace eval ::logcanvas {
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
-          variable branchrevs
           if {[info exists branchrevs(1)]} {
             DrawBranch 0 0 {} 1
             UpdateBndBox
@@ -1327,6 +1007,7 @@ namespace eval ::logcanvas {
         }
         save_options
       }
+
       # Collect the user options from the global set
       set opt(update_drawing) $logcfg(update_drawing)
       set opt(scale) $logcfg(scale)
@@ -1334,7 +1015,7 @@ namespace eval ::logcanvas {
         set opt($key) $value
       }
       toplevel $logcanvas
-      wm title $logcanvas "CVS Log"
+      wm title $logcanvas "CVS Log $filename"
       $logcanvas configure -menu $logcanvas.menubar
       menu $logcanvas.menubar
   
@@ -1567,7 +1248,7 @@ namespace eval ::logcanvas {
       #
       button $logcanvas.refresh -image Refresh \
         -command [namespace code {
-                 reloadLog
+                 $scope\::reloadLog
                }]
       button $logcanvas.view -image Fileview \
         -command [namespace code {
@@ -1657,7 +1338,7 @@ namespace eval ::logcanvas {
         $logcanvas.viewtags configure -state disabled
         $logcanvas.diff configure -command [namespace code {
                  comparediff_r [$logcanvas.up.revA_rvers cget -text] \
-                   [$logcanvas.up.revB_rvers cget -text] $cwd $logcanvas $filename
+                 [$logcanvas.up.revB_rvers cget -text] $cwd $logcanvas $filename
                }]
       }
   
@@ -1721,22 +1402,9 @@ namespace eval ::logcanvas {
       $logcanvas.canvas xview moveto 0
       $logcanvas.canvas yview moveto 0
       # Collect the history from the RCS log
-      reloadLog
-      return [namespace current]
+      #return [namespace current]
+      return [list [namespace current] $logcanvas]
     }
   }
 }
 
-proc sortrevs {a b} {
-    # Proc for lsort -command, to sort revision numbers
-    # Return -1 if a<b, 0 if a=b, and 1 if a>b
-    foreach ax [split $a {.}] bx [split $b {.}] {
-	if {$ax < $bx} {
-	    return -1
-	}\
-	elseif {$ax > $bx} {
-	    return 1
-	}
-    }
-    return 0
-}

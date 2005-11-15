@@ -200,6 +200,9 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
       set cvscfg(startwindow) log
       set lcfile $val; incr i
     }
+    {--*j.*} {
+      set cvscfg(startwindow) $val; incr i
+    }
     -psn_* {
       # Ignore the Carbon Process Serial Number
       incr i
@@ -277,6 +280,14 @@ image create photo Branchtag \
    -format gif -file [file join $cvscfg(bitmapdir) branchtag.gif]
 image create photo Import \
    -format gif -file [file join $cvscfg(bitmapdir) import.gif]
+image create photo Mergebranch \
+  -format gif -file [file join $cvscfg(bitmapdir) merge.gif]
+image create photo Mergediff \
+  -format gif -file [file join $cvscfg(bitmapdir) merge_changes.gif]
+image create photo Man \
+  -format gif -file [file join $cvscfg(bitmapdir) man.gif]
+
+
 
 # Create a window
 if {[string match {mod*} $cvscfg(startwindow)]} {
@@ -296,7 +307,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_logcanvas [pwd] \"$lcfile"\
+    cvs_logcanvas \"$lcfile"\
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
@@ -305,6 +316,15 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     svn_branches $lcfile
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"
+  }
+} elseif {$cvscfg(startwindow) == "join"} {
+  wm withdraw .
+  if {$incvs} {
+    cvs_joincanvas
+  } elseif {$insvn} {
+    svn_joincanvas
+  } else {
+    puts "Directory doesn't seem to be in CVS or SVN"
   }
 } else {
   workdir_setup
