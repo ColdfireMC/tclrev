@@ -58,12 +58,11 @@ namespace eval ::logcanvas {
       variable revwho
       variable revdate
       variable revtime
-      variable revlines
       variable revstate
       variable revbranches
       variable branchrevs
       variable revcomment
-      variable tags
+      variable revtags
       variable sel_tag
       set sel_tag(A) {}
       set sel_tag(B) {}
@@ -140,11 +139,11 @@ namespace eval ::logcanvas {
         # that marks the root of this branch. If we can't find it we can't
         # use tags in this delta selection.
         if {$btag != {}} {
-          variable tags
+          variable revtags
           # FIXME: should use a site policy routine to convert the tag
           append atag $btag {-root}
-          if {![info exists tags($arev)] \
-          || [lsearch -exact $tags($arev) $atag] < 0} {
+          if {![info exists revtags($arev)] \
+          || [lsearch -exact $revtags($arev) $atag] < 0} {
             foreach {atag btag} {{} {}} { break }
           }
         }
@@ -161,7 +160,7 @@ namespace eval ::logcanvas {
         global cvscfg
         global inrcs
         variable logcanvas
-        variable tags
+        variable revtags
         foreach tag [$logcanvas.canvas gettags current] {
           if {[string index $tag 0] == {R}} {
             set rev [string range $tag 1 end]
@@ -177,7 +176,7 @@ namespace eval ::logcanvas {
           toplevel $mname
           wm title $mname "Tags: $rev"
           wm transient $mname $logcanvas.canvas
-          set ntags [llength $tags($rev)]
+          set ntags [llength $revtags($rev)]
           set h [expr {400 / [font metrics $cvscfg(listboxfont)\
               -displayof $mname -linespace]}]
           if {$h > $ntags} {
@@ -192,7 +191,7 @@ namespace eval ::logcanvas {
             # unless you close and reopen the pop up :-(
             listbox $mname.lbx -font $cvscfg(listboxfont) \
               -width 0 -height $h
-            foreach tag $tags($rev) {
+            foreach tag $revtags($rev) {
               $mname.lbx insert end $tag
             }
           }
@@ -203,21 +202,21 @@ namespace eval ::logcanvas {
           pack $mname.scroll -side right -fill y
           pack $mname.lbx -ipadx 10 -ipady 10 -expand y -fill both
           bind $mname.lbx <Button-1> [namespace code "
-          variable tags
+          variable revtags
           set i \[$mname.lbx nearest %y\]
-          SetSelection A \[lindex \$tags($rev) \$i\] $rev
+          SetSelection A \[lindex \$revtags($rev) \$i\] $rev
           $mname.lbx selection clear 0 end
           $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-2> [namespace code "
-          variable tags
+          variable revtags
           set i \[$mname.lbx nearest %y\]
-          SetSelection A \[lindex \$tags($rev) \$i\] $rev
+          SetSelection A \[lindex \$revtags($rev) \$i\] $rev
           $mname.lbx selection clear 0 end
           $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-3> [namespace code "
-          variable tags
+          variable revtags
           set i \[$mname.lbx nearest %y\]
-          SetSelection B \[lindex \$tags($rev) \$i\] $rev
+          SetSelection B \[lindex \$revtags($rev) \$i\] $rev
           $mname.lbx selection clear 0 end
           $mname.lbx selection set \$i"]
           # FIXME: add capability to delete a tag here?
@@ -278,7 +277,7 @@ namespace eval ::logcanvas {
         variable font_bold_h
         variable logcanvas
         variable root_info
-        variable tags
+        variable revtags
         variable curr_x
         variable curr_y
 
@@ -292,18 +291,16 @@ namespace eval ::logcanvas {
           $x $y $tx $ty \
           -width $curr(width) -fill gray90 -outline red3 \
           -tags [list box active]
-        if {$revstate(current) == {dead}} {
-          $logcanvas.canvas create line \
-            $x $y $tx $ty -fill red -width $curr(width) \
-            -tags [list box active]
-          $logcanvas.canvas create line \
-            $tx $y $x $ty -fill red -width $curr(width) \
-            -tags [list box active]
+        if {[info exists revstate(current)]} {
+          if {$revstate(current) == {dead}} {
+            $logcanvas.canvas create line \
+              $x $y $tx $ty -fill red -width $curr(width) \
+              -tags [list box active]
+            $logcanvas.canvas create line \
+              $tx $y $x $ty -fill red -width $curr(width) \
+              -tags [list box active]
+          }
         }
-        #$logcanvas.canvas create rectangle \
-          #$x $y $tx $ty \
-          #-width $curr(width) \
-          #-tags [list box rect active]
         set pad \
           [expr {($box_width - [image width Man] \
             - [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
@@ -332,9 +329,10 @@ namespace eval ::logcanvas {
         variable font_bold
         variable logcanvas
         variable root_info
-        variable tags
+        variable revtags
 
         #gen_log:log T "ENTER ($branch)"
+puts "tags [array names revtags]"
         set box_width 0
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
@@ -356,10 +354,11 @@ namespace eval ::logcanvas {
         variable font_bold
         variable logcanvas
         variable root_info
-        variable tags
+        variable revtags
 
+puts "DrawRoot $root_rev $branch"
         gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch $last_rev)"
-        set btag [lindex $tags($branch) 0]
+        set btag [lindex $revtags($branch) 0]
         # draw the box
         $logcanvas.canvas create rectangle \
           $x $y \
@@ -392,27 +391,24 @@ namespace eval ::logcanvas {
         variable revdate
         variable revtime
         variable revwho
-        variable revstate
-        variable revlines
         variable font_norm
         variable font_norm_h
         variable font_bold
         variable logcanvas
-        variable tags
+        variable revtags
         variable tlist
 
-puts "ENTER $revision"
         #gen_log:log T "ENTER ($revision)"
         set height $box_height
         set tag_width 0
         set box_width 0
         set tlist($revision) {}
-        if {$opt(show_tags) && [info exists tags($revision)]} {
+        if {$opt(show_tags) && [info exists revtags($revision)]} {
           # We want to show all the coloured tags plus others to take
           # the total to at least cvscfg(tagdepth)
           set tag_colour {}
           set tag_black {}
-          foreach tag $tags($revision) {
+          foreach tag $revtags($revision) {
             if {[info exists cvscfg(tagcolour,$tag)]} {
               lappend tag_colour $tag
             } else {
@@ -463,13 +459,12 @@ puts "ENTER $revision"
         variable revtime
         variable revwho
         variable revstate
-        variable revlines
         variable font_norm
         variable font_norm_h
         variable font_bold
         variable logcanvas
         variable tlist
-        variable tags
+        variable revtags
         variable fromtags
         variable totags
         variable fromtag_branch
@@ -490,7 +485,7 @@ puts "ENTER $revision"
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
             set lsplit [lrange [split $revision {.}] 0 end-1]
             if {[llength $lsplit] > 1} {
-              set fromtag_branch($tag) $tags([join $lsplit {.}])
+              set fromtag_branch($tag) $revtags([join $lsplit {.}])
             } else {
               set fromtag_branch($tag) "trunk"
             }
@@ -503,7 +498,7 @@ puts "ENTER $revision"
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
             set lsplit [lrange [split $revision {.}] 0 end-1]
             if {[llength $lsplit] > 1} {
-              set totag_branch($tag) $tags([join $lsplit {.}])
+              set totag_branch($tag) $revtags([join $lsplit {.}])
             } else {
               set totag_branch($tag) "trunk"
             }
@@ -531,21 +526,19 @@ puts "ENTER $revision"
         set ty [expr {$y - $box_height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
-          -fill gray90 \
-          -tags [list box R$revision active]
-        if {$revstate($revision) == {dead}} {
-          $logcanvas.canvas create line \
-            $x $y $tx $ty -fill red -width $curr(width) \
-            -tags [list box R$revision active]
-          $logcanvas.canvas create line \
-            $tx $y $x $ty -fill red -width $curr(width) \
-            -tags [list box R$revision active]
-        }
-        $logcanvas.canvas create rectangle \
-          $x $y $tx $ty \
-          -width $curr(width) \
-          -tags [list box R$revision rect$revision active]
+          -width $curr(width) -fill gray90 \
+          -tags [list box rect$revision R$revision active]
         # ...and add the contents
+        if {[info exists revstate($revision)]} {
+          if {$revstate($revision) == {dead}} {
+            $logcanvas.canvas create line \
+              $x $y $tx $ty -fill red -width $curr(width) \
+              -tags [list box R$revision active]
+            $logcanvas.canvas create line \
+              $tx $y $x $ty -fill red -width $curr(width) \
+              -tags [list box R$revision active]
+          }
+        }
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
         foreach s [subst $rev_info] {
@@ -669,19 +662,21 @@ puts " $revision"
           set y2 [expr {$y - $box_height/2 - $curr(boff)}]
           set brevs {}
           set bxys {}
-          foreach r2 $revbranches($revision) {
-            # Do we display the branch if it is empty?
-            # If it's the you-are-here, we do anyway
-            if {$branchrevs($r2) == {} && $r2 != {current} && !\
-                $opt(show_empty_branches)} {
-              continue
+          if {[info exists revbranches($revision)]} {
+            foreach r2 $revbranches($revision) {
+              # Do we display the branch if it is empty?
+              # If it's the you-are-here, we do anyway
+              if {$branchrevs($r2) == {} && $r2 != {current} && !\
+                  $opt(show_empty_branches)} {
+                continue
+              }
+              lappend brevs $r2
+              foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
+                lappend bxys $lx $lbw $rh $lly
+                break
+              }
+              set x2 [expr {$lx + $lbw + $curr(spcx)}]
             }
-            lappend brevs $r2
-            foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
-              lappend bxys $lx $lbw $rh $lly
-              break
-            }
-            set x2 [expr {$lx + $lbw + $curr(spcx)}]
           }
           # y2 may have changed to accomodate a long branch. If so we need
           # to figure out what our y should be
@@ -808,7 +803,6 @@ puts " $revision"
       proc DrawTree { {now {}} } {
         global cvscfg
         global logcfg
-        global module_dir
         variable scope
         variable after_id_draw
         variable logcanvas
@@ -837,14 +831,13 @@ puts " $revision"
         variable revwho
         variable revdate
         variable revtime
-        variable revlines
-        variable revstate
         variable revcomment
-        variable tags
+        variable revstate
+        variable revtags
         variable revbranches
         variable branchrevs
 
-
+puts "\nDrawTree"
         gen_log:log T "ENTER ($now)"
         foreach a [array names $scope\::revwho] {
           set revwho($a) [set $scope\::revwho($a)]
@@ -855,17 +848,14 @@ puts " $revision"
         foreach a [array names $scope\::revtime] {
           set revtime($a) [set $scope\::revtime($a)]
         }
-        foreach a [array names $scope\::revlines] {
-          set revlines($a) [set $scope\::revlines($a)]
+        foreach a [array names $scope\::revcomment] {
+          set revcomment($a) [set $scope\::revcomment($a)]
         }
         foreach a [array names $scope\::revstate] {
           set revstate($a) [set $scope\::revstate($a)]
         }
-        foreach a [array names $scope\::revcomment] {
-          set revcomment($a) [set $scope\::revcomment($a)]
-        }
-        foreach a [array names $scope\::tags] {
-          set tags($a) [set $scope\::tags($a)]
+        foreach a [array names $scope\::revtags] {
+          set revtags($a) [set $scope\::revtags($a)]
         }
         foreach a [array names $scope\::revbranches] {
           set revbranches($a) [set $scope\::revbranches($a)]
@@ -893,15 +883,9 @@ puts " $revision"
             append root_info {$branch }
           }
           if {$opt(show_root_tags)} {
-            append root_info {$tags($branch) }
+            append root_info {$revtags($branch) }
           }
           set rev_info {}
-          if {$opt(show_box_revstate)} {
-            append rev_info {"$revstate($revision)" }
-          }
-          if {$opt(show_box_revlines)} {
-            append rev_info {"$revlines($revision)" }
-          }
           if {$opt(show_box_revtime)} {
             append rev_info {$revtime($revision) }
           }
@@ -914,6 +898,7 @@ puts " $revision"
           if {$opt(show_box_rev)} {
             append rev_info {$revision}
           }
+puts "rev_info $rev_info"
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
           set my_size [expr {round($logcfg(font_size) * $opt(scale))}]
@@ -941,8 +926,10 @@ puts " $revision"
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
-          if {[info exists branchrevs(1)]} {
-            DrawBranch 0 0 {} 1
+puts "Does branchrevs(trunk) exist?"
+puts [array names branchrevs]
+          if {[info exists branchrevs(trunk)]} {
+            DrawBranch 0 0 {} trunk
             UpdateBndBox
           }
           if {$opt(show_merges)} {
@@ -1101,9 +1088,7 @@ puts " $revision"
           set opt(show_box_rev) [\
           set opt(show_box_revwho) [\
           set opt(show_box_revdate) [\
-          set opt(show_box_revtime) [\
-          set opt(show_box_revlines) [\
-          set opt(show_box_revstate) 1]]]]]]
+          set opt(show_box_revtime) 1]]]]
           DrawTree
         }]
       $logcanvas.menubar.view.rev add command -label "Turn all options off" \
@@ -1113,8 +1098,7 @@ puts " $revision"
           set opt(show_box_revwho) [\
           set opt(show_box_revdate) [\
           set opt(show_box_revtime) [\
-          set opt(show_box_revlines) [\
-          set opt(show_box_revstate) 0]]]]]]
+          set opt(show_box_revtime) 1]]]]
           DrawTree
         }]
       $logcanvas.menubar.view.rev add separator
@@ -1143,16 +1127,6 @@ puts " $revision"
         -onvalue 1 -offvalue 0 \
         -selectcolor $selcolor \
         -command [namespace code { DrawTree }]
-      $logcanvas.menubar.view.rev add checkbutton -label "Show lines changed" \
-        -variable [namespace current]::opt(show_box_revlines) \
-        -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
-        -command [namespace code { DrawTree }]
-      $logcanvas.menubar.view.rev add checkbutton -label "Show RCS state" \
-        -variable [namespace current]::opt(show_box_revstate) \
-        -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
-        -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add cascade -label "Size" \
         -menu $logcanvas.menubar.view.size
@@ -1177,7 +1151,6 @@ puts " $revision"
       frame $logcanvas.up -relief groove -border 2
       set textfont $cvscfg(listboxfont)
       set disbg [lindex [$logcanvas.up configure -background] 4]
-      gen_log:log D "module_dir $module_dir"
       label $logcanvas.up.lfname -text "CVS Path" \
         -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove
@@ -1265,14 +1238,14 @@ puts " $revision"
                }]
       button $logcanvas.join -image Mergebranch \
         -command [namespace code {
-                   variable tags
+                   variable revtags
                    set rv [$logcanvas.up.revA_rvers cget -text]
                    set rt [join [lrange [split $rv {.}] 0 end-1] {.}]
                    merge_dialog \
                      [$logcanvas.up.revA_rvers cget -text] \
                      "" \
                      [list $filename] \
-                     [lindex $tags($rt) 0]
+                     [lindex $revtags($rt) 0]
                  }]
       button $logcanvas.delta -image Mergediff \
         -command [namespace code {
@@ -1283,12 +1256,12 @@ puts " $revision"
                  }]
       button $logcanvas.viewtags -image Tags \
         -command [namespace code {
-                   variable tags
+                   variable revtags
                    set taglist {}
                    foreach r [ \
-                     lsort -command sortrevs [array names tags] \
+                     lsort -command sortrevs [array names revtags] \
                    ] {
-                     append taglist "$r: $tags($r)\n"
+                     append taglist "$r: $revtags($r)\n"
                    }
                    view_output::new Tags $taglist
                  }]

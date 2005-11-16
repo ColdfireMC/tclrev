@@ -82,9 +82,9 @@ proc svn_workdir_status {} {
   global Filelist
 
   gen_log:log T "ENTER"
-  set cmd(cvs_status) [exec::new "svn status -uvN"]
-  set status_lines [split [$cmd(cvs_status)\::output] "\n"]
-  unset cmd(cvs_status)
+  set cmd(svn_status) [exec::new "svn status -uvN"]
+  set status_lines [split [$cmd(svn_status)\::output] "\n"]
+  unset cmd(svn_status)
   # The first five columns in the output are each one character wide
   foreach logline $status_lines {
     if {[string match "Status*" $logline]} {continue}
@@ -574,29 +574,6 @@ proc parse_svnmodules {tf svnroot} {
   gen_log:log T "LEAVE"
 }
 
-# Sends files to the SVN branch browser one at a time
-proc svn_branches {files} {
-  global cvscfg
-  global cvsglb
-  
-  gen_log:log T "ENTER ($files)"
-  set filelist [join $files]
-
-  if {$files == {}} {
-    cvsfail "Please select one or more files!" .workdir
-    return
-  }
-
-  gen_log:log D "Relative Path: $cvsglb(relpath)"
-
-  foreach file $files {
-    regsub -all { } $file {%20} file
-    ::branch_canvas::new $cvsglb(relpath) $file
-  }
-
-  gen_log:log T "LEAVE"
-}
-
 proc svn_cat {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
@@ -792,4 +769,365 @@ proc svn_filecat {root path title} {
 
   set v [viewer::new "$wintitle $root/$path"]
   $v\::do "$commandline"
+}
+
+# Sends files to the SVN branch browser one at a time
+proc svn_branches {files} {
+  global cvscfg
+  global cvsglb
+  
+  gen_log:log T "ENTER ($files)"
+  set filelist [join $files]
+
+  if {$files == {}} {
+    cvsfail "Please select one or more files!" .workdir
+    return
+  }
+
+  gen_log:log D "Relative Path: $cvsglb(relpath)"
+
+  foreach file $files {
+    regsub -all { } $file {%20} file
+    ::svn_branchlog::new $cvsglb(relpath) $file
+  }
+
+  gen_log:log T "LEAVE"
+}
+
+namespace eval ::svn_branchlog {
+  variable instance 0
+
+  proc new {relpath filename} {
+    variable instance
+    set my_idx $instance
+    incr instance
+
+    namespace eval $my_idx {
+      set my_idx [uplevel {concat $my_idx}]
+      set filename [uplevel {concat $filename}]
+      set relpath [uplevel {concat $relpath}]
+      variable command
+      variable cmd_log
+      variable lc
+      variable revwho
+      variable revdate
+      variable revtime
+      variable revlines
+      variable revstate
+      variable revcomment
+      variable tags
+      variable revbranches
+      variable branchrevs
+      variable logstate
+
+puts "[namespace current]"
+      gen_log:log T "ENTER [namespace current]"
+
+      set command "$cvs log $filename"
+      set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+      set ln [lindex $newlc 0]
+      set lc [lindex $newlc 1]
+puts "$ln $lc"
+      set show_tags [set $ln\::opt(show_tags)]
+puts "show_tags $show_tags"
+
+      proc reloadLog { } {
+        global cvscfg
+        #global current_tagname
+        variable command
+        variable cmd_log
+        variable lc
+        variable ln
+        variable revwho
+        variable revdate
+        variable revtime
+        variable revcomment
+        variable revkind
+        variable revname
+        variable revtags
+        variable branchrevs
+        variable allrevs
+        variable revbranches
+        variable logstate
+        variable relpath
+        variable filename
+        variable show_tags
+
+        gen_log:log T "ENTER"
+        catch { $lc.canvas delete all }
+        catch { unset revwho }
+        catch { unset revdate }
+        catch { unset revtime }
+        catch { unset revcomment }
+        catch { unset revtags }
+        catch { unset branchrevs }
+        catch { unset revbranches }
+        catch { unset revkind }
+        catch { unset revname }
+
+        # Can't use file join or it will mess up the URL
+        if { $relpath == {} } {
+          set path "$cvscfg(svnroot)/trunk/$filename"
+        } else {
+          set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
+        }
+        $lc.up.rfname insert end "$path"
+        $lc.up.rfname configure -state readonly
+
+        busy_start $lc
+        # The trunk
+puts "\nTrunk"
+        set revtags(trunk) trunk
+        set branchrevs(trunk) {}
+        # if the file was added on a branch, this will error out.
+        # Come to think of it, there's nothing especially privileged
+        #  about the trunk
+        set command "svn log $path"
+        gen_log:log C "$command"
+        set ret [catch {eval exec $command} log_output]
+        if {$ret == 0} {
+          set trunk_lines [split $log_output "\n"]
+          set rr [parse_svnlog $trunk_lines trunk]
+          foreach r $branchrevs(trunk) {
+            puts " $r $revdate($r)"
+            gen_log:log D " $r $revdate($r) ($revcomment($r))"
+            set revkind($r) "revision"
+          }
+          set revkind($rr) "root"
+          set revname($rr) "trunk"
+        }
+
+        # Branches
+puts "Branches"
+        set command "svn list $cvscfg(svnroot)/branches"
+        gen_log:log C "$command"
+        set ret [catch {eval "exec $command"} branches]
+        if {$ret != 0} {
+            gen_log:log E "$branches"
+            puts "$branches"
+            set branches ""
+        }
+        foreach branch $branches {
+          gen_log:log D "$branch"
+          # There can be files such as "README" here that aren't branches
+          if {![string match {*/} $branch]} {continue}
+          set branch [string trimright $branch "/"]
+puts " $branch"
+          # Can't use file join or it will mess up the URL
+          if { $relpath == {} } {
+            set path "$cvscfg(svnroot)/branches/$branch/$filename"
+          } else {
+            set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
+          }
+          set revtags($branch) {}
+          set command "svn log --stop-on-copy $path"
+          gen_log:log C "$command"
+          set ret [catch {eval exec $command} log_output]
+          if {$ret != 0} {
+            # This can happen a lot -let's not let it stop us
+            gen_log:log E "$log_output"
+            puts "$log_output"
+            continue
+          }
+          set loglines [split $log_output "\n"]
+          set rb [parse_svnlog $loglines $branch]
+          foreach r $branchrevs($branch) {
+            puts "   $r $revdate($r)"
+            gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+            set revkind($r) "revision"
+          }
+          set revkind($rb) "branch"
+          set revname($rb) "$branch"
+
+          set command "svn log -q $path"
+          gen_log:log C "$command"
+          set ret [catch {eval exec $command} log_output]
+          if {$ret != 0} {
+            cvsfail "$log_output"
+            return
+          }
+          set loglines [split $log_output "\n"]
+          parse_q $loglines $branch
+          set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
+          set revbranches($bp) $branch
+          update idletasks
+        } 
+        # Tags
+        if {$show_tags} {
+puts "Tags"
+          set command "svn list $cvscfg(svnroot)/tags"
+          gen_log:log C "$command"
+          set ret [catch {eval "exec $command"} tags]
+          if {$ret != 0} {
+              gen_log:log E "$tags"
+              puts "$tags"
+              set tags ""
+          }
+          foreach tag $tags {
+            gen_log:log D "$tag"
+            # There can be files such as "README" here that aren't tags
+            if {![string match {*/} $tag]} {continue}
+            set tag [string trimright $tag "/"]
+puts " $tag"
+            # Can't use file join or it will mess up the URL
+            if { $relpath == {} } {
+              set path "$cvscfg(svnroot)/tags/$tag/$filename"
+            } else {
+              set path "$cvscfg(svnroot)/tags/$tag/$relpath/$filename"
+            }
+            set command "svn log --stop-on-copy $path"
+            gen_log:log C "$command"
+            set ret [catch {eval exec $command} log_output]
+            if {$ret != 0} {
+              # This can happen a lot -let's not let it stop us
+              gen_log:log E "$log_output"
+              puts "$log_output"
+              continue
+            }
+            set loglines [split $log_output "\n"]
+            set rb [parse_svnlog $loglines $tag]
+            foreach r $branchrevs($tag) {
+              puts "   $r $revdate($r)"
+              gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+              set revkind($r) "revision"
+            }
+            set revkind($rb) "tag"
+            set revname($rb) "$tag"
+  
+            set command "svn log -q $path"
+            gen_log:log C "$command"
+            set ret [catch {eval exec $command} log_output]
+            if {$ret != 0} {
+              cvsfail "$log_output"
+              return
+            }
+            set loglines [split $log_output "\n"]
+            parse_q $loglines $tag
+            set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
+            set revtags($bp) $tag
+            update idletasks
+          } 
+        }
+
+        [namespace current]::svn_sort_it_all_out
+        gen_log:log T "LEAVE"
+        return
+      }
+
+      proc parse_svnlog {lines r} {
+        variable revwho
+        variable revdate
+        variable revtime
+        variable revcomment
+        variable branchrevs
+
+        set i 0
+        set l [llength $lines]
+        while {$i < $l} {
+          set line [lindex $lines $i]
+          gen_log:log D "$i of $l:  $line"
+          if [regexp {^--*$} $line] {
+            # Next line is new revision
+            incr i
+            if {[expr {$l - $i}] <= 1} {break}
+            set line [lindex $lines $i]
+            set splitline [split $line "|"]
+            set revnum [string trim [lindex $splitline 0]]
+            lappend branchrevs($r) $revnum
+            set revwho($revnum) [string trim [lindex $splitline 1]]
+            set date_and_time [string trim [lindex $splitline 2]]
+            set revdate($revnum) [lindex $date_and_time 0]
+            set revtime($revnum) [lindex $date_and_time 1]
+            set notelen [lindex [string trim [lindex $splitline 3]] 0]
+            gen_log:log D "revnum $revnum"
+            gen_log:log D "revwho($revnum) $revwho($revnum)"
+            gen_log:log D "revdate($revnum) $revdate($revnum)"
+            gen_log:log D "revtime($revnum) $revtime($revnum)"
+            gen_log:log D "notelen $notelen"
+            
+            incr i 2
+            set revcomment($revnum) ""
+            set c 0
+            while {$c < $notelen} {
+              append revcomment($revnum) "[lindex $lines [expr {$c + $i}]]\n"
+              incr c
+            }
+            set revcomment($revnum) [string trimright $revcomment($revnum)]
+            gen_log:log D "revcomment($revnum) $revcomment($revnum)"
+          }
+          incr i
+        }
+        return $revnum
+      }
+
+      proc parse_q {lines r} {
+        variable allrevs
+
+        set allrevs($r) ""
+        foreach line $lines {
+#puts $line
+          gen_log:log D "$line"
+          if [regexp {^r} $line] {
+            set splitline [split $line "|"]
+#puts "$splitline"
+            set revnum [string trim [lindex $splitline 0]]
+#puts "revnum $revnum"
+            lappend allrevs($r) $revnum
+          }
+        }
+      }
+
+      proc svn_sort_it_all_out {} {
+        global cvscfg
+        variable filename
+        variable lc
+        variable ln
+        variable revwho
+        variable revdate
+        variable revtime
+        variable revcomment
+        variable revkind
+        variable revname
+        variable revtags
+        variable branchrevs
+        variable revbranches
+        variable logstate
+        variable revnum
+        variable rootbranch
+        variable revbranch
+  
+        gen_log:log T "ENTER"
+
+        # Sort the revision and branch lists and remove duplicates
+puts "\nsvn_sort_it_all_out"
+        #foreach r [lsort -dictionary [array names revkind]] {
+           #puts "$r \"$revkind($r)\""
+        #}
+
+        # Find out where to put the working revision icon (if anywhere)
+        #set command "svn status -v $filename"
+        set command "svn log -q --stop-on-copy $filename"
+        set cmd [exec::new $command]
+        set log_output [$cmd\::output]
+        set loglines [split $log_output "\n"]
+        set svnstat [lindex $loglines 1]
+        set revnum(current) [lindex $svnstat 0]
+        gen_log:log D "revnum(current) $revnum(current)"
+puts "revnum(current) $revnum(current)"
+foreach a [array names branchrevs] {
+  puts "branchrevs($a) $branchrevs($a)"
+}
+foreach a [array names revbranches] {
+  puts "revbranches($a) $revbranches($a)"
+}
+        # We only needed these to place the you-are-here box.
+        catch {unset rootbranch revbranch}
+        $ln\::DrawTree now
+        gen_log:log T "LEAVE"
+      }
+
+      [namespace current]::reloadLog
+      return [namespace current]
+    }
+  }
 }
