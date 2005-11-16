@@ -2,7 +2,7 @@
 # TCL Library for TkCVS
 #
 
-# This is a major rewrite over the previous version. It uses a
+# This is a major rewrite over the original version. It uses a
 # top down, recursive, branch-at-a-time, latest-revision-first
 # algorithm to layout the graph sensibly.
 # -- Mike Jagdis <jaggy@purplet.demon.co.uk>
@@ -25,20 +25,11 @@ namespace eval ::logcanvas {
 
     set cwd [pwd]
     if {[catch "image type Fileview"]} {
-      #::workdir::images
       workdir_images
     }
     if {[catch "image type Workdir"]} {
-      #::repository::images
       modbrowse_images
     }
-    #if {![info exists current_tagname]} {
-      #set current_tagname ""
-      #if {$localfile != "no file"} {
-        #cvsroot_check $cwd
-        #read_cvs_dir [file join $cwd CVS]
-      #}
-    #}
 
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
@@ -202,23 +193,23 @@ namespace eval ::logcanvas {
           pack $mname.scroll -side right -fill y
           pack $mname.lbx -ipadx 10 -ipady 10 -expand y -fill both
           bind $mname.lbx <Button-1> [namespace code "
-          variable revtags
-          set i \[$mname.lbx nearest %y\]
-          SetSelection A \[lindex \$revtags($rev) \$i\] $rev
-          $mname.lbx selection clear 0 end
-          $mname.lbx selection set \$i"]
+                variable revtags
+                set i \[$mname.lbx nearest %y\]
+                SetSelection A \[lindex \$revtags($rev) \$i\] $rev
+                $mname.lbx selection clear 0 end
+                $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-2> [namespace code "
-          variable revtags
-          set i \[$mname.lbx nearest %y\]
-          SetSelection A \[lindex \$revtags($rev) \$i\] $rev
-          $mname.lbx selection clear 0 end
-          $mname.lbx selection set \$i"]
+                variable revtags
+                set i \[$mname.lbx nearest %y\]
+                SetSelection A \[lindex \$revtags($rev) \$i\] $rev
+                $mname.lbx selection clear 0 end
+                $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-3> [namespace code "
-          variable revtags
-          set i \[$mname.lbx nearest %y\]
-          SetSelection B \[lindex \$revtags($rev) \$i\] $rev
-          $mname.lbx selection clear 0 end
-          $mname.lbx selection set \$i"]
+                variable revtags
+                set i \[$mname.lbx nearest %y\]
+                SetSelection B \[lindex \$revtags($rev) \$i\] $rev
+                $mname.lbx selection clear 0 end
+                $mname.lbx selection set \$i"]
           # FIXME: add capability to delete a tag here?
           # We need it to get laid out before we query its geometry.
           update
@@ -1154,7 +1145,6 @@ puts [array names branchrevs]
       label $logcanvas.up.lfname -text "CVS Path" \
         -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove
-      #$logcanvas.up.rfname configure -bg $disbg
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {

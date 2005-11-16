@@ -2,7 +2,7 @@
 # Get the revision log of an RCS file and send it to the
 # branch-diagram browser.
 # Disable merge buttons.
-proc rcs_filelog {files} {
+proc rcs_branches {files} {
   global cvscfg
   global cwd
   
@@ -14,13 +14,9 @@ proc rcs_filelog {files} {
   }
 
   foreach filename $files {
-    set pid [pid]
-    set filetail [file tail $filename]
-    set commandline "rlog \"$filename\""
-
-    # Log canvas viewer
-    logcanvas::new $cwd $filename "no file" $commandline
+    set branchlog [::cvs_branchlog::new rcs "$filename"]
   }
+
   gen_log:log T "LEAVE"
 }
 
