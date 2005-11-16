@@ -824,16 +824,14 @@ puts "[namespace current]"
       gen_log:log T "ENTER [namespace current]"
 
       set command "$cvs log $filename"
-      set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+      set newlc [logcanvas::new $filename "SVN,loc" "$command" [namespace current]]
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-puts "$ln $lc"
       set show_tags [set $ln\::opt(show_tags)]
-puts "show_tags $show_tags"
 
       proc reloadLog { } {
         global cvscfg
-        #global current_tagname
+        global cvsglb
         variable command
         variable cmd_log
         variable lc
@@ -871,8 +869,10 @@ puts "show_tags $show_tags"
         } else {
           set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
         }
+        $lc.up.lfname configure -text "SVN Path"
+        $lc.up.rfname delete 0 end
         $lc.up.rfname insert end "$path"
-        $lc.up.rfname configure -state readonly
+        $lc.up.rfname configure -state readonly -bg $cvsglb(textbg)
 
         busy_start $lc
         # The trunk
