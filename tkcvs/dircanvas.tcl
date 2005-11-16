@@ -1251,7 +1251,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_cvsok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Browse the Log Diagram" \
-    -command { cvs_logcanvas [pwd] [workdir_list_files] }
+    -command { cvs_branches [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Annotate/Blame" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Remove" \
@@ -1278,7 +1278,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_merge_pop add command -label "CVS Annotate/Blame" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.stat_merge_pop add command -label "Browse the Log Diagram" \
-    -command { cvs_logcanvas [pwd] [workdir_list_files] }
+    -command { cvs_branches [workdir_list_files] }
 
   # For CVS files that are modified
   menu $w.stat_mod_pop -tearoff 0
@@ -1307,7 +1307,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_conf_pop add command -label "CVS Annotate/Blame" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.stat_conf_pop add command -label "Browse the Log Diagram" \
-    -command { cvs_logcanvas [pwd] [workdir_list_files] }
+    -command { cvs_branches [workdir_list_files] }
 
   # For RCS files
   menu $w.rcs_pop -tearoff 0

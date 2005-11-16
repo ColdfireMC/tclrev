@@ -307,7 +307,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_logcanvas \"$lcfile"\
+    cvs_branches \"$lcfile"\
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
