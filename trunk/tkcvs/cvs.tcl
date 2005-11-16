@@ -1882,7 +1882,7 @@ proc cvs_branches {files} {
   }
 
   foreach file $files {
-    set branchlog [::cvs_branchlog::new "$file"]
+    set branchlog [::cvs_branchlog::new cvs "$file"]
   }
 
   gen_log:log T "LEAVE"
@@ -1891,7 +1891,7 @@ proc cvs_branches {files} {
 namespace eval ::cvs_branchlog {
   variable instance 0
 
-  proc new {filename} {
+  proc new {sys filename} {
     variable instance
     set my_idx $instance
     incr instance
@@ -1899,6 +1899,7 @@ namespace eval ::cvs_branchlog {
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
+      set sys [uplevel {concat $sys}]
       variable command
       variable cmd_log
       variable lc
@@ -1917,8 +1918,16 @@ namespace eval ::cvs_branchlog {
 puts "[namespace current]"
       gen_log:log T "ENTER [namespace current]"
 
-      set command "$cvs log $filename"
-      set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+      switch -- $sys {
+        cvs {
+          set command "$cvs log $filename"
+          set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+        }
+        rcs {
+          set command "rlog $filename"
+          set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+        }
+      }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
 puts "$ln $lc"
@@ -2182,6 +2191,7 @@ gen_log:log T "ENTER ($exec $logline)"
         global cvscfg
         global module_dir
         variable filename
+        variable sys
         variable lc
         variable ln
         variable revwho
@@ -2215,7 +2225,7 @@ gen_log:log T "ENTER ($exec $logline)"
         # FIXME: we don't know that the log parsed was derived from the
         # file in this directory. Maybe we should check CVS/{Root,Repository}?
         # Maybe this check should be done elsewhere?
-        if {$filename != "no file"} {
+        if {$sys != "rcs" && $filename != "no file"} {
           gen_log:log D "$filename is local. Reading CVS/Entries"
           set basename [file tail $filename]
           if {![catch {open [file join \
@@ -2277,14 +2287,14 @@ gen_log:log T "ENTER ($exec $logline)"
                     { break }
                   break
                 }
-set revnum(current) $rnum
+                set revnum(current) $rnum
               }
               close $entries
             }
         } else {
           gen_log:log D "$filename"
         }
-puts "revnum(current) $revnum(current)"
+#puts "revnum(current) $revnum(current)"
 foreach a [array names branchrevs] {
   puts "branchrevs($a) $branchrevs($a)"
 }

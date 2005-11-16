@@ -311,7 +311,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
-    rcs_filelog $lcfile
+    rcs_branches $lcfile
   } elseif {$insvn} {
     svn_branches $lcfile
   } else {

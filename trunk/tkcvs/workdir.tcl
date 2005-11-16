@@ -515,7 +515,7 @@ proc workdir_menus {} {
   .workdir.menubar.rcs add command -label "Checkin" -underline 0 \
      -command { rcs_checkin [workdir_list_files] }
   .workdir.menubar.rcs add command -label "Browse the Log Diagram" \
-     -command { rcs_filelog [workdir_list_files] }
+     -command { rcs_branches [workdir_list_files] }
 
   # These commands will vary according to revision system.  Does it still make sense to
   # keep them in their own menu?
@@ -987,7 +987,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
-      -command { rcs_filelog [workdir_list_files] }
+      -command { rcs_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { rcs_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
