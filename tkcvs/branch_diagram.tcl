@@ -11,19 +11,18 @@
 namespace eval ::logcanvas {
   variable instance 0
 
-  proc new {filename localfile command scope} {
+  proc new {filename how command scope} {
     #
-    # Creates a new log canvas.  If filename is not "no file" then it is
-    # the file name in the local directory that this applies to.
+    # Creates a new log canvas.
     #
     variable instance
     set my_idx $instance
     incr instance
-    global inrcs
     global current_tagname
-    variable cwd
+    global module_dir
+    variable sys
+    variable loc
 
-    set cwd [pwd]
     if {[catch "image type Fileview"]} {
       workdir_images
     }
@@ -33,16 +32,15 @@ namespace eval ::logcanvas {
 
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
+      set how [uplevel {concat $how}]
       set filename [uplevel {concat $filename}]
-      set localfile [uplevel {concat $localfile}]
       set command [uplevel {concat $command}]
       set scope [uplevel {concat $scope}]
-      set cwd [uplevel {concat $cwd}]
       variable cmd_log
       # Global constants scaled by current scaling factor for this instance
       variable curr
       global cvscfg
-      global cvs
+      global cvsglb
       global tcl_platform
       # User options for info display for this instance
       variable opt
@@ -61,6 +59,10 @@ namespace eval ::logcanvas {
       set sel_rev(A) {}
       set sel_rev(B) {}
       variable logcanvas ".logcanvas$my_idx"
+
+      set sys_loc [split $how {,}]
+      set sys [lindex $sys_loc 0]
+      set loc [lindex $sys_loc 1]
 
       proc ClearSelection {AorB} {
         variable logcanvas
@@ -149,7 +151,6 @@ namespace eval ::logcanvas {
       # revision
       #
         global cvscfg
-        global inrcs
         variable logcanvas
         variable revtags
         foreach tag [$logcanvas.canvas gettags current] {
@@ -797,7 +798,6 @@ puts " $revision"
         variable scope
         variable after_id_draw
         variable logcanvas
-        variable cwd
         variable box_height
         variable root_info
         variable fromtags {}
@@ -977,6 +977,9 @@ puts [array names branchrevs]
       proc SaveOptions {} {
         global logcfg
         variable opt
+        variable sys
+        variable loc
+
         # Save the options to the global set
         set logcfg(update_drawing) $opt(update_drawing)
         foreach {key value} [array get opt] {
@@ -993,7 +996,7 @@ puts [array names branchrevs]
         set opt($key) $value
       }
       toplevel $logcanvas
-      wm title $logcanvas "CVS Log $filename"
+      wm title $logcanvas "$sys Log $filename"
       $logcanvas configure -menu $logcanvas.menubar
       menu $logcanvas.menubar
   
@@ -1142,8 +1145,7 @@ puts [array names branchrevs]
       frame $logcanvas.up -relief groove -border 2
       set textfont $cvscfg(listboxfont)
       set disbg [lindex [$logcanvas.up configure -background] 4]
-      label $logcanvas.up.lfname -text "CVS Path" \
-        -width 12 -anchor w
+      label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
@@ -1215,16 +1217,19 @@ puts [array names branchrevs]
                }]
       button $logcanvas.view -image Fileview \
         -command [namespace code {
-                 cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] $filename
+                 cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] \
+                 $filename
                }]
       button $logcanvas.annotate -image Annotate \
         -command [namespace code {
-                 cvs_annotate [$logcanvas.up.revA_rvers cget -text] $filename
+                 cvs_annotate [$logcanvas.up.revA_rvers cget -text] \
+                 $filename
                }]
       button $logcanvas.diff -image Diff \
         -command [namespace code {
                  comparediff_r [$logcanvas.up.revA_rvers cget -text] \
-                   [$logcanvas.up.revB_rvers cget -text] $cwd $logcanvas $filename
+                   [$logcanvas.up.revB_rvers cget -text] $logcanvas \
+                   $filename
                }]
       button $logcanvas.join -image Mergebranch \
         -command [namespace code {
@@ -1234,8 +1239,7 @@ puts [array names branchrevs]
                    merge_dialog \
                      [$logcanvas.up.revA_rvers cget -text] \
                      "" \
-                     [list $filename] \
-                     [lindex $revtags($rt) 0]
+                     [list $filename]
                  }]
       button $logcanvas.delta -image Mergediff \
         -command [namespace code {
@@ -1251,7 +1255,9 @@ puts [array names branchrevs]
                    foreach r [ \
                      lsort -command sortrevs [array names revtags] \
                    ] {
-                     append taglist "$r: $revtags($r)\n"
+                     if {$r != "trunk"} {
+                       append taglist "$r: $revtags($r)\n"
+                     }
                    }
                    view_output::new Tags $taglist
                  }]
@@ -1278,22 +1284,22 @@ puts [array names branchrevs]
       pack $logcanvas.close \
         -in $logcanvas.down -side right \
         -ipadx 1 -ipady 1 -fill both -expand 1
-      if {$localfile == "no file"} {
+      if {$sys == "CVS" && $loc == "rep"} {
         $logcanvas.view configure \
         -command [namespace code {
-                 cvs_fileview_checkout [$logcanvas.up.revA_rvers cget -text] $filename
+                 cvs_fileview_checkout [$logcanvas.up.revA_rvers cget -text] \
+                 $module_dir/$filename
                }]
         $logcanvas.join configure -state disabled
         $logcanvas.annotate configure \
         -command [namespace code {
-                   cvs_annotate_r [$logcanvas.up.revA_rvers cget\
-                   -text] $filename
+                   cvs_annotate_r [$logcanvas.up.revA_rvers cget -text] \
+                   $module_dir/$filename
                  }]
         $logcanvas.join configure -state disabled
         $logcanvas.delta configure -state disabled
       }
-      if {$inrcs} {
-        $logcanvas.up.lfname configure -text "RCS File"
+      if {$sys == "rcs"} {
         $logcanvas.view configure -state disabled
         $logcanvas.annotate configure -state disabled
         $logcanvas.join configure -state disabled
@@ -1301,7 +1307,7 @@ puts [array names branchrevs]
         $logcanvas.viewtags configure -state disabled
         $logcanvas.diff configure -command [namespace code {
                  comparediff_r [$logcanvas.up.revA_rvers cget -text] \
-                 [$logcanvas.up.revB_rvers cget -text] $cwd $logcanvas $filename
+                 [$logcanvas.up.revB_rvers cget -text] $logcanvas $filename
                }]
       }
   

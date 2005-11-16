@@ -19,13 +19,13 @@ proc comparediff {args} {
   gen_log:log T "LEAVE"
 }
 
-proc comparediff_r {rev1 rev2 dir parent args} {
+proc comparediff_r {rev1 rev2 parent args} {
 #
 # This diffs a file with the repository, using two revisions or tags.
 #
   global cvscfg
  
-  gen_log:log T "ENTER ($rev1 $rev2 $dir $args)"
+  gen_log:log T "ENTER ($rev1 $rev2 $args)"
 
   if {$rev1 == {} && $rev2 == {}} {
     cvsfail "Must have at least one revision number or tag for this function!" $parent
@@ -38,11 +38,11 @@ proc comparediff_r {rev1 rev2 dir parent args} {
   # dont join args because we dont get them from workdir_list_files
   foreach file $args {
     set cwd [pwd]
-    if {[catch {cd $dir}]} {
-        cvsfail "unable to access $dir" $parent
-        gen_log:log T "LEAVE unable to access $dir"
-        return
-    }
+    #if {[catch {cd $dir}]} {
+        #cvsfail "unable to access $dir" $parent
+        #gen_log:log T "LEAVE unable to access $dir"
+        #return
+    #}
 
     #this should already be done when we get here
     #regsub -all {\$} $file {\$} file

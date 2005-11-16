@@ -122,9 +122,9 @@ proc cvs_workdir_status {} {
         # Should be able to do these regsubs in one expression
         regsub {File: } [lindex $line 0] "" filename
         regsub {\s*$} $filename "" filename
-        if {[string match "no file *" $filename]} {
-          regsub {^no file } $filename "" filename
-        }
+        #if {[string match "no file *" $filename]} {
+          #regsub {^no file } $filename "" filename
+        #}
         regsub {Status: } [lindex $line 1] "" status
         set Filelist($filename:status) $status
         # Don't set editors to null because we'll use its presence
@@ -603,7 +603,7 @@ proc cvs_fileview_update {revision filename} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($filename $revision)"
+  gen_log:log T "ENTER ($revision $filename)"
   if {$revision == {}} {
     set commandline "$cvs -d $cvscfg(cvsroot) update -p \"$filename\""
     #gen_log:log C "$commandline"
@@ -627,7 +627,7 @@ proc cvs_fileview_checkout {revision filename} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($filename $revision)"
+  gen_log:log T "ENTER ($revision)"
   if {$revision == {}} {
     set commandline "$cvs -d $cvscfg(cvsroot) checkout -p \"$filename\""
     #gen_log:log C "$commandline"
@@ -1260,7 +1260,7 @@ proc cvs_filelog {filename parent} {
   set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
 
   # Log canvas viewer
-  logcanvas::new $filename "no file" $commandline [namespace current]
+  logcanvas::new $filename "CVS,rep" $commandline [namespace current]
   cd $cwd
   gen_log:log T "LEAVE"
 }
@@ -1882,7 +1882,7 @@ proc cvs_branches {files} {
   }
 
   foreach file $files {
-    set branchlog [::cvs_branchlog::new cvs "$file"]
+    ::cvs_branchlog::new cvs "$file"
   }
 
   gen_log:log T "LEAVE"
@@ -1918,14 +1918,14 @@ namespace eval ::cvs_branchlog {
 puts "[namespace current]"
       gen_log:log T "ENTER [namespace current]"
 
-      switch -- $sys {
-        cvs {
+      switch -glob -- $sys {
+        cvs* {
           set command "$cvs log $filename"
-          set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+          set newlc [logcanvas::new $filename "CVS,loc" "$command" [namespace current]]
         }
-        rcs {
+        rcs* {
           set command "rlog $filename"
-          set newlc [logcanvas::new $filename "diff ok" "$command" [namespace current]]
+          set newlc [logcanvas::new $filename "RCS,loc" "$command" [namespace current]]
         }
       }
       set ln [lindex $newlc 0]
@@ -1973,19 +1973,15 @@ puts "$ln $lc"
         return
       }
 
-      proc ClearSelection {AorB} {
+      proc configure_buttons { dir fname } {
+        global cvsglb
         variable lc
-        variable sel_tag
-        variable sel_rev
-        catch {$lc.canvas itemconfigure Sel$AorB -outline black}
-        $lc.canvas dtag Sel$AorB
-        $lc.up.rev${AorB}_rvers configure -text {}
-        $lc.up.log${AorB}_rlogfm.rcomment delete 1.0 end
-        $lc.up.rev${AorB}_rwho configure -text {}
-        $lc.up.rev${AorB}_rdate configure -text {}
-        set sel_tag($AorB) {}
-        set sel_rev($AorB) {}
-        return
+        variable textbg
+
+        $lc.up.lfname configure -text "RCS file"
+        $lc.up.rfname delete 0 end
+        $lc.up.rfname insert end "$fname,v"
+        $lc.up.rfname configure -state readonly -bg $cvsglb(textbg)
       }
 
       proc parse_cvslog { exec logline } {
@@ -2020,7 +2016,7 @@ gen_log:log T "ENTER ($exec $logline)"
               # Look for the first text line which should give the file name.
               if {[string match {RCS file: *} $logline]} {
                 # I think the whole path to the "RCS file" from the log isn't
-                # really what # we want here.  More like module_dir, so we know
+                # really what we want here.  More like module_dir, so we know
                 # what to feed to cvs rdiff and rannotate.
                 set fname [string range $logline 10 end]
                 set fname [file tail $fname]
@@ -2031,9 +2027,7 @@ gen_log:log T "ENTER ($exec $logline)"
                 if {$inrcs && [file isdir RCS]} {
                    set fname [file join RCS $fname]
                 }
-                $lc.up.rfname delete 0 end
-                $lc.up.rfname insert end "$fname,v"
-                $lc.up.rfname configure -state readonly -bg $cvsglb(textbg)
+                configure_buttons $module_dir $fname
               } elseif {[string match {Working file: *} $logline]} {
                 # If we care about a working copy we need to look
                 # at the name of the working file here. It may be
@@ -2058,9 +2052,8 @@ gen_log:log T "ENTER ($exec $logline)"
                   set parts [linsert $parts end-1 {0}]
                   set rnum [join $parts {.}]
                 }
-                lappend revtags($rnum) $tagstring
-  
                 if {[lindex $parts end-1] == 0} {
+                  # Branch tag
                   set rnum [join [lreplace $parts end-1 end-1] {.}]
                   set rootbranch($tagstring) [join [lrange $parts 0 end-2] {.}]
                   set revbranch($tagstring) $rnum
@@ -2069,6 +2062,8 @@ gen_log:log T "ENTER ($exec $logline)"
                     $rnum
                   append branchrevs($rnum) {}
                 } else {
+                  # Ordinary symbolic tag
+                  lappend revtags($rnum) $tagstring
                   # Is it possible that this tag is the only surviving
                   # record that this revision ever existed?
                   if {[llength $parts] == 2} {

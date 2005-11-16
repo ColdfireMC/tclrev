@@ -389,88 +389,83 @@ proc merge_dialog { from since file {fromtag {}} } {
   global cvs
   global current_tagname
 
-    set from [uplevel {concat $from}]
-    set since [uplevel {concat $since}]
-    set file [uplevel {concat $file}]
-    set fromtag [uplevel {concat $fromtag}]
+  gen_log:log T "ENTER (\"$from\" \"$since\" \"$file\" \"$fromtag\")"
 
-    gen_log:log T "ENTER (\"$from\" \"$since\" \"$file\" \"$fromtag\")"
+  if {$from == {}} {
+     cvsfail "You must specify a branch to merge from!"
+     return
+  }
+  if {$fromtag == {}} {
+     set fromtag $from
+  }
 
-    if {$from == {}} {
-       cvsfail "You must specify a branch to merge from!"
-       return
-    }
-    if {$fromtag == {}} {
-       set fromtag $from
-    }
+  # Tag where we merged from
+  if {[llength $current_tagname] == 1} {
+    set curr_tag $current_tagname
+  } else {
+    set curr_tag "trunk"
+  }
 
-    # Tag where we merged from
-    if {[llength $current_tagname] == 1} {
-      set curr_tag $current_tagname
-    } else {
-      set curr_tag "trunk"
-    }
+  if {$since == {}} {
+    set since "\"\""
+    set mess "Merge revision $from"
+  } else {
+    set mess "Merge the changes between revision $since and $from"
+    append mess " (if $since > $from the changes are removed)"
+    append commandline "-j$since "
+  }
+  append mess " to the current revision ($curr_tag)"
 
-    if {$since == {}} {
-      set since "\"\""
-      set mess "Merge revision $from"
-    } else {
-      set mess "Merge the changes between revision $since and $from"
-      append mess " (if $since > $from the changes are removed)"
-      append commandline "-j$since "
-    }
-    append mess " to the current revision ($curr_tag)"
+  # Construct tag names
+  set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat)]
+  set totagend [expr {$totagbegin + 8}]
+  set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
+  set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat)]
+  set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1}]]
+  set datef [string range $cvscfg(mergetoformat) $totagend end]
+  set today [clock format [clock seconds] -format "$datef"]
 
-    # Construct tag names
-    set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat)]
-    set totagend [expr {$totagbegin + 8}]
-    set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
-    set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat)]
-    set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1}]]
-    set datef [string range $cvscfg(mergetoformat) $totagend end]
-    set today [clock format [clock seconds] -format "$datef"]
+  set mtag "${toprefix}_${curr_tag}_$today"
+  set ftag "${fromprefix}_${fromtag}_$today"
 
-    set mtag "${toprefix}_${curr_tag}_$today"
-    set ftag "${fromprefix}_${fromtag}_$today"
+  # I had symbolic tags in mind, but some people are using untagged versions.
+  # Substitute the dots, which are illegal for tagnames.
+  regsub -all {\.} $mtag {-} mtag
+  regsub -all {\.} $ftag {-} ftag
 
-    # I had symbolic tags in mind, but some people are using untagged versions.
-    # Substitute the dots, which are illegal for tagnames.
-    regsub -all {\.} $mtag {-} mtag
-    regsub -all {\.} $ftag {-} ftag
+  toplevel .merge
+  frame .merge.top
 
-    toplevel .merge
-    frame .merge.top
+  message .merge.top.m1 -aspect 600 -text "$mess"
+  frame .merge.top.f
+  checkbutton .merge.top.f.fromtag \
+    -text "Apply the tag" \
+    -variable cvscfg(auto_tag)
+  entry .merge.top.f.ent -textvariable mtag \
+    -width 32 -relief raised -bd 1 
+  .merge.top.f.ent delete 0 end
+  .merge.top.f.ent insert end $mtag
+  message .merge.top.m2 -aspect 600 -text "to revision $from"
+  frame .merge.bottom -relief raised -bd 2
+  button .merge.bottom.apply -text "Apply" \
+    -command "cvs_join $from $since \[.merge.top.f.ent get\] $ftag $file"
+  button .merge.bottom.ok -text "OK" \
+    -command "cvs_join $from $since \[.merge.top.f.ent get\] $ftag $file; destroy .merge"
+  button .merge.bottom.cancel -text "Cancel" \
+    -command "destroy .merge"
 
-    message .merge.top.m1 -aspect 600 -text "$mess"
-    frame .merge.top.f
-    checkbutton .merge.top.f.fromtag \
-      -text "Apply the tag" \
-      -variable cvscfg(auto_tag)
-    entry .merge.top.f.ent -textvariable mtag \
-      -width 32 -relief raised -bd 1 
-    .merge.top.f.ent delete 0 end
-    .merge.top.f.ent insert end $mtag
-    message .merge.top.m2 -aspect 600 -text "to revision $from"
-    frame .merge.bottom -relief raised -bd 2
-    button .merge.bottom.apply -text "Apply" \
-      -command "cvs_join $from $since \[.merge.top.f.ent get\] $ftag $file"
-    button .merge.bottom.ok -text "OK" \
-      -command "cvs_join $from $since \[.merge.top.f.ent get\] $ftag $file; destroy .merge"
-    button .merge.bottom.cancel -text "Cancel" \
-      -command "destroy .merge"
+  pack .merge.bottom -side bottom -expand 1 -fill x
+  pack .merge.bottom.apply -side left -expand 1
+  pack .merge.bottom.ok -side left -expand 1
+  pack .merge.bottom.cancel -side left -expand 1
 
-    pack .merge.bottom -side bottom -expand 1 -fill x
-    pack .merge.bottom.apply -side left -expand 1
-    pack .merge.bottom.ok -side left -expand 1
-    pack .merge.bottom.cancel -side left -expand 1
-
-    pack .merge.top -side top -fill x
-    pack .merge.top.m1 -side top -fill x -expand y
-    pack .merge.top.f -side top -padx 2 -pady 4
-    pack .merge.top.f.fromtag -side left
-    pack .merge.top.f.ent -side left
-    pack .merge.top.m2 -side top -fill x -expand y
-    gen_log:log T "LEAVE"
+  pack .merge.top -side top -fill x
+  pack .merge.top.m1 -side top -fill x -expand y
+  pack .merge.top.f -side top -padx 2 -pady 4
+  pack .merge.top.f.fromtag -side left
+  pack .merge.top.f.ent -side left
+  pack .merge.top.m2 -side top -fill x -expand y
+  gen_log:log T "LEAVE"
 }
 
 proc file_tag_dialog {branch} {
