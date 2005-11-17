@@ -89,6 +89,8 @@ namespace eval ::logcanvas {
         variable sel_tag
         variable sel_rev
         ClearSelection $AorB
+        set other [expr {$AorB == "A" ? {B} : {A}}]
+        if {$rev == $sel_rev($other)} { ClearSelection $other }
         if {! [info exists revcomment($rev)]} {
            set revcomment($rev) "*** empty log message ***"
         }
@@ -324,7 +326,7 @@ namespace eval ::logcanvas {
         variable revtags
 
         #gen_log:log T "ENTER ($branch)"
-puts "tags [array names revtags]"
+#puts "tags [array names revtags]"
         set box_width 0
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
@@ -334,6 +336,7 @@ puts "tags [array names revtags]"
         }
         incr box_width $curr(padx,2)
         #gen_log:log T "LEAVE"
+puts " CalcRoot ($branch): $box_width [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]"
         return [list $box_width \
           [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]]
       }
@@ -348,7 +351,7 @@ puts "tags [array names revtags]"
         variable root_info
         variable revtags
 
-puts "DrawRoot $root_rev $branch"
+puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch $last_rev)"
         gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch $last_rev)"
         set btag [lindex $revtags($branch) 0]
         # draw the box
@@ -557,13 +560,11 @@ puts "DrawRoot $root_rev $branch"
         puts "DrawBranch ($x $y $root_rev $branch)"
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         # What revisions to show on this branch?
-puts " branchrevs($branch) $branchrevs($branch)"
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
           # Always have the head revision
           set revlist [lindex $branchrevs($branch) 0]
-puts "revlist $revlist"
           foreach r [lrange $branchrevs($branch) 1 end-1] {
             if {$opt(show_inter_revs)
             || ($opt(show_empty_branches) && $revbranches($r) != {})} {
@@ -592,9 +593,8 @@ puts "revlist $revlist"
         }
         set height [expr {$root_height + $curr(spcy)}]
         set rdata {}
-puts "revlist $revlist"
+puts " revlist $revlist"
         foreach revision $revlist {
-puts " $revision"
           if {$revision == {current}} {
             set rtw 0
             foreach {rbw rh} [CalcCurrent $revision] { break }
@@ -861,11 +861,11 @@ puts "\nDrawTree"
         set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
 
         catch {after cancel $after_id_draw}
+        busy_start $logcanvas
         if {$now != {now} && [info exists logcfg(draw_delay)]} {
           set after_id_draw \
             [after $logcfg(draw_delay) [namespace code {DrawTree now}]]
         } else {
-          busy_start $logcanvas
           set view_xoff [lindex [$logcanvas.canvas xview] 0]
           set view_yoff [lindex [$logcanvas.canvas yview] 0]
           $logcanvas.canvas delete all
@@ -889,7 +889,7 @@ puts "\nDrawTree"
           if {$opt(show_box_rev)} {
             append rev_info {$revision}
           }
-puts "rev_info $rev_info"
+#puts "rev_info $rev_info"
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
           set my_size [expr {round($logcfg(font_size) * $opt(scale))}]
@@ -917,10 +917,22 @@ puts "rev_info $rev_info"
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
-puts "Does branchrevs(trunk) exist?"
-puts [array names branchrevs]
+          foreach a [array names revtags] {
+            puts "$a $revtags($a)"
+            if {$revtags($a) == "trunk"} {
+              set trunkrev $a
+            }
+          }
+
+          # Start drawing, beginning with the trunk
           if {[info exists branchrevs(trunk)]} {
-            DrawBranch 0 0 {} trunk
+            foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $trunkrev] {
+                lappend bxys $lx $lbw $rh $lly
+                break
+              }
+              set x2 [expr {$lx + $lbw + $curr(spcx)}]
+            foreach {box_width root_height} [CalcRoot $trunkrev] { break }
+            #DrawRoot 0 $y2 $lbw $rh  1 1.1.1
             UpdateBndBox
           }
           if {$opt(show_merges)} {
@@ -1091,8 +1103,7 @@ puts [array names branchrevs]
           set opt(show_box_rev) [\
           set opt(show_box_revwho) [\
           set opt(show_box_revdate) [\
-          set opt(show_box_revtime) [\
-          set opt(show_box_revtime) 1]]]]
+          set opt(show_box_revtime) 0]]]]
           DrawTree
         }]
       $logcanvas.menubar.view.rev add separator
