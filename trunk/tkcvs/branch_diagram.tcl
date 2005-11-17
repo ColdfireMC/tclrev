@@ -247,6 +247,7 @@ namespace eval ::logcanvas {
         variable font_bold_h
         variable logcanvas
 
+puts " CalcCurrent ($revision)"
         gen_log:log T "ENTER ($revision)"
         set box_width \
           [expr {[image width Man] \
@@ -275,6 +276,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
+puts "DrawCurrent ($x $y $box_width $box_height $revision)"
         gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
         set curr_x $x
         set curr_y $y
@@ -341,7 +343,7 @@ puts " CalcRoot ($branch): $box_width [expr {$curr(pady,2) + [llength [subst $ro
           [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]]
       }
 
-      proc DrawRoot { x y box_width box_height root_rev branch last_rev } {
+      proc DrawRoot { x y box_width box_height root_rev branch } {
         global cvscfg
         variable curr
         variable font_norm
@@ -351,8 +353,8 @@ puts " CalcRoot ($branch): $box_width [expr {$curr(pady,2) + [llength [subst $ro
         variable root_info
         variable revtags
 
-puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch $last_rev)"
-        gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch $last_rev)"
+puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
+        gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch )"
         set btag [lindex $revtags($branch) 0]
         # draw the box
         $logcanvas.canvas create rectangle \
@@ -360,7 +362,7 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch $last_rev)"
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
             -width $curr(width) \
             -fill gray90 -outline blue \
-            -tags [list T$btag A$root_rev B$last_rev delta active]
+            -tags [list T$btag A$root_rev delta active]
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
         gen_log:log D "[subst $root_info]"
@@ -370,7 +372,7 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch $last_rev)"
             -text $s \
             -anchor s \
             -font $font_norm -fill blue \
-            -tags [list T$btag A$root_rev B$last_rev delta active]
+            -tags [list T$btag A$root_rev delta active]
           incr ty -$font_norm_h
           }
         gen_log:log T "LEAVE"
@@ -560,6 +562,7 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch $last_rev)"
         puts "DrawBranch ($x $y $root_rev $branch)"
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         # What revisions to show on this branch?
+puts "Looking at branchrevs($branch)"
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
@@ -586,16 +589,20 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch $last_rev)"
         }
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
+puts "Branch: does $branch equal current?"
         if {$branch == {current}} {
+puts "  YES"
           foreach {box_width root_height} [CalcCurrent $branch] { break }
         } else {
           foreach {box_width root_height} [CalcRoot $branch] { break }
         }
         set height [expr {$root_height + $curr(spcy)}]
         set rdata {}
-puts " revlist $revlist"
+puts " revlist ($branch)  $revlist"
         foreach revision $revlist {
+puts "  Revision: does $revision equal current?"
           if {$revision == {current}} {
+puts "    YES"
             set rtw 0
             foreach {rbw rh} [CalcCurrent $revision] { break }
           } else {
@@ -691,7 +698,7 @@ puts " revlist $revlist"
               if {$last_rev == {current}} {
                 set last_rev [lindex $branchrevs($b) 1]
               }
-              DrawRoot $bx $by $bw $rh $revision $b $last_rev
+              DrawRoot $bx $by $bw $rh $revision $b
             }
             # We could draw this with -smooth 1 but without anti-aliasing
             # the curves look yukky :-(
@@ -932,7 +939,7 @@ puts "\nDrawTree"
               }
               set x2 [expr {$lx + $lbw + $curr(spcx)}]
             foreach {box_width root_height} [CalcRoot $trunkrev] { break }
-            #DrawRoot 0 $y2 $lbw $rh  1 1.1.1
+            DrawRoot 0 $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
           }
           if {$opt(show_merges)} {
