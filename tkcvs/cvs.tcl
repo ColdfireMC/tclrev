@@ -2293,14 +2293,12 @@ puts "\ncvs_sort_it_all_out"
                     { break }
                   break
                 }
-                set revnum(current) $rnum
               }
               close $entries
             }
         } else {
           gen_log:log D "$filename"
         }
-puts "\nrevnum(current) $revnum(current)"
 puts ""
 foreach a [array names branchrevs] {
   puts "branchrevs($a) $branchrevs($a)"

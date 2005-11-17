@@ -874,7 +874,23 @@ namespace eval ::svn_branchlog {
         $lc.up.rfname insert end "$path"
         $lc.up.rfname configure -state readonly -bg $cvsglb(textbg)
 
+        # Find out where to put the working revision icon (if anywhere)
+        #set command "svn status -v $filename"
+        set command "svn log -q --stop-on-copy $filename"
+        set cmd [exec::new $command]
+        set log_output [$cmd\::output]
+        set loglines [split $log_output "\n"]
+        set svnstat [lindex $loglines 1]
+        set revnum_current [lindex $svnstat 0]
+        gen_log:log D "revnum_current $revnum_current"
+puts "revnum_current $revnum_current"
+
         busy_start $lc
+        if { $relpath == {} } {
+          set path "$cvscfg(svnroot)/trunk/$filename"
+        } else {
+          set path "$cvscfg(svnroot)/$trunk/relpath/$filename"
+        }
         # The trunk
 puts "\nTrunk"
         set branchrevs(trunk) {}
@@ -935,14 +951,19 @@ puts " $branch"
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
 puts "  set revtags($rb) $branch"
-          set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
-          set revtags($rb) $branch
+puts "  branchrevs($branch) $branchrevs($branch)"
           foreach r $branchrevs($branch) {
+            #if {$r == $revnum_current} {
+              #set branchrevs($branch) [linsert $branchrevs($branch) end-1 {current}]
+            #}
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
           }
+          set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
+puts "  branchrevs($rb) $branchrevs($rb)"
           set revkind($rb) "branch"
           set revname($rb) "$branch"
+          set revtags($rb) $branch
 
           set command "svn log -q $path"
           gen_log:log C "$command"
@@ -955,7 +976,7 @@ puts "  set revtags($rb) $branch"
           parse_q $loglines $branch
           set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
           #set revbranches($bp) $branch
-          puts " revbranches($bp) $branch:  rb $rb"
+          puts " revbranches($bp) $branch:  $rb"
           set revbranches($bp) $rb
           update idletasks
         } 
@@ -1113,21 +1134,8 @@ puts "\nsvn_sort_it_all_out"
            if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
 
-        # Find out where to put the working revision icon (if anywhere)
-        #set command "svn status -v $filename"
-        set command "svn log -q --stop-on-copy $filename"
-        set cmd [exec::new $command]
-        set log_output [$cmd\::output]
-        set loglines [split $log_output "\n"]
-        set svnstat [lindex $loglines 1]
-        set revnum(current) [lindex $svnstat 0]
-        gen_log:log D "revnum(current) $revnum(current)"
 puts ""
-puts "\nrevnum(current) $revnum(current)"
-# FIXME - hunt for current revnum in branchrevs for current_tagname
-# and add "current" to its branchrevs array
-puts ""
-foreach a [array names branchrevs] {
+foreach a [lsort -dictionary [array names branchrevs]] {
   puts "branchrevs($a) $branchrevs($a)"
 }
 puts ""
