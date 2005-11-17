@@ -1915,7 +1915,6 @@ namespace eval ::cvs_branchlog {
       variable logstate
       variable cwd
 
-puts "[namespace current]"
       gen_log:log T "ENTER [namespace current]"
 
       switch -glob -- $sys {
@@ -1930,7 +1929,6 @@ puts "[namespace current]"
       }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-puts "$ln $lc"
 
       proc reloadLog { } {
         variable command
@@ -1961,7 +1959,6 @@ puts "$ln $lc"
         set cwd [pwd]
 
         busy_start $lc
-        set revtags(trunk) trunk
         set logstate {R}
 
         set cmd_log [::exec::new $command {} 0 [namespace current]::parse_cvslog]
@@ -2003,7 +2000,7 @@ puts "$ln $lc"
         variable revbranches
         variable branchrevs
         variable logstate
-        #variable revnum
+        variable revkind
         variable rnum
         variable rootbranch
         variable revbranch
@@ -2055,6 +2052,7 @@ gen_log:log T "ENTER ($exec $logline)"
                 if {[lindex $parts end-1] == 0} {
                   # Branch tag
                   set rnum [join [lreplace $parts end-1 end-1] {.}]
+                  set revkind($rnum) "branch"
                   set rootbranch($tagstring) [join [lrange $parts 0 end-2] {.}]
                   set revbranch($tagstring) $rnum
                   lappend revtags($rnum) $tagstring
@@ -2103,6 +2101,7 @@ gen_log:log T "ENTER ($exec $logline)"
               # Look for a revision number line
               set rnum [lindex [split $logline] 1]
               set parts [split $rnum {.}]
+              set revkind($rnum) "revision"
               if {[llength $parts] == 2} {
                 # A trunk revision but not necessarily 1.x because CVS allows
                 # the first part of the revision number to be changed. We have
@@ -2202,15 +2201,27 @@ gen_log:log T "ENTER ($exec $logline)"
         variable rnum
         variable rootbranch
         variable revbranch
+        variable revkind
   
         gen_log:log T "ENTER"
 
+        set revkind(1) "root"
+
+puts "\ncvs_sort_it_all_out"
+        foreach r [lsort -command sortrevs [array names revkind]] {
+           puts "$r \"$revkind($r)\""
+        }
         # Sort the revision and branch lists and remove duplicates
         foreach r [array names branchrevs] {
           set branchrevs($r) \
             [lsort -unique -decreasing -command sortrevs $branchrevs($r)]
           gen_log:log D "branchrevs($r) $branchrevs($r)"
         }
+
+        # Create a fake revision to be the trunk branchtag
+        set revtags(1) "trunk"
+        set branchrevs(1) $branchrevs(trunk)
+
         foreach r [array names revbranches] {
           set revbranches($r) \
             [lsort -unique -command sortrevs $revbranches($r)]
@@ -2289,13 +2300,18 @@ gen_log:log T "ENTER ($exec $logline)"
         } else {
           gen_log:log D "$filename"
         }
-#puts "revnum(current) $revnum(current)"
+puts "\nrevnum(current) $revnum(current)"
+puts ""
 foreach a [array names branchrevs] {
   puts "branchrevs($a) $branchrevs($a)"
 }
-puts "\ncvs_sort_it_all_out"
+puts ""
 foreach a [array names revbranches] {
   puts "revbranches($a) $revbranches($a)"
+}
+puts ""
+foreach a [array names revtags] {
+  puts "revtags($a) $revtags($a)"
 }
 
         # We only needed these to place the you-are-here box.

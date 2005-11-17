@@ -3,6 +3,7 @@ proc read_svn_dir {dirname} {
   global cvscfg
   global cvsglb
   global current_tagname
+  global module_dir
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
@@ -26,7 +27,6 @@ proc read_svn_dir {dirname} {
       set root ""
       set relp ""
       set current_tagname ""
-      #puts $spl
       set state P
       for {set j 0} {$j < [llength $spl]} {incr j} {
         set word [lindex $spl $j]
@@ -59,18 +59,19 @@ proc read_svn_dir {dirname} {
         }
       }
       #puts $current_tagname
-      puts "***"
       set cvscfg(svnroot) [string trimright $root "/"]
+puts "******"
       gen_log:log D "SVN URL: $cvscfg(url)"
-      puts "SVN URL: $cvscfg(url)"
+puts "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
-      puts "svnroot: $cvscfg(svnroot)"
+puts "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) $relp
       gen_log:log D "relpath: $cvsglb(relpath)"
-      puts "relpath: $cvsglb(relpath)"
+puts "relpath: $cvsglb(relpath)"
+      set module_dir $relp
       gen_log:log D "tagname: $current_tagname"
-      puts "tagname: $current_tagname"
-      puts "***"
+puts "tagname: $current_tagname"
+puts "******"
     }
   }
   gen_log:log T "LEAVE"
@@ -820,7 +821,6 @@ namespace eval ::svn_branchlog {
       variable branchrevs
       variable logstate
 
-puts "[namespace current]"
       gen_log:log T "ENTER [namespace current]"
 
       set command "$cvs log $filename"
@@ -865,9 +865,9 @@ puts "[namespace current]"
 
         # Can't use file join or it will mess up the URL
         if { $relpath == {} } {
-          set path "$cvscfg(svnroot)/trunk/$filename"
+          set path "$cvscfg(url)/$filename"
         } else {
-          set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
+          set path "$cvscfg(url)/$relpath/$filename"
         }
         $lc.up.lfname configure -text "SVN Path"
         $lc.up.rfname delete 0 end
@@ -877,7 +877,6 @@ puts "[namespace current]"
         busy_start $lc
         # The trunk
 puts "\nTrunk"
-        set revtags(trunk) trunk
         set branchrevs(trunk) {}
         # if the file was added on a branch, this will error out.
         # Come to think of it, there's nothing especially privileged
@@ -889,12 +888,17 @@ puts "\nTrunk"
           set trunk_lines [split $log_output "\n"]
           set rr [parse_svnlog $trunk_lines trunk]
           foreach r $branchrevs(trunk) {
-            puts " $r $revdate($r)"
             gen_log:log D " $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
           }
           set revkind($rr) "root"
           set revname($rr) "trunk"
+          set revtags($rr) "trunk"
+puts " set revtags($rr) trunk"
+          set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
+          foreach a [array names branchrevs] {
+            puts " branchrevs($a) $branchrevs($a)"
+          }
         }
 
         # Branches
@@ -919,7 +923,6 @@ puts " $branch"
           } else {
             set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
           }
-          set revtags($branch) {}
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
           set ret [catch {eval exec $command} log_output]
@@ -931,8 +934,10 @@ puts " $branch"
           }
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
+puts "  set revtags($rb) $branch"
+          set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
+          set revtags($rb) $branch
           foreach r $branchrevs($branch) {
-            puts "   $r $revdate($r)"
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
           }
@@ -949,7 +954,9 @@ puts " $branch"
           set loglines [split $log_output "\n"]
           parse_q $loglines $branch
           set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
-          set revbranches($bp) $branch
+          #set revbranches($bp) $branch
+          puts " revbranches($bp) $branch:  rb $rb"
+          set revbranches($bp) $rb
           update idletasks
         } 
         # Tags
@@ -987,7 +994,6 @@ puts " $tag"
             set loglines [split $log_output "\n"]
             set rb [parse_svnlog $loglines $tag]
             foreach r $branchrevs($tag) {
-              puts "   $r $revdate($r)"
               gen_log:log D "  $r $revdate($r) ($revcomment($r))"
               set revkind($r) "revision"
             }
@@ -1004,6 +1010,7 @@ puts " $tag"
             set loglines [split $log_output "\n"]
             parse_q $loglines $tag
             set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
+puts "set revtags($bp) $tag"
             set revtags($bp) $tag
             update idletasks
           } 
@@ -1079,6 +1086,7 @@ puts " $tag"
 
       proc svn_sort_it_all_out {} {
         global cvscfg
+        global current_tagname
         variable filename
         variable lc
         variable ln
@@ -1100,9 +1108,10 @@ puts " $tag"
 
         # Sort the revision and branch lists and remove duplicates
 puts "\nsvn_sort_it_all_out"
-        #foreach r [lsort -dictionary [array names revkind]] {
-           #puts "$r \"$revkind($r)\""
-        #}
+        foreach r [lsort -dictionary [array names revkind]] {
+           puts "$r \"$revkind($r)\""
+           if {![info exists revbranches($r)]} {set revbranches($r) {} }
+        }
 
         # Find out where to put the working revision icon (if anywhere)
         #set command "svn status -v $filename"
@@ -1113,12 +1122,21 @@ puts "\nsvn_sort_it_all_out"
         set svnstat [lindex $loglines 1]
         set revnum(current) [lindex $svnstat 0]
         gen_log:log D "revnum(current) $revnum(current)"
-puts "revnum(current) $revnum(current)"
+puts ""
+puts "\nrevnum(current) $revnum(current)"
+# FIXME - hunt for current revnum in branchrevs for current_tagname
+# and add "current" to its branchrevs array
+puts ""
 foreach a [array names branchrevs] {
   puts "branchrevs($a) $branchrevs($a)"
 }
-foreach a [array names revbranches] {
+puts ""
+foreach a [lsort -dictionary [array names revbranches]] {
   puts "revbranches($a) $revbranches($a)"
+}
+puts ""
+foreach a [lsort -dictionary [array names revtags]] {
+  puts "revtags($a) $revtags($a)"
 }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
