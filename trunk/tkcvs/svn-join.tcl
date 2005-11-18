@@ -443,7 +443,7 @@ puts "\nsort_it_all_out"
         $join_canvas create rectangle \
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $rheight}] \
-            -width $box_width -fill gray90 -outline blue
+            -width 2 -fill gray90 -outline blue
         set mx [expr {$x + $box_width/2}]
         set my [expr {$y - $box_height}]
         # This is the short arrow above the rectangle
@@ -476,7 +476,7 @@ puts "\nsort_it_all_out"
         set ty [expr {$y - $box_height}]
         $join_canvas create rectangle \
           $x $y $tx $ty \
-          -width $box_width -fill gray90 -outline red3
+          -width 2 -fill gray90 -outline red3
         set pad \
           [expr {($box_width - [image width Man] \
             - [font measure {Helvetica -10 bold} -displayof $join_canvas {You are}]) \
