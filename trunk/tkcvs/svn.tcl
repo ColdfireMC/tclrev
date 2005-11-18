@@ -756,7 +756,7 @@ proc svn_checkout {dir url rev target cmd} {
 # SVN cat or ls.  Called from module browser
 proc svn_filecat {root path title} {
   gen_log:log T "ENTER ($root $path $title)"
-  puts "svn_filecat ($root $path $title)"
+puts "svn_filecat ($root $path $title)"
 
   # Should do cat if it's a file and ls if it's a path
   if {[string match {*/} $title]} {
@@ -888,7 +888,7 @@ puts "revnum_current $revnum_current"
         if { $relpath == {} } {
           set path "$cvscfg(svnroot)/trunk/$filename"
         } else {
-          set path "$cvscfg(svnroot)/$trunk/relpath/$filename"
+          set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
         }
         # The trunk
 puts "\nTrunk"
@@ -918,7 +918,7 @@ puts "\nTrunk"
 puts " set revtags($rr) trunk"
           set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
           foreach a [array names branchrevs] {
-            puts " branchrevs($a) $branchrevs($a)"
+puts " branchrevs($a) $branchrevs($a)"
           }
         }
 
@@ -929,7 +929,7 @@ puts "Branches"
         set ret [catch {eval "exec $command"} branches]
         if {$ret != 0} {
             gen_log:log E "$branches"
-            puts "$branches"
+puts "$branches"
             set branches ""
         }
         foreach branch $branches {
@@ -950,7 +950,8 @@ puts " $branch"
           if {$ret != 0} {
             # This can happen a lot -let's not let it stop us
             gen_log:log E "$log_output"
-            puts "$log_output"
+puts "$command"
+puts "$log_output"
             continue
           }
           set loglines [split $log_output "\n"]
@@ -993,11 +994,11 @@ puts "  branchrevs($rb) $branchrevs($rb)"
 puts " allrevs($branch) $allrevs($branch)"
           set revbranches($bp) $branch
 
-          puts " revbranches($bp) $branch:  $rb"
+puts " revbranches($bp) $branch = $rb"
           set revbranches($bp) $rb
 puts " revbranches($bp) $revbranches($bp)"
           update idletasks
-        } 
+        }
         # Tags
         if {$show_tags} {
 puts "Tags"
@@ -1006,7 +1007,7 @@ puts "Tags"
           set ret [catch {eval "exec $command"} tags]
           if {$ret != 0} {
               gen_log:log E "$tags"
-              puts "$tags"
+puts "$tags"
               set tags ""
           }
           foreach tag $tags {
@@ -1027,7 +1028,7 @@ puts " $tag"
             if {$ret != 0} {
               # This can happen a lot -let's not let it stop us
               gen_log:log E "$log_output"
-              puts "$log_output"
+puts "$log_output"
               continue
             }
             set loglines [split $log_output "\n"]
@@ -1148,21 +1149,21 @@ puts "set revtags($bp) $tag"
         # Sort the revision and branch lists and remove duplicates
 puts "\nsvn_sort_it_all_out"
         foreach r [lsort -dictionary [array names revkind]] {
-           puts "$r \"$revkind($r)\""
+puts "$r \"$revkind($r)\""
            if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
 
 puts ""
 foreach a [lsort -dictionary [array names branchrevs]] {
-  puts "branchrevs($a) $branchrevs($a)"
+puts "branchrevs($a) $branchrevs($a)"
 }
 puts ""
 foreach a [lsort -dictionary [array names revbranches]] {
-  puts "revbranches($a) $revbranches($a)"
+puts "revbranches($a) $revbranches($a)"
 }
 puts ""
 foreach a [lsort -dictionary [array names revtags]] {
-  puts "revtags($a) $revtags($a)"
+puts "revtags($a) $revtags($a)"
 }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}

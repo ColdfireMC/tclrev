@@ -522,7 +522,7 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
           -width $curr(width) -fill gray90 \
-          -tags [list box R$revision active]
+          -tags [list box R$revision rect$revision active]
         # ...and add the contents
         if {[info exists revstate($revision)]} {
           if {$revstate($revision) == {dead}} {
@@ -555,7 +555,7 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
         variable branchrevs
         variable revbranches
 
-        puts "DrawBranch ($x $y $root_rev $branch)"
+puts "DrawBranch ($x $y $root_rev $branch)"
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         # What revisions to show on this branch?
         if {$branchrevs($branch) == {}} {
@@ -883,7 +883,7 @@ puts "\nDrawTree"
           if {$opt(show_box_rev)} {
             append rev_info {$revision}
           }
-#puts "rev_info $rev_info"
+
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
           set my_size [expr {round($logcfg(font_size) * $opt(scale))}]
@@ -912,14 +912,25 @@ puts "\nDrawTree"
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
           foreach a [array names revtags] {
-            puts "$a $revtags($a)"
+puts "$a $revtags($a)"
             if {$revtags($a) == "trunk"} {
               set trunkrev $a
             }
           }
+          if {! [info exists trunkrev]} {
+             set min 100000
+             foreach a [array names revtags] {
+               if {$revtags($a) != {} } {
+               set rnum [string trimleft $a {r}]
+puts " revtags($a) $revtags($a)"
+               if {$rnum < $min} {set min $rnum}
+               }
+             }
+             set basebranch $revtags(r$min)
+          }
 
           # Start drawing, beginning with the trunk
-          if {[info exists branchrevs(trunk)]} {
+          if {[info exists trunkrev]} {
             foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $trunkrev] {
                 lappend bxys $lx $lbw $rh $lly
                 break
@@ -934,6 +945,12 @@ puts "\nDrawTree"
 
             foreach {box_width root_height} [CalcRoot $trunkrev] { break }
             DrawRoot 0 $y2 $lbw $rh $trunkrev $trunkrev
+            UpdateBndBox
+            break
+          } elseif {[info exists basebranch]} {
+            gen_log:log D "DrawBranch 0 0 {} $basebranch"
+            if {! [info exists revtags($basebranch)]} {set revtags($basebranch) {} }
+            DrawBranch 0 0 {} $basebranch
             UpdateBndBox
           }
           if {$opt(show_merges)} {
