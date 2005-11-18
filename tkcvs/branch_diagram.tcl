@@ -355,7 +355,7 @@ namespace eval ::logcanvas {
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
             -width $curr(width) \
             -fill gray90 -outline blue \
-            -tags [list T$btag A$root_rev delta active]
+            -tags [list T$btag delta active]
 
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
@@ -366,7 +366,7 @@ namespace eval ::logcanvas {
             -text $s \
             -anchor s \
             -font $font_norm -fill blue \
-            -tags [list T$btag A$root_rev delta active]
+            -tags [list T$btag delta active]
           incr ty -$font_norm_h
           }
         gen_log:log T "LEAVE"
