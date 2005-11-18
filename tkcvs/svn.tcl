@@ -58,7 +58,6 @@ proc read_svn_dir {dirname} {
           default {}
         }
       }
-      #puts $current_tagname
       set cvscfg(svnroot) [string trimright $root "/"]
 puts "******"
       gen_log:log D "SVN URL: $cvscfg(url)"
@@ -85,7 +84,7 @@ proc svn_workdir_status {} {
   gen_log:log T "ENTER"
   set cmd(svn_status) [exec::new "svn status -uvN"]
   set status_lines [split [$cmd(svn_status)\::output] "\n"]
-  unset cmd(svn_status)
+  catch {unset cmd(svn_status)}
   # The first five columns in the output are each one character wide
   foreach logline $status_lines {
     if {[string match "Status*" $logline]} {continue}
@@ -903,7 +902,13 @@ puts "\nTrunk"
         if {$ret == 0} {
           set trunk_lines [split $log_output "\n"]
           set rr [parse_svnlog $trunk_lines trunk]
+          set curr 0
           foreach r $branchrevs(trunk) {
+            if {$r == $revnum_current} {
+              set branchrevs($r) {current}
+              set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
+              set curr 1
+            }
             gen_log:log D " $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
           }
@@ -952,10 +957,14 @@ puts " $branch"
           set rb [parse_svnlog $loglines $branch]
 puts "  set revtags($rb) $branch"
 puts "  branchrevs($branch) $branchrevs($branch)"
+          # See if this is the current revision
+          set curr 0
           foreach r $branchrevs($branch) {
-            #if {$r == $revnum_current} {
-              #set branchrevs($branch) [linsert $branchrevs($branch) end-1 {current}]
-            #}
+            if {$r == $revnum_current} {
+              set branchrevs($r) {current}
+              set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
+              set curr 1
+            }
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
           }
@@ -974,10 +983,19 @@ puts "  branchrevs($rb) $branchrevs($rb)"
           }
           set loglines [split $log_output "\n"]
           parse_q $loglines $branch
-          set bp [lindex $allrevs($branch) [llength $branchrevs($branch)]]
-          #set revbranches($bp) $branch
+
+          # If current is HEAD of branch, move the branchpoint back on, before You are Here
+          set idx [llength $branchrevs($branch)]
+          if {$curr} {
+            incr idx -1
+          }
+          set bp [lindex $allrevs($branch) $idx]
+puts " allrevs($branch) $allrevs($branch)"
+          set revbranches($bp) $branch
+
           puts " revbranches($bp) $branch:  $rb"
           set revbranches($bp) $rb
+puts " revbranches($bp) $revbranches($bp)"
           update idletasks
         } 
         # Tags

@@ -113,7 +113,7 @@ proc cvs_workdir_status {} {
     # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
     # into an array.
 
-    unset cmd(cvs_status)
+    catch {unset cmd(cvs_status)}
     foreach logline $status_lines {
       if {[string match "File:*" $logline]} {
         regsub -all {\t+} $logline "\t" logline
@@ -178,7 +178,7 @@ proc cvs_workdir_status {} {
 
   if {[info exists cmd(cvs_editors)]} {
     set filename {}
-    unset cmd(cvs_editors)
+    catch {unset cmd(cvs_editors)}
     foreach logline $editors_lines {
       set line [split $logline "\t"]
       gen_log:log D "$line"
@@ -208,7 +208,7 @@ proc cvs_workdir_status {} {
   if {[info exists cmd(cvs_lockers)]} {
     set filename {}
     set lockers {}
-    unset cmd(cvs_lockers)
+    catch {unset cmd(cvs_lockers)}
     foreach line $lockers_lines {
       if {[string match "Working file: *" $line]} {
         gen_log:log D "$line"

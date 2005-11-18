@@ -313,7 +313,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
   # If a checkout is already running, abort it
   if {[info exists cmd(cvs_co)]} {
     catch {$cmd(cvs_co)\::abort}
-    unset cmd(cvs_co)
+    catch {unset cmd(cvs_co)}
   }
 
   catch {unset modval}
@@ -583,7 +583,7 @@ proc module_exit { } {
 
   if {[info exists cmd(cvs_co)]} {
     catch {$cmd(cvs_co)\::abort}
-    unset cmd(cvs_co)
+    catch {unset cmd(cvs_co)}
   }
 
   set pid [pid]

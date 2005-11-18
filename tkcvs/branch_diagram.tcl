@@ -88,6 +88,7 @@ namespace eval ::logcanvas {
         variable revcomment
         variable sel_tag
         variable sel_rev
+
         ClearSelection $AorB
         set other [expr {$AorB == "A" ? {B} : {A}}]
         if {$rev == $sel_rev($other)} { ClearSelection $other }
@@ -116,6 +117,7 @@ namespace eval ::logcanvas {
       proc RevSelect {AorB} {
         variable logcanvas
         set t [$logcanvas.canvas gettags current]
+#puts "RevSelect $AorB TAGS $t"
         SetSelection $AorB \
           [string range [lindex $t [lsearch -glob $t {T*}]] 1 end] \
           [string range [lindex $t [lsearch -glob $t {R*}]] 1 end]
@@ -126,6 +128,7 @@ namespace eval ::logcanvas {
         variable logcanvas
 
         set t [$logcanvas.canvas gettags current]
+#puts "DeltaSelect  TAGS $t"
         set atag {}
         set arev [string range [lindex $t [lsearch -glob $t {A*}]] 1 end]
         set btag [string range [lindex $t [lsearch -glob $t {T*}]] 1 end]
@@ -179,7 +182,7 @@ namespace eval ::logcanvas {
           if {[info tclversion] >= 8.3} {
             listbox $mname.lbx -font $cvscfg(listboxfont) \
               -width 0 -height $h \
-              -listvar [namespace current]::tags($rev)
+              -listvar [namespace current]::revtags($rev)
           } else {
             # The list of tags won't get update on a reload of the log file
             # unless you close and reopen the pop up :-(
@@ -285,16 +288,13 @@ puts "DrawCurrent ($x $y $box_width $box_height $revision)"
         set ty [expr {$y - $box_height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
-          -width $curr(width) -fill gray90 -outline red3 \
-          -tags [list box active]
+          -width $curr(width) -fill gray90 -outline red3
         if {[info exists revstate(current)]} {
           if {$revstate(current) == {dead}} {
             $logcanvas.canvas create line \
-              $x $y $tx $ty -fill red -width $curr(width) \
-              -tags [list box active]
+              $x $y $tx $ty -fill red -width $curr(width)
             $logcanvas.canvas create line \
-              $tx $y $x $ty -fill red -width $curr(width) \
-              -tags [list box active]
+              $tx $y $x $ty -fill red -width $curr(width)
           }
         }
         set pad \
@@ -305,14 +305,12 @@ puts "DrawCurrent ($x $y $box_width $box_height $revision)"
         # add the contents
         $logcanvas.canvas create image \
           [expr {$x + $pad}] $ty \
-          -image Man -anchor w \
-          -tags [list box active]
+          -image Man -anchor w
         $logcanvas.canvas create text \
           [expr {$x + $box_width - $pad}] $ty \
           -text "You are\nhere" -anchor e \
           -fill red3 \
-          -font $font_bold \
-          -tags [list box active]
+          -font $font_bold
         gen_log:log T "LEAVE"
         return
       }
@@ -328,7 +326,6 @@ puts "DrawCurrent ($x $y $box_width $box_height $revision)"
         variable revtags
 
         #gen_log:log T "ENTER ($branch)"
-#puts "tags [array names revtags]"
         set box_width 0
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
@@ -363,6 +360,7 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
             -width $curr(width) \
             -fill gray90 -outline blue \
             -tags [list T$btag A$root_rev delta active]
+
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
         gen_log:log D "[subst $root_info]"
@@ -524,16 +522,14 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
           -width $curr(width) -fill gray90 \
-          -tags [list box rect$revision R$revision active]
+          -tags [list box R$revision active]
         # ...and add the contents
         if {[info exists revstate($revision)]} {
           if {$revstate($revision) == {dead}} {
             $logcanvas.canvas create line \
-              $x $y $tx $ty -fill red -width $curr(width) \
-              -tags [list box R$revision active]
+              $x $y $tx $ty -fill red -width $curr(width)
             $logcanvas.canvas create line \
-              $tx $y $x $ty -fill red -width $curr(width) \
-              -tags [list box R$revision active]
+              $tx $y $x $ty -fill red -width $curr(width)
           }
         }
         set tx [expr {$x + $box_width/2}]
@@ -562,7 +558,6 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
         puts "DrawBranch ($x $y $root_rev $branch)"
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         # What revisions to show on this branch?
-puts "Looking at branchrevs($branch)"
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
@@ -589,20 +584,15 @@ puts "Looking at branchrevs($branch)"
         }
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
-puts "Branch: does $branch equal current?"
         if {$branch == {current}} {
-puts "  YES"
           foreach {box_width root_height} [CalcCurrent $branch] { break }
         } else {
           foreach {box_width root_height} [CalcRoot $branch] { break }
         }
         set height [expr {$root_height + $curr(spcy)}]
         set rdata {}
-puts " revlist ($branch)  $revlist"
         foreach revision $revlist {
-puts "  Revision: does $revision equal current?"
           if {$revision == {current}} {
-puts "    YES"
             set rtw 0
             foreach {rbw rh} [CalcCurrent $revision] { break }
           } else {
@@ -688,8 +678,7 @@ puts "    YES"
             if {$ly != {}} {
               $logcanvas.canvas create line \
                 $mx $ly $mx [expr {$by - $rh}] \
-                -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
-                -tags [list A$revision B$b delta active]
+                -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
             }
             if {$b == {current}} {
               DrawCurrent $bx $by $bw $rh $revision
@@ -706,8 +695,7 @@ puts "    YES"
               $logcanvas.canvas create line \
                 $rx $ry $mx $ry $mx $by \
                 -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
-                -fill blue \
-                -tags [list A$revision B[lindex $branchrevs($b) 0] delta active]
+                -fill blue
             ]
             if {$opt(update_drawing) < 1} {
               UpdateBndBox
@@ -716,8 +704,7 @@ puts "    YES"
           if {$last_y != {}} {
             $logcanvas.canvas create line \
               $midx $last_y $midx [expr {$y - $box_height}] \
-              -arrow first -arrowshape $curr(arrowshape) -width $curr(width) \
-              -tags [list A$revision B$last_rev delta active]
+              -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
           }
           if {$revision == {current}} {
             DrawCurrent $x $y $box_width $rheight $revision
@@ -937,7 +924,14 @@ puts "\nDrawTree"
                 lappend bxys $lx $lbw $rh $lly
                 break
               }
-              set x2 [expr {$lx + $lbw + $curr(spcx)}]
+            set x2 [expr {$lx + $lbw + $curr(spcx)}]
+            set mx [expr {$lx + $lbw/2}]
+            set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
+            set by [expr {$y2 - $curr(boff)}] ; ### OK
+            $logcanvas.canvas create line \
+              $mx $ry $mx [expr {$by - $rh}] \
+              -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
+
             foreach {box_width root_height} [CalcRoot $trunkrev] { break }
             DrawRoot 0 $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
@@ -1165,6 +1159,8 @@ puts "\nDrawTree"
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove
+      button $logcanvas.up.bmodbrowse -image Modules \
+        -command {module_changedir [pwd]}
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
@@ -1193,6 +1189,8 @@ puts "\nDrawTree"
       grid $logcanvas.up.rfname -column 1 -row 0 -columnspan 5 -sticky ew
       grid $logcanvas.up.bworkdir -column 6 -row 0 -rowspan 2 -sticky e\
         -padx 2 -pady 1
+      grid $logcanvas.up.bmodbrowse -column 7 -row 0 -rowspan 2 -sticky e\
+        -padx 2 -pady 1
       grid $logcanvas.up.revA_lvers -column 0 -row 1 -sticky w
       grid $logcanvas.up.revA_rvers -column 1 -row 1 -sticky w
       grid $logcanvas.up.revA_ldate -column 2 -row 1 -sticky w
@@ -1200,7 +1198,7 @@ puts "\nDrawTree"
       grid $logcanvas.up.revA_lwho -column 4 -row 1 -sticky w
       grid $logcanvas.up.revA_rwho -column 5 -row 1 -sticky ew
       grid $logcanvas.up.logA_lcomment -column 0 -row 2 -sticky nw
-      grid $logcanvas.up.logA_rlogfm -column 1 -row 2 -columnspan 6 -sticky ew
+      grid $logcanvas.up.logA_rlogfm -column 1 -row 2 -columnspan 7 -sticky ew
       pack $logcanvas.up.logA_rlogfm.yscroll -side right -fill y
       pack $logcanvas.up.logA_rlogfm.rcomment -side left -fill x -expand y
       grid $logcanvas.up.revB_lvers -column 0 -row 3 -sticky w
@@ -1210,7 +1208,7 @@ puts "\nDrawTree"
       grid $logcanvas.up.revB_lwho -column 4 -row 3 -sticky w
       grid $logcanvas.up.revB_rwho -column 5 -row 3 -sticky ew
       grid $logcanvas.up.logB_lcomment -column 0 -row 4 -sticky nw
-      grid $logcanvas.up.logB_rlogfm -column 1 -row 4 -columnspan 6 -sticky ew
+      grid $logcanvas.up.logB_rlogfm -column 1 -row 4 -columnspan 7 -sticky ew
       pack $logcanvas.up.logB_rlogfm.yscroll -side right -fill y
       pack $logcanvas.up.logB_rlogfm.rcomment -side left -fill x -expand y
       # Pack the bottom before the middle so it doesnt disappear if
@@ -1333,18 +1331,20 @@ puts "\nDrawTree"
         {"Re-read the log information"}
       set_tooltips $logcanvas.up.bworkdir \
         {"Open the Working Directory Browser"}
+      set_tooltips $logcanvas.up.bmodbrowse \
+        {"Open the Repository Browser"}
       set_tooltips $logcanvas.view \
-         {"View a version of the file"}
+        {"View a version of the file"}
       set_tooltips $logcanvas.annotate \
-         {"View revision where each line was modified"}
+        {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \
-         {"Compare two versions of the file"}
+        {"Compare two versions of the file"}
       set_tooltips $logcanvas.join \
-         {"Merge branch to current"}
+        {"Merge branch to current"}
       set_tooltips $logcanvas.delta \
-         {"Merge changes to current"}
+        {"Merge changes to current"}
       set_tooltips $logcanvas.viewtags \
-         {"List all the file\'s tags"}
+        {"List all the file\'s tags"}
   
       #
       # Put the canvas on to the display.
