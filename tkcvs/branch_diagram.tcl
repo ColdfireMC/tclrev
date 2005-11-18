@@ -250,7 +250,6 @@ namespace eval ::logcanvas {
         variable font_bold_h
         variable logcanvas
 
-puts " CalcCurrent ($revision)"
         gen_log:log T "ENTER ($revision)"
         set box_width \
           [expr {[image width Man] \
@@ -279,7 +278,6 @@ puts " CalcCurrent ($revision)"
         variable curr_x
         variable curr_y
 
-puts "DrawCurrent ($x $y $box_width $box_height $revision)"
         gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
         set curr_x $x
         set curr_y $y
@@ -335,7 +333,6 @@ puts "DrawCurrent ($x $y $box_width $box_height $revision)"
         }
         incr box_width $curr(padx,2)
         #gen_log:log T "LEAVE"
-puts " CalcRoot ($branch): $box_width [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]"
         return [list $box_width \
           [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]]
       }
@@ -350,7 +347,6 @@ puts " CalcRoot ($branch): $box_width [expr {$curr(pady,2) + [llength [subst $ro
         variable root_info
         variable revtags
 
-puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
         gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch )"
         set btag [lindex $revtags($branch) 0]
         # draw the box
@@ -555,7 +551,6 @@ puts "DrawRoot ($x $y $box_width $box_height $root_rev $branch )"
         variable branchrevs
         variable revbranches
 
-puts "DrawBranch ($x $y $root_rev $branch)"
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         # What revisions to show on this branch?
         if {$branchrevs($branch) == {}} {
@@ -822,7 +817,6 @@ puts "DrawBranch ($x $y $root_rev $branch)"
         variable revbranches
         variable branchrevs
 
-puts "\nDrawTree"
         gen_log:log T "ENTER ($now)"
         foreach a [array names $scope\::revwho] {
           set revwho($a) [set $scope\::revwho($a)]
@@ -912,7 +906,6 @@ puts "\nDrawTree"
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
           foreach a [array names revtags] {
-puts "$a $revtags($a)"
             if {$revtags($a) == "trunk"} {
               set trunkrev $a
             }
@@ -922,7 +915,6 @@ puts "$a $revtags($a)"
              foreach a [array names revtags] {
                if {$revtags($a) != {} } {
                set rnum [string trimleft $a {r}]
-puts " revtags($a) $revtags($a)"
                if {$rnum < $min} {set min $rnum}
                }
              }
@@ -944,15 +936,15 @@ puts " revtags($a) $revtags($a)"
               -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
 
             foreach {box_width root_height} [CalcRoot $trunkrev] { break }
-            DrawRoot 0 $y2 $lbw $rh $trunkrev $trunkrev
+            DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
-            break
           } elseif {[info exists basebranch]} {
             gen_log:log D "DrawBranch 0 0 {} $basebranch"
             if {! [info exists revtags($basebranch)]} {set revtags($basebranch) {} }
             DrawBranch 0 0 {} $basebranch
             UpdateBndBox
           }
+
           if {$opt(show_merges)} {
             foreach from $fromtags {
               gen_log:log D "$from  to $fromtag_branch($from) at $xy($from)"
