@@ -1174,11 +1174,11 @@ proc directory_list { filenames } {
   # triggered by a button click)
   if {[info exists cmd(cvs_status)]} {
     catch {$cmd(cvs_status)\::abort}
-    unset cmd(cvs_status)
+    catch {unset cmd(cvs_status)}
   }
   if {[info exists cmd(cvs_editors)]} {
     catch {$cmd(cvs_editors)\::abort}
-    unset cmd(cvs_editors)
+    catch {unset cmd(cvs_editors)}
   }
 
   # Select from those files only the ones we want (e.g., no CVS dirs)
