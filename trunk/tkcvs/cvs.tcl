@@ -1970,17 +1970,6 @@ namespace eval ::cvs_branchlog {
         return
       }
 
-      proc configure_buttons { dir fname } {
-        global cvsglb
-        variable lc
-        variable textbg
-
-        $lc.up.lfname configure -text "RCS file"
-        $lc.up.rfname delete 0 end
-        $lc.up.rfname insert end "$fname,v"
-        $lc.up.rfname configure -state readonly -bg $cvsglb(textbg)
-      }
-
       proc parse_cvslog { exec logline } {
         #
         # Splits the rcs file up and parses it using a simple state machine.
@@ -1990,6 +1979,7 @@ namespace eval ::cvs_branchlog {
         global cvsglb
         variable filename
         variable lc
+        variable ln
         variable revwho
         variable revdate
         variable revtime
@@ -2024,7 +2014,7 @@ gen_log:log T "ENTER ($exec $logline)"
                 if {$inrcs && [file isdir RCS]} {
                    set fname [file join RCS $fname]
                 }
-                configure_buttons $module_dir $fname
+                $ln\::ConfigureButtons CVS $fname
               } elseif {[string match {Working file: *} $logline]} {
                 # If we care about a working copy we need to look
                 # at the name of the working file here. It may be

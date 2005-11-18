@@ -150,6 +150,48 @@ namespace eval ::logcanvas {
         return
       }
 
+      proc ConfigureButtons {sys fname} {
+        global cvsglb
+        variable logcanvas
+
+        switch -- $sys {
+          "SVN" {
+            $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn}
+            $logcanvas.up.lfname configure -text "SVN Path"
+            $logcanvas.up.rfname delete 0 end
+            $logcanvas.up.rfname insert end "$fname"
+            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+            $logcanvas.view configure \
+               -command [namespace code {
+                  svn_fileview [$logcanvas.up.revA_rvers cget -text] \
+                  $filename
+               }]
+            $logcanvas.annotate configure \
+               -command [namespace code {
+                 svn_annotate [string trimleft [$logcanvas.up.revA_rvers cget -text] {r}] \
+                 $filename
+               }]
+          }
+         "CVS" {
+            $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs}
+            $logcanvas.up.lfname configure -text "RCS file"
+            $logcanvas.up.rfname delete 0 end
+            $logcanvas.up.rfname insert end "$fname,v"
+            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+            $logcanvas.view configure \
+               -command [namespace code {
+                  cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] \
+                  $filename
+               }]
+            $logcanvas.annotate configure \
+               -command [namespace code {
+                 cvs_annotate [$logcanvas.up.revA_rvers cget -text] \
+                 $filename
+               }]
+          }
+        }
+      }
+
       proc PopupTags { x y } {
       #
       # Pop up a transient window with a listbox of the tags for a specific\
@@ -1168,8 +1210,7 @@ namespace eval ::logcanvas {
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove
-      button $logcanvas.up.bmodbrowse -image Modules \
-        -command {module_changedir [pwd]}
+      button $logcanvas.up.bmodbrowse -image Modules
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
@@ -1240,16 +1281,8 @@ namespace eval ::logcanvas {
         -command [namespace code {
                  $scope\::reloadLog
                }]
-      button $logcanvas.view -image Fileview \
-        -command [namespace code {
-                 cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] \
-                 $filename
-               }]
-      button $logcanvas.annotate -image Annotate \
-        -command [namespace code {
-                 cvs_annotate [$logcanvas.up.revA_rvers cget -text] \
-                 $filename
-               }]
+      button $logcanvas.view -image Fileview
+      button $logcanvas.annotate -image Annotate
       button $logcanvas.diff -image Diff \
         -command [namespace code {
                  comparediff_r [$logcanvas.up.revA_rvers cget -text] \
@@ -1309,18 +1342,11 @@ namespace eval ::logcanvas {
       pack $logcanvas.close \
         -in $logcanvas.down -side right \
         -ipadx 1 -ipady 1 -fill both -expand 1
+
+      # FIXME move this stuff to ConfigureButtons?
       if {$sys == "CVS" && $loc == "rep"} {
         $logcanvas.view configure \
-        -command [namespace code {
-                 cvs_fileview_checkout [$logcanvas.up.revA_rvers cget -text] \
-                 $module_dir/$filename
-               }]
         $logcanvas.join configure -state disabled
-        $logcanvas.annotate configure \
-        -command [namespace code {
-                   cvs_annotate_r [$logcanvas.up.revA_rvers cget -text] \
-                   $module_dir/$filename
-                 }]
         $logcanvas.join configure -state disabled
         $logcanvas.delta configure -state disabled
       }

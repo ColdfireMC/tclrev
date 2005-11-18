@@ -399,12 +399,11 @@ proc svn_commit {comment args} {
 
 }
 
-# Called from workdir browser annotate button
+# Called from workdir browser annotate button and from the log browser
 proc svn_annotate {revision args} {
   global cvscfg
 
   gen_log:log T "ENTER ($revision $args)"
-
   if {$revision != ""} {
     # We were given a revision
     set revflag "-r$revision"
@@ -746,7 +745,7 @@ proc svn_checkout {dir url rev target cmd} {
 
   set v [viewer::new "SVN Export"]
   set cwd [pwd]
-  cd $dir
+  cd $dir/file
   $v\::do "$command"
   $v\::wait
   cd $cwd
@@ -769,6 +768,24 @@ puts "svn_filecat ($root $path $title)"
 
   set v [viewer::new "$wintitle $root/$path"]
   $v\::do "$commandline"
+}
+proc svn_fileview {revision filename} {
+# This views a specific revision of a file in the repository.
+# For files checked out in the current sandbox.
+  global cvscfg
+
+  gen_log:log T "ENTER ($revision $filename)"
+  if {$revision == {}} {
+    set commandline "svn cat \"$filename\""
+    set v [viewer::new "$filename"]
+    $v\::do "$commandline"
+  } else {
+    set commandline "svn cat -$revision \"$filename\""
+    set v [viewer::new "$filename Revision $revision"]
+    $v\::do "$commandline"
+  }
+  gen_log:log T "LEAVE"
+
 }
 
 # Sends files to the SVN branch browser one at a time
@@ -868,13 +885,9 @@ namespace eval ::svn_branchlog {
         } else {
           set path "$cvscfg(url)/$relpath/$filename"
         }
-        $lc.up.lfname configure -text "SVN Path"
-        $lc.up.rfname delete 0 end
-        $lc.up.rfname insert end "$path"
-        $lc.up.rfname configure -state readonly -bg $cvsglb(textbg)
+        $ln\::ConfigureButtons SVN $path
 
         # Find out where to put the working revision icon (if anywhere)
-        #set command "svn status -v $filename"
         set command "svn log -q --stop-on-copy $filename"
         set cmd [exec::new $command]
         set log_output [$cmd\::output]
