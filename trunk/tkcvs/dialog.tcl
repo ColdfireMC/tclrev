@@ -384,12 +384,17 @@ proc add_dialog {args} {
   gen_log:log T "LEAVE"
 }
 
-proc merge_dialog { from since file {fromtag {}} } {
+proc merge_dialog { sys from since file {fromtag {}} } {
   global cvscfg
   global cvs
   global current_tagname
 
-  gen_log:log T "ENTER (\"$from\" \"$since\" \"$file\" \"$fromtag\")"
+  gen_log:log T "ENTER ($sys \"$from\" \"$since\" \"$file\" \"$fromtag\")"
+
+  if {$sys == "SVN"} {
+     cvsfail "SVN Merge not implemented yet. Sorry!"
+     return
+  }
 
   if {$from == {}} {
      cvsfail "You must specify a branch to merge from!"
@@ -448,9 +453,9 @@ proc merge_dialog { from since file {fromtag {}} } {
   message .merge.top.m2 -aspect 600 -text "to revision $from"
   frame .merge.bottom -relief raised -bd 2
   button .merge.bottom.apply -text "Apply" \
-    -command "cvs_join $from $since \[.merge.top.f.ent get\] $ftag $file"
+    -command "cvs_merge $from $since \[.merge.top.f.ent get\] $ftag $file"
   button .merge.bottom.ok -text "OK" \
-    -command "cvs_join $from $since \[.merge.top.f.ent get\] $ftag $file; destroy .merge"
+    -command "cvs_merge $from $since \[.merge.top.f.ent get\] $ftag $file; destroy .merge"
   button .merge.bottom.cancel -text "Cancel" \
     -command "destroy .merge"
 

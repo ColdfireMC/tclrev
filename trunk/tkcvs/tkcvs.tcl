@@ -317,12 +317,12 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"
   }
-} elseif {$cvscfg(startwindow) == "join"} {
+} elseif {$cvscfg(startwindow) == "mer"} {
   wm withdraw .
   if {$incvs} {
-    cvs_joincanvas
+    cvs_directory_merge
   } elseif {$insvn} {
-    svn_joincanvas
+    svn_directory_merge
   } else {
     puts "Directory doesn't seem to be in CVS or SVN"
   }
