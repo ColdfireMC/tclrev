@@ -1420,7 +1420,12 @@ proc cvsroot_check { dir } {
     set ret [catch {eval "exec $command"} raw_rcs_log]
     if {$ret} {
        gen_log:log D "$raw_rcs_log"
-       set inrcs 0
+       if [string match {*Unknown option:*} $raw_rcs_log] {
+         # An old version of RCS, but it's here
+         set inrcs 1
+       } else {
+         set inrcs 0
+       }
     }
   }
 
