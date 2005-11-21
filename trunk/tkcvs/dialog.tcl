@@ -564,65 +564,61 @@ proc rtag_dialog { cvsroot module branch } {
 
   gen_log:log T "ENTER ($cvsroot $module $branch)"
 
-    set cvsroot [uplevel {list $cvsroot}]
-    set module [uplevel {list $module}]
-    set branch [uplevel {list $branch}]
+  toplevel .modtag
+  grab set .modtag
 
-    toplevel .modtag
-    grab set .modtag
+  frame .modtag.top
+  pack .modtag.top -side top -fill x
 
-    frame .modtag.top
-    pack .modtag.top -side top -fill x
+  message .modtag.top.lbl -aspect 300 -relief groove \
+    -text "Tag the module \"$module\" with the new tag you specify.\
+           If you fill in \"Existing Tag\", the revisions having that tag will get\
+           the new tag.  Otherwise, the head revision will be tagged."
+  label .modtag.top.olbl -text "Existing Tag" -anchor w
+  entry .modtag.top.oentry -textvariable otag \
+    -relief sunken
+  label .modtag.top.nlbl -text "New Tag" -anchor w
+  entry .modtag.top.nentry -textvariable ntag \
+    -relief sunken
+  checkbutton .modtag.top.branch -text "Branch tag (-b)" \
+     -variable branch -onvalue "yes" -offvalue "no"
+  checkbutton .modtag.top.force -text "Move existing (-F)" \
+     -variable force -onvalue "yes" -offvalue "no"
 
-    message .modtag.top.lbl -aspect 300 -relief groove \
-      -text "Tag the module \"$module\" with the new tag you specify.\
-             If you fill in \"Existing Tag\", the revisions having that tag will get\
-             the new tag.  Otherwise, the head revision will be tagged."
-    label .modtag.top.olbl -text "Existing Tag" -anchor w
-    entry .modtag.top.oentry -textvariable otag \
-      -relief sunken
-    label .modtag.top.nlbl -text "New Tag" -anchor w
-    entry .modtag.top.nentry -textvariable ntag \
-      -relief sunken
-    checkbutton .modtag.top.branch -text "Branch tag (-b)" \
-       -variable branch -onvalue "yes" -offvalue "no"
-    checkbutton .modtag.top.force -text "Move existing (-F)" \
-       -variable force -onvalue "yes" -offvalue "no"
+  grid columnconf .modtag.top 1 -weight 1
+  grid rowconf .modtag.top 4 -weight 1
+  grid .modtag.top.lbl -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
+  grid .modtag.top.olbl -column 0 -row 1 -sticky nw
+  grid .modtag.top.oentry -column 1 -row 1
+  grid .modtag.top.nlbl -column 0 -row 2 -sticky nw
+  grid .modtag.top.nentry -column 1 -row 2
+  grid .modtag.top.branch -column 1 -row 3 -sticky w
+  grid .modtag.top.force -column 1 -row 4 -sticky w
 
-    grid columnconf .modtag.top 1 -weight 1
-    grid rowconf .modtag.top 4 -weight 1
-    grid .modtag.top.lbl -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
-    grid .modtag.top.olbl -column 0 -row 1 -sticky nw
-    grid .modtag.top.oentry -column 1 -row 1
-    grid .modtag.top.nlbl -column 0 -row 2 -sticky nw
-    grid .modtag.top.nentry -column 1 -row 2
-    grid .modtag.top.branch -column 1 -row 3 -sticky w
-    grid .modtag.top.force -column 1 -row 4 -sticky w
+  frame .modtag.down -relief groove -bd 2
+  pack .modtag.down -side top -fill x
 
-    frame .modtag.down -relief groove -bd 2
-    pack .modtag.down -side top -fill x
+  button .modtag.down.tag -text "Tag" \
+    -command "
+               cvs_rtag $cvsroot $module $branch \$force \$otag \$ntag; \
+               .modtag.down.cancel invoke
+             "
 
-    button .modtag.down.tag -text "Tag" \
-      -command {
-                 .modtag.down.cancel invoke
-                 cvs_rtag $cvsroot $module $branch $force $otag $ntag
-               }]
+  button .modtag.down.cancel -text "Cancel" \
+    -command {
+               grab release .modtag
+               destroy .modtag
+             }
 
-    button .modtag.down.cancel -text "Cancel" \
-      -command {
-                 grab release .modtag
-                 destroy .modtag
-               }]
+  pack .modtag.down.tag .modtag.down.cancel -in .modtag.down -side left \
+    -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
-    pack .modtag.down.tag .modtag.down.cancel -in .modtag.down -side left \
-      -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+  bind .modtag.top.nentry <Return> \
+    { .modtag.down.tag invoke }
 
-    bind .modtag.top.nentry <Return> \
-      { .modtag.down.tag invoke }]
-
-    wm title .modtag "Tag Module"
-    wm minsize .modtag 1 1
-    gen_log:log T "LEAVE"
+  wm title .modtag "Tag Module"
+  wm minsize .modtag 1 1
+  gen_log:log T "LEAVE"
 }
 
 proc subtract_dialog {args} {
