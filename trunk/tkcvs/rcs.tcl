@@ -119,82 +119,75 @@ proc rcs_workdir_status {} {
   set ret [catch {eval "exec $command"} raw_rcs_log]
   #gen_log:log D "$raw_rcs_log"
 
+  # The older version (pre-5.x or something) of RCS is a lot different from
+  # the newer versions, explaining some of the ugliness here
   set rlog_lines [split $raw_rcs_log "\n"]
-  set logstate "working"
   set lockers ""
   foreach rlogline $rlog_lines {
     gen_log:log D "$rlogline"
-    gen_log:log D "  logstate $logstate"
     # Found one!
-    switch -exact -- $logstate {
-      "working" {
-        if {[string match "Working file:*" $rlogline]} {
-          regsub {Working file: } $rlogline "" filename
-          regsub {\s*$} $filename "" filename
-          gen_log:log D "RCS file $filename"
-          set Filelist($filename:wrev) ""
-          set Filelist($filename:stickytag) ""
-          set Filelist($filename:option) ""
-          if {[file exists $filename]} {
-            set Filelist($filename:status) "RCS Up-to-date"
-            # Do rcsdiff to see if it's changed
-            set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
-            gen_log:log C "$command"
-            set ret [catch {eval "exec $command"}]
-            if {$ret == 1} {
-              set Filelist($filename:status) "RCS Modified"
-            }
-          } else {
-            set Filelist($filename:status) "RCS Needs Checkout"
-          }
-          set who ""
-          set lockers ""
-          set logstate "head"
-          continue
+    if {[string match "*Working file:*" $rlogline]} {
+      regsub {^.*Working file:\s+} $rlogline "" filename
+      regsub {\s*$} $filename "" filename
+      gen_log:log D "RCS file $filename"
+      set Filelist($filename:wrev) ""
+      set Filelist($filename:stickytag) ""
+      set Filelist($filename:option) ""
+      if {[file exists $filename]} {
+        set Filelist($filename:status) "RCS Up-to-date"
+        # Do rcsdiff to see if it's changed
+        #set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
+        set command "rcsdiff \"$filename\""
+        gen_log:log C "$command"
+        set ret [catch {eval "exec $command"} output]
+        gen_log:log D "$output"
+        set splitline [split $output "\n"]
+        if [string match {====*} [lindex $splitline 0]] {
+           set splitline [lrange $splitline 1 end]
         }
+        if {[llength $splitline] > 3} {
+          set Filelist($filename:status) "RCS Modified"
+          gen_log:log D "$filename MODIFIED"
+        }
+      } else {
+        set Filelist($filename:status) "RCS Needs Checkout"
       }
-      "head" {
-        if {[string match "head:*" $rlogline]} {
-          regsub {head: } $rlogline "" revnum
-          set Filelist($filename:wrev) "$revnum"
-          set Filelist($filename:stickytag) "$revnum on trunk"
-          #gen_log:log D "  Rev \"$revnum\""
-          set logstate "branch"
-          continue
-        }
+      set who ""
+      set lockers ""
+      continue
+    }
+    if {[string match "head:*" $rlogline]} {
+      regsub {head: } $rlogline "" revnum
+      set Filelist($filename:wrev) "$revnum"
+      set Filelist($filename:stickytag) "$revnum on trunk"
+      #gen_log:log D "  Rev \"$revnum\""
+      continue
+    } 
+    if {[string match "branch:*" $rlogline]} {
+      regsub {branch: *} $rlogline "" revnum
+      if {[string length $revnum] > 0} {
+        set Filelist($filename:wrev) "$revnum"
+        set Filelist($filename:stickytag) "$revnum on branch"
+        #gen_log:log D "  Branch rev \"$revnum\""
       }
-      "branch" {
-        if {[string match "branch:*" $rlogline]} {
-          regsub {branch: *} $rlogline "" revnum
-          if {[string length $revnum] > 0} {
-            set Filelist($filename:wrev) "$revnum"
-            set Filelist($filename:stickytag) "$revnum on branch"
-            #gen_log:log D "  Branch rev \"$revnum\""
-          }
-          set logstate "locks"
-          continue
-        }
+      continue
+    }
+    if { [string index $rlogline 0] == "\t" } {
+       set splitline [split $rlogline]
+       #gen_log:log D "\"[lindex $splitline 1]\""
+       #gen_log:log D "\"[lindex $splitline 2]\""
+       set who [lindex $splitline 1]
+       set who [string trimright $who ":"]
+       #gen_log:log D " who $who"
+       append lockers ",$who"
+       #gen_log:log D " lockers $lockers"
+    } else {
+      if {[string match "access list:*" $rlogline]} {
+        set lockers [string trimleft $lockers ","]
+        set Filelist($filename:editors) $lockers
+        # No more tags after this point
+        continue
       }
-      "locks" {
-        if { [string index $rlogline 0] == "\t" } {
-           set splitline [split $rlogline]
-           #gen_log:log D "\"[lindex $splitline 1]\""
-           #gen_log:log D "\"[lindex $splitline 2]\""
-           set who [lindex $splitline 1]
-           set who [string trimright $who ":"]
-           #gen_log:log D " who $who"
-           append lockers ",$who"
-           #gen_log:log D " lockers $lockers"
-        } else {
-          if {[string match "access list:*" $rlogline]} {
-            set lockers [string trimleft $lockers ","]
-            set Filelist($filename:editors) $lockers
-            # No more tags after this point
-            set logstate "working"
-            continue
-          }
-        }
-      }  
     }
   }
   gen_log:log T "LEAVE"

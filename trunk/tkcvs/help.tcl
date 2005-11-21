@@ -88,17 +88,18 @@ proc cvs_version {} {
 
   $v\::log "\n-----------------------------------------"
   set commandline "$cvs -v"
-  $v\::do "$commandline"
-  $v\::wait
+  set ret [catch {eval "exec $commandline"} output]
+  $v\::log $output
 
   $v\::log "\n-----------------------------------------\n"
   set commandline "svn --version"
-  $v\::do "$commandline"
-  $v\::wait
+  set ret [catch {eval "exec $commandline"} output]
+  $v\::log $output
 
-  $v\::log "-----------------------------------------\n"
+  $v\::log "\n-----------------------------------------\n"
   set commandline "rcs -V"
-  $v\::do "$commandline"
+  set ret [catch {eval "exec $commandline"} output]
+  $v\::log $output
 
   gen_log:log T "LEAVE"
 }
