@@ -1972,8 +1972,8 @@ namespace eval ::cvs_branchlog {
 
       switch -glob -- $sys {
         cvs* {
+          set command "$cvs log $filename"
           if {$directory_merge} {
-            set command "$cvs log $filename"
             set newlc [mergecanvas::new $filename "CVS,loc" "$command" [namespace current]]
             set ln [lindex $newlc 0]
             set lc [lindex $newlc 1]
