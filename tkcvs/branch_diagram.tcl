@@ -36,7 +36,7 @@ namespace eval ::logcanvas {
       set filename [uplevel {concat $filename}]
       set command [uplevel {concat $command}]
       set scope [uplevel {concat $scope}]
-      variable cmd_log
+      #variable cmd_log
       # Global constants scaled by current scaling factor for this instance
       variable curr
       global cvscfg
@@ -726,8 +726,6 @@ namespace eval ::logcanvas {
               }
               DrawRoot $bx $by $bw $rh $revision $b
             }
-            # We could draw this with -smooth 1 but without anti-aliasing
-            # the curves look yukky :-(
             $logcanvas.canvas lower [ \
               $logcanvas.canvas create line \
                 $rx $ry $mx $ry $mx $by \
@@ -953,36 +951,39 @@ namespace eval ::logcanvas {
             }
           }
           if {! [info exists trunkrev]} {
-             set min 100000
-             foreach a [array names revtags] {
-               if {$revtags($a) != {} } {
-               set rnum [string trimleft $a {r}]
-               if {$rnum < $min} {set min $rnum}
-               }
-             }
-             set basebranch $revtags(r$min)
+            set min 100000
+            foreach a [array names revtags] {
+              if {$revtags($a) != {} } {
+                set rnum [string trimleft $a {r}]
+                if {$rnum < $min} {set min $rnum}
+              }
+            }
+            set basebranch $revtags(r$min)
           }
 
           # Start drawing, beginning with the trunk
           if {[info exists trunkrev]} {
             foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $trunkrev] {
-                lappend bxys $lx $lbw $rh $lly
-                break
-              }
+              lappend bxys $lx $lbw $rh $lly
+              break
+            }
             set x2 [expr {$lx + $lbw + $curr(spcx)}]
             set mx [expr {$lx + $lbw/2}]
             set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
-            set by [expr {$y2 - $curr(boff)}] ; ### OK
+            set by [expr {$y2 - $curr(boff)}]
             $logcanvas.canvas create line \
               $mx $ry $mx [expr {$by - $rh}] \
-              -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
+              -arrow last -arrowshape $curr(arrowshape) \
+              -width $curr(width)
 
             foreach {box_width root_height} [CalcRoot $trunkrev] { break }
             DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
           } elseif {[info exists basebranch]} {
             gen_log:log D "DrawBranch 0 0 {} $basebranch"
-            if {! [info exists revtags($basebranch)]} {set revtags($basebranch) {} }
+            if {! [info exists revtags($basebranch)]} {
+              set revtags($basebranch) {}
+            }
             DrawBranch 0 0 {} $basebranch
             UpdateBndBox
           }
@@ -1291,17 +1292,18 @@ namespace eval ::logcanvas {
                }]
       button $logcanvas.join -image Mergebranch \
         -command [namespace code {
-                   variable revtags
+                   variable sys
                    set rv [$logcanvas.up.revA_rvers cget -text]
                    set rt [join [lrange [split $rv {.}] 0 end-1] {.}]
-                   merge_dialog \
+                   merge_dialog $sys \
                      [$logcanvas.up.revA_rvers cget -text] \
                      "" \
                      [list $filename]
                  }]
       button $logcanvas.delta -image Mergediff \
         -command [namespace code {
-                   merge_dialog \
+                   variable sys
+                   merge_dialog $sys \
                      [$logcanvas.up.revA_rvers cget -text] \
                      [$logcanvas.up.revB_rvers cget -text] \
                      [list $filename]
@@ -1324,7 +1326,7 @@ namespace eval ::logcanvas {
         -command [namespace code {
                  global cvscfg
                  variable logcanvas
-                 variable cmd_log
+                 #variable cmd_log
                  set cvscfg(loggeom) [wm geometry $logcanvas]
                  destroy $logcanvas
                  namespace delete [namespace current]

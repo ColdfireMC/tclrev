@@ -35,6 +35,7 @@ proc read_svn_dir {dirname} {
             switch -- $word {
               "trunk" {
                 set type $word
+                set current_tagname $word
                 set state E
               } 
               "branches" {
@@ -724,6 +725,60 @@ proc svn_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
+proc svn_merge {from since fromtag totag args} {
+#
+# This does a join (merge) of a chosen revision of localfile to the
+# current revision.
+#
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER ($from $since $fromtag $totag $args)"
+
+  cvsfail "Sorry, SVN merge not yet implemented"
+  return
+
+  set filelist $args
+  set v [viewer::new "SVN Merge"]
+
+  set commandline "$cvs update -d -j$from $filelist"
+  if {$since == ""} {
+    set commandline "$cvs update -d -j$from $filelist"
+  } else {
+    set commandline "$cvs update -d -j$since -j$from $filelist"
+  }
+    
+  $v\::do "$commandline" 0 status_colortags
+  $v\::wait
+
+  if {$cvscfg(auto_tag)} {
+    set comandline "$cvs tag -F -r $from $fromtag $filelist"
+    $v\::do "$cvs tag -F -r $from $fromtag $filelist"
+    toplevel .reminder
+    message .reminder.m1 -aspect 600 -text \
+      "When you are finished checking in your merges, \
+      you should apply the tag"
+    entry .reminder.ent -width 32 -relief groove -state readonly \
+       -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
+    .reminder.ent insert end $totag 
+    message .reminder.m2 -aspect 600 -text \
+      "using the \"Tag the selected files\" button"
+    frame .reminder.bottom -relief raised -bd 2
+    button .reminder.bottom.close -text "Dismiss" \
+      -command {destroy .reminder}
+    pack .reminder.bottom -side bottom -fill x
+    pack .reminder.bottom.close -side bottom -expand yes
+    pack .reminder.m1 -side top
+    pack .reminder.ent -side top -padx 2
+    pack .reminder.m2 -side top
+  }
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+  gen_log:log T "LEAVE"
+}
+
 # SVN Checkout or Export.  Called from Repository Browser
 proc svn_checkout {dir url rev target cmd} {
   gen_log:log T "ENTER ($dir $url $rev $target $cmd)"
@@ -788,6 +843,19 @@ proc svn_fileview {revision filename} {
 
 }
 
+# Sends directory "." to the directory-merge tool
+proc svn_directory_merge {} {
+  global cvscfg
+  global cvsglb
+  
+  gen_log:log T "ENTER"
+
+  gen_log:log D "Relative Path: $cvsglb(relpath)"
+  ::svn_branchlog::new $cvsglb(relpath) . 1
+
+  gen_log:log T "LEAVE"
+}
+
 # Sends files to the SVN branch browser one at a time
 proc svn_branches {files} {
   global cvscfg
@@ -814,7 +882,7 @@ proc svn_branches {files} {
 namespace eval ::svn_branchlog {
   variable instance 0
 
-  proc new {relpath filename} {
+  proc new {relpath filename {directory_merge {0}} } {
     variable instance
     set my_idx $instance
     incr instance
@@ -823,6 +891,7 @@ namespace eval ::svn_branchlog {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set relpath [uplevel {concat $relpath}]
+      set directory_merge [uplevel {concat $directory_merge}]
       variable command
       variable cmd_log
       variable lc
@@ -838,12 +907,18 @@ namespace eval ::svn_branchlog {
       variable logstate
 
       gen_log:log T "ENTER [namespace current]"
-
       set command "$cvs log $filename"
-      set newlc [logcanvas::new $filename "SVN,loc" "$command" [namespace current]]
-      set ln [lindex $newlc 0]
-      set lc [lindex $newlc 1]
-      set show_tags [set $ln\::opt(show_tags)]
+      if {$directory_merge} {
+        set newlc [mergecanvas::new $filename "SVN,loc" "$command" [namespace current]]
+        set ln [lindex $newlc 0]
+        set lc [lindex $newlc 1]
+        set show_tags 0
+      } else {
+        set newlc [logcanvas::new $filename "SVN,loc" "$command" [namespace current]]
+        set ln [lindex $newlc 0]
+        set lc [lindex $newlc 1]
+        set show_tags [set $ln\::opt(show_tags)]
+      }
 
       proc reloadLog { } {
         global cvscfg
@@ -998,7 +1073,8 @@ puts "  branchrevs($rb) $branchrevs($rb)"
           set loglines [split $log_output "\n"]
           parse_q $loglines $branch
 
-          # If current is HEAD of branch, move the branchpoint back on, before You are Here
+          # If current is HEAD of branch, move the branchpoint
+          # back one, before You are Here
           set idx [llength $branchrevs($branch)]
           if {$curr} {
             incr idx -1

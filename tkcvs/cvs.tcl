@@ -1033,7 +1033,7 @@ proc cvs_update {tagname normal_binary action_if_no_tag get_all_dirs dir args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_join {from since fromtag totag args} {
+proc cvs_merge {from since fromtag totag args} {
 #
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
@@ -1041,7 +1041,6 @@ proc cvs_join {from since fromtag totag args} {
   global cvs
   global cvscfg
   global cvsglb
-  global current_tagname
 
   gen_log:log T "ENTER ($from $since $fromtag $totag $args)"
 
@@ -1352,21 +1351,6 @@ proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outf
   }
   gen_log:log T "LEAVE"
   return
-}
-
-proc cvs_version {} {
-#
-# This shows CVS banner.
-#
-  global cvs
-  global cvscfg
-
-  gen_log:log T "ENTER"
-  set commandline "$cvs -v"
-  #gen_log:log C "$commandline"
-  set v [viewer::new "CVS version"]
-  $v\::do "$commandline"
-  gen_log:log T "LEAVE"
 }
 
 proc cvs_version_number {} {
@@ -1766,6 +1750,7 @@ proc read_cvs_dir {dirname} {
   global current_tagname
 
   gen_log:log T "ENTER ($dirname)"
+  set current_tagname "trunk"
   if {[file isdirectory $dirname]} {
     if {[file isfile [file join $dirname Repository]]} {
       gen_log:log F "OPEN CVS/Repository"
@@ -1869,6 +1854,73 @@ proc cvs_lock {do files} {
   }
 }
 
+# Sends directory "." to the directory-merge tool
+# Find the bushiest file in the directory and diagram it
+proc cvs_directory_merge {} {
+  global cvscfg
+  global cvsglb
+  global cvs
+  global incvs
+  
+  gen_log:log T "ENTER"
+  if {! $incvs} {
+    cvs_notincvs
+    return 1
+  }
+  set files [glob -nocomplain -types f -- .??* *]
+
+  regsub -all {\$} $files {\$} files
+  set commandline "$cvs -d $cvscfg(cvsroot) log $files"
+  gen_log:log C "$commandline"
+  catch {eval "exec $commandline"} raw_log
+  set log_lines [split $raw_log "\n"]
+
+  foreach logline $log_lines {
+    if {[string match "Working file:*" $logline]} {
+      set filename [lrange [split $logline] 2 end]
+      set nbranches($filename) 0
+      continue
+    }
+    if {[string match "total revisions:*" $logline]} {
+      set nrevs($filename) [lindex [split $logline] end]
+      continue
+    }
+    if { [regexp {^\t[-\w]+: .*\.0\.\d+$} $logline] } {
+      incr nbranches($filename)
+    }
+  }
+  set bushiestfile ""
+  set mostrevisedfile ""
+  set nbrmax 0
+  foreach br [array names nbranches] {
+    if {$nbranches($br) > $nbrmax} {
+      set bushiestfile $br
+      set nbrmax $nbranches($br)
+    }
+  }
+  set nrevmax 0
+  foreach br [array names nrevs] {
+    if {$nrevs($br) > $nrevmax} {
+      set mostrevisedfile $br
+      set nrevmax $nrevs($br)
+    }
+  }
+  gen_log:log F "Bushiest file \"$bushiestfile\" has $nbrmax branches"
+  gen_log:log F "Most Revised file \"$mostrevisedfile\" has $nrevmax revisions"
+
+  # Sometimes we don't find a file with any branches at all, so bushiest
+  # is empty.  Fall back to mostrevised.  All files have at least one rev.
+  if {[string length $bushiestfile] > 0} {
+    set filename $bushiestfile
+  } else {
+    set filename $mostrevisedfile
+  }
+
+  ::cvs_branchlog::new cvs $filename 1
+
+  gen_log:log T "LEAVE"
+}
+
 # Sends files to the SVN branch browser one at a time
 proc cvs_branches {files} {
   global cvs
@@ -1891,7 +1943,7 @@ proc cvs_branches {files} {
 namespace eval ::cvs_branchlog {
   variable instance 0
 
-  proc new {sys filename} {
+  proc new {sys filename {directory_merge {0}} } {
     variable instance
     set my_idx $instance
     incr instance
@@ -1900,6 +1952,7 @@ namespace eval ::cvs_branchlog {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set sys [uplevel {concat $sys}]
+      set directory_merge [uplevel {concat $directory_merge}]
       variable command
       variable cmd_log
       variable lc
@@ -1919,16 +1972,27 @@ namespace eval ::cvs_branchlog {
 
       switch -glob -- $sys {
         cvs* {
-          set command "$cvs log $filename"
-          set newlc [logcanvas::new $filename "CVS,loc" "$command" [namespace current]]
+          if {$directory_merge} {
+            set command "$cvs log $filename"
+            set newlc [mergecanvas::new $filename "CVS,loc" "$command" [namespace current]]
+            set ln [lindex $newlc 0]
+            set lc [lindex $newlc 1]
+            set show_tags 0
+          } else {
+            set newlc [logcanvas::new $filename "CVS,loc" "$command" [namespace current]]
+            set ln [lindex $newlc 0]
+            set lc [lindex $newlc 1]
+            set show_tags [set $ln\::opt(show_tags)]
+          }
         }
         rcs* {
           set command "rlog $filename"
           set newlc [logcanvas::new $filename "RCS,loc" "$command" [namespace current]]
+          set ln [lindex $newlc 0]
+          set lc [lindex $newlc 1]
+          set show_tags [set $ln\::opt(show_tags)]
         }
       }
-      set ln [lindex $newlc 0]
-      set lc [lindex $newlc 1]
 
       proc reloadLog { } {
         variable command
@@ -2174,6 +2238,7 @@ gen_log:log T "ENTER ($exec $logline)"
       proc cvs_sort_it_all_out {} {
         global cvscfg
         global module_dir
+        global current_tagname
         variable filename
         variable sys
         variable lc
@@ -2301,6 +2366,7 @@ puts ""
 foreach a [array names revtags] {
   puts "revtags($a) $revtags($a)"
 }
+puts "current_tagname $current_tagname"
 
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}

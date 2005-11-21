@@ -76,6 +76,33 @@ proc aboutbox {} {
   pack .about.down.ok
 }
 
+proc cvs_version {} {
+#
+# This shows CVS banner.
+#
+  global cvs
+  global cvscfg
+
+  gen_log:log T "ENTER"
+  set v [viewer::new "Versions"]
+
+  $v\::log "\n-----------------------------------------"
+  set commandline "$cvs -v"
+  $v\::do "$commandline"
+  $v\::wait
+
+  $v\::log "\n-----------------------------------------\n"
+  set commandline "svn --version"
+  $v\::do "$commandline"
+  $v\::wait
+
+  $v\::log "-----------------------------------------\n"
+  set commandline "rcs -V"
+  $v\::do "$commandline"
+
+  gen_log:log T "LEAVE"
+}
+
 proc wish_version {{parent {.}}} {
   global tk_version
 

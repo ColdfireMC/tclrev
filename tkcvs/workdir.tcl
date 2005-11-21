@@ -158,7 +158,7 @@ proc workdir_setup {} {
      -command { change_dir [pwd] }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
   button .workdir.bottom.buttons.dirfuncs.bjoin -image DirBranches \
-     -command { cvs_joincanvas }
+     -command { cvs_directory_merge }
   button .workdir.bottom.buttons.dirfuncs.bimport -image Import \
      -command { import_run }
 
@@ -490,7 +490,7 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add command -label "Release" \
      -command { release_dialog [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Join (Merge) Directory" \
-     -underline 0 -command { cvs_joincanvas }
+     -underline 0 -command { cvs_directory_merge }
   .workdir.menubar.cvs add command -label "Import CWD into Repository" \
      -underline 0 -command import_run
 
@@ -662,7 +662,7 @@ proc menu_std_help { w } {
   menu $w.help
   $w.help add command -label "About TkCVS" -underline 0 \
      -command aboutbox
-  $w.help add command -label "About CVS" -underline 6 \
+  $w.help add command -label "About CVS SVN RCS" -underline 6 \
      -command cvs_version
   $w.help add command -label "About Wish" -underline 6 \
      -command "wish_version [winfo parent $w]"
@@ -1025,7 +1025,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
      -command { svn_import_run }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
-      -command svn_joincanvas
+      -command svn_directory_merge
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
@@ -1073,7 +1073,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
       -command { import_run }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
-      -command cvs_joincanvas
+      -command cvs_directory_merge
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }
