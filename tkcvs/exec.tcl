@@ -460,7 +460,7 @@ proc viewer_window {w title parent} {
   wm protocol $w WM_DELETE_WINDOW "$w.close invoke"
 
   text $w.text -setgrid yes -relief sunken -border 2 \
-      -exportselection 1 \
+      -exportselection 1 -height 30 \
       -yscroll "$w.scroll set"
   bind $w.text <KeyPress> {
     switch -- %K {

@@ -1916,7 +1916,7 @@ proc cvs_directory_merge {} {
     set filename $mostrevisedfile
   }
 
-  ::cvs_branchlog::new cvs $filename 1
+  ::cvs_branchlog::new cvs "$filename" 1
 
   gen_log:log T "LEAVE"
 }
@@ -1972,14 +1972,14 @@ namespace eval ::cvs_branchlog {
 
       switch -glob -- $sys {
         cvs* {
-          set command "$cvs log $filename"
+          set command "cvs log \"$filename\""
           if {$directory_merge} {
-            set newlc [mergecanvas::new $filename "CVS,loc" "$command" [namespace current]]
+            set newlc [mergecanvas::new $filename "CVS,loc" [namespace current]]
             set ln [lindex $newlc 0]
             set lc [lindex $newlc 1]
             set show_tags 0
           } else {
-            set newlc [logcanvas::new $filename "CVS,loc" "$command" [namespace current]]
+            set newlc [logcanvas::new $filename "CVS,loc" [namespace current]]
             set ln [lindex $newlc 0]
             set lc [lindex $newlc 1]
             set show_tags [set $ln\::opt(show_tags)]
@@ -1987,7 +1987,7 @@ namespace eval ::cvs_branchlog {
         }
         rcs* {
           set command "rlog $filename"
-          set newlc [logcanvas::new $filename "RCS,loc" "$command" [namespace current]]
+          set newlc [logcanvas::new $filename "RCS,loc" [namespace current]]
           set ln [lindex $newlc 0]
           set lc [lindex $newlc 1]
           set show_tags [set $ln\::opt(show_tags)]
