@@ -11,7 +11,7 @@
 namespace eval ::logcanvas {
   variable instance 0
 
-  proc new {filename how command scope} {
+  proc new {filename how scope} {
     #
     # Creates a new log canvas.
     #
@@ -34,7 +34,6 @@ namespace eval ::logcanvas {
       set my_idx [uplevel {concat $my_idx}]
       set how [uplevel {concat $how}]
       set filename [uplevel {concat $filename}]
-      set command [uplevel {concat $command}]
       set scope [uplevel {concat $scope}]
       #variable cmd_log
       # Global constants scaled by current scaling factor for this instance

@@ -892,7 +892,6 @@ namespace eval ::svn_branchlog {
       set filename [uplevel {concat $filename}]
       set relpath [uplevel {concat $relpath}]
       set directory_merge [uplevel {concat $directory_merge}]
-      variable command
       variable cmd_log
       variable lc
       variable revwho
@@ -907,14 +906,13 @@ namespace eval ::svn_branchlog {
       variable logstate
 
       gen_log:log T "ENTER [namespace current]"
-      set command "$cvs log $filename"
       if {$directory_merge} {
-        set newlc [mergecanvas::new $filename "SVN,loc" "$command" [namespace current]]
+        set newlc [mergecanvas::new $filename "SVN,loc" [namespace current]]
         set ln [lindex $newlc 0]
         set lc [lindex $newlc 1]
         set show_tags 0
       } else {
-        set newlc [logcanvas::new $filename "SVN,loc" "$command" [namespace current]]
+        set newlc [logcanvas::new $filename "SVN,loc" [namespace current]]
         set ln [lindex $newlc 0]
         set lc [lindex $newlc 1]
         set show_tags [set $ln\::opt(show_tags)]
@@ -923,7 +921,6 @@ namespace eval ::svn_branchlog {
       proc reloadLog { } {
         global cvscfg
         global cvsglb
-        variable command
         variable cmd_log
         variable lc
         variable ln
