@@ -410,6 +410,11 @@ proc merge_dialog { sys from since file {fromtag {}} } {
   } else {
     set curr_tag "trunk"
   }
+  if {$sys == "CVS"} {
+    if {$from == "trunk"} {
+      set from "HEAD"
+    }
+  }
 
   if {$since == {}} {
     set since "\"\""

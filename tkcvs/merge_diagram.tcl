@@ -41,6 +41,7 @@ namespace eval ::mergecanvas {
       proc ConfigureButtons {sys fname} {
         global cvsglb
         variable mergecanvas
+        variable scope
 
         switch -- $sys {
          "SVN" {
@@ -220,18 +221,117 @@ puts "REVTAG $revtag"
         return [list $tag_width $box_width 0]
       }
 
+      proc DrawRevision { x y tag_width box_width height revision} {
+        global cvscfg
+        variable curr
+        variable box_height
+        variable rev_info
+        variable revdate
+        variable revtime
+        variable revwho
+        variable revstate
+        variable font_norm
+        variable font_norm_h
+        variable font_bold
+        variable mergecanvas
+        variable tlist
+        variable revtags
+        variable fromtags
+        variable totags
+        variable fromtag_branch
+        variable totag_branch
+        variable xy
+        variable boxwidth
+        variable fromprefix
+        variable toprefix
+
+        gen_log:log T "ENTER ($x $y $tag_width $box_width $height $revision)"
+        # Draw the list of tags
+        set tx [expr {$x - $curr(tspcb)}]
+        set ty $y
+        foreach tag $tlist($revision) {
+          if {[string match "${fromprefix}_*" $tag]} {
+            lappend fromtags $tag
+            set boxwidth($tag) $box_width
+            set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
+            set lsplit [lrange [split $revision {.}] 0 end-1]
+            if {[llength $lsplit] > 1} {
+              set fromtag_branch($tag) $revtags([join $lsplit {.}])
+            } else {
+              set fromtag_branch($tag) "trunk"
+            }
+            gen_log:log D "  fromtag($tag) - $revision - $fromtag_branch($tag)"
+            
+          }
+          if {[string match "${toprefix}_*" $tag]} {
+            lappend totags $tag
+            set boxwidth($tag) $box_width
+            set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
+            set lsplit [lrange [split $revision {.}] 0 end-1]
+            if {[llength $lsplit] > 1} {
+              set totag_branch($tag) $revtags([join $lsplit {.}])
+            } else {
+              set totag_branch($tag) "trunk"
+            }
+            gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
+          }
+          set my_font $font_norm
+          set tagcolour black
+          set taglist [list T$tag R$revision box active]
+          if {$tag == {more...}} {
+            set my_font $font_bold
+            set taglist [list R$revision tag active]
+          } elseif {[info exists cvscfg(tagcolour,$tag)]} {
+            set tagcolour $cvscfg(tagcolour,$tag)
+          }
+          $mergecanvas.canvas create text \
+            $tx $ty \
+            -text $tag \
+            -anchor se -fill $tagcolour \
+            -font $my_font \
+            -tags $taglist
+          incr ty -$font_norm_h
+        }
+        # draw the box...
+        set tx [expr {$x + $box_width}]
+        set ty [expr {$y - $box_height}]
+        $mergecanvas.canvas create rectangle \
+          $x $y $tx $ty \
+          -width $curr(width) -fill gray90 \
+          -tags [list box R$revision rect$revision active]
+        # ...and add the contents
+        if {[info exists revstate($revision)]} {
+          if {$revstate($revision) == {dead}} {
+            $mergecanvas.canvas create line \
+              $x $y $tx $ty -fill red -width $curr(width)
+            $mergecanvas.canvas create line \
+              $tx $y $x $ty -fill red -width $curr(width)
+          }
+        }
+        set tx [expr {$x + $box_width/2}]
+        set ty [expr {$y - $curr(pady)}]
+        foreach s [subst $rev_info] {
+          $mergecanvas.canvas create text \
+            $tx $ty \
+            -text $s \
+            -anchor s \
+            -font $font_norm \
+            -tags [list R$revision box active]
+          incr ty -$font_norm_h
+        }
+        gen_log:log T "LEAVE"
+        return
+      }
+
+
       proc DrawBranch { x y root_rev branch } {
         variable mergecanvas
-        variable opt
         variable curr
-        variable highest_y
         variable box_height
         variable branchrevs
         variable revbranches
-        variable revtags
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
-if {$y < $highest_y} { set highest_y $y}
         # What revisions to show on this branch?
         if {$branchrevs($branch) == {}} {
           set revlist {}
@@ -239,27 +339,18 @@ if {$y < $highest_y} { set highest_y $y}
           # Always have the head revision
           set revlist [lindex $branchrevs($branch) 0]
           foreach r [lrange $branchrevs($branch) 1 end-1] {
-            # Only if there are non-empty branches off this revision
-            foreach b $revbranches($r) {
-              if {$branchrevs($b) != {}} {
-                lappend revlist $r
-                break
-              }
+            if {$revbranches($r) != {} } {
+              lappend revlist $r
             }
           }
           if {[llength $branchrevs($branch)] > 1} {
             # Always have the first revision on a branch
-            set bq [lindex $branchrevs($branch) end]
-            if {[info exists revbranches($bq)] && $revbranches($bq) != ""} {
             lappend revlist [lindex $branchrevs($branch) end]
-            }
           }
         }
-
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
         if {$branch == {current}} {
-puts "Branch equals current"
           foreach {box_width root_height} [CalcCurrent $branch] { break }
         } else {
           foreach {box_width root_height} [CalcRoot $branch] { break }
@@ -267,12 +358,11 @@ puts "Branch equals current"
         set height [expr {$root_height + $curr(spcy)}]
         set rdata {}
         foreach revision $revlist {
-          set rtw 0
-          set rbw 0
-          set rh 0
           if {$revision == {current}} {
-puts "Revision equals current"
+            set rtw 0
             foreach {rbw rh} [CalcCurrent $revision] { break }
+          } else {
+            foreach {rtw rbw rh} [CalcRevision $revision] { break }
           }
           lappend rdata $rtw $rh
           if {$rtw > $tag_width} {
@@ -329,14 +419,8 @@ puts "Revision equals current"
           set bxys {}
           if {[info exists revbranches($revision)]} {
             foreach r2 $revbranches($revision) {
-              # Do we display the branch if it is empty?
-              # If it's the you-are-here, we do anyway
-              if {$branchrevs($r2) == {} && $r2 != {current}} {
-                continue
-              }
               lappend brevs $r2
               foreach {lx y2 lbw rh lly} [DrawBranch $x2 $y2 $revision $r2] {
-puts "DrawBranch ($revision $r2) returned ($lx $y2 $lbw $rh $lly)"
                 lappend bxys $lx $lbw $rh $lly
                 break
               }
@@ -346,11 +430,16 @@ puts "DrawBranch ($revision $r2) returned ($lx $y2 $lbw $rh $lly)"
           # y2 may have changed to accomodate a long branch. If so we need
           # to figure out what our y should be
           set y [expr {$y2 + $box_height/2 + $curr(boff)}]
-          set rx [expr {$x + $box_width/2}]
+          set rx [expr {$x + $box_width}]
           set ry [expr {$y - $box_height/2}]
-          set by [expr {$ry - $curr(boff) + 2}]
+          set by [expr {$ry - $curr(boff)}]
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
+            if {$ly != {}} {
+              $mergecanvas.canvas create line \
+                $mx $ly $mx [expr {$by - $rh}] \
+                -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
+            }
             if {$b == {current}} {
               DrawCurrent $bx $by $bw $rh $revision
             } else {
@@ -362,24 +451,30 @@ puts "DrawBranch ($revision $r2) returned ($lx $y2 $lbw $rh $lly)"
             }
             $mergecanvas.canvas lower [ \
               $mergecanvas.canvas create line \
-                $rx [expr {$y + $curr(boff)} + 2]\
                 $rx $ry $mx $ry $mx $by \
-                -arrow last -arrowshape $curr(arrowshape) \
-                -width 2 \
+                -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
                 -fill blue
             ]
           }
+          if {$last_y != {}} {
+            $mergecanvas.canvas create line \
+              $midx $last_y $midx [expr {$y - $box_height}] \
+              -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
+          }
           if {$revision == {current}} {
             DrawCurrent $x $y $box_width $rheight $revision
+          } else {
+            DrawRevision $x $y $rtag_width $box_width $rheight $revision
           }
           set last_y $y
           set last_rev $revision
         }
+        UpdateBndBox
         gen_log:log T "LEAVE"
         return [list $x [expr {$y + $root_height + $curr(spcy)}] \
         $box_width $root_height $last_y]
       }
-  
+
       proc UpdateBndBox {} {
         variable mergecanvas
         variable font_bold
@@ -390,7 +485,9 @@ puts "DrawBranch ($revision $r2) returned ($lx $y2 $lbw $rh $lly)"
 
         #gen_log:log T "ENTER"
 
+        update idletasks
         foreach {x1 y1 x2 y2} [$mergecanvas.canvas bbox all] { break }
+        if {! [info exists x1]} {return}
         $mergecanvas.canvas configure \
           -scrollregion [list \
             [expr {$x1 - 5}] [expr {$y1 - 5}] \
@@ -534,12 +631,10 @@ puts "DrawBranch ($revision $r2) returned ($lx $y2 $lbw $rh $lly)"
           set mx [expr {$lx + $lbw/2}]
           set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
           set by [expr {$y2 - $curr(boff)}]
-puts "drawing root axis arrow"
-          $mergecanvas.canvas lower [$mergecanvas.canvas create line \
-            $mx $ry $mx [expr {$highest_y + 2}] \
+          $mergecanvas.canvas create line \
+            $mx $ry $mx [expr {$by - $rh}] \
             -arrow last -arrowshape $curr(arrowshape) \
             -width 2
-          ]
 
           foreach {box_width root_height} [CalcRoot $trunkrev] { break }
           DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
@@ -568,6 +663,12 @@ puts "drawing root axis arrow"
       frame $mergecanvas.up -relief groove -border 2
       pack $mergecanvas.up -side top -fill x
 
+      if {$sys == "CVS"} {
+        label $mergecanvas.up.lfname -text "Representative File" -anchor w
+        entry $mergecanvas.up.rfname -textvariable $scope\::filename
+        bind $mergecanvas.up.rfname <Return> \
+           $scope\::reloadLog
+      }
       label $mergecanvas.up.lversFrom -text "Merge From" -anchor w
       entry $mergecanvas.up.rversFrom
       label $mergecanvas.up.lversSince -text "   Since" -anchor w
@@ -582,6 +683,10 @@ puts "drawing root axis arrow"
 
       grid columnconf $mergecanvas.up 1 -weight 1
       grid rowconf $mergecanvas.up 3 -weight 1
+      if {$sys == "CVS"} {
+        grid $mergecanvas.up.lfname -column 0 -row 0 -sticky w
+        grid $mergecanvas.up.rfname -column 1 -row 0 -padx 4 -sticky ew
+      }
       grid $mergecanvas.up.lversFrom -column 0 -row 1 -sticky w
       grid $mergecanvas.up.rversFrom -column 1 -row 1 -padx 4 -sticky ew
       grid $mergecanvas.up.lversSince -column 0 -row 2 -sticky w
