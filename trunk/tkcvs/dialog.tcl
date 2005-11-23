@@ -784,6 +784,7 @@ proc unedit_dialog {args} {
 #
 proc update_run {} {
   global cvsglb
+  global cvscfg
 
   gen_log:log T "ENTER"
 

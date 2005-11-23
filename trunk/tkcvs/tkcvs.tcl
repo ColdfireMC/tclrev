@@ -181,7 +181,7 @@ if { ! [info exists cvscfg(lastdir)] } {
 #
 # Command line options
 #
-set usage "Usage: tkcvs \[-dir directory\] \[-root cvsroot\] \[-win workdir|module\] \[-log file\]"
+set usage "Usage: tkcvs \[-dir directory\] \[-root cvsroot\] \[-win workdir|module|merge\] \[-log file\]"
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
   set val [lindex $argv [expr {$i+1}]]
@@ -317,7 +317,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"
   }
-} elseif {$cvscfg(startwindow) == "mer"} {
+} elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
   if {$incvs} {
     cvs_directory_merge
