@@ -1079,8 +1079,10 @@ proc cvs_merge {from since fromtag totag args} {
     pack .reminder.m2 -side top
   }
 
-  if {$cvscfg(auto_status)} {
-    setup_dir
+  if [winfo exists .workdir] {
+    if {$cvscfg(auto_status)} {
+      setup_dir
+    }
   }
   gen_log:log T "LEAVE"
 }
@@ -1915,6 +1917,7 @@ proc cvs_directory_merge {} {
   } else {
     set filename $mostrevisedfile
   }
+puts "Representative file: $filename"
 
   ::cvs_branchlog::new cvs "$filename" 1
 
