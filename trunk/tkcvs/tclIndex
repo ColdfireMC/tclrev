@@ -6,6 +6,9 @@
 # element name is the name of a command and the value is
 # a script that loads the command.
 
+set auto_index(::joincanvas::new) [list source [file join $dir joincanvas.tcl]]
+set auto_index(cvs_joincanvas) [list source [file join $dir joincanvas.tcl]]
+set auto_index(join_getlog) [list source [file join $dir joincanvas.tcl]]
 set auto_index(rcs_branches) [list source [file join $dir rcs.tcl]]
 set auto_index(rcs_checkout) [list source [file join $dir rcs.tcl]]
 set auto_index(rcs_lock) [list source [file join $dir rcs.tcl]]
@@ -148,7 +151,6 @@ set auto_index(svn_branches) [list source [file join $dir svn.tcl]]
 set auto_index(::svn_branchlog::new) [list source [file join $dir svn.tcl]]
 set auto_index(import_run) [list source [file join $dir import.tcl]]
 set auto_index(do_import) [list source [file join $dir import.tcl]]
-set auto_index(::mergecanvas::new) [list source [file join $dir merge_diagram.tcl]]
 set auto_index(get_cde_params) [list source [file join $dir cde_params.tcl]]
 set auto_index(import2_run) [list source [file join $dir import2.tcl]]
 set auto_index(do_import2) [list source [file join $dir import2.tcl]]

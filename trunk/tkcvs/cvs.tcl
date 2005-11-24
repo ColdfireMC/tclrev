@@ -1042,31 +1042,33 @@ proc cvs_merge {from since fromtag totag args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($from $since $fromtag $totag $args)"
+  gen_log:log T "ENTER (\"$from\" \"$since\" \"$fromtag\" \"$totag\" \"$args\")"
 
   set filelist $args
   set v [viewer::new "CVS Join"]
 
-  set commandline "$cvs update -d -j$from $filelist"
   if {$since == ""} {
     set commandline "$cvs update -d -j$from $filelist"
   } else {
     set commandline "$cvs update -d -j$since -j$from $filelist"
   }
     
-  $v\::do "$commandline" 0 status_colortags
+  #$v\::do "$commandline" 0 status_colortags
+  $v\::do "$commandline" 0
   $v\::wait
 
   if {$cvscfg(auto_tag)} {
     set comandline "$cvs tag -F -r $from $fromtag $filelist"
     $v\::do "$cvs tag -F -r $from $fromtag $filelist"
     toplevel .reminder
+    wm title .reminder "Reminder"
     message .reminder.m1 -aspect 600 -text \
       "When you are finished checking in your merges, \
       you should apply the tag"
-    entry .reminder.ent -width 32 -relief groove -state readonly \
-       -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
+    entry .reminder.ent -width 32 -relief groove \
+       -readonlybackground $cvsglb(textbg)
     .reminder.ent insert end $totag 
+    .reminder.ent configure -state readonly
     message .reminder.m2 -aspect 600 -text \
       "using the \"Tag the selected files\" button"
     frame .reminder.bottom -relief raised -bd 2
