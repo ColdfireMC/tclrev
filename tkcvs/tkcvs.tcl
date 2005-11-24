@@ -320,7 +320,8 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
   if {$incvs} {
-    cvs_directory_merge
+    #cvs_directory_merge
+    cvs_joincanvas
   } elseif {$insvn} {
     svn_directory_merge
   } else {

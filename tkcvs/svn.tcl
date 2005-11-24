@@ -735,19 +735,15 @@ proc svn_merge {from since fromtag totag args} {
 
   gen_log:log T "ENTER ($from $since $fromtag $totag $args)"
 
-  cvsfail "Sorry, SVN merge not yet implemented"
-  return
-
   set filelist $args
   set v [viewer::new "SVN Merge"]
 
-  set commandline "$cvs update -d -j$from $filelist"
-  if {$since == ""} {
-    set commandline "$cvs update -d -j$from $filelist"
-  } else {
-    set commandline "$cvs update -d -j$since -j$from $filelist"
-  }
+  # for a file
+  set commandline "svn merge --dry-run -r$since\:HEAD svnpath-branch/$from $filelist"
+  # for cwd
+  set commandline "svn merge --dry-run -r$since\:HEAD svnpath-branch/$from"
     
+gen_log:log C $commandline
   $v\::do "$commandline" 0 status_colortags
   $v\::wait
 

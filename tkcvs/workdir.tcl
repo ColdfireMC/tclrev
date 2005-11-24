@@ -158,7 +158,7 @@ proc workdir_setup {} {
      -command { change_dir [pwd] }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
   button .workdir.bottom.buttons.dirfuncs.bjoin -image DirBranches \
-     -command { cvs_directory_merge }
+     -command cvs_joincanvas
   button .workdir.bottom.buttons.dirfuncs.bimport -image Import \
      -command { import_run }
 
@@ -1025,7 +1025,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
      -command { svn_import_run }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
-      -command svn_directory_merge
+      -command { svn_branches . }
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
@@ -1073,7 +1073,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bimport configure -state disabled \
       -command { import_run }
     .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
-      -command cvs_directory_merge
+      -command cvs_joincanvas
     .workdir.bottom.buttons.filefuncs.bdiff configure -state normal
     .workdir.bottom.buttons.filefuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }

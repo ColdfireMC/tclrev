@@ -67,7 +67,8 @@ namespace eval ::logcanvas {
         variable logcanvas
         variable sel_tag
         variable sel_rev
-        catch {$logcanvas.canvas itemconfigure Sel$AorB -outline black}
+        #catch {$logcanvas.canvas itemconfigure Sel$AorB -outline black}
+        catch {$logcanvas.canvas itemconfigure Sel$AorB -fill gray90}
         $logcanvas.canvas dtag Sel$AorB
         $logcanvas.up.rev${AorB}_rvers configure -text {}
         $logcanvas.up.log${AorB}_rlogfm.rcomment delete 1.0 end
@@ -106,8 +107,10 @@ namespace eval ::logcanvas {
           $logcanvas.up.log${AorB}_rlogfm.rcomment insert end $revcomment($rev)
         }
         $logcanvas.canvas addtag Sel$AorB withtag rect$rev
-        $logcanvas.canvas itemconfigure SelA -outline $cvscfg(colourA)
-        $logcanvas.canvas itemconfigure SelB -outline $cvscfg(colourB)
+        #$logcanvas.canvas itemconfigure SelA -outline $cvscfg(colourA)
+        #$logcanvas.canvas itemconfigure SelB -outline $cvscfg(colourB)
+        $logcanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
+        $logcanvas.canvas itemconfigure SelB -fill $cvscfg(colourB)
         set sel_tag($AorB) $tag
         set sel_rev($AorB) $rev
         return
@@ -123,30 +126,11 @@ namespace eval ::logcanvas {
         return
       }
 
-      proc DeltaSelect {} {
+      proc Unselect {AorB} {
         variable logcanvas
-
         set t [$logcanvas.canvas gettags current]
-#puts "DeltaSelect  TAGS $t"
-        set atag {}
-        set arev [string range [lindex $t [lsearch -glob $t {A*}]] 1 end]
-        set btag [string range [lindex $t [lsearch -glob $t {T*}]] 1 end]
-        set brev [string range [lindex $t [lsearch -glob $t {B*}]] 1 end]
-        # We have the branch tag, we want to know the corresponding tag
-        # that marks the root of this branch. If we can't find it we can't
-        # use tags in this delta selection.
-        if {$btag != {}} {
-          variable revtags
-          # FIXME: should use a site policy routine to convert the tag
-          append atag $btag {-root}
-          if {![info exists revtags($arev)] \
-          || [lsearch -exact $revtags($arev) $atag] < 0} {
-            foreach {atag btag} {{} {}} { break }
-          }
-        }
-        SetSelection A $atag $arev
-        SetSelection B $btag $brev
-        return
+        if {$t != {} } {return}
+        ClearSelection $AorB
       }
 
       proc ConfigureButtons {sys fname} {
@@ -389,14 +373,14 @@ namespace eval ::logcanvas {
         variable revtags
 
         gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch )"
-        set btag [lindex $revtags($branch) 0]
+        #set btag [lindex $revtags($branch) 0]
         # draw the box
         $logcanvas.canvas create rectangle \
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
             -width $curr(width) \
             -fill gray90 -outline blue \
-            -tags [list T$btag delta active]
+            -tags [list box R$branch rect$branch active]
 
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
@@ -407,7 +391,7 @@ namespace eval ::logcanvas {
             -text $s \
             -anchor s \
             -font $font_norm -fill blue \
-            -tags [list T$btag delta active]
+            -tags [list R$branch box active]
           incr ty -$font_norm_h
           }
         gen_log:log T "LEAVE"
@@ -538,7 +522,8 @@ namespace eval ::logcanvas {
           }
           set my_font $font_norm
           set tagcolour black
-          set taglist [list T$tag R$revision box active]
+          #set taglist [list T$tag R$revision box active]
+          set taglist {}
           if {$tag == {more...}} {
             set my_font $font_bold
             set taglist [list R$revision tag active]
@@ -1209,7 +1194,8 @@ namespace eval ::logcanvas {
       set textfont $cvscfg(listboxfont)
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
-      entry $logcanvas.up.rfname -font $textfont -relief groove
+      entry $logcanvas.up.rfname -font $textfont -relief groove \
+        -readonlybackground $cvsglb(textbg)
       button $logcanvas.up.bmodbrowse -image Modules
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
@@ -1405,27 +1391,30 @@ namespace eval ::logcanvas {
       $logcanvas.canvas bind active <Leave> \
         "$logcanvas.canvas config -cursor {}"
   
+
       $logcanvas.canvas bind tag <Button-1> \
         [namespace code "PopupTags %X %Y"]
+
       $logcanvas.canvas bind box <ButtonPress-1> \
         [namespace code "RevSelect A"]
       # Tcl/TK for Windows doesn't do Button 3, so we duplicate it on Button 2
       $logcanvas.canvas bind box <ButtonPress-2> \
-        [namespace code "RevSelect A"]
+        [namespace code "RevSelect B"]
       $logcanvas.canvas bind box <ButtonPress-3> \
         [namespace code "RevSelect B"]
-      $logcanvas.canvas bind delta <ButtonPress-1> \
-        [namespace code "DeltaSelect"]
-      # Tcl/TK for Windows doesn't do Button 3, so we duplicate it on Button 2
-      $logcanvas.canvas bind delta <ButtonPress-2> \
-        [namespace code "DeltaSelect"]
-      $logcanvas.canvas bind delta <ButtonPress-3> \
-        [namespace code "DeltaSelect"]
+
+      # Clicking in a blank part of the canvas unselects boxes
+      bind $logcanvas.canvas <ButtonPress-1> \
+        [namespace code "Unselect A"]
+      bind $logcanvas.canvas <ButtonPress-2> \
+        [namespace code "Unselect B"]
+      bind $logcanvas.canvas <ButtonPress-3> \
+        [namespace code "Unselect B"]
+
       focus $logcanvas.canvas
       $logcanvas.canvas xview moveto 0
       $logcanvas.canvas yview moveto 0
-      # Collect the history from the RCS log
-      #return [namespace current]
+
       return [list [namespace current] $logcanvas]
     }
   }
