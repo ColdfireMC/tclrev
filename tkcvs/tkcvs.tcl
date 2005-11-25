@@ -281,9 +281,9 @@ image create photo Branchtag \
 image create photo Import \
    -format gif -file [file join $cvscfg(bitmapdir) import.gif]
 image create photo Mergebranch \
-  -format gif -file [file join $cvscfg(bitmapdir) merge.gif]
+  -format gif -file [file join $cvscfg(bitmapdir) newmerge_simple.gif]
 image create photo Mergediff \
-  -format gif -file [file join $cvscfg(bitmapdir) merge_changes.gif]
+  -format gif -file [file join $cvscfg(bitmapdir) newmerge.gif]
 image create photo Man \
   -format gif -file [file join $cvscfg(bitmapdir) man.gif]
 

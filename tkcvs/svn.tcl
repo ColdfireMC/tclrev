@@ -434,6 +434,16 @@ proc svn_list {module} {
   gen_log:log T "LEAVE"
 }
 
+# Called from the module browser
+proc svn_delete {root path} {
+
+  gen_log:log T "ENTER ($root $path)"
+  set v [viewer::new "SVN delete"]
+  set command "svn delete $root/$path -m \"Removed using TkSVN\""
+  $v\::do "$command"
+  gen_log:log T "LEAVE"
+}
+
 # This is the callback for the folder-opener in ModTree
 proc svn_jit_listdir { tf into } {
   global cvscfg
@@ -683,31 +693,25 @@ proc svn_tag {tagname force branch update args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($tagname $force $branch $update $args)"
+  gen_log:log T "ENTER ($tagname $force $branch $update)"
 
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
 
-  set filelist [join $args]
-  if {$filelist == ""} {
-    set filelist "."
-  }
-
-  set command "svn copy $filelist "
+  set v [viewer::new "SVN Tag (Copy)"]
+  set command "svn copy ."
   # Can't use file join or it will mess up the URL
   if {$branch == "yes"} {
-    set to_path "$cvscfg(svnroot)/branches/$tagname"
-    set comment "Branched"
+    set to_path "$cvscfg(svnroot)/branches/$tagname/$cvsglb(relpath)"
+    set comment "Branched using TkSVN"
   } else {
-    set to_path "$cvscfg(svnroot)/tags/$tagname"
-    set comment "Tagged"
+    set to_path "$cvscfg(svnroot)/tags/$tagname/$cvsglb(relpath)"
+    set comment "Tagged using TkSVN"
   }
   append command " $to_path -m \"$comment\""
   gen_log:log C "$command"
-
-  set v [viewer::new "SVN Tag (Copy)"]
   $v\::do "$command"
   $v\::wait
 
@@ -725,7 +729,7 @@ proc svn_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_merge {from since fromtag totag args} {
+proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
 #
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
@@ -733,30 +737,35 @@ proc svn_merge {from since fromtag totag args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($from $since $fromtag $totag $args)"
+  gen_log:log T "ENTER ($fromrev $sincerev $frombranch $fromtag $totag $args)"
 
-  set filelist $args
   set v [viewer::new "SVN Merge"]
 
+  set fromrev [string trimleft $fromrev {r}]
+  set sincerev [string trimleft $sincerev {r}]
   # for a file
-  set commandline "svn merge --dry-run -r$since\:HEAD svnpath-branch/$from $filelist"
+  set commandline "svn merge -r$sincerev\:$fromrev $frombranch $file"
   # for cwd
-  set commandline "svn merge --dry-run -r$since\:HEAD svnpath-branch/$from"
+  set commandline "svn merge -r$sincerev\:$fromrev $frombranch"
     
-gen_log:log C $commandline
   $v\::do "$commandline" 0 status_colortags
   $v\::wait
 
   if {$cvscfg(auto_tag)} {
-    set comandline "$cvs tag -F -r $from $fromtag $filelist"
-    $v\::do "$cvs tag -F -r $from $fromtag $filelist"
+    if {$file == "."} {
+      set comandline "svn copy $file $cvscfg(svnroot)/tags/$fromtag"
+    } else {
+      set comandline "svn copy $file $cvscfg(svnroot)/tags/$fromtag/$file"
+    }
+    $v\::do "$commandline"
     toplevel .reminder
     message .reminder.m1 -aspect 600 -text \
       "When you are finished checking in your merges, \
       you should apply the tag"
-    entry .reminder.ent -width 32 -relief groove -state readonly \
+    entry .reminder.ent -width 32 -relief groove \
        -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
     .reminder.ent insert end $totag 
+    .reminder.ent configure -state readonly
     message .reminder.m2 -aspect 600 -text \
       "using the \"Tag the selected files\" button"
     frame .reminder.bottom -relief raised -bd 2
@@ -820,23 +829,27 @@ puts "svn_filecat ($root $path $title)"
   set v [viewer::new "$wintitle $root/$path"]
   $v\::do "$commandline"
 }
-proc svn_fileview {revision filename} {
+
+proc svn_fileview {revision filename kind} {
 # This views a specific revision of a file in the repository.
 # For files checked out in the current sandbox.
   global cvscfg
 
-  gen_log:log T "ENTER ($revision $filename)"
+  gen_log:log T "ENTER ($revision $filename $kind)"
+  set cmd "cat"
+  if {$kind == "directory"} {
+     set cmd "ls"
+  }
   if {$revision == {}} {
-    set commandline "svn cat \"$filename\""
+    set commandline "svn $cmd \"$filename\""
     set v [viewer::new "$filename"]
     $v\::do "$commandline"
   } else {
-    set commandline "svn cat -$revision \"$filename\""
+    set commandline "svn $cmd -$revision \"$filename\""
     set v [viewer::new "$filename Revision $revision"]
     $v\::do "$commandline"
   }
   gen_log:log T "LEAVE"
-
 }
 
 # Sends directory "." to the directory-merge tool
@@ -903,7 +916,7 @@ namespace eval ::svn_branchlog {
 
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
-        set newlc [mergecanvas::new $filename "SVN,loc" [namespace current]]
+        set newlc [logcanvas::new . "SVN,loc" [namespace current]]
         set ln [lindex $newlc 0]
         set lc [lindex $newlc 1]
         set show_tags 0
@@ -925,6 +938,7 @@ namespace eval ::svn_branchlog {
         variable revtime
         variable revcomment
         variable revkind
+        variable revpath
         variable revname
         variable revtags
         variable branchrevs
@@ -945,6 +959,7 @@ namespace eval ::svn_branchlog {
         catch { unset branchrevs }
         catch { unset revbranches }
         catch { unset revkind }
+        catch { unset revpath }
         catch { unset revname }
 
         # Can't use file join or it will mess up the URL
@@ -996,6 +1011,7 @@ puts "\nTrunk"
           set revkind($rr) "root"
           set revname($rr) "trunk"
           set revtags($rr) "trunk"
+          set revpath($rr) $path
 puts " set revtags($rr) trunk"
           set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
           foreach a [array names branchrevs] {
@@ -1049,12 +1065,14 @@ puts "  branchrevs($branch) $branchrevs($branch)"
             }
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
+            set revpath($r) $path
           }
           set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
 puts "  branchrevs($rb) $branchrevs($rb)"
           set revkind($rb) "branch"
           set revname($rb) "$branch"
           set revtags($rb) $branch
+          set revpath($rb) $path
 
           set command "svn log -q $path"
           gen_log:log C "$command"
@@ -1118,9 +1136,11 @@ puts "$log_output"
             foreach r $branchrevs($tag) {
               gen_log:log D "  $r $revdate($r) ($revcomment($r))"
               set revkind($r) "revision"
+              set revpath($r) $path
             }
             set revkind($rb) "tag"
             set revname($rb) "$tag"
+            set revpath($rb) $path
   
             set command "svn log -q $path"
             gen_log:log C "$command"
@@ -1217,6 +1237,7 @@ puts "set revtags($bp) $tag"
         variable revtime
         variable revcomment
         variable revkind
+        variable revpath
         variable revname
         variable revtags
         variable branchrevs
@@ -1231,10 +1252,9 @@ puts "set revtags($bp) $tag"
         # Sort the revision and branch lists and remove duplicates
 puts "\nsvn_sort_it_all_out"
         foreach r [lsort -dictionary [array names revkind]] {
-puts "$r \"$revkind($r)\""
+#puts "$r \"$revkind($r)\""
            if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
-
 puts ""
 foreach a [lsort -dictionary [array names branchrevs]] {
 puts "branchrevs($a) $branchrevs($a)"
@@ -1246,6 +1266,9 @@ puts "revbranches($a) $revbranches($a)"
 puts ""
 foreach a [lsort -dictionary [array names revtags]] {
 puts "revtags($a) $revtags($a)"
+}
+foreach a [lsort -dictionary [array names revpath]] {
+puts "revpath($a) $revpath($a)"
 }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}

@@ -51,6 +51,7 @@ namespace eval ::logcanvas {
       variable branchrevs
       variable revcomment
       variable revtags
+      variable revpath
       variable sel_tag
       set sel_tag(A) {}
       set sel_tag(B) {}
@@ -139,21 +140,51 @@ namespace eval ::logcanvas {
 
         switch -- $sys {
           "SVN" {
+            set kind ""
+            set info_cmd [exec::new "svn info [file tail $fname]"]
+            set info_lines [split [$info_cmd\::output] "\n"]
+            foreach infoline $info_lines {
+              if {[string match "Node Kind:*" $infoline]} {
+                gen_log:log D "$infoline"
+                set kind [lindex $infoline end]
+              }
+            }
             $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn}
             $logcanvas.up.lfname configure -text "SVN Path"
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$fname"
             $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
-            $logcanvas.view configure \
-               -command [namespace code {
-                  svn_fileview [$logcanvas.up.revA_rvers cget -text] \
-                  $filename
-               }]
-            $logcanvas.annotate configure \
-               -command [namespace code {
-                 svn_annotate [string trimleft [$logcanvas.up.revA_rvers cget -text] {r}] \
-                 $filename
-               }]
+            if {$kind == "directory"} {
+              $logcanvas.diff configure -state disabled
+              $logcanvas.annotate configure -state disabled
+              $logcanvas.view configure \
+                 -command [namespace code {
+                    svn_fileview [$logcanvas.up.revA_rvers cget -text] \
+                      $filename directory
+                 }]
+            } else {
+              $logcanvas.view configure \
+                 -command [namespace code {
+                    svn_fileview [$logcanvas.up.revA_rvers cget -text] \
+                      $filename file
+                 }]
+              $logcanvas.annotate configure \
+                 -command [namespace code {
+                   set rev [$logcanvas.up.revA_rvers cget -text]
+                   set rev [string trimleft $rev {r}]
+                   svn_annotate $rev $filename
+                 }]
+            }
+            $logcanvas.delta configure \
+              -command [namespace code {
+                 variable sys
+                 set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 set fromtag $revpath($sincerev)
+                 merge_dialog $sys \
+                   $fromrev $sincerev $fromtag \
+                   [list $filename]
+                 }]
           }
          "CVS" {
             $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs}
@@ -838,6 +869,7 @@ namespace eval ::logcanvas {
         variable revcomment
         variable revstate
         variable revtags
+        variable revpath
         variable revbranches
         variable branchrevs
 
@@ -859,6 +891,9 @@ namespace eval ::logcanvas {
         }
         foreach a [array names $scope\::revtags] {
           set revtags($a) [set $scope\::revtags($a)]
+        }
+        foreach a [array names $scope\::revpath] {
+          set revpath($a) [set $scope\::revpath($a)]
         }
         foreach a [array names $scope\::revbranches] {
           set revbranches($a) [set $scope\::revbranches($a)]
@@ -1275,24 +1310,7 @@ namespace eval ::logcanvas {
                    [$logcanvas.up.revB_rvers cget -text] $logcanvas \
                    $filename
                }]
-      button $logcanvas.join -image Mergebranch \
-        -command [namespace code {
-                   variable sys
-                   set rv [$logcanvas.up.revA_rvers cget -text]
-                   set rt [join [lrange [split $rv {.}] 0 end-1] {.}]
-                   merge_dialog $sys \
-                     [$logcanvas.up.revA_rvers cget -text] \
-                     "" \
-                     [list $filename]
-                 }]
-      button $logcanvas.delta -image Mergediff \
-        -command [namespace code {
-                   variable sys
-                   merge_dialog $sys \
-                     [$logcanvas.up.revA_rvers cget -text] \
-                     [$logcanvas.up.revB_rvers cget -text] \
-                     [list $filename]
-                 }]
+      button $logcanvas.delta -image Mergediff
       button $logcanvas.viewtags -image Tags \
         -command [namespace code {
                    variable revtags
@@ -1321,7 +1339,6 @@ namespace eval ::logcanvas {
            $logcanvas.view \
            $logcanvas.annotate \
            $logcanvas.diff \
-           $logcanvas.join \
            $logcanvas.delta \
            $logcanvas.viewtags \
         -in $logcanvas.down -side left \
@@ -1333,14 +1350,10 @@ namespace eval ::logcanvas {
       # FIXME move this stuff to ConfigureButtons?
       if {$sys == "CVS" && $loc == "rep"} {
         $logcanvas.view configure \
-        $logcanvas.join configure -state disabled
-        $logcanvas.join configure -state disabled
         $logcanvas.delta configure -state disabled
-      }
-      if {$sys == "rcs"} {
+      } elseif {$sys == "RCS"} {
         $logcanvas.view configure -state disabled
         $logcanvas.annotate configure -state disabled
-        $logcanvas.join configure -state disabled
         $logcanvas.delta configure -state disabled
         $logcanvas.viewtags configure -state disabled
         $logcanvas.diff configure -command [namespace code {
@@ -1361,8 +1374,6 @@ namespace eval ::logcanvas {
         {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \
         {"Compare two versions of the file"}
-      set_tooltips $logcanvas.join \
-        {"Merge branch to current"}
       set_tooltips $logcanvas.delta \
         {"Merge changes to current"}
       set_tooltips $logcanvas.viewtags \

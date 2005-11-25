@@ -384,20 +384,17 @@ proc add_dialog {args} {
   gen_log:log T "LEAVE"
 }
 
-proc merge_dialog { sys from since file {fromtag {}} } {
+proc merge_dialog { sys fromrev sincerev frombranch file } {
   global cvscfg
   global cvsglb
   global cvs
   global current_tagname
 
-  gen_log:log T "ENTER ($sys \"$from\" \"$since\" \"$file\" \"$fromtag\")"
+  gen_log:log T "ENTER ($sys \"$fromrev\" \"$sincerev\" \"$frombranch\" \"$file\")"
 
-  if {$from == {}} {
+  if {$fromrev == {}} {
      cvsfail "You must specify a branch to merge from!"
      return
-  }
-  if {$fromtag == {}} {
-     set fromtag $from
   }
 
   # Tag where we merged from
@@ -407,12 +404,12 @@ proc merge_dialog { sys from since file {fromtag {}} } {
     set curr_tag "trunk"
   }
 
-  if {$since == {}} {
+  if {$sincerev == {}} {
     set since "\"\""
-    set mess "Merge revision $from"
+    set mess "Merge revision $fromrev"
   } else {
-    set mess "Merge the changes between revision $since and $from"
-    append mess " (if $since > $from the changes are removed)"
+    set mess "Merge the changes between revision $sincerev and $fromrev"
+    append mess " (if $sincerev > $fromrev the changes are removed)"
   }
   append mess " to the current revision ($curr_tag)"
 
@@ -426,7 +423,7 @@ proc merge_dialog { sys from since file {fromtag {}} } {
   set today [clock format [clock seconds] -format "$datef"]
 
   set mtag "${toprefix}_${curr_tag}_$today"
-  set ftag "${fromprefix}_${fromtag}_$today"
+  set ftag "${fromprefix}_${frombranch}_$today"
 
   # I had symbolic tags in mind, but some people are using untagged versions.
   # Substitute the dots, which are illegal for tagnames.
@@ -446,11 +443,12 @@ proc merge_dialog { sys from since file {fromtag {}} } {
   .merge.top.f.ent delete 0 end
   .merge.top.f.ent insert end $mtag
   .merge.top.f.ent configure -state readonly
-  message .merge.top.m2 -aspect 600 -text "to revision $from"
+  message .merge.top.m2 -aspect 600 -text "to revision $fromrev"
   frame .merge.bottom -relief raised -bd 2
   button .merge.bottom.apply -text "Apply"
   button .merge.bottom.ok -text "OK"
-  button .merge.bottom.cancel -text "Cancel"
+  button .merge.bottom.cancel -text "Cancel" \
+     -command {destroy .merge}
 
   pack .merge.bottom -side bottom -expand 1 -fill x
   pack .merge.bottom.apply -side left -expand 1
@@ -466,17 +464,19 @@ proc merge_dialog { sys from since file {fromtag {}} } {
 
   switch -- $sys {
     "CVS" {
-       if {$from == "trunk"} { set from "HEAD" }
+       if {$fromrev == "trunk"} { set from "HEAD" }
        .merge.bottom.apply configure \
-          -command "cvs_merge $from $since \[.merge.top.f.ent get\] $ftag $file"
+          -command "cvs_merge $fromrev $sincerev $mtag $ftag $file"
        .merge.bottom.ok configure \
-          -command "cvs_merge $from $since \[.merge.top.f.ent get\] $ftag $file; destroy .merge"
+          -command "cvs_merge $fromrev $sincerev $mtag $ftag $file; \
+                    destroy .merge"
      }
     "SVN" {
        .merge.bottom.apply configure \
-          -command "svn_merge $from $since \[.merge.top.f.ent get\] $ftag $file"
+          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file"
        .merge.bottom.ok configure \
-          -command "svn_merge $from $since \[.merge.top.f.ent get\] $ftag $file; destroy .merge"
+          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file; \
+                    destroy .merge"
      }
   }
   gen_log:log T "LEAVE"
@@ -497,12 +497,19 @@ proc file_tag_dialog {branch} {
   frame .tag.top
   pack .tag.top -side top -fill x
 
-  message .tag.top.msg -justify left -aspect 300 -relief groove \
-    -text "Apply a new tag or branch tag \
-           to the marked files, recursively.\
-           Will change the repository.\
-           If a branch, it can also update local directory if desired."
+  set msg ""
+  if {$incvs} {
+    set msg "Apply a new tag or branch tag \
+             to the marked files, recursively.\
+             Will change the repository.\
+             If a branch, it can also update local directory if desired."
+  } elseif {$insvn} {
+    set msg "Create a new branch or tag copy \
+             of the files in this directory"
+  }
 
+  message .tag.top.msg -justify left -aspect 300 -relief groove \
+    -text $msg
   label .tag.top.lbl -text "Tag Name" -anchor w
   entry .tag.top.entry -relief sunken -textvariable usertagname
   checkbutton .tag.top.branch -text "Branch tag (-b)" \
@@ -544,8 +551,7 @@ proc file_tag_dialog {branch} {
     }
   } elseif {$insvn} {
     .tag.down.tag configure -command {
-      svn_tag $usertagname no $branchflag $updflag \
-          [workdir_list_files]
+      svn_tag $usertagname no $branchflag $updflag
       grab release .tag
       destroy .tag
     }

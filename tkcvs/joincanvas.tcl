@@ -435,7 +435,7 @@ namespace eval joincanvas {
            [namespace code "select_rectangle HEAD"]
 
         # You are Here
-        if {$current_tagname == ""} {
+        if {$current_tagname == "trunk"} {
           you_are_here $headrev $tagwidth \
             [expr {$px(1) - $tagwidth / 2 }] \
             [expr {$ylevel(trunk) - $cvscanv(boxy)}]
@@ -545,19 +545,14 @@ namespace eval joincanvas {
       button $joincanvas.help -text "Help" \
         -padx 0 -pady 0 \
         -command directory_branch_viewer
-      button $joincanvas.join -image Mergebranch \
-          -command [namespace code {
-                   merge_dialog cvs \
-                     [$joincanvas.up.rversFrom get] \
-                     "" \
-                     {}
-                 }]
       button $joincanvas.delta -image Mergediff \
           -command [namespace code {
-                   merge_dialog cvs \
-                     [$joincanvas.up.rversFrom get] \
-                     [$joincanvas.up.rversSince get] \
-                     {}
+                 set fromrev [$joincanvas.up.rversFrom get]
+                 set sincerev [$joincanvas.up.rversSince get]
+                 set fromtag $revtags($fromrev)
+                 merge_dialog cvs \
+                   $fromrev $sincerev $fromtag \
+                   [list $filename]
                  }]
 
       button $joincanvas.close -text "Close" \
@@ -569,7 +564,6 @@ namespace eval joincanvas {
                  "]
 
       pack $joincanvas.help \
-           $joincanvas.join \
            $joincanvas.delta \
         -in $joincanvas.down -side left \
         -ipadx 1 -ipady 1 -fill both -expand 1
@@ -577,8 +571,6 @@ namespace eval joincanvas {
         -in $joincanvas.down -side right \
         -ipadx 1 -ipady 1 -fill both -expand 1
 
-      set_tooltips $joincanvas.join \
-         {"Merge to current"}
       set_tooltips $joincanvas.delta \
          {"Merge changes to current"}
 
