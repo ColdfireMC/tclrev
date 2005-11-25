@@ -382,9 +382,9 @@ proc workdir_images {} {
   image create photo Tags \
     -format gif -file [file join $cvscfg(bitmapdir) tags.gif]
   image create photo Mergebranch \
-    -format gif -file [file join $cvscfg(bitmapdir) merge.gif]
+    -format gif -file [file join $cvscfg(bitmapdir) newmerge_simple.gif]
   image create photo Mergediff \
-    -format gif -file [file join $cvscfg(bitmapdir) merge_changes.gif]
+    -format gif -file [file join $cvscfg(bitmapdir) newmerge.gif]
   image create photo Conflict \
     -format gif -file [file join $cvscfg(bitmapdir) conflict.gif]
 
@@ -1042,6 +1042,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
       -command { svn_revert [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "SVN" -state normal

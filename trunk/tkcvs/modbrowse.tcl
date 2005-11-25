@@ -87,6 +87,9 @@ proc modbrowse_setup {} {
   #
   button .modbrowse.bottom.buttons.modfuncs.filecat -image Fileview \
     -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
+  button .modbrowse.bottom.buttons.modfuncs.remove -image SvnRemove \
+    -command { svn_delete $cvscfg(svnroot) $modbrowse_path }
+
   button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files \
     -command { browse_files $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches \
@@ -101,6 +104,7 @@ proc modbrowse_setup {} {
     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
   button .modbrowse.bottom.buttons.modfuncs.branchtag -image Branchtag \
     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
+
   button .modbrowse.bottom.buttons.cvsfuncs.import -image Import \
      -command { import_run }
   button .modbrowse.bottom.buttons.cvsfuncs.who -image Who \
@@ -135,6 +139,8 @@ proc modbrowse_setup {} {
      -ipadx 4 -ipady 4
   grid .modbrowse.bottom.buttons.modfuncs.patchfile -column 7 -row 0 \
      -ipadx 4 -ipady 4
+  grid .modbrowse.bottom.buttons.modfuncs.remove -column 8 -row 0 \
+     -ipadx 4 -ipady 4
 
   pack .modbrowse.bottom.buttons.closefm.close \
      -side right -fill both -expand yes
@@ -148,9 +154,11 @@ proc modbrowse_setup {} {
   set_tooltips .modbrowse.bottom.buttons.modfuncs.branchtag \
      {"Branch all files in a module"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.filebrowse \
-     {"Browse the files in a module"}
+     {"Browse the files in a CVS module"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.filecat \
      {"Show a file in the SVN repository"}
+  set_tooltips .modbrowse.bottom.buttons.modfuncs.remove \
+     {"Remove a branch or tag from the SVN repository"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.patchsummary \
      {"Show a summary of differences between versions"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.patchfile \
@@ -190,6 +198,8 @@ proc modbrowse_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) patchfile.gif]
   image create photo Who \
     -format gif -file [file join $cvscfg(bitmapdir) who.gif]
+  image create photo SvnRemove \
+    -format gif -file [file join $cvscfg(bitmapdir) delete_red.gif]
   if {[catch "image type arr_dn"]} {
     workdir_images
   }
@@ -413,8 +423,8 @@ puts "called with no argument"
     $widget configure -state $bstate
   }
   if {$svnurl} {
-    .modbrowse.bottom.buttons.modfuncs.filecat configure -state normal \
-      -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
+    .modbrowse.bottom.buttons.modfuncs.filecat configure -state normal
+    .modbrowse.bottom.buttons.modfuncs.remove configure -state normal
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
       -command { svn_import_run }
     .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
@@ -424,6 +434,7 @@ puts "called with no argument"
   } else {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.remove configure -state disabled
     .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
       -command { cvs_checkout_dialog $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \

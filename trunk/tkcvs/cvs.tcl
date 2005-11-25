@@ -1059,7 +1059,7 @@ proc cvs_merge {from since fromtag totag args} {
 
   if {$cvscfg(auto_tag)} {
     set comandline "$cvs tag -F -r $from $fromtag $filelist"
-    $v\::do "$cvs tag -F -r $from $fromtag $filelist"
+    $v\::do "$commandline"
     toplevel .reminder
     wm title .reminder "Reminder"
     message .reminder.m1 -aspect 600 -text \
