@@ -43,7 +43,7 @@ proc ::picklist::choose { w data } {
     set height [expr {($line_h
                         + [.picklist.list cget -borderwidth]
                         + [.picklist.list cget -selectborderwidth])
-                      * [llength $data] + 4}]
+                      * [llength $data] + 8}]
   } else {
     set height [expr {($line_h
                         + [.picklist.list cget -borderwidth]

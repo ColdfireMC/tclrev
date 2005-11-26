@@ -23,7 +23,7 @@ namespace eval ::logcanvas {
     variable sys
     variable loc
 
-    if {[catch "image type Fileview"]} {
+    if {[catch "image type Modules"]} {
       workdir_images
     }
     if {[catch "image type Workdir"]} {
@@ -108,8 +108,6 @@ namespace eval ::logcanvas {
           $logcanvas.up.log${AorB}_rlogfm.rcomment insert end $revcomment($rev)
         }
         $logcanvas.canvas addtag Sel$AorB withtag rect$rev
-        #$logcanvas.canvas itemconfigure SelA -outline $cvscfg(colourA)
-        #$logcanvas.canvas itemconfigure SelB -outline $cvscfg(colourB)
         $logcanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
         $logcanvas.canvas itemconfigure SelB -fill $cvscfg(colourB)
         set sel_tag($AorB) $tag
@@ -120,7 +118,6 @@ namespace eval ::logcanvas {
       proc RevSelect {AorB} {
         variable logcanvas
         set t [$logcanvas.canvas gettags current]
-#puts "RevSelect $AorB TAGS $t"
         SetSelection $AorB \
           [string range [lindex $t [lsearch -glob $t {T*}]] 1 end] \
           [string range [lindex $t [lsearch -glob $t {R*}]] 1 end]
@@ -202,6 +199,19 @@ namespace eval ::logcanvas {
                  cvs_annotate [$logcanvas.up.revA_rvers cget -text] \
                  $filename
                }]
+            $logcanvas.delta configure \
+              -command [namespace code {
+                 variable sys
+                 set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 set fromtag ""
+                 if {[info exists revtags($sincerev)]} {
+                   set fromtag [lindex $revtags($sincerev) 0]
+                 }
+                 merge_dialog $sys \
+                   $fromrev $sincerev $fromtag \
+                   [list $filename]
+                 }]
           }
         }
       }
