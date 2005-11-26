@@ -10,6 +10,13 @@ namespace eval joincanvas {
     set my_idx $instance
     incr instance
 
+    if {[catch "image type Modules"]} {
+      workdir_images
+    }
+    if {[catch "image type Workdir"]} {
+      modbrowse_images
+    }
+
     #
     # Creates a new log canvas.  filelog must be the output of a cvs
     # log or rlog command.
@@ -85,6 +92,10 @@ namespace eval joincanvas {
                 set taglist "$taglist$logline\n"
                 set tagitems [split $logline ":"]
                 set tagrevision [string trim [lindex $tagitems 1]]
+                set tagname [string trim [lindex $tagitems 0]]
+                # Add all the tags to a picklist for our "since" tag
+                ::picklist::used alltags $tagname
+
                 set parts [split $tagrevision {.}]
                 if {[expr {[llength $parts] & 1}] == 1} {
                   set parts [linsert $parts end-1 {0}]
@@ -114,6 +125,7 @@ namespace eval joincanvas {
             }
           }
         }
+        ::picklist::used alltags ""
       }
 
       proc node {joincanvas rev x y} {
@@ -182,14 +194,15 @@ namespace eval joincanvas {
           [expr {$x + $tagwidth + 5}] [expr {$y + $cvscanv(boxy)}] \
           -width 3 \
           -fill gray90 \
-          -tags b$rev ]
+          -tags [list b$rev rect$rev] \
+        ]
         # Drop the fill color below the text so the text isn't hidden
         $joincanvas.canvas lower $boxid
 
         # Bind button-presses to the rectangles.
         if {$tags($rev) != ""} {
         $joincanvas.canvas bind b$rev <ButtonPress-1> \
-           [namespace code "select_rectangle $tags($rev)"]
+           [namespace code "select_rectangle $rev $tags($rev)"]
         }
 
         if {"$current_tagname" == "$tagtext"} {
@@ -198,14 +211,31 @@ namespace eval joincanvas {
         gen_log:log T "LEAVE"
       }
 
-      proc select_rectangle {rev} {
+      proc unselect_all {} {
+        variable joincanvas
+        set t [$joincanvas.canvas gettags current]
+        if {$t != {} } {return}
+        unselect_rectangle
+      }
+
+      proc unselect_rectangle {} {
+        variable joincanvas
+        catch {$joincanvas.canvas itemconfigure SelA -fill gray90}
+        $joincanvas.up.rversFrom delete 0 end
+        $joincanvas.canvas dtag SelA
+      }
+
+      proc select_rectangle {rev tags} {
         global cvscfg
         variable joincanvas
 
-        gen_log:log T "ENTER ($rev)"
+        gen_log:log T "ENTER ($rev $tags)"
 
+        unselect_rectangle
         $joincanvas.up.rversFrom delete 0 end
-        $joincanvas.up.rversFrom insert end $rev
+        $joincanvas.up.rversFrom insert end $tags
+        $joincanvas.canvas addtag SelA withtag rect$rev
+        $joincanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
       }
 
       proc fillcanvas {filename filelog} {
@@ -432,7 +462,11 @@ namespace eval joincanvas {
 
         # Bind button-press
         $joincanvas.canvas bind b$headrev <ButtonPress-1> \
-           [namespace code "select_rectangle HEAD"]
+           [namespace code "select_rectangle $headrev HEAD"]
+        # Clicking in a blank part of the canvas unselects boxes
+        bind $joincanvas.canvas <ButtonPress-1> \
+           [namespace code unselect_all]
+
 
         # You are Here
         if {$current_tagname == "trunk"} {
@@ -498,15 +532,21 @@ namespace eval joincanvas {
       frame $joincanvas.up -relief groove -border 2
       pack $joincanvas.up -side top -fill x
 
+      button $joincanvas.up.bworkdir -image Workdir -command { workdir_setup }
+      button $joincanvas.up.bmodbrowse -image Modules -command { modbrowse_run cvs }
+
       label $joincanvas.up.lfname -text "Representative File" -anchor w
       entry $joincanvas.up.rfname -textvariable [namespace current]::repfile
       bind $joincanvas.up.rfname <Return> \
         [namespace code {join_getlog $repfile [namespace current]}]
 
       label $joincanvas.up.lversFrom -text "Merge From" -anchor w
+      frame $joincanvas.up.eFrom -bg $cvscfg(colourA)
       entry $joincanvas.up.rversFrom
+
       label $joincanvas.up.lversSince -text "   Since" -anchor w
-      entry $joincanvas.up.rversSince
+      frame $joincanvas.up.eSince -bg $cvscfg(colourB)
+      ::picklist::entry $joincanvas.up.rversSince "" alltags
       label $joincanvas.up.lversTo -text "Merge To" -anchor w
       entry $joincanvas.up.rversTo -relief groove -readonlybackground $cvsglb(textbg)
 
@@ -514,12 +554,21 @@ namespace eval joincanvas {
       grid rowconf $joincanvas.up 3 -weight 1
       grid $joincanvas.up.lfname -column 0 -row 0 -sticky w
       grid $joincanvas.up.rfname -column 1 -row 0 -padx 4 -sticky ew
+      grid $joincanvas.up.bworkdir -column 2 -row 0 -rowspan 2 \
+        -sticky e -padx 2 -pady 1
       grid $joincanvas.up.lversFrom -column 0 -row 1 -sticky w
-      grid $joincanvas.up.rversFrom -column 1 -row 1 -padx 4 -sticky ew
+      grid $joincanvas.up.eFrom -column 1 -row 1 -sticky ew -padx 4
+      grid $joincanvas.up.bmodbrowse -column 2 -row 2 -rowspan 2 \
+        -sticky e -padx 2 -pady 1
       grid $joincanvas.up.lversSince -column 0 -row 2 -sticky w
-      grid $joincanvas.up.rversSince -column 1 -row 2 -padx 4 -sticky ew
+      grid $joincanvas.up.eSince -column 1 -row 2 -sticky ew -padx 4
       grid $joincanvas.up.lversTo -column 0 -row 3 -sticky w
       grid $joincanvas.up.rversTo -column 1 -row 3 -padx 4 -sticky ew
+
+      pack $joincanvas.up.rversFrom -in $joincanvas.up.eFrom \
+        -padx 2 -pady 2 -fill x
+      pack $joincanvas.up.rversSince -in $joincanvas.up.eSince \
+        -padx 2 -pady 2 -fill x
 
       set textfont [$joincanvas.up.rfname cget -font]
 
@@ -545,14 +594,18 @@ namespace eval joincanvas {
       button $joincanvas.help -text "Help" \
         -padx 0 -pady 0 \
         -command directory_branch_viewer
+      button $joincanvas.join -image Mergebranch \
+          -command [namespace code {
+                   set fromrev [$joincanvas.up.rversFrom get]
+                   merge_dialog CVS \
+                     $fromrev "" $fromrev .
+                 }]
       button $joincanvas.delta -image Mergediff \
           -command [namespace code {
                  set fromrev [$joincanvas.up.rversFrom get]
-                 set sincerev [$joincanvas.up.rversSince get]
-                 set fromtag $revtags($fromrev)
-                 merge_dialog cvs \
-                   $fromrev $sincerev $fromtag \
-                   [list $filename]
+                 set sincerev [$joincanvas.up.rversSince.e get]
+                 merge_dialog CVS \
+                   $fromrev $sincerev $fromrev .
                  }]
 
       button $joincanvas.close -text "Close" \
@@ -564,6 +617,7 @@ namespace eval joincanvas {
                  "]
 
       pack $joincanvas.help \
+           $joincanvas.join \
            $joincanvas.delta \
         -in $joincanvas.down -side left \
         -ipadx 1 -ipady 1 -fill both -expand 1
@@ -571,8 +625,14 @@ namespace eval joincanvas {
         -in $joincanvas.down -side right \
         -ipadx 1 -ipady 1 -fill both -expand 1
 
+      set_tooltips $joincanvas.join \
+         {"Merge to current"}
       set_tooltips $joincanvas.delta \
          {"Merge changes to current"}
+      set_tooltips $joincanvas.up.bworkdir \
+        {"Open the Working Directory Browser"}
+      set_tooltips $joincanvas.up.bmodbrowse \
+        {"Open the Repository Browser"}
 
       #
       # Put the canvas on to the display.

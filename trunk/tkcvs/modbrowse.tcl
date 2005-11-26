@@ -432,6 +432,7 @@ puts "called with no argument"
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
   } else {
+    .modbrowse.bottom.buttons.modfuncs.filecat configure -state disabled
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
     .modbrowse.bottom.buttons.modfuncs.remove configure -state disabled

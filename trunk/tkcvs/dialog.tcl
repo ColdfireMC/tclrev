@@ -464,11 +464,11 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
 
   switch -- $sys {
     "CVS" {
-       if {$fromrev == "trunk"} { set from "HEAD" }
+       if {$fromrev == "trunk"} { set fromrev "HEAD" }
        .merge.bottom.apply configure \
-          -command "cvs_merge $fromrev $sincerev $mtag $ftag $file"
+          -command "cvs_merge $fromrev \"$sincerev\" $mtag $ftag $file"
        .merge.bottom.ok configure \
-          -command "cvs_merge $fromrev $sincerev $mtag $ftag $file; \
+          -command "cvs_merge $fromrev \"$sincerev\" $mtag $ftag $file; \
                     destroy .merge"
      }
     "SVN" {

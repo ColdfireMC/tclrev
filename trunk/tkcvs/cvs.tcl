@@ -1053,12 +1053,11 @@ proc cvs_merge {from since fromtag totag args} {
     set commandline "$cvs update -d -j$since -j$from $filelist"
   }
     
-  #$v\::do "$commandline" 0 status_colortags
-  $v\::do "$commandline" 0
+  $v\::do "$commandline"
   $v\::wait
 
   if {$cvscfg(auto_tag)} {
-    set comandline "$cvs tag -F -r $from $fromtag $filelist"
+    set commandline "$cvs tag -F -r $from $fromtag $filelist"
     $v\::do "$commandline"
     toplevel .reminder
     wm title .reminder "Reminder"
