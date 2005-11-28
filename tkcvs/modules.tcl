@@ -1,9 +1,7 @@
 #
-# TCL Library for TkCVS
+# Tcl Library for TkCVS
 #
 
-#
-# $Id: modules.tcl,v 1.27 2002/11/10 05:56:14 dorothyr Exp $
 #
 # Procedures to parse the CVS modules file and store whatever is
 # read into various associative arrays, sorted, and unsorted lists.

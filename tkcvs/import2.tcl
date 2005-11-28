@@ -3,8 +3,6 @@
 #
 
 #
-# File import2.tcl is new to tkcvs 7.1.2
-#
 # import2.tcl is similar to import1.tcl except that it is used for
 # importing to an existing module.
 # By: Eugene Lee, Aerospace Corporation, 10/16/03

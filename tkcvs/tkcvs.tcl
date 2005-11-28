@@ -4,8 +4,6 @@
 exec wish "$0" -- ${1+"$@"}
 
 #
-# $Id: tkcvs.tcl,v 1.4 2005/06/06 03:03:22 dorothyr Exp $
-#
 # TkCVS Main program -- A Tk interface to CVS.
 #
 # Uses a structured modules file -- see the manpage for more details.
@@ -251,11 +249,6 @@ if {![info exists cvscfg(ignore_file_filter)]} {
 # leaving a directory with a .cvsignore file.
 set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
 
-set incvs 0
-set insvn 0
-set inrcs 0
-foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
-
 #foreach c [lsort [array names cvscfg]] {
   #gen_log:log D "cvscfg($c) $cvscfg($c)"
 #}
@@ -289,9 +282,16 @@ image create photo Man \
 
 
 
+set incvs 0
+set insvn 0
+set inrcs 0
+
 # Create a window
+# Start with Module Browser
 if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
+  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+
   if {$insvn} {
     set cvsglb(root) $cvscfg(svnroot)
     modbrowse_run svn
@@ -300,12 +300,14 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     #set cvsglb(root) $cvscfg(cvsroot)
     modbrowse_run cvs
   }
+# Start with Branch Browser
 } elseif {$cvscfg(startwindow) == "log"} {
   if {! [file exists $lcfile]} {
     puts "ERROR: $lcfile doesn't exist!"
     exit 1
   }
   wm withdraw .
+  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
   if {$incvs} {
     cvs_branches \"$lcfile"\
   } elseif {$inrcs} {
@@ -317,16 +319,18 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"
   }
+# Start with Direcotry Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
+  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
   if {$incvs} {
-    #cvs_directory_merge
     cvs_joincanvas
   } elseif {$insvn} {
     svn_directory_merge
   } else {
     puts "Directory doesn't seem to be in CVS or SVN"
   }
+# The usual way, with the Workdir Browser
 } else {
   workdir_setup
 }

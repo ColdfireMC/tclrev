@@ -1,9 +1,7 @@
 #
-# TCL Library for tkcvs
+# Tcl Library for TkCVS
 #
 
-#
-# $Id: workdir.tcl,v 1.144.2.2 2005/09/06 05:06:30 dorothyr Exp $
 #
 # Current working directory display.  Handles all of the functions
 # concerned with navigating about the current directory on the main
@@ -1037,6 +1035,8 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { svn_update [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal \
+     -command { svn_update_options }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command svn_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
@@ -1085,7 +1085,8 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
        -command { \
        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal \
+     -command { update_run }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command cvs_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \

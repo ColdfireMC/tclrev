@@ -2,8 +2,6 @@
 #
 # Copyright (C) 1997,1998 D. Richard Hipp
 #
-# $Revision: 1.18 $
-#
 
 #
 # Create a new two-paned widget for the modules.

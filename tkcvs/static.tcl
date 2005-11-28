@@ -1,6 +1,4 @@
 #
-# $Id: static.tcl,v 1.2 2001/05/12 07:10:03 dorothyr Exp $
-#
 #  DESCRIPTION
 #      This file contains a procedure written in Tcl that supports static
 #      variables.

@@ -1,9 +1,7 @@
 #
-# TCL Library for TkCVS
+# Tcl Library for TkCVS
 #
 
-#
-# $Id: cvs.tcl,v 1.131 2005/07/15 21:30:14 dorothyr Exp $
 # 
 # Contains procedures used in interaction with CVS.
 #
@@ -2242,7 +2240,7 @@ gen_log:log T "ENTER ($exec $logline)"
       proc cvs_sort_it_all_out {} {
         global cvscfg
         global module_dir
-        global current_tagname
+        #global current_tagname
         variable filename
         variable sys
         variable lc
@@ -2268,7 +2266,7 @@ gen_log:log T "ENTER ($exec $logline)"
 
 puts "\ncvs_sort_it_all_out"
         foreach r [lsort -command sortrevs [array names revkind]] {
-           puts "$r \"$revkind($r)\""
+puts "$r $revkind($r)"
         }
         # Sort the revision and branch lists and remove duplicates
         foreach r [array names branchrevs] {
@@ -2370,7 +2368,6 @@ puts ""
 foreach a [array names revtags] {
   puts "revtags($a) $revtags($a)"
 }
-puts "current_tagname $current_tagname"
 
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}

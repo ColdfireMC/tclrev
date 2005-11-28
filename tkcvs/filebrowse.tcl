@@ -1,9 +1,7 @@
 #
-#Tcl library for TkCVS
+# Tcl library for TkCVS
 #
 
-#
-# $Id: filebrowse.tcl,v 1.20 2005/06/26 06:15:29 dorothyr Exp $
 #
 # Sets up a dialog to browse the contents of a module.
 #

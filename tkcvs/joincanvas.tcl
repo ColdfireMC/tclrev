@@ -1,5 +1,5 @@
 #
-# TCL Library for TkCVS
+# Tcl Library for TkCVS
 #
 
 namespace eval joincanvas {

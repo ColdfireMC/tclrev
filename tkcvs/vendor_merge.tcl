@@ -1,8 +1,6 @@
 
-# TCL Library for TkCVS
+# Tcl Library for TkCVS
 
-#
-# $Id: merge.tcl,v 1.20 2005/06/06 03:03:40 dorothyr Exp $
 #
 # Modifications by Eugene Lee 10/16/03 
 # 1. .merge window made more robust so user cannot key in incorrect data.

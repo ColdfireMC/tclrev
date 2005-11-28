@@ -3,8 +3,6 @@
 #
 
 #
-# $Id: import.tcl,v 1.47 2005/06/06 03:03:22 dorothyr Exp $
-#
 # Adds a new document to the repository.
 #
 
