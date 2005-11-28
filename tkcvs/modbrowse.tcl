@@ -93,9 +93,9 @@ proc modbrowse_setup {} {
   button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files \
     -command { browse_files $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches \
-    -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 1 }
+    -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
   button .modbrowse.bottom.buttons.modfuncs.patchfile -image Patchfile \
-    -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 0 }
+    -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   button .modbrowse.bottom.buttons.modfuncs.checkout -image Checkout \
     -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.export -image Export \
@@ -245,9 +245,9 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.cvs add command -label "Branch Tag Module" -underline 0 \
      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
   .modbrowse.modmenu.cvs add command -label "Make Patch File" -underline 0 \
-     -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 0 }
+     -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   .modbrowse.modmenu.cvs add command -label "View Patch Summary" -underline 0 \
-     -command { dialog_patch $cvscfg(cvsroot) $modbrowse_module 1 }
+     -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
   .modbrowse.modmenu.cvs add separator
   .modbrowse.modmenu.cvs add command -label "Import CWD to A New Module" -underline 0 \
      -command { import_run }
@@ -267,6 +267,10 @@ proc modbrowse_menus {} {
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
   .modbrowse.modmenu.svn add command -label "SVN Export" \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+  .modbrowse.modmenu.svn add command -label "Make Patch File" -underline 0 \
+     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path 0 }
+  .modbrowse.modmenu.svn add command -label "View Patch Summary" -underline 0 \
+     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path 1 }
   .modbrowse.modmenu.svn add separator
   .modbrowse.modmenu.svn add command -label "Import CWD into Repository" \
      -command svn_import_run
@@ -431,6 +435,10 @@ puts "called with no argument"
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+    .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
+      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 1 }
+    .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
+      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 0 }
   } else {
     .modbrowse.bottom.buttons.modfuncs.filecat configure -state disabled
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
@@ -444,6 +452,10 @@ puts "called with no argument"
       -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
+      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
+    .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal
+      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   }
   if {$insvn || $incvs || $inrcs} {
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled

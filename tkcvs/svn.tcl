@@ -424,6 +424,60 @@ proc svn_annotate {revision args} {
   gen_log:log T "LEAVE"
 }
 
+proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
+#
+# This creates a patch file between two revisions of a module.  If the
+# second revision is null, it creates a patch to the head revision.
+# If both are null the top two revisions of the file are diffed.
+#
+  global cvscfg
+ 
+  gen_log:log T "ENTER ($pathA $pathB $revA $dateA $revB $dateB $outmode $outfile)"
+  global cvs
+
+  foreach {rev1 rev2} {{} {}} { break }
+  if {$revA != {}} {
+    set rev1 $revA
+  } elseif {$dateA != {}} {
+    set rev1 "\{\"$dateA\"\}"
+  }
+  if {$revB != {}} {
+    set rev2 "$revB"
+  } elseif {$dateA != {}} {
+    set rev2 "\{\"$dateB\"\}"
+  }
+puts "pathA $pathA"
+puts "pathB $pathB"
+puts "rev1 $rev1"
+puts "rev2 $rev2"
+  if {$pathA != {} && $pathB != {}} {
+    set commandline "svn diff $pathA $pathB"
+  } elseif {$rev1 != {} && $rev2 != {}} {
+    set commandline "svn diff $pathA@$rev1 $pathA@$rev2"
+  } else {
+    cvsfail "Specify either two paths OR one path and two revisions"
+    return
+  }
+
+  if {$outmode == 0} {
+    set v [viewer::new "SVN Diff"]
+    $v\::do "$commandline"
+  } else {
+    set e [exec::new "$commandline"]
+    set patch [$e\::output]
+    gen_log:log F "OPEN $outfile"
+    if {[catch {set fo [open $outfile w]}]} {
+      cvsfail "Cannot open $outfile for writing" .modbrowse
+      return
+    }
+    puts $fo $patch
+    close $fo
+    gen_log:log F "CLOSE $outfile"
+  }
+  gen_log:log T "LEAVE"
+  return
+}
+
 # Called from module browser filebrowse button
 proc svn_list {module} {
   global cvscfg
