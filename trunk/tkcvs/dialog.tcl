@@ -469,7 +469,6 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
 
   set mtag "${toprefix}_${curr_tag}_$today"
   set ftag "${fromprefix}_${frombranch}_$today"
-
   # I had symbolic tags in mind, but some people are using untagged versions.
   # Substitute the dots, which are illegal for tagnames.
   regsub -all {\.} $mtag {-} mtag
@@ -486,8 +485,6 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
   entry .merge.top.f.ent -textvariable mtag \
     -width 32 -relief groove -readonlybackground $cvsglb(textbg)
   .merge.top.f.ent delete 0 end
-  .merge.top.f.ent insert end $mtag
-  .merge.top.f.ent configure -state readonly
   message .merge.top.m2 -aspect 600 -text "to revision $fromrev"
   frame .merge.bottom -relief raised -bd 2
   button .merge.bottom.apply -text "Apply"
@@ -502,13 +499,16 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
 
   pack .merge.top -side top -fill x
   pack .merge.top.m1 -side top -fill x -expand y
-  pack .merge.top.f -side top -padx 2 -pady 4
-  pack .merge.top.f.fromtag -side left
-  pack .merge.top.f.ent -side left
-  pack .merge.top.m2 -side top -fill x -expand y
+
 
   switch -- $sys {
     "CVS" {
+       pack .merge.top.f -side top -padx 2 -pady 4
+       pack .merge.top.f.fromtag -side left
+       pack .merge.top.f.ent -side left
+       pack .merge.top.m2 -side top -fill x -expand y
+       .merge.top.f.ent insert end $mtag
+       .merge.top.f.ent configure -state readonly
        if {$fromrev == "trunk"} { set fromrev "HEAD" }
        .merge.bottom.apply configure \
           -command "cvs_merge $fromrev \"$sincerev\" $mtag $ftag $file"
@@ -517,10 +517,14 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
                     destroy .merge"
      }
     "SVN" {
+       set cvscfg(auto_tag) 0
+       # frombranch has the whole URL, can't use that
+       #set mtag "${toprefix}_${curr_tag}_$today"
+       #set ftag "${fromprefix}_${fromrev}_$today"
        .merge.bottom.apply configure \
-          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file"
+          -command "svn_merge $fromrev $sincerev $frombranch $file"
        .merge.bottom.ok configure \
-          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file; \
+          -command "svn_merge $fromrev $sincerev $frombranch $file; \
                     destroy .merge"
      }
   }
