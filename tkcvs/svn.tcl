@@ -518,9 +518,15 @@ proc svn_list {module} {
 proc svn_delete {root path} {
 
   gen_log:log T "ENTER ($root $path)"
+
+  set mess "Really delete $path from the SVN repository?"
+  if {[cvsconfirm $mess .modbrowse] != "ok"} {
+    return
+  }
   set v [viewer::new "SVN delete"]
   set command "svn delete $root/$path -m \"Removed using TkSVN\""
   $v\::do "$command"
+  modbrowse_run
   gen_log:log T "LEAVE"
 }
 
@@ -734,7 +740,7 @@ proc svn_merge_conflict {args} {
       if {[cvsconfirm $mess .workdir] != "ok"} {
         continue
       }
-      set commandline "svn resolved $file"
+      set commandline "svn resolved \"$file\""
       exec::new $commandline
     } else {
       cvsfail "$view_this" .workdir
@@ -809,7 +815,7 @@ proc svn_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
+proc svn_merge {fromrev sincerev frombranch file} {
 #
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
@@ -817,9 +823,52 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($fromrev $sincerev $frombranch $fromtag $totag $args)"
+  gen_log:log T "ENTER ($fromrev $sincerev $frombranch $file)"
 
   set v [viewer::new "SVN Merge"]
+
+  # Way too many problems with auto-tagging.  I don't think it will work well with
+  # Subversion - dar
+
+  # Tagging involves commits, so we have to tag before we change files
+  #if {$cvscfg(auto_tag)} {
+    #set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag" err]
+    #if {$ret} {
+#puts $err
+      #set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
+#puts $commandline
+      #$v\::do $commandline
+      #$v\::wait
+    #}
+## svn mkdir -m"Tagged from TkSVN Merge"  $cvscfg(svnroot)/tags/$fromtag
+    #set commandline "svn copy -m\"Tag_Mergefrom\" $file"
+    #if {$file == "."} {
+      ## Not right.  Makes an extra directory under tag
+      #append commandline " $cvscfg(svnroot)/tags/$fromtag"
+    #} else {
+      #append commandline " $cvscfg(svnroot)/tags/$fromtag/$file"
+    #}
+#puts "$commandline"
+    #$v\::do "$commandline"
+    #toplevel .reminder
+    #message .reminder.m1 -aspect 600 -text \
+      #"When you are finished checking in your merges, \
+      #you should apply the tag"
+    #entry .reminder.ent -width 32 -relief groove \
+       #-font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
+    #.reminder.ent insert end $totag 
+    #.reminder.ent configure -state readonly
+    #message .reminder.m2 -aspect 600 -text \
+      #"using the \"Tag the selected files\" button"
+    #frame .reminder.bottom -relief raised -bd 2
+    #button .reminder.bottom.close -text "Dismiss" \
+      #-command {destroy .reminder}
+    #pack .reminder.bottom -side bottom -fill x
+    #pack .reminder.bottom.close -side bottom -expand yes
+    #pack .reminder.m1 -side top
+    #pack .reminder.ent -side top -padx 2
+    #pack .reminder.m2 -side top
+  #}
 
   set fromrev [string trimleft $fromrev {r}]
   set sincerev [string trimleft $sincerev {r}]
@@ -830,33 +879,6 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
     
   $v\::do "$commandline" 0 status_colortags
   $v\::wait
-
-  if {$cvscfg(auto_tag)} {
-    if {$file == "."} {
-      set comandline "svn copy $file $cvscfg(svnroot)/tags/$fromtag"
-    } else {
-      set comandline "svn copy $file $cvscfg(svnroot)/tags/$fromtag/$file"
-    }
-    $v\::do "$commandline"
-    toplevel .reminder
-    message .reminder.m1 -aspect 600 -text \
-      "When you are finished checking in your merges, \
-      you should apply the tag"
-    entry .reminder.ent -width 32 -relief groove \
-       -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
-    .reminder.ent insert end $totag 
-    .reminder.ent configure -state readonly
-    message .reminder.m2 -aspect 600 -text \
-      "using the \"Tag the selected files\" button"
-    frame .reminder.bottom -relief raised -bd 2
-    button .reminder.bottom.close -text "Dismiss" \
-      -command {destroy .reminder}
-    pack .reminder.bottom -side bottom -fill x
-    pack .reminder.bottom.close -side bottom -expand yes
-    pack .reminder.m1 -side top
-    pack .reminder.ent -side top -padx 2
-    pack .reminder.m2 -side top
-  }
 
   if {$cvscfg(auto_status)} {
     setup_dir
@@ -1078,32 +1100,30 @@ namespace eval ::svn_branchlog {
         if {$ret == 0} {
           set trunk_lines [split $log_output "\n"]
           set rr [parse_svnlog $trunk_lines trunk]
+          # See if the current revision is on the trunk
           set curr 0
-          set tip [lindex $branchrevs(trunk) 0]
+          set brevs $branchrevs(trunk)
+          set tip [lindex $brevs 0]
+          set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of trunk do this.
             set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
             set curr 1
           }
-          foreach r [lrange $branchrevs(trunk) 1 end] {
+          foreach r $brevs {
             if {$r == $revnum_current} {
               # We need to make a new artificial branch off of $r
               set revbranches($r) {current}
-              #set revtags($r) {}
-              #set curr 1
             }
             gen_log:log D " $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
+            set revpath($r) $path
           }
+          set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
           set revkind($rr) "root"
           set revname($rr) "trunk"
           set revtags($rr) "trunk"
           set revpath($rr) $path
-#puts " set revtags($rr) trunk"
-          set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
-          foreach a [array names branchrevs] {
-#puts " branchrevs($a) $branchrevs($a)"
-          }
         }
 
         # Branches
@@ -1134,37 +1154,32 @@ namespace eval ::svn_branchlog {
           if {$ret != 0} {
             # This can happen a lot -let's not let it stop us
             gen_log:log E "$log_output"
-#puts "$command"
-#puts "$log_output"
             continue
           }
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
-#puts "  set revtags($rb) $branch"
-#puts "  branchrevs($branch) $branchrevs($branch)"
-          # See if this is the current revision
+          # See if the current revision is on this branch
           set curr 0
-
-          set tip [lindex $branchrevs($branch) 0]
+          set brevs $branchrevs($branch)
+          set tip [lindex $brevs 0]
+          set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
             set curr 1
           }
-          foreach r [lrange $branchrevs($branch) 1 end] {
+          foreach r $brevs {
             if {$r == $revnum_current} {
               # We need to make a new artificial branch off of $r
               set revbranches($r) {current}
-              #set revtags($r) {}
-              #set curr 1
             }
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
+            set revpath($r) $path
           }
           set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
-#puts "  branchrevs($rb) $branchrevs($rb)"
           set revkind($rb) "branch"
-          set revname($rb) "$branch"
+          set revname($rb) $branch
           set revtags($rb) $branch
           set revpath($rb) $path
 
