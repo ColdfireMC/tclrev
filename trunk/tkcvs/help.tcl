@@ -2,9 +2,6 @@
 # Tcl Library for TkCVS
 #
 
-#
-# $Id: help.tcl,v 1.60 2005/07/19 18:16:22 dorothyr Exp $
-#
 # Help procedures and help data.
 #
 #########################################

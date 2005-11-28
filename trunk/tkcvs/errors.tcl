@@ -1,9 +1,7 @@
 #
-# TCL Library
+# Tcl Library
 #
 
-#
-# $Id: errors.tcl,v 1.10 2005/07/18 16:16:53 dorothyr Exp $
 #
 # Procedures for unimplemented procedures and error messages used by
 # TkCVS.

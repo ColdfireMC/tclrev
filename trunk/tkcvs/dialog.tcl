@@ -3,8 +3,6 @@
 #
 
 #
-# $Id: dialog.tcl,v 1.38 2005/07/07 04:18:50 dorothyr Exp $
-#
 # Smallish dialogs - add, tag
 #
 
@@ -1294,3 +1292,131 @@ proc release_dialog { args } {
 
   gen_log:log T "LEAVE"
 }
+
+proc svn_update_options {} {
+  global cvsglb
+  global cvscfg
+
+  gen_log:log T "ENTER"
+
+  if {[winfo exists .svn_update]} {
+    wm deiconify .svn_update
+    raise .svn_update
+    grab set .svn_update
+    gen_log:log T "LEAVE"
+    return
+  }
+
+  if {! [info exists cvsglb(tagmode_selection)]} {
+    set cvsglb(tagmode_selection) "Keep"
+  }
+
+  toplevel .svn_update
+  grab set .svn_update
+  frame .svn_update.explaintop
+  frame .svn_update.options
+  frame .svn_update.down
+
+  frame .svn_update.options.keep -relief groove -border 2
+  frame .svn_update.options.trunk -relief groove -border 2
+  frame .svn_update.options.branch -relief groove -border 2
+  frame .svn_update.options.revision -relief groove -border 2
+
+  pack .svn_update.down -side bottom -fill x
+  pack .svn_update.explaintop -side top -fill x -pady 1
+  pack .svn_update.options -side top -fill x -pady 1
+
+  # Provide an explanation of this dialog box
+  label .svn_update.explain -relief raised -bd 1 \
+    -text "Update files in local directory"
+
+  pack .svn_update.explain \
+    -in .svn_update.explaintop -side top -fill x
+
+  pack .svn_update.options.keep -side top -fill x
+  pack .svn_update.options.trunk -side top -fill x
+  pack .svn_update.options.branch -side top -fill x
+  pack .svn_update.options.revision -side top -fill x
+
+  # If the user wants to simply do a normal update
+  radiobutton .svn_update.options.keep.select \
+    -text "Update to most recent revision on same branch or trunk." \
+    -variable cvsglb(tagmode_selection) -value "Keep" -anchor w
+
+  message .svn_update.options.keep.explain -font $cvscfg(listboxfont) \
+    -justify left -width 400 \
+    -text "If local directory is on main trunk, get latest on main trunk.
+If local directory is on a branch, get latest on that branch."
+
+  pack .svn_update.options.keep.select -side top -fill x
+  pack .svn_update.options.keep.explain -side top -fill x -pady 1 -ipady 0
+
+  # If the user wants to update to the head revision
+  radiobutton .svn_update.options.trunk.select \
+    -text "Switch local files to be on main trunk" \
+    -variable cvsglb(tagmode_selection) -value "Trunk" -anchor w
+
+  message .svn_update.options.trunk.explain -font $cvscfg(listboxfont) \
+    -justify left -width 400 \
+    -text "Advice:  If your local directories are currently on a branch, \
+you may want to commit any local changes to that branch first."
+
+  pack .svn_update.options.trunk.select -side top -fill x
+  pack .svn_update.options.trunk.explain -side top -fill x -pady 1 -ipady 0
+
+  # If the user wants to update to a branch
+  radiobutton .svn_update.options.branch.select \
+    -text "Switch local files to be on a branch" \
+    -variable cvsglb(tagmode_selection) -value "Branch" -anchor w
+
+  frame .svn_update.options.branch.lblentry
+  label .svn_update.lbranch -text "Branch" -anchor w
+  entry .svn_update.tbranch -relief sunken -textvariable cvsglb(branchname)
+
+  pack .svn_update.options.branch.select -side top -fill x
+  pack .svn_update.options.branch.lblentry -side top -fill x \
+    -expand y -pady 1 -ipady 0
+  pack .svn_update.lbranch -in .svn_update.options.branch.lblentry \
+    -side left -fill x -pady 4
+  pack .svn_update.tbranch -in .svn_update.options.branch.lblentry \
+    -side left -fill x -padx 2 -pady 4
+
+  # Where user enters a revision number
+  radiobutton .svn_update.options.revision.select \
+    -text "Update (-r) local files to be a specific revision:" \
+    -variable cvsglb(tagmode_selection) -value "Revision" -anchor w
+
+  frame .svn_update.options.revision.lblentry
+  label .svn_update.lrev -text "Revision" -anchor w
+  entry .svn_update.trev -relief sunken -textvariable cvsglb(revnumber)
+
+  pack .svn_update.options.revision.select -side top -fill x
+  pack .svn_update.options.revision.lblentry -side top -fill x \
+    -expand y -pady 1 -ipady 0
+  pack .svn_update.lrev -in .svn_update.options.revision.lblentry \
+    -side left -fill x -pady 4
+  pack .svn_update.trev -in .svn_update.options.revision.lblentry \
+    -side left -fill x -padx 2 -pady 4
+
+  # The OK/Cancel buttons
+  button .svn_update.ok -text "OK" \
+    -command { grab release .svn_update
+               wm withdraw .svn_update              
+               svn_opt_update }
+
+  button .svn_update.apply -text "Apply" \
+    -command svn_opt_update
+
+  button .svn_update.quit -text "Close" \
+    -command { grab release .svn_update
+               wm withdraw .svn_update }
+
+  pack .svn_update.ok .svn_update.apply .svn_update.quit -in .svn_update.down \
+    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  # Window Manager stuff
+  wm title .svn_update "Update from Repository"
+  wm minsize .svn_update 1 1
+  gen_log:log T "LEAVE"
+}
+

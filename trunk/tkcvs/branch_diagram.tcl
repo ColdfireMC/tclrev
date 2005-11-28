@@ -1,5 +1,5 @@
 #
-# TCL Library for TkCVS
+# Tcl Library for TkCVS
 #
 
 # This is a major rewrite over the original version. It uses a

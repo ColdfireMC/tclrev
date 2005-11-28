@@ -1,6 +1,4 @@
 #
-# $Id: modbrowse.tcl,v 1.53 2005/07/07 04:18:51 dorothyr Exp $
-#
 # Set up a check out dialog.
 #
 
@@ -454,7 +452,7 @@ puts "called with no argument"
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
       -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
-    .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal
+    .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
       -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   }
   if {$insvn || $incvs || $inrcs} {

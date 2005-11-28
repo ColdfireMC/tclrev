@@ -1,6 +1,3 @@
-#
-# $Id: tkcvs_def.tcl,v 1.55 2004/08/10 16:48:18 dorothyr Exp $
-#
 # TkCVS defaults file.
 #
 # This file is read by TkCVS on startup.  It will be installed

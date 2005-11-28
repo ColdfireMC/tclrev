@@ -1,9 +1,6 @@
 #
 # Columns for listing CVS files and their status
 #
-#
-# $Id: dircanvas.tcl,v 1.41 2003/11/04 07:21:12 dorothyr Exp $
-#
 
 proc DirCanvas:create {w args} {
   global cvscfg
