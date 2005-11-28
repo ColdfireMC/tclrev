@@ -267,7 +267,7 @@ proc dialog_svn_checkout { svnroot revtag command } {
 
 # Compare two revisions of a module, from the module browser
 # Can make a patch file or send a summary to the screen
-proc dialog_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
+proc dialog_cvs_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
   global dynamic_dialog
   global dialog_action
 
@@ -316,12 +316,59 @@ proc dialog_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
   }
 
   set dialog_action {cvs_patch $dynamic_dialog(cvsroot) \
-   $dynamic_dialog(module) $dynamic_dialog(difffmt) \
-   $dynamic_dialog(revtagA) $dynamic_dialog(dateA) \
-   $dynamic_dialog(revtagB) $dynamic_dialog(dateB) $dynamic_dialog(outmode) $dynamic_dialog(outfile)
+     $dynamic_dialog(module) $dynamic_dialog(difffmt) \
+     $dynamic_dialog(revtagA) $dynamic_dialog(dateA) \
+     $dynamic_dialog(revtagB) $dynamic_dialog(dateB) \
+     $dynamic_dialog(outmode) $dynamic_dialog(outfile)
   }
 
-  set form [dialog_FormCreate "Checkout Module" $dialog_form_patch]
+  set form [dialog_FormCreate "Diff/Patch Module" $dialog_form_patch]
+  gen_log:log T "LEAVE"
+}
+
+# Compare two revisions, from the module browser
+# Can make a patch file or send a summary to the screen
+proc dialog_svn_patch { cvsroot path summary } {
+  global dynamic_dialog
+  global dialog_action
+
+  gen_log:log T "ENTER ( $cvsroot $path $summary )"
+
+  set dynamic_dialog(cvsroot) $cvsroot
+  set dynamic_dialog(path) $path
+  if {$summary} {
+    set dynamic_dialog(outmode) 0
+  } else {
+    set dynamic_dialog(outmode) 1
+  }
+
+  set dynamic_dialog(pathA) "$cvsroot$path"
+
+  # field  req type labeltext          data
+  set dialog_form_patch {
+  1         0     l {Repository Paths} 1
+  pathA     1     t {Path A}           {}
+  pathB     0     t {Path B}           {}
+  3         0     l {Destination}      1
+  outmode   0     r {Output Mode}      {{To Screen} 0 {To File} 1}
+  outfile   0     t {Output File}      {outfile}
+  4         0     l {Old Revision}     1
+  revA      0     t {Revision}         {}
+  dateA     0     t {Date}             {}
+  5         0     l {New Revision}     1
+  revB      0     t {Revision}         {}
+  dateB     0     t {Date}             {}
+  6         0     l {Format}           1
+  }
+
+  set dialog_action {svn_patch $dynamic_dialog(pathA) \
+     $dynamic_dialog(pathB) \
+     $dynamic_dialog(revA) $dynamic_dialog(dateA) \
+     $dynamic_dialog(revB) $dynamic_dialog(dateB) \
+     $dynamic_dialog(outmode) $dynamic_dialog(outfile)
+  }
+
+  set form [dialog_FormCreate "SVN Diff/Patch" $dialog_form_patch]
   gen_log:log T "LEAVE"
 }
 
