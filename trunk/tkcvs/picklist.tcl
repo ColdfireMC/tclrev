@@ -132,10 +132,7 @@ proc ::picklist::load { } {
     variable data
 
     while {[gets $file name] > 0} {
-      set c 0
       while {[gets $file item] > 0} {
-        # FIXME: number of items saved should be a preference
-        if {$c > 10} {break}
         lappend data($name) $item
       }
     }
@@ -150,10 +147,14 @@ proc ::picklist::save { } {
   if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] w]}]} {
     variable data
 
-    foreach name [array names data] {
+    foreach name {cvsroot directory} {
       puts $file $name
+      set c 0
       foreach item $data($name) {
+        # number of items saved is a preference
+        if {$c >= $cvscfg(picklist_items)} {break}
         puts $file $item
+        incr c
       }
       puts $file ""
     }

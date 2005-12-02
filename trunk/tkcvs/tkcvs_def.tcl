@@ -25,6 +25,9 @@ set cvscfg(tagdepth) 6
 set cvscfg(colourA) darkgreen
 set cvscfg(colourB) brown
 
+# Maximum number of places to save in the picklist history
+set cvscfg(picklist_items) 10
+
 # If you want the module browser to come up on startup instead of the
 # working-directory browser, uncomment this.
 #set cvscfg(startwindow) "module"
