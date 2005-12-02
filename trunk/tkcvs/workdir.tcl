@@ -59,7 +59,8 @@ proc workdir_setup {} {
   pack .workdir.top -side top -fill x
 
   ::picklist::entry .workdir.top.tcwd cwd directory
-  ::picklist::bind .workdir.top.tcwd <Return> {change_dir "$cwd"}
+  ::picklist::bind .workdir.top.tcwd <Return> \
+     {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
   button .workdir.top.updir_btn -image updir \
     -command {change_dir ..}
