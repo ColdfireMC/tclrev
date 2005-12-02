@@ -50,3 +50,31 @@ proc comparediff_r {rev1 rev2 parent args} {
   gen_log:log T "LEAVE"
 }
 
+proc comparediff_sandbox {rev1 rev2 parent file} {
+#
+# This diffs two revisions of a file that's not checked out
+#
+  global cvscfg
+ 
+  gen_log:log T "ENTER ($rev1 $rev2 $file)"
+
+  if {$rev1 == {} && $rev2 == {}} {
+    cvsfail "Must have at least one revision number or tag for this function!" $parent
+    return 1
+  }
+
+  if {$rev1 != {}} {
+    set rev1 [string trimleft $rev1 {r}]
+    set rev1 "-r \"$rev1\""
+  }
+  if {$rev2 != {}} {
+    set rev2 [string trimleft $rev2 {r}]
+    set rev2 "-r \"$rev2\""
+  }
+ 
+  set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$file\""
+  gen_log:log C "$commandline"
+  cvs_sandbox_runcmd $commandline view_this
+
+  gen_log:log T "LEAVE"
+}
