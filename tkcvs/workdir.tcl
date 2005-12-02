@@ -1192,12 +1192,7 @@ proc directory_list { filenames } {
     if {[file isdirectory $i]} {
       if {[isCmDirectory $i]} {
         # Read the bookkeeping files but don't list the directory
-        if {$i == "CVS"} {
-          read_cvs_dir [file join $cwd $i]
-          continue
-        } elseif {$i == ".svn"} {
-          continue
-        } elseif {$i == "RCS"} {
+        if {$i == "CVS" || $i == ".svn" || $i == "RCS"} {
           continue
         }
       }
