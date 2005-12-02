@@ -66,17 +66,17 @@ proc gather_mod_index {} {
   set modlist_sorted [lsort $modlist]
   if {$cvscfg(logging) && [regexp -nocase {d} $cvscfg(log_classes)]} {
     foreach idx $modlist_sorted {
-      gen_log:log D "$idx"
+      #gen_log:log D "$idx"
       set dname [lindex $idx 0]
       if {[info exists dparent($dname)]} {
-        gen_log:log D "   PARENT: $dparent($dname)"
+        #gen_log:log D "   PARENT: $dparent($dname)"
       }
       if {[info exists dcontents($dname)]} {
-        gen_log:log D "   CHILDREN: $dcontents($dname)"
+        #gen_log:log D "   CHILDREN: $dcontents($dname)"
       }
       set desc [find_subdirs $dname 0]
       if {$desc != ""} {
-        gen_log:log D "   SUBDIRS: $desc"
+        #gen_log:log D "   SUBDIRS: $desc"
       }
     }
   }
@@ -118,12 +118,12 @@ proc find_filenames {mcode} {
    
   set view_lines [split $view_this "\n"]
   foreach line $view_lines {
-    gen_log:log D "$line"
+    #gen_log:log D "$line"
     if {[string match "File *" $line]} {
       set lst [split $line]
       set cut [expr {[llength $lst] - 6}]
       set dname [join [lrange $lst 1 $cut]]
-      gen_log:log D "$dname"
+      #gen_log:log D "$dname"
       lappend filenames($mcode) $dname
     }
   }
