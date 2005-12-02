@@ -1260,7 +1260,7 @@ proc cvs_filelog {filename parent} {
   set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
 
   # Log canvas viewer
-  logcanvas::new $filename "CVS,rep" $commandline [namespace current]
+  ::cvs_branchlog::new "CVS,rep" $filename
   cd $cwd
   gen_log:log T "LEAVE"
 }
@@ -1916,14 +1916,14 @@ proc cvs_directory_merge {} {
   } else {
     set filename $mostrevisedfile
   }
-puts "Representative file: $filename"
 
-  ::cvs_branchlog::new cvs "$filename" 1
+  ::cvs_branchlog::new "CVS,dir" "$filename"
 
   gen_log:log T "LEAVE"
 }
 
-# Sends files to the SVN branch browser one at a time
+# Sends files to the CVS branch browser one at a time.  Called from
+# workdir browser
 proc cvs_branches {files} {
   global cvs
   global cvscfg
@@ -1936,7 +1936,7 @@ proc cvs_branches {files} {
   }
 
   foreach file $files {
-    ::cvs_branchlog::new cvs "$file"
+    ::cvs_branchlog::new "CVS,loc" "$file"
   }
 
   gen_log:log T "LEAVE"
@@ -1945,7 +1945,7 @@ proc cvs_branches {files} {
 namespace eval ::cvs_branchlog {
   variable instance 0
 
-  proc new {sys filename {directory_merge {0}} } {
+  proc new {how filename} {
     variable instance
     set my_idx $instance
     incr instance
@@ -1953,8 +1953,7 @@ namespace eval ::cvs_branchlog {
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
-      set sys [uplevel {concat $sys}]
-      set directory_merge [uplevel {concat $directory_merge}]
+      set how [uplevel {concat $how}]
       variable command
       variable cmd_log
       variable lc
@@ -1971,23 +1970,30 @@ namespace eval ::cvs_branchlog {
       variable cwd
 
       gen_log:log T "ENTER [namespace current]"
+      set sys_loc [split $how {,}]
+puts "how $how"
+puts "sys_loc $sys_loc"
+      set sys [lindex $sys_loc 0]
+      set loc [lindex $sys_loc 1]
 
-      switch -glob -- $sys {
-        cvs* {
+      switch -- $sys {
+        CVS {
           set command "cvs log \"$filename\""
-          if {$directory_merge} {
-            set newlc [mergecanvas::new $filename "CVS,loc" [namespace current]]
+          if {$loc == "dir"} {
+            #set newlc [mergecanvas::new $filename "CVS,loc" [namespace current]]
+            set newlc [mergecanvas::new $filename $how [namespace current]]
+            # ln is the namespace, lc is the canvas
             set ln [lindex $newlc 0]
             set lc [lindex $newlc 1]
             set show_tags 0
           } else {
-            set newlc [logcanvas::new $filename "CVS,loc" [namespace current]]
+            set newlc [logcanvas::new $filename $how [namespace current]]
             set ln [lindex $newlc 0]
             set lc [lindex $newlc 1]
             set show_tags [set $ln\::opt(show_tags)]
           }
         }
-        rcs* {
+        RCS {
           set command "rlog $filename"
           set newlc [logcanvas::new $filename "RCS,loc" [namespace current]]
           set ln [lindex $newlc 0]
@@ -2080,7 +2086,7 @@ gen_log:log T "ENTER ($exec $logline)"
                 if {$inrcs && [file isdir RCS]} {
                    set fname [file join RCS $fname]
                 }
-                $ln\::ConfigureButtons CVS $fname
+                $ln\::ConfigureButtons $fname
               } elseif {[string match {Working file: *} $logline]} {
                 # If we care about a working copy we need to look
                 # at the name of the working file here. It may be

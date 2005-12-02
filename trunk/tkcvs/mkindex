@@ -4,10 +4,37 @@
 exec tclsh "$0" -- ${1+"$@"}
 
 puts "making tclIndex"
-auto_mkindex .
 
-#puts "making pkgIndex.tcl"
-#pkg_mkIndex .
+auto_mkindex . \
+  annotate.tcl \
+  branch_diagram.tcl \
+  cde_params.tcl \
+  cvs.tcl \
+  dialog.tcl \
+  diff.tcl \
+  dircanvas.tcl \
+  errors.tcl \
+  exec.tcl \
+  filebrowse.tcl \
+  gen_log.tcl \
+  help.tcl \
+  import.tcl \
+  import2.tcl \
+  joincanvas.tcl \
+  modbrowse.tcl \
+  modtree.tcl \
+  modules.tcl \
+  picklist.tcl \
+  rcs.tcl \
+  scrollbindings.tcl \
+  static.tcl \
+  svn-import.tcl \
+  svn.tcl \
+  tkcvs.tcl \
+  tkcvs_def.tcl \
+  tooltips.tcl \
+  vendor_merge.tcl \
+  workdir.tcl
 
 puts "done"
 exit

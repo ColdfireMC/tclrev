@@ -131,10 +131,13 @@ namespace eval ::logcanvas {
         ClearSelection $AorB
       }
 
-      proc ConfigureButtons {sys fname} {
+      proc ConfigureButtons {fname} {
         global cvsglb
         variable logcanvas
+        variable sys
+        variable loc
 
+puts "sys $sys    loc $loc"
         switch -- $sys {
           "SVN" {
             set kind ""
@@ -184,34 +187,62 @@ namespace eval ::logcanvas {
                  }]
           }
          "CVS" {
-            $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs}
-            $logcanvas.up.lfname configure -text "RCS file"
-            $logcanvas.up.rfname delete 0 end
-            $logcanvas.up.rfname insert end "$fname,v"
-            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
-            $logcanvas.view configure \
+           $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs}
+           $logcanvas.up.lfname configure -text "RCS file"
+           $logcanvas.up.rfname delete 0 end
+           $logcanvas.up.rfname insert end "$fname,v"
+           $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+
+           if {$loc == "rep"} {
+             # Working on repository files, not checked out
+             $logcanvas.view configure \
+                -command [namespace code {
+                  cvs_fileview_checkout [$logcanvas.up.revA_rvers cget -text] $filename
+                }]
+             $logcanvas.annotate configure \
+                -command [namespace code {
+                   cvs_annotate_r [$logcanvas.up.revA_rvers cget\
+                   -text] $filename
+                }]
+             $logcanvas.diff configure \
+                -command [namespace code {
+                   comparediff_sandbox [$logcanvas.up.revA_rvers cget -text] \
+                     [$logcanvas.up.revB_rvers cget -text] $logcanvas \
+                     $filename
+                }]
+             $logcanvas.delta configure -state disabled
+           } else {
+             # We have a checked-out local file
+             $logcanvas.view configure \
                -command [namespace code {
                   cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] \
                   $filename
                }]
-            $logcanvas.annotate configure \
+             $logcanvas.annotate configure \
                -command [namespace code {
                  cvs_annotate [$logcanvas.up.revA_rvers cget -text] \
                  $filename
                }]
-            $logcanvas.delta configure \
-              -command [namespace code {
-                 variable sys
-                 set fromrev [$logcanvas.up.revA_rvers cget -text]
-                 set sincerev [$logcanvas.up.revB_rvers cget -text]
-                 set fromtag ""
-                 if {[info exists revtags($sincerev)]} {
-                   set fromtag [lindex $revtags($sincerev) 0]
-                 }
-                 merge_dialog $sys \
-                   $fromrev $sincerev $fromtag \
-                   [list $filename]
-                 }]
+             $logcanvas.delta configure \
+               -command [namespace code {
+                  variable sys
+                  set fromrev [$logcanvas.up.revA_rvers cget -text]
+                  set sincerev [$logcanvas.up.revB_rvers cget -text]
+                  set fromtag ""
+                  if {[info exists revtags($sincerev)]} {
+                    set fromtag [lindex $revtags($sincerev) 0]
+                  }
+                  merge_dialog $sys \
+                    $fromrev $sincerev $fromtag \
+                    [list $filename]
+                }]
+            }
+         }
+         "RCS" {
+           $logcanvas.view configure -state disabled
+           $logcanvas.annotate configure -state disabled
+           $logcanvas.delta configure -state disabled
+           $logcanvas.viewtags configure -state disabled
           }
         }
       }
@@ -1316,10 +1347,9 @@ namespace eval ::logcanvas {
       button $logcanvas.annotate -image Annotate
       button $logcanvas.diff -image Diff \
         -command [namespace code {
-                 comparediff_r [$logcanvas.up.revA_rvers cget -text] \
-                   [$logcanvas.up.revB_rvers cget -text] $logcanvas \
-                   $filename
-               }]
+          comparediff_r [$logcanvas.up.revA_rvers cget -text] \
+          [$logcanvas.up.revB_rvers cget -text] $logcanvas $filename
+        }]
       button $logcanvas.delta -image Mergediff
       button $logcanvas.viewtags -image Tags \
         -command [namespace code {
@@ -1357,21 +1387,6 @@ namespace eval ::logcanvas {
         -in $logcanvas.down -side right \
         -ipadx 1 -ipady 1 -fill both -expand 1
 
-      # FIXME move this stuff to ConfigureButtons?
-      if {$sys == "CVS" && $loc == "rep"} {
-        $logcanvas.view configure \
-        $logcanvas.delta configure -state disabled
-      } elseif {$sys == "RCS"} {
-        $logcanvas.view configure -state disabled
-        $logcanvas.annotate configure -state disabled
-        $logcanvas.delta configure -state disabled
-        $logcanvas.viewtags configure -state disabled
-        $logcanvas.diff configure -command [namespace code {
-                 comparediff_r [$logcanvas.up.revA_rvers cget -text] \
-                 [$logcanvas.up.revB_rvers cget -text] $logcanvas $filename
-               }]
-      }
-  
       set_tooltips $logcanvas.refresh \
         {"Re-read the log information"}
       set_tooltips $logcanvas.up.bworkdir \

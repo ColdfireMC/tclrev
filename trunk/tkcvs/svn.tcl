@@ -1070,7 +1070,7 @@ namespace eval ::svn_branchlog {
         } else {
           set path "$cvscfg(url)/$relpath/$filename"
         }
-        $ln\::ConfigureButtons SVN $path
+        $ln\::ConfigureButtons $path
 
         # Find out where to put the working revision icon (if anywhere)
         set command "svn log -q --stop-on-copy $filename"
