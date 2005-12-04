@@ -1971,8 +1971,6 @@ namespace eval ::cvs_branchlog {
 
       gen_log:log T "ENTER [namespace current]"
       set sys_loc [split $how {,}]
-puts "how $how"
-puts "sys_loc $sys_loc"
       set sys [lindex $sys_loc 0]
       set loc [lindex $sys_loc 1]
 
@@ -1980,7 +1978,6 @@ puts "sys_loc $sys_loc"
         CVS {
           set command "cvs log \"$filename\""
           if {$loc == "dir"} {
-            #set newlc [mergecanvas::new $filename "CVS,loc" [namespace current]]
             set newlc [mergecanvas::new $filename $how [namespace current]]
             # ln is the namespace, lc is the canvas
             set ln [lindex $newlc 0]
@@ -2066,7 +2063,7 @@ puts "sys_loc $sys_loc"
         variable rnum
         variable rootbranch
         variable revbranch
-gen_log:log T "ENTER ($exec $logline)"
+        #gen_log:log T "ENTER ($exec $logline)"
 
         #gen_log:log D "$logline"
         if {$logline != {}} {
@@ -2270,9 +2267,9 @@ gen_log:log T "ENTER ($exec $logline)"
 
         set revkind(1) "root"
 
-puts "\ncvs_sort_it_all_out"
+        gen_log:log D "\ncvs_sort_it_all_out"
         foreach r [lsort -command sortrevs [array names revkind]] {
-puts "$r $revkind($r)"
+          gen_log:log D "revkind($r) $revkind($r)"
         }
         # Sort the revision and branch lists and remove duplicates
         foreach r [array names branchrevs] {
@@ -2362,18 +2359,18 @@ puts "$r $revkind($r)"
         } else {
           gen_log:log D "$filename"
         }
-puts ""
-foreach a [array names branchrevs] {
-  puts "branchrevs($a) $branchrevs($a)"
-}
-puts ""
-foreach a [array names revbranches] {
-  puts "revbranches($a) $revbranches($a)"
-}
-puts ""
-foreach a [array names revtags] {
-  puts "revtags($a) $revtags($a)"
-}
+        gen_log:log D ""
+        foreach a [array names branchrevs] {
+          gen_log:log D "branchrevs($a) $branchrevs($a)"
+        }
+        gen_log:log D ""
+        foreach a [array names revbranches] {
+          gen_log:log D "revbranches($a) $revbranches($a)"
+        }
+        gen_log:log D ""
+        foreach a [array names revtags] {
+          gen_log:log D "revtags($a) $revtags($a)"
+        }
 
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}

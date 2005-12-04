@@ -74,7 +74,7 @@ proc browse_files {module} {
     -command "module_tagview $filebrowse $module"
   button $filebrowse.quit -text "Close" \
     -padx 0 -pady 0 \
-    -command {destroy $filebrowse; exit_cleanup 0}
+    -command "destroy $filebrowse; exit_cleanup 0"
 
   pack $filebrowse.view \
        $filebrowse.log \

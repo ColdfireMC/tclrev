@@ -219,7 +219,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
 # If CVSROOT envvar is set, use it
 if { ! [info exists cvscfg(cvsroot)] } {
   if { ! [info exists env(CVSROOT)] } {
-    puts "warning: your \$CVSROOT environment variable is not set."
+    #puts "warning: your \$CVSROOT environment variable is not set."
     set cvscfg(cvsroot) ""
   } else {
     set cvscfg(cvsroot) $env(CVSROOT)
@@ -296,8 +296,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     set cvsglb(root) $cvscfg(svnroot)
     modbrowse_run svn
   } else {
-    puts $cvscfg(cvsroot)
-    #set cvsglb(root) $cvscfg(cvsroot)
     modbrowse_run cvs
   }
 # Start with Branch Browser

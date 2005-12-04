@@ -533,7 +533,7 @@ namespace eval joincanvas {
       pack $joincanvas.up -side top -fill x
 
       button $joincanvas.up.bworkdir -image Workdir -command { workdir_setup }
-      button $joincanvas.up.bmodbrowse -image Modules -command { modbrowse_run cvs }
+      button $joincanvas.up.bmodbrowse -image Modules_cvs -command { modbrowse_run cvs }
 
       label $joincanvas.up.lfname -text "Representative File" -anchor w
       entry $joincanvas.up.rfname -textvariable [namespace current]::repfile

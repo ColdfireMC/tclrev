@@ -137,7 +137,6 @@ namespace eval ::logcanvas {
         variable sys
         variable loc
 
-puts "sys $sys    loc $loc"
         switch -- $sys {
           "SVN" {
             set kind ""
@@ -149,7 +148,8 @@ puts "sys $sys    loc $loc"
                 set kind [lindex $infoline end]
               }
             }
-            $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn}
+            $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn} \
+              -image Modules_svn
             $logcanvas.up.lfname configure -text "SVN Path"
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$fname"
@@ -187,7 +187,8 @@ puts "sys $sys    loc $loc"
                  }]
           }
          "CVS" {
-           $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs}
+           $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs} \
+              -image Modules_cvs
            $logcanvas.up.lfname configure -text "RCS file"
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname,v"
@@ -239,10 +240,12 @@ puts "sys $sys    loc $loc"
             }
          }
          "RCS" {
+           $logcanvas.up.rfname delete 0 end
+           $logcanvas.up.rfname insert end "$fname"
+           $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
            $logcanvas.view configure -state disabled
            $logcanvas.annotate configure -state disabled
            $logcanvas.delta configure -state disabled
-           $logcanvas.viewtags configure -state disabled
           }
         }
       }
@@ -367,11 +370,11 @@ puts "sys $sys    loc $loc"
       proc DrawCurrent { x y box_width box_height revision } {
         variable curr
         variable revstate
+        variable revtags
         variable font_bold
         variable font_bold_h
         variable logcanvas
         variable root_info
-        variable revtags
         variable curr_x
         variable curr_y
 
@@ -547,12 +550,13 @@ puts "sys $sys    loc $loc"
         variable revtime
         variable revwho
         variable revstate
+        variable revkind
+        variable revtags
         variable font_norm
         variable font_norm_h
         variable font_bold
         variable logcanvas
         variable tlist
-        variable revtags
         variable fromtags
         variable totags
         variable fromtag_branch
@@ -646,6 +650,7 @@ puts "sys $sys    loc $loc"
         variable opt
         variable curr
         variable box_height
+        variable revkind
         variable branchrevs
         variable revbranches
 
@@ -766,6 +771,7 @@ puts "sys $sys    loc $loc"
           set rx [expr {$x + $box_width}]
           set ry [expr {$y - $box_height/2}]
           set by [expr {$ry - $curr(boff)}]
+          # If it has brevs, it's the root of a branch
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
             if {$ly != {}} {
@@ -797,6 +803,8 @@ puts "sys $sys    loc $loc"
               $midx $last_y $midx [expr {$y - $box_height}] \
               -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
           }
+          # this misses the case of a branch that doesn't have any revisions
+          # yet in Subversion.  It should do DrawRoot instead of DrawRevision
           if {$revision == {current}} {
             DrawCurrent $x $y $box_width $rheight $revision
           } else {
@@ -911,6 +919,7 @@ puts "sys $sys    loc $loc"
         variable revstate
         variable revtags
         variable revpath
+        variable revkind
         variable revbranches
         variable branchrevs
 
@@ -938,6 +947,9 @@ puts "sys $sys    loc $loc"
         }
         foreach a [array names $scope\::revbranches] {
           set revbranches($a) [set $scope\::revbranches($a)]
+        }
+        foreach a [array names $scope\::revkind] {
+          set revkind($a) [set $scope\::revkind($a)]
         }
         foreach a [array names $scope\::branchrevs] {
           set branchrevs($a) [set $scope\::branchrevs($a)]
@@ -1279,7 +1291,7 @@ puts "sys $sys    loc $loc"
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove \
         -readonlybackground $cvsglb(textbg)
-      button $logcanvas.up.bmodbrowse -image Modules
+      button $logcanvas.up.bmodbrowse -image Modules -command modbrowse_run
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
