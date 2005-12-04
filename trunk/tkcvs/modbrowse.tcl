@@ -4,6 +4,7 @@
 
 proc modbrowse_setup {} {
   global cwd
+  global repository_root
   global modbrowse_module
   global modbrowse_path
   global modbrowse_title
@@ -48,7 +49,7 @@ proc modbrowse_setup {} {
   label .modbrowse.top.lroot -text "CVSROOT"
   ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
   ::picklist::bind .modbrowse.top.troot <Return> \
-    {modbrowse_run}
+    {if {$repository_root != $cvsglb(root)} {modbrowse_run}}
 
   button .modbrowse.top.bworkdir -image Workdir -command {workdir_setup}
 
@@ -238,7 +239,7 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.cvs add command -label "CVS Checkout" \
       -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module}
   .modbrowse.modmenu.cvs add command -label "CVS Export" \
-      -command { dialog_svn_export $cvscfg(cvsroot) $modbrowse_module}
+      -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module}
   .modbrowse.modmenu.cvs add command -label "Tag Module" -underline 0 \
      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
   .modbrowse.modmenu.cvs add command -label "Branch Tag Module" -underline 0 \
@@ -266,6 +267,10 @@ proc modbrowse_menus {} {
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
   .modbrowse.modmenu.svn add command -label "SVN Export" \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+  .modbrowse.modmenu.svn add command -label "Tag Module" -underline 0 \
+     -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "tags" }
+  .modbrowse.modmenu.svn add command -label "Branch Module" -underline 0 \
+     -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "branches" }
   .modbrowse.modmenu.svn add command -label "Make Patch File" -underline 0 \
      -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path 0 }
   .modbrowse.modmenu.svn add command -label "View Patch Summary" -underline 0 \
@@ -322,6 +327,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
   global cvsglb
   global cvs
   global cmd
+  global repository_root
 
   gen_log:log T "ENTER ($CVSorSVN)"
   # If a checkout is already running, abort it
@@ -349,7 +355,6 @@ proc modbrowse_run { {CVSorSVN {}} } {
       gen_log:log D "cvsglb(root) $cvsglb(root)"
       gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
       gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
-      if {$cvsglb(root) == $cvscfg(svnroot)} {return}
 
       set cvsglb(root) $cvscfg(svnroot) 
       if {! [info exists cvscfg(svnroot)] } {
@@ -371,7 +376,6 @@ proc modbrowse_run { {CVSorSVN {}} } {
       gen_log:log D "cvsglb(root) $cvsglb(root)"
       gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
       gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
-      if {$cvsglb(root) == $cvscfg(cvsroot)} {return}
 
       set cvsglb(root) $cvscfg(cvsroot)
       set cmd(cvs_co) \
@@ -396,15 +400,15 @@ proc modbrowse_run { {CVSorSVN {}} } {
       }
       if {$svnurl} {
         gen_log:log D "default,detected svn url"
+        set cvscfg(svnroot) $cvsglb(root)
         gen_log:log D "cvsglb(root) $cvsglb(root)"
         gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
         gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
-        if {$cvsglb(root) == $cvscfg(svnroot)} {return}
 
-        set cvsglb(root) $cvscfg(svnroot) 
-        if {! [info exists cvscfg(svnroot)] } {
-          read_svn_dir .
-        }
+        #set cvsglb(root) $cvscfg(svnroot) 
+        #if {! [info exists cvscfg(svnroot)] } {
+          #read_svn_dir .
+        #}
         .modbrowse.top.lroot configure -text "SVN URL"
         .modbrowse.top.lmcode configure -text "Selection"
         # Call ModTree with the just-in-time level maker
@@ -416,12 +420,12 @@ proc modbrowse_run { {CVSorSVN {}} } {
         parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
       } else {
         gen_log:log D "default"
+        set cvscfg(cvsroot) $cvsglb(root)
         gen_log:log D "cvsglb(root) $cvsglb(root)"
         gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
         gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
-        if {$cvsglb(root) == $cvscfg(cvsroot)} {return}
 
-        set cvsglb(root) $cvscfg(cvsroot)
+        #set cvsglb(root) $cvscfg(cvsroot)
         set cmd(cvs_co) \
             [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
         .modbrowse.top.lroot configure -text "CVSROOT"
@@ -438,6 +442,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
       }
     }
   }
+  set repository_root $cvsglb(root)
   ::picklist::used cvsroot $cvsglb(root)
 
   set bstate [expr {$svnurl ? {disabled} : {normal}}]
@@ -456,6 +461,10 @@ proc modbrowse_run { {CVSorSVN {}} } {
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+    .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
+      -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "tags" }
+    .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
+      -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "branches" }
     .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
       -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
@@ -473,6 +482,10 @@ proc modbrowse_run { {CVSorSVN {}} } {
       -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
+    .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
+      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
+    .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
+      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
     .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
       -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
@@ -678,29 +691,26 @@ proc module_changedir {new_dir} {
     foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
 
     # If this directory has a different cvsroot, redo the tree
-    #if {$incvs} {
+    if {$incvs} {
       if {$cvscfg(cvsroot) != $cvsglb(root)} {
         set cvsglb(root) $cvscfg(cvsroot)
         modbrowse_run
       }
-    #} elseif {$insvn} {
-      #if {$cvscfg(cvsroot) != $cvsglb(root)} {
-        #set cvsglb(root) $cvscfg(cvsroot)
-        #modbrowse_run
-      #}
-    #}
-    if {$insvn || $incvs || $inrcs} {
-      .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
-    } else {
-      .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal
+    } elseif {$insvn} {
+      if {$cvscfg(cvsroot) != $cvsglb(root)} {
+        set cvsglb(root) $cvscfg(cvsroot)
+        modbrowse_run
+      }
     }
+    #if {$insvn || $incvs || $inrcs} {
+      #.modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
+    #} else {
+      #.modbrowse.bottom.buttons.cvsfuncs.import configure -state normal
+    #}
 
     if {[winfo exists .workdir]} {
       ::picklist::used directory [pwd]
       setup_dir
-    }
-    if {! [winfo exists .modbrowse]} {
-      modbrowse_run
     }
   } else {
     set cwd [pwd]

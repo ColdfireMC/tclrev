@@ -14,7 +14,7 @@ proc rcs_branches {files} {
   }
 
   foreach filename $files {
-    ::cvs_branchlog::new rcs "$filename"
+    ::cvs_branchlog::new RCS "$filename"
   }
 
   gen_log:log T "LEAVE"

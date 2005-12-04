@@ -60,18 +60,12 @@ proc read_svn_dir {dirname} {
         }
       }
       set cvscfg(svnroot) [string trimright $root "/"]
-puts "******"
       gen_log:log D "SVN URL: $cvscfg(url)"
-puts "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
-puts "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) $relp
       gen_log:log D "relpath: $cvsglb(relpath)"
-puts "relpath: $cvsglb(relpath)"
       set module_dir $relp
       gen_log:log D "tagname: $current_tagname"
-puts "tagname: $current_tagname"
-puts "******"
     }
   }
   gen_log:log T "LEAVE"
@@ -797,14 +791,12 @@ proc svn_tag {tagname force branch update args} {
     set comment "Tagged using TkSVN"
   }
   append command " $to_path -m \"$comment\""
-  gen_log:log C "$command"
   $v\::do "$command"
   $v\::wait
 
   if {$update == "yes"} {
     # update so we're on the branch
     set command "svn switch $to_path"
-    #gen_log:log C "$command"
     $v\::do "$command" 0 status_colortags
     $v\::wait
   }
@@ -812,6 +804,27 @@ proc svn_tag {tagname force branch update args} {
   if {$cvscfg(auto_status)} {
     setup_dir
   }
+  gen_log:log T "LEAVE"
+}
+
+proc svn_rcopy {from_path to_path} {
+#
+# makes a tag or branch.  Called from the module browser
+#
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER ($from_path $to_path)"
+
+  set v [viewer::new "SVN Copy"]
+  set command "svn copy $from_path"
+  # Can't use file join or it will mess up the URL
+  set comment "Copied using TkSVN"
+  append command " $to_path -m \"$comment\""
+  $v\::do "$command"
+  $v\::wait
+
+  modbrowse_run svn
   gen_log:log T "LEAVE"
 }
 
@@ -917,7 +930,6 @@ proc svn_checkout {dir url rev target cmd} {
 # SVN cat or ls.  Called from module browser
 proc svn_filecat {root path title} {
   gen_log:log T "ENTER ($root $path $title)"
-puts "svn_filecat ($root $path $title)"
 
   # Should do cat if it's a file and ls if it's a path
   if {[string match {*/} $title]} {
@@ -1359,26 +1371,23 @@ namespace eval ::svn_branchlog {
         gen_log:log T "ENTER"
 
         # Sort the revision and branch lists and remove duplicates
-puts "\nsvn_sort_it_all_out"
+        gen_log:log D "\nsvn_sort_it_all_out"
         foreach r [lsort -dictionary [array names revkind]] {
-puts "$r $revkind($r)"
+           gen_log:log D "revkind($r) $revkind($r)"
            if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
-puts ""
-foreach a [lsort -dictionary [array names branchrevs]] {
-puts "branchrevs($a) $branchrevs($a)"
-}
-puts ""
-foreach a [lsort -dictionary [array names revbranches]] {
-puts "revbranches($a) $revbranches($a)"
-}
-puts ""
-foreach a [lsort -dictionary [array names revtags]] {
-puts "revtags($a) $revtags($a)"
-}
-#foreach a [lsort -dictionary [array names revpath]] {
-#puts "revpath($a) $revpath($a)"
-#}
+        gen_log:log D ""
+        foreach a [lsort -dictionary [array names branchrevs]] {
+           gen_log:log D "branchrevs($a) $branchrevs($a)"
+        }
+        gen_log:log D ""
+           foreach a [lsort -dictionary [array names revbranches]] {
+           gen_log:log D "revbranches($a) $revbranches($a)"
+        }
+        gen_log:log D ""
+           foreach a [lsort -dictionary [array names revtags]] {
+           gen_log:log D "revtags($a) $revtags($a)"
+        }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         $ln\::DrawTree now

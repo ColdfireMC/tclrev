@@ -218,11 +218,11 @@ proc dialog_cvs_export { cvsroot module {revtag {}} } {
                                         {Treat files as binary} {-kb}
                                         {Keywords only} {-kk}}
   }
-
+  # Action function
   set dialog_action {cvs_export  $dynamic_dialog(dir) \
      $dynamic_dialog(cvsroot) $dynamic_dialog(kflag) \
-     $dynamic_dialog(revtag) $dynamic_dialog(date) $dynamic_dialog(target) \
-     $dynamic_dialog(module)
+     $dynamic_dialog(revtag) $dynamic_dialog(date) \
+     $dynamic_dialog(target) $dynamic_dialog(module)
   }
 
   set form [dialog_FormCreate "Export Module" $dialog_form_export]
@@ -230,13 +230,12 @@ proc dialog_cvs_export { cvsroot module {revtag {}} } {
 }
 
 # Checkout or Export a SVN module from the Repository Browser
-proc dialog_svn_checkout { svnroot revtag command } {
+proc dialog_svn_checkout { svnroot path command } {
   global dynamic_dialog
   global dialog_action
 
   set dir [pwd]
-  # The "tag" is what we selected, ie the "module"
-  set dynamic_dialog(revtag) $revtag
+  set dynamic_dialog(path) $path
   set dynamic_dialog(svnroot) $svnroot
   set dynamic_dialog(command) $command
   set dynamic_dialog(dir) $dir
@@ -245,7 +244,7 @@ proc dialog_svn_checkout { svnroot revtag command } {
   set dialog_form_export {
     1       0   l {SVN Repository}     1
     svnroot 1   t {SVN URL}            {}
-    revtag  1   t {Path in Repository} {}
+    path    1   t {Path in Repository} {}
     2       0   l {Destination}        1
     dir     1   t {Current Directory}  {}
     target  0   t {Target Directory}   {}
@@ -253,14 +252,43 @@ proc dialog_svn_checkout { svnroot revtag command } {
     command 0   r {Versioning}         {{Versioned (Checkout)}  {checkout}
                                         {Un-Versioned (Export)} {export}}
   }
-
+  # Action function
   set dialog_action {svn_checkout $dynamic_dialog(dir) \
-     $dynamic_dialog(svnroot) $dynamic_dialog(revtag) $dynamic_dialog(target) \
+     $dynamic_dialog(svnroot) $dynamic_dialog(path) $dynamic_dialog(target) \
      $dynamic_dialog(command)
   }
 
   set form [dialog_FormCreate "Checkout or Export" $dialog_form_export]
   gen_log:log T "LEAVE"
+}
+
+# Make a branch or tag (svn copy) from the Repository Browser
+proc dialog_svn_copy { svnroot path kind } {
+  global dynamic_dialog
+  global dialog_action
+
+  set dynamic_dialog(path) $path
+  set dynamic_dialog(svnroot) $svnroot
+  set dynamic_dialog(dir) $svnroot/$kind
+  #set dynamic_dialog(kind) $kind
+
+  # field  req type labeltext          data
+  set dialog_form_copy {
+    1       0   l {SVN Repository}     1
+    svnroot 1   t {SVN URL}            {}
+    path    1   t {Path in Repository} {}
+    2       0   l {Destination}        1
+    dir     1   t {Destination URL}    {}
+    target  1   t {New Branch/Tag}     {}
+  }
+  # Action function
+  set dialog_action {svn_rcopy $dynamic_dialog(svnroot)/$dynamic_dialog(path) \
+                               $dynamic_dialog(dir)/$dynamic_dialog(target)
+  }
+
+  set form [dialog_FormCreate "SVN Copy" $dialog_form_copy]
+  gen_log:log T "LEAVE"
+
 }
 
 # Compare two revisions of a module, from the module browser
@@ -283,6 +311,7 @@ proc dialog_cvs_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
   set dynamic_dialog(module) $module
   set dynamic_dialog(revtagA) $revtagA
   set dynamic_dialog(revtagB) $revtagB
+  set dynamic_dialog(outfile) "$module.patch"
   if {$summary} {
     set dynamic_dialog(outmode) 0
     set dynamic_dialog(difffmt) {-s}
@@ -312,7 +341,7 @@ proc dialog_cvs_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
                                         {Unidiff}            {-u}
                                         {One liner}          {-s}}
   }
-
+  # Action function
   set dialog_action {cvs_patch $dynamic_dialog(cvsroot) \
      $dynamic_dialog(module) $dynamic_dialog(difffmt) \
      $dynamic_dialog(revtagA) $dynamic_dialog(dateA) \
@@ -339,7 +368,7 @@ proc dialog_svn_patch { cvsroot path summary } {
   } else {
     set dynamic_dialog(outmode) 1
   }
-
+  set dynamic_dialog(outfile) "patchfile.patch"
   set dynamic_dialog(pathA) "$cvsroot$path"
 
   # field  req type labeltext          data
@@ -356,9 +385,8 @@ proc dialog_svn_patch { cvsroot path summary } {
   5         0     l {New Revision}     1
   revB      0     t {Revision}         {}
   dateB     0     t {Date}             {}
-  6         0     l {Format}           1
   }
-
+  # Action function
   set dialog_action {svn_patch $dynamic_dialog(pathA) \
      $dynamic_dialog(pathB) \
      $dynamic_dialog(revA) $dynamic_dialog(dateA) \
