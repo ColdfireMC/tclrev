@@ -94,6 +94,8 @@ proc cvs_version {} {
   $v\::log $output
 
   $v\::log "\n-----------------------------------------\n"
+  $v\::log "If you see a usage message here, you may have"
+  $v\::log "an older version of RCS.  It should still work."
   set commandline "rcs -V"
   set ret [catch {eval "exec $commandline"} output]
   $v\::log $output
@@ -188,7 +190,7 @@ proc put-text {tw txt} {
             if {[info exists tags($keyword)] == 0} {
                 error "end tag $keyword without beginning"
             }
-            gen_log:log D "$tw tag add $keyword $tags($keyword) insert"
+            #gen_log:log D "$tw tag add $keyword $tags($keyword) insert"
             $tw tag add $keyword $tags($keyword) insert
             unset tags($keyword)
         } else {
@@ -258,7 +260,7 @@ proc man_description {} {
 
 <h1>DESCRIPTION</h1>
 
-TkCVS is a Tcl/Tk-based graphical interface to the CVS configuration management system. It displays the status of the files in the current working directory, and provides buttons and menus to execute CVS commands on the selected files. TkDiff is included for browsing and merging your changes.
+TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present.  TkDiff is bundled in for browsing and merging your changes.
 
 TkCVS extends CVS with a method to produce a browsable, "user friendly" listing of modules in the repository. This requires some manual editing of the CVSROOT/modules file the first time - see the online help.
   }
@@ -288,8 +290,8 @@ Invoke a log browser for the specified file. -log and -win are mutually exclusiv
 <h3>-root</h3> <itl>cvsroot</itl>
 Set $CVSROOT to the specified repository.
 
-<h3>-win</h3>  <itl>workdir|module</itl>
-Start by displaying the directory browser (the default) or the module browser. -win and -log are mutually exclusive.
+<h3>-win</h3>  <itl>workdir|module|merge</itl>
+Start by displaying the directory browser (the default), the module browser, or the directory-merge tool. -win and -log are mutually exclusive.
 
 <h1>Examples</h1>
 <cmp>% tkcvs -win module -root /jaz/repository</cmp>
@@ -309,19 +311,24 @@ The current directory display shows:
 
 *  The name of the current directory. You can change directories by typing in this field.
 
-*  The location of the current directory in the CVS repository. If it is not contained in the repository you may import it using the menu CVS -> Import WD into Repository.
+*  The location of the current directory in the CVS repository. If it is not contained in the repository you may import it using the menu or toolbar button.
 
-*  A Directory Tag name, if the directory is contained in the CVS repository and it has been checked out against a particular CVS version tag.
+*  A Directory Tag name, if the directory is contained in the CVS repository and it has been checked out against a particular CVS version tag.  If in Subversion, the branch or tag is inferred from the URL based on the conventional trunk-branches-tags repository organization.
 
-*  The CVSROOT of the current directory if it is in the CVS repository, or the setting of the $CVSROOT environment if it is not.
+*  The CVSROOT of the current directory if it's under CVS control, or the URL of the Subversion repository if it's under Subversion control.  If neither is true, it may default to the value of the $CVSROOT environment variable.
 
-*  A list of the files in the current directory with an icon next to each. You select a file by clicking on its name or icon once with the left mouse button. Holding the Control key while clicking will add the file to the group of those already selected. You can select a contiguous group of files by holding the Shift key while clicking. You can also select a group of files by dragging the mouse with the middle or right button pressed to select an area. Selecting an item that's already selected de-selects that item. To unselect all files, click the left mouse button in an empty area of the file list.
+*  A list of the files in the current directory with an icon next to each showing its status. You select a file by clicking on its name or icon once with the left mouse button. Holding the Control key while clicking will add the file to the group of those already selected. You can select a contiguous group of files by holding the Shift key while clicking. You can also select a group of files by dragging the mouse with the middle or right button pressed to select an area. Selecting an item that's already selected de-selects that item. To unselect all files, click the left mouse button in an empty area of the file list.
 
-*  If cvscfg(showstatcol) is set, the cvs status of the file will be spelled out in text.
+*  If cvscfg(showdatecol) is set, the modification time of the file is shown. The format of the date column may be specified with cvscfg(dateformat). The default format was chosen because it sorts the same way alphabetically as chronologically.
 
-*  If cvscfg(showdatecol) is set, the modification time of the file is shown. The format of the date column may be specified with cvscfg(dateformat). The default one sorts the same way alphabetically as chronologically.
+If the directory belongs to a revision system, other columns are present.
 
-*  If cvscfg(showeditcol) is set, a list of people editing the files. This column is only useful if your site uses "cvs watch" and/or "cvs edit".
+* The revision column shows which revision of the file is checked out, and whether it's on the trunk or
+on a branch.
+
+*  If cvscfg(showstatcol) is set, the status column shows the revision of the file spelled out in text.  This information is mostly redundant to the icon in the file column.
+
+*  If cvscfg(showeditcol) is set, a column appears which varies according to revision system. In Subversion, the author of the most recent checkin is shown.  In CVS, it shows a list of people editing the files if your site uses "cvs watch" and/or "cvs edit". Otherwise, it will be empty.  In RCS, it shows who, if anyone, has the file locked.
 
 You can move into a directory by double-clicking on it.
 
@@ -329,7 +336,7 @@ Double clicking on a file will load the file into a suitable editor so you can c
 
 <h2>File Status</h2>
 
-When you are in a directory that is contained in the CVS repository, a file status will be shown by an icon next to each file. Checking the "Status Column" option causes the status to be displayed in text in its own column. The various statuses that can be shown are:
+When you are in a directory that is under CVS or Subversion control, the file status will be shown by an icon next to each file. Checking the "Status Column" option causes the status to be displayed in text in its own column. Some possible statuses are:
 
 <h3>Up-to-date</h3>
 The file is up to date with respect to the repository.
@@ -344,7 +351,7 @@ The file has been added to the repository. This file will become permanent in th
 You have removed the file with remove, and not yet committed your changes.
 
 <h3>Needs Checkout</h3>
- Someone else has committed a newer revision to the repository. The name is slightly misleading; you will ordinarily use update rather than checkout to get that newer revision.
+Someone else has committed a newer revision to the repository. The name is slightly misleading; you will ordinarily use update rather than checkout to get that newer revision.
 
 <h3>Needs Patch</h3>
 Like Needs Checkout, but the CVS server will send a patch rather than the entire file. Sending a patch or sending an entire file accomplishes the same thing.
@@ -359,20 +366,17 @@ This is like Locally Modified, except that a previous update command gave a conf
 The file is not contained in the repository. You may need to add the file to the repository by pressing the "Add" button.
 
 <h3>[directory:CVS]</h3>
-The file is a directory which has been checked out from the CVS repository.
+A directory which has been checked out from a CVS repository.
+
+
+<h3>[directory:SVN]</h3>
+The file is a directory which has been checked out from a Subversion repository.  In Subversion, directories are themselves versioned objects.
 
 <h3>[directory:RCS]</h3>
-The file is a directory which is maintained using RCS.
-
-<h3>[directory:SCCS]</h3>
-The file is a directory which is maintained using SCCS.
+A directory which contains an RCS sub-directory or some files with the ,v suffix, thus presumably containing some files that are under RCS revision control.
 
 <h3>[directory]</h3>
 The file is a directory.
-
-<h2>Editors Display</h2>
-
-If the option cvscfg(showeditcol) has been set then a column labeled "editors" may have entries. This gives the edit status of each of the files in the current directory so it can be easily seen who is currently editing the file. Refer to the CVS documentation for details of how to set up the repository for using the "cvs edit" feature using "cvs watch on", etc.
 
 <h2>File Filters</h2>
 
@@ -387,7 +391,7 @@ You can specify file matching patterns to instruct TkCVS which files you wish to
 The big button at the upper right opens the module browser.
 
 <itl>Module Browse:</itl>
-Opens a module browser window. PUSH THIS BUTTON! The module browser is useful and will teach you all kinds of things about CVS.
+Opens a module browser window which will enable you to explore items in the repository even if they're not checked out.  In CVS, this requires that there be entries in the CVSROOT/modules file.  Browsing can be improved by using TkCVS-specific comments in CVSROOT/modules.
 
 <itl>Go Up:</itl>
 The button to the left of the entry that shows the current directory. Press it and you go up one level.
@@ -397,8 +401,6 @@ There are a number of buttons at the bottom of the window. Pressing on one of th
 <itl>Delete:</itl>
 Press this button to delete the selected files. The files will not be removed from the repository. To remove the files from the repository as well as delete them, press the "Remove" button instead.
 
-<itl>New Folder:</itl>
-Creates a plain directory.
 
 <itl>Edit:</itl>
 Press this button to load the selected files in to an appropriate editor.
@@ -412,11 +414,12 @@ Press this button to re-read the current directory, in case the status of some f
 <itl>Status Check:</itl>
 Shows, in a searchable text window, the status of all the files. By default, it is recursive and lists unknown (?) files. These can be changed in the Options menu.
 
-<itl>Log (Branch) Browse:</itl>
-This button will bring up the log browser window for each of the selected files in the window. This window is described later.
 
 <itl>Directory Branch Browse:</itl>
 Chooses a "representative" file in the current directory and diagrams only the branch tags. Useful for batch merging.
+
+<itl>Log (Branch) Browse:</itl>
+This button will bring up the log browser window for each of the selected files in the window. This window is described later.
 
 <itl>Diff:</itl>
 This compares the selected files with the equivalent files in the repository. A separate program called "TkDiff" (also supplied with TkCVS) is used to do this. For more information on TkDiff, see TkDiff's help menu.
@@ -446,10 +449,16 @@ This button will tag the selected files. The -F (force) option will move the tag
 <itl>Branch Tag:</itl>
 This button will tag the selected files, creating a branch. The -F (force) option will move the tag if it already exists on the file.
 
-<itl>Set Edit Flag:</itl>
+<itl>Lock (CVS and RCS):</itl>
+Lock an RCS file for editing.  If cvscfg(cvslock) is set, lock a CVS file.  Use of locking is philosophically discouraged in CVS since it's against the "concurrent" part of Concurrent Versioning System, but locking policy is nevertheless used at some sites.  One size doesn't fit all.
+
+<itl>Unlock (CVS and RCS):</itl>
+Unlock an RCS file.  If cvscfg(cvslock) is set, unlock a CVS file.
+
+<itl>Set Edit Flag (CVS):</itl>
 This button sets the edit flag on the selected files, enabling other developers to see that you are currently editing those files (See "cvs edit" in the CVS documentation).
 
-<itl>Reset Edit Flag:</itl>
+<itl>Reset Edit Flag (CVS):</itl>
 This button resets the edit flag on the selected files, enabling other developers to see that you are no longer editing those files (See "cvs edit" in the CVS documentation). As the current version of cvs waits on a prompt for "cvs unedit" if changes have been made to the file in question (to ask if you want to revert the changes to the current revision), the current action of tkcvs is to abort the unedit (by piping in nothing to stdin). Therefore, to lose the changes and revert to the current revision, it is necessary to delete the file and do an update (this will also clear the edit flag). To keep the changes, make a copy of the file, delete the original, update, and then move the saved copy back to the original filename.
 
 <itl>Close:</itl>
