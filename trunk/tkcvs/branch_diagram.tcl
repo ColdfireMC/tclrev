@@ -1005,17 +1005,24 @@ puts "sys $sys    loc $loc"
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
+
           foreach a [array names revtags] {
-            if {$revtags($a) == "trunk"} {
-              set trunkrev $a
+            foreach tag $revtags($a) {
+              if {$tag == "trunk"} {
+                set trunkrev $a
+                break
+              }
             }
           }
           if {! [info exists trunkrev]} {
             set min 100000
             foreach a [array names revtags] {
-              if {$revtags($a) != {} } {
-                set rnum [string trimleft $a {r}]
-                if {$rnum < $min} {set min $rnum}
+              if {$a == "" } {continue}
+              foreach tag $revtags($a) {
+                if {$revtags($a) != {} } {
+                  set rnum [string trimleft $a {r}]
+                  if {$rnum < $min} {set min $rnum}
+                }
               }
             }
             set basebranch $revtags(r$min)

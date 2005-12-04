@@ -1261,8 +1261,7 @@ namespace eval ::svn_branchlog {
             set loglines [split $log_output "\n"]
             parse_q $loglines $tag
             set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
-#puts "set revtags($bp) $tag"
-            set revtags($bp) $tag
+            lappend revtags($bp) $tag
             update idletasks
           } 
         }

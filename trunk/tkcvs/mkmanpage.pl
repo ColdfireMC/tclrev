@@ -7,7 +7,7 @@ print ".SH NAME\n";
 print "TkCVS \- a Tk/Tcl Graphical Interface to CVS and Subversion\n";
 print ".SH SYNOPSIS\n";
 print ".B tkcvs\n";
-print "[\\-dir directory] [\\-root cvsroot] [\\-win workdir|module] [\\-log file]\n";
+print "[\\-dir directory] [\\-root cvsroot] [\\-win workdir|module|merge] [\\-log file]\n";
 
 while(<HELP>) {
   if (/^\s+do_help.*{/) {
