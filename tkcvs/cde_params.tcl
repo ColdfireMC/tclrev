@@ -116,6 +116,7 @@ proc get_cde_params { } {
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
   set cvsglb(canvbg) $shadow
+  set cvsglb(readonlybg) $shadow
   set cvsglb(hlfg) $fg
   set cvsglb(textbg) $textbg
   set cvsglb(textfg) $textfg
