@@ -1290,7 +1290,8 @@ namespace eval ::logcanvas {
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove \
-        -readonlybackground $cvsglb(textbg)
+        -readonlybackground $cvsglb(readonlybg)
+        
       button $logcanvas.up.bmodbrowse -image Modules -command modbrowse_run
       button $logcanvas.up.bworkdir -image Workdir -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
@@ -1309,6 +1310,7 @@ namespace eval ::logcanvas {
          
         frame $logcanvas.up.log${fm}_rlogfm -bd 3 -bg $cvscfg(colour$fm)
         text  $logcanvas.up.log${fm}_rlogfm.rcomment -height 5 \
+           -fg $cvsglb(textfg) -bg $cvsglb(textbg)\
            -yscrollcommand [namespace code\
            "$logcanvas.up.log${fm}_rlogfm.yscroll set"]
            scrollbar $logcanvas.up.log${fm}_rlogfm.yscroll \

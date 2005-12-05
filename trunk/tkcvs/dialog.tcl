@@ -511,7 +511,8 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
     -text "Apply the tag" \
     -variable cvscfg(auto_tag)
   entry .merge.top.f.ent -textvariable mtag \
-    -width 32 -relief groove -readonlybackground $cvsglb(textbg)
+    -width 32 -relief groove \
+    -readonlybackground $cvsglb(readonlybg)
   .merge.top.f.ent delete 0 end
   message .merge.top.m2 -aspect 600 -text "to revision $fromrev"
   frame .merge.bottom -relief raised -bd 2

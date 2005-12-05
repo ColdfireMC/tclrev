@@ -110,8 +110,12 @@ if {! [get_cde_params]} {
   destroy .native
   # Hilight colors.  Get the colorful ones.
   entry .testent
-  set cvsglb(textbg) [lindex [.testent configure -background] 4]
-  set cvsglb(textfg) [lindex [.testent configure -foreground] 4]
+  #set cvsglb(textbg) [lindex [.testent configure -background] 4]
+  #set cvsglb(textfg) [lindex [.testent configure -foreground] 4]
+  set cvsglb(textbg) white
+  set cvsglb(textfg) black
+  set cvsglb(readonlybg) gray96
+  #set cvsglb(readonlybg) [lindex [.testent configure -readonlybackground] 4]
   set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
   destroy .testent
@@ -141,6 +145,7 @@ if {! [get_cde_params]} {
     set cvscfg(dialogfont) $cvscfg(guifont)
   }
 
+  option add *Entry.background $cvsglb(textbg)
   option add *Label.font $cvscfg(guifont) userDefault
   option add *Button.font $cvscfg(guifont) userDefault
   option add *Menu.font $menufont userDefault

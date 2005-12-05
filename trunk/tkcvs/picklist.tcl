@@ -100,6 +100,7 @@ proc ::picklist::choose { w data } {
 
 
 proc ::picklist::entry { w varName listName } {
+  global cvsglb
   variable data
 
   if {! [info exists data($listName)]} {
@@ -107,7 +108,7 @@ proc ::picklist::entry { w varName listName } {
   }
 
   frame $w -relief sunken -border 2
-  ::entry $w.e -relief flat -border 0 -textvariable $varName
+  ::entry $w.e -relief flat -border 0 -textvariable $varName -bg $cvsglb(textbg)
   pack $w.e -side left -expand 1 -fill both
   button $w.b -image arr_dn -border 1 \
     -padx 0 -pady 0 -takefocus 0 \
