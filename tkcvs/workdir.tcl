@@ -79,7 +79,7 @@ proc workdir_setup {} {
   label .workdir.top.lcvsroot -text "CVSROOT"
   entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) \
      -relief groove -state readonly \
-     -font $cvscfg(guifont) -readonlybackground $cvsglb(textbg)
+     -font $cvscfg(guifont) -readonlybackground $cvsglb(readonlybg)
 
   grid columnconf .workdir.top 1 -weight 1
   grid rowconf .workdir.top 3 -weight 1

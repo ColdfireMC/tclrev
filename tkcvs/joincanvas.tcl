@@ -548,7 +548,8 @@ namespace eval joincanvas {
       frame $joincanvas.up.eSince -bg $cvscfg(colourB)
       ::picklist::entry $joincanvas.up.rversSince "" alltags
       label $joincanvas.up.lversTo -text "Merge To" -anchor w
-      entry $joincanvas.up.rversTo -relief groove -readonlybackground $cvsglb(textbg)
+      entry $joincanvas.up.rversTo -relief groove \
+        -readonlybackground $cvsglb(readonlybg)
 
       grid columnconf $joincanvas.up 1 -weight 1
       grid rowconf $joincanvas.up 3 -weight 1

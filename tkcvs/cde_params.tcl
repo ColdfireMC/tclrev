@@ -113,6 +113,8 @@ proc get_cde_params { } {
     puts stderr "   Falling back to plain X"
     return 0
   }
+  set cvsglb(bg) $bg
+  set cvsglb(fg) $fg
   set cvsglb(canvbg) $shadow
   set cvsglb(hlfg) $fg
   set cvsglb(textbg) $textbg
