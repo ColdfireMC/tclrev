@@ -94,11 +94,11 @@ proc cvs_version {} {
   $v\::log $output
 
   $v\::log "\n-----------------------------------------\n"
-  $v\::log "If you see a usage message here, you may have"
-  $v\::log "an older version of RCS.  It should still work."
   set commandline "rcs -V"
   set ret [catch {eval "exec $commandline"} output]
   $v\::log $output
+  $v\::log "\nIf you see a usage message here, you have"
+  $v\::log " an old version of RCS.  It should still work.\n"
 
   gen_log:log T "LEAVE"
 }
@@ -262,7 +262,7 @@ proc man_description {} {
 
 TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present.  TkDiff is bundled in for browsing and merging your changes.
 
-TkCVS extends CVS with a method to produce a browsable, "user friendly" listing of modules in the repository. This requires some manual editing of the CVSROOT/modules file the first time - see the online help.
+TkCVS also aids in browsing the repository. For Subversion, the repository tree is browsed like an ordinary file tree.  For CVS, the CVSROOT/modules file is read.  TkCVS extends CVS with a method to produce a browsable, "user friendly" listing of modules. This requires special comments in the CVSROOT/modules file. See "CVS Modules File" for more guidance.
   }
 }
 
@@ -305,30 +305,32 @@ proc current_directory {} {
 
   do_help "Current Directory" {
 
-<h1>CURRENT DIRECTORY DISPLAY</h1>
+<h1>Working Directory Browser</h1>
 
-The current directory display shows:
+The working directory browser shows the files in your local working copy, or "sandbox."  It shows the status of the files at a glance and provides tools to help with most of the common CVS, SVN, and RCS operations you might do.
 
-*  The name of the current directory. You can change directories by typing in this field.
+At the top of the browser you will find:
+*  The name of the current directory. You can change directories by typing in this field. Recently visited directories are saved in the picklist.
 
-*  The location of the current directory in the CVS repository. If it is not contained in the repository you may import it using the menu or toolbar button.
+*  The relative path of the current directory in the repository. If it is not contained in the repository you may import it using the menu or toolbar button.
 
-*  A Directory Tag name, if the directory is contained in the CVS repository and it has been checked out against a particular CVS version tag.  If in Subversion, the branch or tag is inferred from the URL based on the conventional trunk-branches-tags repository organization.
+*  A Directory Tag name, if the directory is contained in the repository and it has been checked out against a particular branch or tag.  In Subversion, the branch or tag is inferred from the URL based on the conventional trunk-branches-tags repository organization.
 
 *  The CVSROOT of the current directory if it's under CVS control, or the URL of the Subversion repository if it's under Subversion control.  If neither is true, it may default to the value of the $CVSROOT environment variable.
 
-*  A list of the files in the current directory with an icon next to each showing its status. You select a file by clicking on its name or icon once with the left mouse button. Holding the Control key while clicking will add the file to the group of those already selected. You can select a contiguous group of files by holding the Shift key while clicking. You can also select a group of files by dragging the mouse with the middle or right button pressed to select an area. Selecting an item that's already selected de-selects that item. To unselect all files, click the left mouse button in an empty area of the file list.
+The main part of the working directory browser is a list of the files in the current directory with an icon next to each showing its status. You select a file by clicking on its name or icon once with the left mouse button. Holding the Control key while clicking will add the file to the group of those already selected. You can select a contiguous group of files by holding the Shift key while clicking. You can also select a group of files by dragging the mouse with the middle or right button pressed to select an area. Selecting an item that's already selected de-selects that item. To unselect all files, click the left mouse button in an empty area of the file list.
 
-*  If cvscfg(showdatecol) is set, the modification time of the file is shown. The format of the date column may be specified with cvscfg(dateformat). The default format was chosen because it sorts the same way alphabetically as chronologically.
+*  The Date column (can be hidden) shows the modification time of the file is shown. The format of the date column may be specified with cvscfg(dateformat). The default format was chosen because it sorts the same way alphabetically as chronologically.
 
 If the directory belongs to a revision system, other columns are present.
 
-* The revision column shows which revision of the file is checked out, and whether it's on the trunk or
-on a branch.
+* The revision column shows which revision of the file is checked out, and whether it's on the trunk or on a branch.
 
-*  If cvscfg(showstatcol) is set, the status column shows the revision of the file spelled out in text.  This information is mostly redundant to the icon in the file column.
+*  The status column (can be hidden) shows the revision of the file spelled out in text.  This information is mostly redundant to the icon in the file column.
 
-*  If cvscfg(showeditcol) is set, a column appears which varies according to revision system. In Subversion, the author of the most recent checkin is shown.  In CVS, it shows a list of people editing the files if your site uses "cvs watch" and/or "cvs edit". Otherwise, it will be empty.  In RCS, it shows who, if anyone, has the file locked.
+*  The Editor/Author/Locker column (can be hidden) varies according to revision system. In Subversion, the author of the most recent checkin is shown.  In CVS, it shows a list of people editing the files if your site uses "cvs watch" and/or "cvs edit". Otherwise, it will be empty.  In RCS, it shows who, if anyone, has the file locked.
+
+The optional columns can be displayed or hidden using the Options menu.
 
 You can move into a directory by double-clicking on it.
 
@@ -368,12 +370,11 @@ The file is not contained in the repository. You may need to add the file to the
 <h3>[directory:CVS]</h3>
 A directory which has been checked out from a CVS repository.
 
-
 <h3>[directory:SVN]</h3>
 The file is a directory which has been checked out from a Subversion repository.  In Subversion, directories are themselves versioned objects.
 
 <h3>[directory:RCS]</h3>
-A directory which contains an RCS sub-directory or some files with the ,v suffix, thus presumably containing some files that are under RCS revision control.
+A directory which contains an RCS sub-directory or some files with the ,v suffix, presumably containing some files that are under RCS revision control.
 
 <h3>[directory]</h3>
 The file is a directory.
@@ -388,9 +389,8 @@ You can specify file matching patterns to instruct TkCVS which files you wish to
 
 <h2>Buttons</h2>
 
+<itl>Module Browser:</itl>
 The big button at the upper right opens the module browser.
-
-<itl>Module Browse:</itl>
 Opens a module browser window which will enable you to explore items in the repository even if they're not checked out.  In CVS, this requires that there be entries in the CVSROOT/modules file.  Browsing can be improved by using TkCVS-specific comments in CVSROOT/modules.
 
 <itl>Go Up:</itl>
@@ -406,7 +406,7 @@ Press this button to delete the selected files. The files will not be removed fr
 Press this button to load the selected files in to an appropriate editor.
 
 <itl>View:</itl>
-Press this button to view the selected files in a Tk text window. This may be a lot faster then Edit, if your preferred editor is xemacs or something of that magnitude.
+Press this button to view the selected files in a Tk text window. This can be a lot faster then Edit, in case your preferred editor is xemacs or something of that magnitude.
 
 <itl>Refresh:</itl>
 Press this button to re-read the current directory, in case the status of some files may have changed.
@@ -416,10 +416,13 @@ Shows, in a searchable text window, the status of all the files. By default, it 
 
 
 <itl>Directory Branch Browse:</itl>
-Chooses a "representative" file in the current directory and diagrams only the branch tags. Useful for batch merging.
+For merging the entire directory. In Subversion, it opens the Branch Browser for "."  In CVS, it chooses a "representative" file in the current directory and opens a graphical tool for directory merges.
 
 <itl>Log (Branch) Browse:</itl>
-This button will bring up the log browser window for each of the selected files in the window. This window is described later.
+This button will bring up the log browser window for each of the selected files in the window. See the Log Browser section
+
+<itl>Annotate:</itl>
+This displays a window in which the selected file is shown with the lines highlighted according to when and by whom they were last revised.  In Subversion, it's also called "blame." 
 
 <itl>Diff:</itl>
 This compares the selected files with the equivalent files in the repository. A separate program called "TkDiff" (also supplied with TkCVS) is used to do this. For more information on TkDiff, see TkDiff's help menu.
@@ -427,12 +430,12 @@ This compares the selected files with the equivalent files in the repository. A 
 <itl>Merge Conflict:</itl>
 If a file's status says "Needs Merge", "Conflict", or is marked with a "C" in CVS Check, there was a difference which CVS needs help to reconcile. This button invokes TkDiff with the -conflict option, opening a merge window to help you merge the differences.
 
-<itl>Update:</itl>
-This updates your sandbox directory with any changes committed to the repository by other developers.
-
 <itl>Check In:</itl>
 This button commits your changes to the repository. This includes adding new files and removing deleted files. When you press this button, a dialog will appear asking you for the version number of the files you want to commit, and a comment. You need only enter a version number if you want to bring the files in the repository up to the next major version number. For example, if a file is version 1.10, and you do not enter a version number, it will be checked in as version 1.11. If you enter the version number 3, then it will be checked in as version 3.0 instead.  It is usually better to use symbolic tags for that purpose.
-If you use rcsinfo to supply a template for the comment, you must use an external editor.  Set cvscfg(use_cvseditor) to do this.
+If you use rcsinfo to supply a template for the comment, you must use an external editor.  Set cvscfg(use_cvseditor) to do this. For checking in to RCS, an externel editor is always used.
+
+<itl>Update:</itl>
+This updates your sandbox directory with any changes committed to the repository by other developers.
 
 <itl>Update with Options:</itl>
 Allows you to update from a different branch, with a tag, with empty directories, and so on.
@@ -440,14 +443,14 @@ Allows you to update from a different branch, with a tag, with empty directories
 <itl>Add Files:</itl>
 Press this button when you want to add new files to the repository. You must create the file before adding it to the repository. To add some files, select them and press the Add Files button. The files that you have added to the repository will be committed next time you press the Check In button. It is not recursive. Use the menu CVS -> Add Recursively for that.
 
-<itl>Remove:</itl>
+<itl>Remove Files:</itl>
 This button will remove files. To remove files, select them and press the Remove button. The files will disappear from the directory, and will be removed from the repository next time you press the Check In button. It is not recursive. Use the menu CVS -> Remove Recursively for that. 
 
 <itl>Tag:</itl>
-This button will tag the selected files. The -F (force) option will move the tag if it already exists on the file.
+This button will tag the selected files. In CVS, the -F (force) option will move the tag if it already exists on the file.
 
 <itl>Branch Tag:</itl>
-This button will tag the selected files, creating a branch. The -F (force) option will move the tag if it already exists on the file.
+This button will tag the selected files, creating a branch. In CVS, the -F (force) option will move the tag if it already exists on the file.
 
 <itl>Lock (CVS and RCS):</itl>
 Lock an RCS file for editing.  If cvscfg(cvslock) is set, lock a CVS file.  Use of locking is philosophically discouraged in CVS since it's against the "concurrent" part of Concurrent Versioning System, but locking policy is nevertheless used at some sites.  One size doesn't fit all.
@@ -470,11 +473,11 @@ proc log_browser {} {
 
   do_help "Log (Branch) Browser" {
 
-<h1>LOG BROWSER</h1>
+<h1>Log (Branch) Browser</h1>
 
 The TkCVS Log Browser window enables you to view a graphical display of the revision log of a file, including all previous versions and any branched versions.
 
-You can get to the log browser window in three ways, either by invoking it directly with "tkcvs -log <filename>", by selecting a file within the main window of TkCVS and pressing the Log Browse button, or by selecting a file in a file list invoked from the module browser and pressing the Log Browse button.
+You can get to the log browser window in three ways, either by invoking it directly with "tkcvs -log <filename>", by selecting a file within the main window of TkCVS and pressing the Log Browse button, or by selecting a file in a list invoked from the module browser and pressing the Log Browse button.
 
 If the Log Browser is examining a checked-out file, the buttons for performing merge operations are enabled.
 
@@ -490,11 +493,11 @@ Each box contains the version number, author of the version, and other informati
 
 <h2>Version Numbers</h2>
 
-Once a file is loaded into the log browser, up to two version numbers may be selected. The primary version (Version A) is selected by clicking the left mouse button on a version box in the main log display.
+Once a file is loaded into the log browser, one or two version numbers may be selected. The primary version (Selection A) is selected by clicking the left mouse button on a version box in the main log display.
 
-The secondary version (Version B) is selected by clicking the right mouse button on a version box in the main log display.
+The secondary version (Selection B) is selected by clicking the right mouse button on a version box in the main log display.
 
-Operations such as "View" and "Merge Branch to Current" always operate only on the primary version selected.
+Operations such as "View" and "Annotate" operate only on the primary version selected.
 
 Operations such as "Diff" and "Merge Changes to Current" require two versions to be selected.
 
@@ -506,32 +509,35 @@ The log browser contains the following buttons:
 Re-reads the revision history of the file.
 
 <itl>View:</itl>
-Pressing this button displays a Tk text window containing the primary version of the file.
+Pressing this button displays a Tk text window containing the version of the file at Selection A.
+
+<itl>Annotate:</itl>
+This displays a window in which the file is shown with its lines highlighted according to when and by whom they were last revised.  In Subversion, it's also called "blame." 
 
 <itl>Diff:</itl>
 Pressing this button runs the "tkdiff" program to display the differences between version A and version B.
 
-<itl>Merge to Current:</itl>
-To use this button, first select a branch version of the file as the primary version. The changes made along the branch up to that version will then be merged into the current version, and stored in the current directory. The version of the file in the current directory will be auto-merged, but no commit will occur.  Then you inspect the merged files, correct any conflicts which may occur, and commit when you are satisfied.  Optionally, TkCVS will tag the version that the merge is from.  It suggests a tag of the form "mergefrom_<rev>_date."  If you use this auto-tagging function, another dialog containing a suggested tag for the merged-to version will appear.  You can leave the dialog up until you are finished, and copy-and-paste the suggested tag into the "Tag" dialog.  It is a good practice to use these tags when doing merges.
-
-<itl>Merge Changes to Current:</itl>
-To use this button, first select two versions anywhere in the file log (although two adjacent branch versions are more commonly selected). It is expected that in most cases version B will be later than version A. CVS will then calculate the changes made between the two versions selected and merge the differences to the current version. Note that if version A is later (higher on the trunk or further along the branch) than version B, a "reverse diff" will be created. This will have the effect of removing the changes from the current version. For example, if the current version is 1.6, version A is 1.5, and version B is 1.3, this button will remove all of the changes made between versions 1.3 and 1.5 from the current version. It may not make sense to select two branch versions on different branches for this function.  Optional tagging of the merged-from and merged-to revisions is the same as for the "Merge to Current" function.
+<itl>Merge:</itl>
+To use this button, select a branch version of the file, other than the branch you are currently on, as the primary version (Selection A). The changes made along the branch up to that version will be merged into the current version, and stored in the current directory. Optionally, select another version (Selection B) and the changes will be from that point rather than from the base of the branch.  The version of the file in the current directory will be merged, but no commit will occur.  Then you inspect the merged files, correct any conflicts which may occur, and commit when you are satisfied.  Optionally, TkCVS will tag the version that the merge is from.  It suggests a tag of the form "mergefrom_<rev>_date."  If you use this auto-tagging function, another dialog containing a suggested tag for the merged-to version will appear.  It's suggested to leave the dialog up until you are finished, then copy-and-paste the suggested tag into the "Tag" dialog.  It is always a good practice to tag when doing merges, and if you use tags of the suggested form, the Branch Browser can diagram them. (Auto-tagging is not implemented in Subversion because, despite the fact that tags are "cheap," it's somewhat impractical to auto-tag single files.  You can do the tagging manually, however.)
 
 <itl>View Tags:</itl>
 This button lists all the tags applied to the file in a searchable text window.
 
 <itl>Close:</itl>
 This button closes the Log Browser. If no other windows are open, TkCVS exits.
+
+<h2>The View Options Menu</h2>
+The View Menu allows you to control what you see in the branch diagram.  You can choose how much information to show in the boxes, whether to show empty revisions, and whether to show tags.  You can even control the size of the boxes.  If you are using Subversion, you may wish to turn the display of tags off.  If they aren't asked for they won't be read from the repository, which can save a lot of time.
   }
 }
 
 proc directory_branch_viewer {} {
 
-  do_help "Branch Viewer and Merge Tool" {
+  do_help "CVS Merge Tool" {
 
-<h1>BRANCH VIEWER AND MERGE TOOL</h1>
+<h1>Merge Tool for CVS</h1>
 
-The Branch Viewer chooses a "representative" file in the current directory and diagrams only the branch tags. If you know that another file is more representative, you can type its name in the top entry and press Return to diagram that file instead.
+The Merge Tool chooses a "representative" file in the current directory and diagrams the branch tags. It tries to pick the "bushiest" file, or failing that, the most-revised file. If you disagree with its choice, you can type the name of another file in the top entry and press Return to diagram that file instead.
 
 The main purpose of this tool is to do merges (cvs update -j rev [-j rev]) on the whole directory. For merging one file at a time, you should use the Log Browser. You can only merge to the line (trunk or branch) that you are currently on. Select a branch to merge from by clicking on it. Then press either the "Merge" or "Merge Changes" button. The version of the file in the current directory will be over-written, but it will not be committed to the repository. You do that after you've reconciled conflicts and decided if it's what you really want.
 
@@ -547,11 +553,11 @@ proc module_browser {} {
 
   do_help "Repository Browser" {
 
-<h1>MODULE BROWSER</h1>
+<h1>Module Browser</h1>
 
-Most of the file related actions of TkCVS are performed within the current-directory window. The module related actions of TkCVS are performed within the module browser. The module browser is displayed using the Module Browse button from the main window.
+Most of the file-related actions of TkCVS are performed within the current-directory window. The module-related actions are performed within the module browser. The module browser can be started from the command line (tkcvs -win moduile) or started from the main window by pressing the big button.
 
-TkCVS arranges modules into directories and subdirectories in a tree structure. You can navigate through the TkCVS module tree using the module browser window.
+TkCVS arranges CVS modules into directories and subdirectories in a tree structure. You can navigate through the module tree using the module browser window.
 
 Using the module browser window, you can select a module to check out. When you check out a module, a new directory is created in the current working directory with the same name as the module.
 
@@ -565,13 +571,15 @@ Once a software release has been tagged, you can use a special type of check out
 
 <h2>Importing</h2>
 
-TkCVS contains a special dialog to allow users to import new files into the repository. New modules can be assigned places within the repository, as well as descriptive names (so that other people know what they are for).
+TkCVS contains a special dialog to allow users to import new files into the repository. In CVS, new modules can be assigned places within the repository, as well as descriptive names (so that other people know what they are for).
 
-When the browser is displayed, it shows two columns. The first column is a tree showing the module codes and directory names of all of the items in the repository. The icon shows whether the item is a directory (which may contain other directories or modules), or whether it is a module (which may be checked out from TkCVS). It is possible for an item to be both a module and a directory. If it has a red ball on it, you can check it out. If it shows a plain folder icon, you have to open the folder to get to the items that you can check out.
+When the Module Browser displays a CVS repository, the first column is a tree showing the module codes and directory names of all of the items in the repository. The icon shows whether the item is a directory (which may contain other directories or modules), or whether it is a module (which may be checked out from TkCVS). It is possible for an item to be both a module and a directory. If it has a red ball on it, you can check it out. If it shows a plain folder icon, you have to open the folder to get to the items that you can check out.
 
 To select a module, click on it with the left mouse button. Only one module can be selected at a time. To clear the selection, click on the item again or click in an empty area of the module column.
 
-The second column shows descriptive titles of the items in the repository, if you have added descriptions to the modules file with the #M syntax.
+The second column shows descriptive titles of the items in the repository, if you have added descriptions to the CVS modules file with the #M syntax.
+
+In Subversion, the repository is browsed directly, like an ordinary file tree, with no extra work about modules.
 
 <h2>Repository Browser Buttons</h2>
 
@@ -613,7 +621,7 @@ proc importing_new_modules {} {
 
   do_help "Importing" {
 
-<h1>IMPORTING NEW MODULES</h1>
+<h1>Importing New Modules</h1>
 
 Before importing a new module, first check to make sure that you have write permission to the repository. Also you'll have to make sure the module name is not already in use.
 
@@ -644,6 +652,8 @@ A one-line descriptive title for your module.  This will be displayed in the rig
 
 <itl>Version Number:</itl>
 The current version number of the module. This should be a number of the form X.Y.Z where .Y and .Z are optional. You can leave this blank, in which case 1 will be used as the first version number.
+
+Importing a directory into Subversion is similar but not so complicated.  You use the SVN -> Import CWD into Repository menu.  You need supply only the path in the repository where you want the directory to go.  The repository must be prepared and the path must exist, however.
   }
 }
 
@@ -651,25 +661,21 @@ proc importing_to_existing_module {} {
 
   do_help "Importing To An Existing Module" {
 
-<h1>IMPORTING TO AN EXISTING MODULE</h1>
+<h1>Importing to an Existing Module (CVS)</h1>
 
 Before importing to an existing module, first check to make sure that you have write permission to the repository.
 
-To import to an existing module you first need a directory where the code is located. Make sure that there is\
-nothing in this directory (including no CVS directory) except the files that you want to import.
+To import to an existing module you first need a directory where the code is located. Make sure that there is nothing in this directory (including no CVS directory) except the files that you want to import.
 
 Open up the Repository Browser by selecting File/Browse Modules from the menu bar.
 
 In the Repository Browser, select File/Import To An Existing Module from the menu bar.
 
-In the dialog that pops up, press the Browse button and select the name of an existing module. Press the OK to\
-close this dialog box. Enter the version number of the code to be imported. 
+In the dialog that pops up, press the Browse button and select the name of an existing module. Press the OK to close this dialog box. Enter the version number of the code to be imported. 
 
-OK the dialog.  Several things happen now.  The directory is imported, your original directory is saved as\
-directory.orig, and the newly created module is checked out.
+OK the dialog.  Several things happen now.  The directory is imported, your original directory is saved as directory.orig, and the newly created module is checked out.
 
-When it finishes, you will find the original Working Directory Browser showing the original code. If you\
-press the "Re-read the current directory" button you will see the results of the checked out code.
+When it finishes, you will find the original Working Directory Browser showing the original code. If you press the "Re-read the current directory" button you will see the results of the checked out code.
 
 Here is a more detailed description of the fields in the Import Dialog.
 
@@ -680,8 +686,7 @@ A name for the existing module. Filled in by the use of the the Browse button
 The location in the repository tree where the existing module is. Filled in by the use of the Browse button. 
 
 <itl>Version Number:</itl>
-The current version number of the module to be imported. This should be a number of the form X.Y.Z where\
-.Y and .Z are optional. You can leave this blank, in which case 1 will be used as the first version number.
+The current version number of the module to be imported. This should be a number of the form X.Y.Z where .Y and .Z are optional. You can leave this blank, in which case 1 will be used as the first version number.
   }
 }
 
@@ -689,38 +694,25 @@ proc vendor_merge {} {
 
   do_help "Vendor Merge" {
 
-<h1>VENDOR MERGE</h1>
+<h1>Vendor Merge (CVS)</h1>
 
-Software development is sometimes based on source distribution from a vendor or third-party distributor.\
-After building a local version of this distribution, merging or tracking the vendor's future release into\
-the local version of the distribution can be done with the vendor merge command.
+Software development is sometimes based on source distribution from a vendor or third-party distributor. After building a local version of this distribution, merging or tracking the vendor's future release into the local version of the distribution can be done with the vendor merge command.
 
-The vendor merge command assumes that a separate module has already been defined for the vendor or third-party\
-distribution with the use of the "Import To A New Module" and "Import To An Existing Module" commands. It also\
-assumes that a separate module has already been defined for the local code for which the vendor merge operation\
-is to be applied to.
+The vendor merge command assumes that a separate module has already been defined for the vendor or third-party distribution with the use of the "Import To A New Module" and "Import To An Existing Module" commands. It also assumes that a separate module has already been defined for the local code for which the vendor merge operation is to be applied to.
 
 Start from an empty directory and invoke tkcvs. Open up the Repository Browser by selecting File/Browse Modules from the menu bar.
 
-Checkout the module of the local code to be merged with changes from the vendor module. (Use the red icon with the\
-down arrow)
+Checkout the module of the local code to be merged with changes from the vendor module. (Use the red icon with the down arrow)
 
-In the Repository Browser, after verifying that the Module entry box still has the name the module of the local code to which\
-the vendor code is to be merged into, select File/Vendor Merge from the menu bar.
+In the Repository Browser, after verifying that the Module entry box still has the name the module of the local code to which the vendor code is to be merged into, select File/Vendor Merge from the menu bar.
 
 In the Module Level Merge With Vendor Code window, press the Browse button to select the module to be used as the vendor module.
 
-OK the dialog. All revisions from the vendor module will be shown in the two scroll lists. Fill in the From and To entry\
-boxes by clicking in the appropriate scroll lists.
+OK the dialog. All revisions from the vendor module will be shown in the two scroll lists. Fill in the From and To entry boxes by clicking in the appropriate scroll lists.
 
-Ok the dialog. Several things happens now. Several screens will appear showing the output from cvs commands for\
-(1)checking out temp files, (2)cvs merge, and (3)cvs rdiff. Information in these screens will tell you what routines will have\
-merge conflicts and what files are new or deleted. After perusing the files, close each screen. <itl>(In the preceeding\
-dialog box, there was an option to save outputs from the merge and rdiff operations to files CVSmerge.out and CVSrdiff.out.)</itl>
+Ok the dialog. Several things happens now. Several screens will appear showing the output from cvs commands for (1)checking out temp files, (2)cvs merge, and (3)cvs rdiff. Information in these screens will tell you what routines will have merge conflicts and what files are new or deleted. After perusing the files, close each screen. <itl>(In the preceeding dialog box, there was an option to save outputs from the merge and rdiff operations to files CVSmerge.out and CVSrdiff.out.)</itl>
 
-The checked out local code will now contain changes from a merge between two revisions of the vendor modules. This\
-code will not be checked into the repository. You can do that after you've reconciled conflicts and decide if that is what you\
-really want. 
+The checked out local code will now contain changes from a merge between two revisions of the vendor modules. This code will not be checked into the repository. You can do that after you've reconciled conflicts and decide if that is what you really want. 
 
 A detailed example on how to use the vendor merge operation is provided in the PDF file vendor5readme.pdf. 
   }
@@ -730,13 +722,13 @@ proc configuration_files {} {
 
   do_help "Configuration Files" {
 
-<h1>CONFIGURATION FILES</h1>
+<h1>Configuration Files</h1>
 
 There are two configuration files for TkCVS. The first is stored in the directory in which the *.tcl files for TkCVS are installed. This is called tkcvs_def.tcl. You can put a file called site_def in that directory, too. That's a good place for site-specific things like tagcolours. Unlike tkcvs_def.tcl, it will not be overwritten when you install a newer version of TkCVS.
 
 Values in the site configuration files can be over-ridden at the user level by placing a .tkcvs file in your home directory. Commands in either of these files should use Tcl syntax. In other words, to set a variable name, you should have the following command in your .tkcvs file:
 
-<cmp>    set variable-name value</cmp>
+<cmp>    set variablename value</cmp>
 
 for example:
 <cmp>    set cvscfg(editor) "gvim"</cmp>
@@ -763,6 +755,9 @@ Most colors and fonts can be customized by using the options database. For examp
 <cmp>   option add *ToolTip.background LightGoldenrod1 </cmp>
 <cmp>   option add *ToolTip.foreground black </cmp>
 
+<h3>cvscfg(picklist_items)</h3>
+Maximum number of visited directories and repositories to save in the picklist history
+
 <h2>Log browser</h2>
 <h3>cvscfg(colourA) cvscfg(colourB)</h3>
 Hilight colours for revision-log boxes
@@ -774,7 +769,7 @@ Colors for marking tags. For example:
 
 <h2>Module browser</h2>
 <h3>cvscfg(aliasfolder)</h3>
-In the module browser, if true this will cause the alias modules to be grouped in one folder. Cleans up clutter if there are a lot of aliases.
+In the CVS module browser, if true this will cause the alias modules to be grouped in one folder. Cleans up clutter if there are a lot of aliases.
 
 <h2>User preferences</h2>
 <h3>cvscfg(allfiles)</h3>
@@ -787,6 +782,8 @@ Whether to tag the merged-from revision when using TkCVS to merge different revi
 Ask for confirmation before performing an operation(true or false)
 <h3>cvscfg(dateformat)</h3>
 Format for the date string shown in the "Date" column, for example "%Y/%m/%d %H:%M"
+<h3>cvscfg(cvslock)</h3>
+Set to true to turn on the ability to use cvs-admin locking from the GUI.
 <h3>cvscfg(econtrol)</h3>
 Set this to true to turn on the ability to use CVS Edit and Unedit, if your site is configured to allow the feature.
 <h3>cvscfg(editor)</h3>
@@ -812,7 +809,7 @@ How many lines to keep in the trace window
 <h3>cvscfg(status_filter)</h3>
 Filter out unknown files (status "?") from CVS Check and CVS Update reports.
 <h3>cvscfg(use_cvseditor)</h3>
-Let CVS invoke an editor for commit log messages rather than having tkcvs use its own input box.
+Let CVS invoke an editor for commit log messages rather than having tkcvs use its own input box.  By doing this, your site's commit template (rcsinfo) can be used.
 
 <h2>File filters</h2>
 <h3>cvscfg(file_filter)</h3>
@@ -852,9 +849,11 @@ proc environment_variables {} {
 
   do_help "Environment Variables" {
 
-<h1>ENVIRONMENT VARIABLES</h1>
+<h1>Environment Variables</h1>
 
 You should have the CVSROOT environment variable pointing to the location of your CVS repository before you run TkCVS. It will still allow you to work with different repositories within the same session.
+
+If you wish TkCVS to point to a Subversion repository by default, you can set the environment variable SVNROOT.  This has no meaning to Subversion itself, but it will clue TkCVS if it's started in an un-versioned directory.
   }
 }
 
@@ -862,7 +861,7 @@ proc user_defined_menu {} {
 
   do_help "User Defined Menu" {
 
-<h1>USER CONFIGURABLE MENU EXTENSIONS</h1>
+<h1>User Configurable Menu Extensions</h1>
 
 It is possible to extend the TkCVS menu by inserting additional commands into the .tkcvs or tkcvs_def.tcl files. These extensions appear on an extra menu to the right of the TkCVS Options menu.
 
@@ -894,9 +893,9 @@ The output of the user defined commands will be displayed in a window when the c
 
 proc cvs_modules_file {} {
 
-  do_help "CVS modules File" {
+  do_help "CVS Modules File" {
 
-<h1>CVS "modules" FILE</h1>
+<h1>CVS Modules File</h1>
 
 If you haven't put anything in your CVSROOT/modules file, do so. See the "Administrative Files" section of the CVS manual. Then, you can add comments which TkCVS can use to title the modules and to display them in a tree structure.
 

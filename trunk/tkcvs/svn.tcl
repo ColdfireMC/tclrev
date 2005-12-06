@@ -313,7 +313,7 @@ proc svn_commit_dialog {} {
   pack .commit.comment -side top -fill both -expand 1
   label .commit.lcomment
   text .commit.tcomment -relief sunken -width 70 -height 10 \
-    -exportselection 1 \
+    -bg $cvsglb(textbg) -exportselection 1 \
     -wrap word -border 2 -setgrid yes
 
 
