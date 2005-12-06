@@ -944,6 +944,17 @@ proc svn_filecat {root path title} {
   $v\::do "$commandline"
 }
 
+# SVN log.  Called from module browser
+proc svn_filelog {root path title} {
+  gen_log:log T "ENTER ($root $path $title)"
+
+  set commandline "svn log \"$root/$path\""
+  set wintitle "SVN Log"
+
+  set v [viewer::new "$wintitle $root/$path"]
+  $v\::do "$commandline"
+}
+
 proc svn_fileview {revision filename kind} {
 # This views a specific revision of a file in the repository.
 # For files checked out in the current sandbox.

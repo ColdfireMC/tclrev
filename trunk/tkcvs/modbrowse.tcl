@@ -73,6 +73,7 @@ proc modbrowse_setup {} {
   frame .modbrowse.bottom -relief groove -border 2 -height 128
   frame .modbrowse.bottom.buttons
   frame .modbrowse.bottom.buttons.cvsfuncs -relief groove -bd 2
+  frame .modbrowse.bottom.buttons.svnfuncs -relief groove -bd 2
   frame .modbrowse.bottom.buttons.modfuncs -relief groove -bd 2
   frame .modbrowse.bottom.buttons.closefm -relief groove -bd 2
 
@@ -80,16 +81,12 @@ proc modbrowse_setup {} {
   pack .modbrowse.bottom.buttons -side top -fill x -expand yes
   pack .modbrowse.bottom.buttons.closefm -side right -padx 10
   pack .modbrowse.bottom.buttons.cvsfuncs -side left
+  pack .modbrowse.bottom.buttons.svnfuncs -side left -expand yes
   pack .modbrowse.bottom.buttons.modfuncs -side left -expand yes
 
   #
   # Create buttons
   #
-  button .modbrowse.bottom.buttons.modfuncs.filecat -image Fileview \
-    -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
-  button .modbrowse.bottom.buttons.modfuncs.remove -image SvnRemove \
-    -command { svn_delete $cvscfg(svnroot) $modbrowse_path }
-
   button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files \
     -command { browse_files $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches \
@@ -104,6 +101,13 @@ proc modbrowse_setup {} {
     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
   button .modbrowse.bottom.buttons.modfuncs.branchtag -image Branchtag \
     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
+
+  button .modbrowse.bottom.buttons.svnfuncs.filecat -image Fileview \
+    -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
+  button .modbrowse.bottom.buttons.svnfuncs.filelog -image Log \
+    -command { svn_filelog $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
+  button .modbrowse.bottom.buttons.svnfuncs.remove -image SvnRemove \
+    -command { svn_delete $cvscfg(svnroot) $modbrowse_path }
 
   button .modbrowse.bottom.buttons.cvsfuncs.import -image Import \
      -command { import_run }
@@ -123,23 +127,26 @@ proc modbrowse_setup {} {
   grid columnconf .modbrowse.bottom.buttons.modfuncs 7 -weight 1
   grid rowconf .modbrowse.bottom.buttons.modfuncs 1 -weight 1
 
-  grid .modbrowse.bottom.buttons.modfuncs.filecat -column 0 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.filebrowse -column 0 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.filebrowse -column 1 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.checkout -column 1 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.checkout -column 2 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.export -column 2 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.export -column 3 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.tag -column 3 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.tag -column 4 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.branchtag -column 4 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.branchtag -column 5 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.patchsummary -column 5 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.patchsummary -column 6 -row 0 \
+  grid .modbrowse.bottom.buttons.modfuncs.patchfile -column 6 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.patchfile -column 7 -row 0 \
+
+  grid .modbrowse.bottom.buttons.svnfuncs.filecat -column 0 -row 0 \
      -ipadx 4 -ipady 4
-  grid .modbrowse.bottom.buttons.modfuncs.remove -column 8 -row 0 \
+  grid .modbrowse.bottom.buttons.svnfuncs.filelog -column 1 -row 0 \
+     -ipadx 4 -ipady 4
+  grid .modbrowse.bottom.buttons.svnfuncs.remove -column 2 -row 0 \
      -ipadx 4 -ipady 4
 
   pack .modbrowse.bottom.buttons.closefm.close \
@@ -155,10 +162,12 @@ proc modbrowse_setup {} {
      {"Branch all files in a module"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.filebrowse \
      {"Browse the files in a CVS module"}
-  set_tooltips .modbrowse.bottom.buttons.modfuncs.filecat \
+  set_tooltips .modbrowse.bottom.buttons.svnfuncs.filecat \
      {"Show a file in the SVN repository"}
-  set_tooltips .modbrowse.bottom.buttons.modfuncs.remove \
-     {"Remove a branch or tag from the SVN repository"}
+  set_tooltips .modbrowse.bottom.buttons.svnfuncs.filelog \
+     {"Show the history log of a file in the SVN repository"}
+  set_tooltips .modbrowse.bottom.buttons.svnfuncs.remove \
+     {"Remove something from the SVN repository"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.patchsummary \
      {"Show a summary of differences between versions"}
   set_tooltips .modbrowse.bottom.buttons.modfuncs.patchfile \
@@ -200,6 +209,8 @@ proc modbrowse_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) who.gif]
   image create photo SvnRemove \
     -format gif -file [file join $cvscfg(bitmapdir) delete_red.gif]
+  image create photo Log \
+    -format gif -file [file join $cvscfg(bitmapdir) log.gif]
   if {[catch "image type arr_dn"]} {
     workdir_images
   }
@@ -453,8 +464,6 @@ proc modbrowse_run { {CVSorSVN {}} } {
     $widget configure -state $bstate
   }
   if {$svnurl} {
-    .modbrowse.bottom.buttons.modfuncs.filecat configure -state normal
-    .modbrowse.bottom.buttons.modfuncs.remove configure -state normal
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
       -command { svn_import_run }
     .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
@@ -469,11 +478,12 @@ proc modbrowse_run { {CVSorSVN {}} } {
       -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
       -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 0 }
+    .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
+    .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
+    .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
   } else {
-    .modbrowse.bottom.buttons.modfuncs.filecat configure -state disabled
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
-    .modbrowse.bottom.buttons.modfuncs.remove configure -state disabled
     .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
       -command { cvs_checkout_dialog $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
@@ -490,6 +500,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
       -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
       -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
+    .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
+    .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
+    .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
   }
   if {$insvn || $incvs || $inrcs} {
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled

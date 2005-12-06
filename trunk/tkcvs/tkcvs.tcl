@@ -86,9 +86,12 @@ if {[file exists [file join $TCDIR tkcvs_def.tcl]]} {
   source [file join $TCDIR tkcvs_def.tcl]
 }
 
+# This helps us recover from a problem left behind by tkcvs 7.2
+set cvscfg(checkrecursive) false
+
 set optfile [file join $cvscfg(home) .tkcvs]
 if {[file exists $optfile]} {
-  source $optfile
+  catch {source $optfile}
 }
 ::picklist::load
 
@@ -110,7 +113,6 @@ if {! [get_cde_params]} {
   destroy .native
   # Hilight colors.  Get the colorful ones.
   entry .testent
-  #set cvsglb(textbg) [lindex [.testent configure -background] 4]
   #set cvsglb(textfg) [lindex [.testent configure -foreground] 4]
   set cvsglb(textbg) white
   set cvsglb(textfg) black
