@@ -49,8 +49,8 @@ while(<HELP>) {
 }
 
 print ".SH SEE ALSO\n";
-print "cvs(1)\n";
+print "cvs(1), svn(1)\n";
 print ".SH AUTHOR\n";
-print "Del (del\@babel.babel.com.au)\n";
+print "Del (del\@babel.babel.com.au): Maintenance and Subversion support: Dorothy Robinson\n";
 
 close HELP;

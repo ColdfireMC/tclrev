@@ -938,7 +938,6 @@ Empty directories always pruned (-P).
   pack .update.options.normbin -in .update.options -side top -fill x
 
 
-
   # If the user wants to simply do a normal update
   radiobutton .update.options.keep.select -text "Keep same branch or trunk." \
     -variable cvsglb(tagmode_selection) -value "Keep" -anchor w
