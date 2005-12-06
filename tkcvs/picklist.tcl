@@ -151,6 +151,7 @@ proc ::picklist::save { } {
     foreach name {cvsroot directory} {
       puts $file $name
       set c 0
+      if {! [info exists data($name)]} { continue }
       foreach item $data($name) {
         # number of items saved is a preference
         if {$c >= $cvscfg(picklist_items)} {break}
