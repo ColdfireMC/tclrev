@@ -35,8 +35,7 @@ proc ::picklist::choose { w data } {
 
   toplevel .picklist
 
-  listbox .picklist.list -relief raised -border 1 -font $cvscfg(listboxfont) \
-    -bg $cvsglb(textbg)
+  listbox .picklist.list -relief raised -border 1 -font $cvscfg(listboxfont)
   pack .picklist.list -side left -fill both -expand 1
 
   if {[llength $data] <= 8} {
