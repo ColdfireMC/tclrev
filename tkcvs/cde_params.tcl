@@ -11,8 +11,10 @@ proc get_cde_params { } {
   set guifont [option get . buttonFontList buttonFontList]
   set txtfont [option get . FontSet FontSet]
   set listfont [option get . textFontList textFontList]
-  set textbg $bg
-  set textfg $fg
+  #set textbg $bg
+  #set textfg $fg
+  set textbg white
+  set textfg black
 
   # If any of these aren't set, I don't think we're in CDE after all
   if {![string length $fg]} {return 0}
@@ -24,13 +26,6 @@ proc get_cde_params { } {
   set txtfont [string trimright $txtfont ":"]
   set listfont [string trimright $txtfont ":"]
   regsub {medium} $txtfont "bold" dlgfont
-
-  #puts "Background $bg"
-  #puts "Foreground $fg"
-  #puts "UI Font $guifont"
-  #puts "User Font $txtfont"
-  #puts "Text Font $listfont"
-  #puts "Dialog Font $dlgfont"
 
   set cvscfg(guifont) $guifont
   set cvscfg(listboxfont) $listfont
@@ -94,7 +89,7 @@ proc get_cde_params { } {
           gets $fh wkspc4
           gets $fh iconbg  ;#control panel bg too
           close $fh
-      
+
           option add *Entry.highlightColor $activetitle userDefault
           option add *selectColor $activetitle userDefault
           option add *Text.highlightColor $wkspc4 userDefault
@@ -113,6 +108,26 @@ proc get_cde_params { } {
     puts stderr "   Falling back to plain X"
     return 0
   }
+
+  set rgb_t [winfo rgb . $textbg]
+  set r [expr [lindex $rgb_t 0]/256]
+  set g [expr [lindex $rgb_t 1]/256]
+  set b [expr [lindex $rgb_t 2]/256]
+  #puts "$r $g $b"
+  set sum [expr {$r + $b + $g}]
+  #puts "sum $sum"
+  set half [expr {(256 + 256 + 256)/2}]
+  #puts "half $half"
+  set textfg [expr {$sum > $half ? {black} : {white}}]
+
+  #puts "Background $bg"
+  #puts "Foreground $fg"
+  #puts "Text Background $textbg"
+  #puts "Text Foreground $textfg"
+  #puts "UI Font $guifont"
+  #puts "User Font $txtfont"
+  #puts "Text Font $listfont"
+  #puts "Dialog Font $dlgfont"
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
   set cvsglb(canvbg) $shadow
@@ -124,6 +139,7 @@ proc get_cde_params { } {
     set cvsglb(hlbg) $fg
     set cvsglb(hlfg) $bg
   }
+
 
   option add *Button.font $guifont userDefault
   option add *Label.font $guifont userDefault

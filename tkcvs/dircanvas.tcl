@@ -392,7 +392,7 @@ proc DirCanvas:clearTextHBox {w id} {
 
     # clear the tag corresponding to the text label
     catch {$w.filecol.list delete HBox$id}
-    $w.filecol.list itemconfigure $id -fill $cvsglb(textfg)
+    $w.filecol.list itemconfigure $id -fill $cvsglb(fg)
 }
 
 # set a text highligh box (used by set/clearselection)

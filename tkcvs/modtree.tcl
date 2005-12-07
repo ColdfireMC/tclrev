@@ -519,7 +519,7 @@ proc ModTree:clearTextHBox {w id} {
 
     # clear the tag corresponding to the text label
     catch {$w.tree.list delete HBox$id}
-    $w.tree.list itemconfigure $id -fill $cvsglb(textfg) 
+    $w.tree.list itemconfigure $id -fill $cvsglb(fg) 
 }
 
 # set a text highligh box (used by set/clearselection)
