@@ -63,7 +63,7 @@ proc workdir_setup {} {
   button .workdir.top.updir_btn -image updir \
     -command {change_dir ..}
 
-  label .workdir.top.lmodule -text "Module"
+  label .workdir.top.lmodule -text "Path"
   label .workdir.top.tmodule -textvariable module_dir -anchor w -relief groove
 
   label .workdir.top.ltagname -text "Tag"
@@ -91,7 +91,7 @@ proc workdir_setup {} {
   grid .workdir.top.ltagname -column 0 -row 2 -sticky nw
   grid .workdir.top.ttagname -column 1 -row 2 -padx 4 -pady 1 -sticky new
   grid .workdir.top.lcvsroot -column 0 -row 3 -sticky nw
-  grid .workdir.top.tcvsroot -column 1 -row 3 -padx 4 -pady 1 -sticky new
+  grid .workdir.top.tcvsroot -column 1 -row 3 -padx 3 -sticky new
 
 
   # Pack the bottom before the middle so it doesnt disappear if
@@ -938,8 +938,8 @@ proc setup_dir { } {
   gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
 
   .workdir.top.bmodbrowse configure -image Modules
-  .workdir.top.lmodule configure -text ""
-  .workdir.top.ltagname configure -text ""
+  .workdir.top.lmodule configure -text "Path"
+  .workdir.top.ltagname configure -text "Tag"
   # Start with the revision-control menus disabled
   .workdir.menubar entryconfigure "CVS" -state normal
   .workdir.menubar entryconfigure "SVN" -state normal
@@ -999,7 +999,7 @@ proc setup_dir { } {
     # Top
     .workdir.top.bmodbrowse configure -image Modules_svn \
       -command {modbrowse_run svn}
-    .workdir.top.lmodule configure -text ""
+    .workdir.top.lmodule configure -text "Path"
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)

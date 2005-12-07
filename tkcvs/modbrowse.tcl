@@ -63,7 +63,7 @@ proc modbrowse_setup {} {
   grid .modbrowse.top.lroot -column 0 -row 0 -sticky w
   grid .modbrowse.top.troot -column 1 -row 0 -columnspan 2 -padx 4 -sticky new
   grid .modbrowse.top.lmcode -column 0 -row 1 -sticky w
-  grid .modbrowse.top.tmcode -column 1 -row 1 -padx 4 -sticky new
+  grid .modbrowse.top.tmcode -column 1 -row 1 -padx 3 -sticky new
   grid .modbrowse.top.lcwd -column 0 -row 2 -sticky w
   grid .modbrowse.top.tcwd -column 1 -row 2 -padx 4 -sticky new
   grid .modbrowse.top.bworkdir -column 2 -row 1 -rowspan 2 -sticky w
