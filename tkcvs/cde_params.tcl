@@ -116,7 +116,9 @@ proc get_cde_params { } {
   #puts "$r $g $b"
   set sum [expr {$r + $b + $g}]
   #puts "sum $sum"
-  set half [expr {(256 + 256 + 256)/2}]
+  #set half [expr {(256 + 256 + 256)/2}]
+  # Try two-thirds
+  set half [expr {2 * ((256 + 256 + 256)/3)}]
   #puts "half $half"
   set textfg [expr {$sum > $half ? {black} : {white}}]
 
