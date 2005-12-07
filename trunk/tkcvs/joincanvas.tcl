@@ -554,7 +554,7 @@ namespace eval joincanvas {
       grid columnconf $joincanvas.up 1 -weight 1
       grid rowconf $joincanvas.up 3 -weight 1
       grid $joincanvas.up.lfname -column 0 -row 0 -sticky w
-      grid $joincanvas.up.rfname -column 1 -row 0 -padx 4 -sticky ew
+      grid $joincanvas.up.rfname -column 1 -row 0 -padx 3 -sticky ew
       grid $joincanvas.up.bworkdir -column 2 -row 0 -rowspan 2 \
         -sticky e -padx 2 -pady 1
       grid $joincanvas.up.lversFrom -column 0 -row 1 -sticky w
@@ -564,7 +564,7 @@ namespace eval joincanvas {
       grid $joincanvas.up.lversSince -column 0 -row 2 -sticky w
       grid $joincanvas.up.eSince -column 1 -row 2 -sticky ew -padx 4
       grid $joincanvas.up.lversTo -column 0 -row 3 -sticky w
-      grid $joincanvas.up.rversTo -column 1 -row 3 -padx 4 -sticky ew
+      grid $joincanvas.up.rversTo -column 1 -row 3 -padx 3 -sticky ew
 
       pack $joincanvas.up.rversFrom -in $joincanvas.up.eFrom \
         -padx 2 -pady 2 -fill x
