@@ -30,7 +30,6 @@ proc ModTree:create {w {open_func {}} } {
       [lindex [.modbrowse.top.bworkdir configure -disabledforeground] 4]
   set buttonhilite \
       [lindex [.modbrowse.top.bworkdir configure -highlightbackground] 4]
-  set cvsglb(canvbg) [lindex [$w.tree.list configure -background] 4]
   set selcolor [option get . selectColor selectColor]
 
   if {[string length $selcolor]} {
@@ -276,9 +275,15 @@ proc ModTree:buildlayer {w v in} {
         -font $cvscfg(listboxfont) -anchor w \
         -tag $w.tree.list.tx$j
     
-    $w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$vx/$c\""
-    $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w \"$vx/$c\""
-    $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w \"$vx/$c\""
+    # In the bindings, filenames need any single percents replaced with
+    # double to avoid interpretation as an event field
+    set f "$vx/$c"
+    regsub -all {\%} $f {%%} fn
+    regsub -all {\$} $fn {\$} fn
+
+    $w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$fn\""
+    $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w \"$fn\""
+    $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w \"$fn\""
 
     #gen_log:log D "$vx/$c $lbl   j=$j"
     if {[info exists Tree($w:$vx/$c:title)]} {
@@ -396,7 +401,6 @@ proc ModTree:clearselection {w} {
 
 proc ModTree:flash {widg v} {
   global Tree
-#puts "Flash: $v"
 
   set j $Tree($widg:$v:tag)
   ModTree:setTextHBox $widg $widg.tree.list.tx$j

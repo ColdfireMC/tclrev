@@ -38,7 +38,7 @@ proc DirCanvas:create {w args} {
     set cvsglb(dfg) [lindex [.workdir.top.bmodbrowse configure -disabledforeground] 4]
     set buttonhilite [lindex [.workdir.top.bmodbrowse configure -highlightbackground] 4]
   }
-  set cvsglb(canvbg) [lindex [$w.filecol.list configure -background] 4]
+  #set cvsglb(canvbg) [lindex [$w.filecol.list configure -background] 4]
   set selcolor [option get . selectColor selectColor]
   if {[string length $selcolor]} {
     set cvsglb(hlbg) $selcolor
@@ -46,7 +46,7 @@ proc DirCanvas:create {w args} {
   if {$cvsglb(hlbg) == $cvsglb(canvbg)} {
     set cvsglb(hlbg) $buttonhilite
   }
-  if {! [info exists cvsglb(glb_highlight]} {
+  if {! [info exists cvsglb(glb_highlight)]} {
     set cvsglb(glb_highlight) $cvsglb(hlbg)
   }
 

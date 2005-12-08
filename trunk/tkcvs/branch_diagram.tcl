@@ -1037,7 +1037,9 @@ namespace eval ::logcanvas {
                 }
               }
             }
-            set basebranch $revtags(r$min)
+            if {$min != 100000} {
+              set basebranch $revtags(r$min)
+            }
           }
 
           # Start drawing, beginning with the trunk

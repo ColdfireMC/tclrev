@@ -142,7 +142,6 @@ proc get_cde_params { } {
     set cvsglb(hlfg) $bg
   }
 
-
   option add *Button.font $guifont userDefault
   option add *Label.font $guifont userDefault
   option add *Menu.font $guifont userDefault

@@ -900,8 +900,8 @@ proc svn_merge {fromrev sincerev frombranch file} {
 }
 
 # SVN Checkout or Export.  Called from Repository Browser
-proc svn_checkout {dir url rev target cmd} {
-  gen_log:log T "ENTER ($dir $url $rev $target $cmd)"
+proc svn_checkout {dir url path rev target cmd} {
+  gen_log:log T "ENTER ($dir $url $path $rev $target $cmd)"
 
   foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
   if {$insvn} { 
@@ -912,18 +912,21 @@ proc svn_checkout {dir url rev target cmd} {
     }
   }
 
-  set command "svn $cmd $url/$rev"
+  set command "svn $cmd"
+  if {$rev != {} } {
+    # Let them get away with saying r3 instead of 3
+    set rev [string trimleft $rev {r}] 
+    append command " -r$rev"
+  }
+  append command " $url/$path"
   if {$target != {} } {
     append command " $target"
   }
   gen_log:log C "$command"
 
-  set v [viewer::new "SVN Export"]
-  set cwd [pwd]
-  cd $dir/file
+  set v [viewer::new "SVN $cmd"]
   $v\::do "$command"
   $v\::wait
-  cd $cwd
   gen_log:log T "LEAVE"
 }
 
