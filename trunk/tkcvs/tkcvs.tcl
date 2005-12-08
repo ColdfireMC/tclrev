@@ -132,13 +132,13 @@ if {! [get_cde_params]} {
     # Find out what the tk default is
     set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
   }
+  set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
   # If we're not in CDE but the background option is set, we're probably
   # in KDE or Gnome or some such.  It rather rudely sets all the Tk
   # backgrounds the same which I don't like, so I'm going to use the same
   # trick I use for CDE to give the canvases a little shading.  I don't
   # do this for raw X11 because the user might have set their own options.
   set bg [option get .testlbl background background]
-  set cvsglb(canvbg) $bg
   if {[string length $bg]} {
     set rgb_bg [winfo rgb .testlbl $bg]
     set shadow [format #%02x%02x%02x [expr (9*[lindex $rgb_bg 0])/2560] \
