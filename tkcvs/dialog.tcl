@@ -234,6 +234,9 @@ proc dialog_svn_checkout { svnroot path command } {
   global dynamic_dialog
   global dialog_action
 
+  if {[info exists dynamic_dialog(rev)]} {
+    set rev $dynamic_dialog(rev)
+  }
   set dir [pwd]
   set dynamic_dialog(path) $path
   set dynamic_dialog(svnroot) $svnroot
@@ -245,6 +248,7 @@ proc dialog_svn_checkout { svnroot path command } {
     1       0   l {SVN Repository}     1
     svnroot 1   t {SVN URL}            {}
     path    1   t {Path in Repository} {}
+    rev     0   t {Revision/Date}      {}
     2       0   l {Destination}        1
     dir     1   t {Current Directory}  {}
     target  0   t {Target Directory}   {}
@@ -254,7 +258,8 @@ proc dialog_svn_checkout { svnroot path command } {
   }
   # Action function
   set dialog_action {svn_checkout $dynamic_dialog(dir) \
-     $dynamic_dialog(svnroot) $dynamic_dialog(path) $dynamic_dialog(target) \
+     $dynamic_dialog(svnroot) $dynamic_dialog(path) \
+     $dynamic_dialog(rev) $dynamic_dialog(target) \
      $dynamic_dialog(command)
   }
 

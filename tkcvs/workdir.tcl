@@ -205,21 +205,21 @@ proc workdir_setup {} {
   # Directory functions
   grid rowconf .workdir.bottom.buttons.dirfuncs 0 -weight 1
   grid .workdir.bottom.buttons.dirfuncs.brefresh       -column 0 -row 0 \
-     -ipadx 2 -rowspan 2 -sticky ns
+     -ipadx 4 -rowspan 2 -sticky ns
   grid .workdir.bottom.buttons.dirfuncs.bcheckdir      -column 1 -row 0 \
-     -ipadx 2 -rowspan 2 -sticky ns
+     -ipadx 4 -rowspan 2 -sticky ns
   grid .workdir.bottom.buttons.dirfuncs.bjoin          -column 2 -row 0 \
      -ipadx 2 -rowspan 2 -sticky ns
 
   # Revcontrol functions
   grid .workdir.bottom.buttons.cvsfuncs.blogfile      -column 0 -row 0 \
-    -ipadx 6
+    -ipadx 4
   grid .workdir.bottom.buttons.cvsfuncs.bannotate     -column 0 -row 1 \
-    -ipadx 6
+    -ipadx 4
   grid .workdir.bottom.buttons.cvsfuncs.bdiff         -column 1 -row 0 \
-    -ipadx 6
+    -ipadx 2
   grid .workdir.bottom.buttons.cvsfuncs.bconflict     -column 1 -row 1 \
-    -ipadx 6
+    -ipadx 2
   grid .workdir.bottom.buttons.cvsfuncs.bupdate       -column 2 -row 0 \
     -ipadx 6
   grid .workdir.bottom.buttons.cvsfuncs.bcheckin      -column 2 -row 1 \
@@ -231,9 +231,9 @@ proc workdir_setup {} {
   grid .workdir.bottom.buttons.cvsfuncs.badd_files    -column 4 -row 0
   grid .workdir.bottom.buttons.cvsfuncs.bremove       -column 4 -row 1
   grid .workdir.bottom.buttons.cvsfuncs.btag          -column 5 -row 0 \
-    -ipadx 6
+    -ipadx 4
   grid .workdir.bottom.buttons.cvsfuncs.bbranchtag    -column 5 -row 1 \
-    -ipadx 6
+    -ipadx 4
 
   # These are specialized an not always available
   grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0

@@ -121,18 +121,33 @@ if {! [get_cde_params]} {
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
   destroy .testent
 
+
   # Find out what the default gui font is
+  label .testlbl -text "LABEL"
   if { [info exists cvscfg(guifont)] } {
     # If you set a guifont, I'm going to assume you want to use it for
     # the menus too.
     set menufont $cvscfg(guifont)
   } else {
     # Find out what the tk default is
-    label .testlbl -text "LABEL"
     set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-    #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
-    destroy .testlbl
   }
+  # If we're not in CDE but the background option is set, we're probably
+  # in KDE or Gnome or some such.  It rather rudely sets all the Tk
+  # backgrounds the same which I don't like, so I'm going to use the same
+  # trick I use for CDE to give the canvases a little shading.  I don't
+  # do this for raw X11 because the user might have set their own options.
+  set bg [option get .testlbl background background]
+  set cvsglb(canvbg) $bg
+  if {[string length $bg]} {
+    set rgb_bg [winfo rgb .testlbl $bg]
+    set shadow [format #%02x%02x%02x [expr (9*[lindex $rgb_bg 0])/2560] \
+                                     [expr (9*[lindex $rgb_bg 1])/2560] \
+                                     [expr (9*[lindex $rgb_bg 2])/2560]]
+    set cvsglb(canvbg) $shadow
+  }
+  destroy .testlbl
+   
   # Find out what the default font is for listboxes
   if { ! [info exists cvscfg(listboxfont)] } {
     entry .testent
@@ -150,6 +165,8 @@ if {! [get_cde_params]} {
   option add *Label.font $cvscfg(guifont) userDefault
   option add *Button.font $cvscfg(guifont) userDefault
   option add *Menu.font $menufont userDefault
+  option add *Scrollbar.troughColor $cvsglb(canvbg) userDefault
+  option add *Canvas.Background $cvsglb(canvbg) userDefault
 }
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
