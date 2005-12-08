@@ -1063,7 +1063,7 @@ proc cvs_merge {from since fromtag totag args} {
       "When you are finished checking in your merges, \
       you should apply the tag"
     entry .reminder.ent -width 32 -relief groove \
-       -readonlybackground $cvsglb(readonlby)
+       -readonlybackground $cvsglb(readonlybg)
     .reminder.ent insert end $totag 
     .reminder.ent configure -state readonly
     message .reminder.m2 -aspect 600 -text \
