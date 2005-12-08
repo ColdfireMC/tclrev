@@ -493,6 +493,11 @@ namespace eval joincanvas {
 
         $joincanvas.canvas config -scrollregion $bbox
         $joincanvas.canvas yview moveto 0
+
+        set here [$joincanvas.up.rversTo get]
+        if {$here == ""} {
+          cvsfail "I can't find where I am.  Perhaps the working directory isn't at the head of a branch?" $joincanvas
+        }
         gen_log:log T "LEAVE"
       }
 
@@ -737,11 +742,12 @@ proc join_getlog {filename {name_idx {}}} {
   set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
   gen_log:log C "$commandline"
   set ret [catch {eval "exec $commandline"} view_this]
-  if {$ret} {
-    cvsfail $view_this
-    gen_log:log T "LEAVE ERROR ($view_this)"
-    return
-  }
+  # If you bail, sometimes you discard a perfectly good log
+  #if {$ret} {
+    #cvsfail $view_this
+    #gen_log:log T "LEAVE ERROR ($view_this)"
+    #return
+  #}
   if {$name_idx == ""} {
     joincanvas::new $filename $view_this $current_tagname
   } else {

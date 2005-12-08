@@ -198,9 +198,9 @@ proc workdir_setup {} {
   grid .workdir.bottom.buttons.funcs.bdelete_file -column 0 -row 0 \
     -ipadx 2 -rowspan 4 -sticky ns
   grid .workdir.bottom.buttons.funcs.bedit_files -column 1 -row 0 \
-     -ipadx 2
+     -ipadx 4
   grid .workdir.bottom.buttons.funcs.bview_files -column 1 -row 1 \
-     -ipadx 2
+     -ipadx 4
 
   # Directory functions
   grid rowconf .workdir.bottom.buttons.dirfuncs 0 -weight 1
