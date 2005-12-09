@@ -18,8 +18,8 @@ if {! [info exists tk_version] } {
    exit 1
 }
 
-if {$tk_version < 8.3} {
-  cvserror "TkCVS requires Tcl/Tk 8.3 or better!"
+if {$tk_version < 8.4} {
+  cvserror "TkCVS requires Tcl/Tk 8.4 or better!"
 }
 
 if {[info exists TclRoot]} {
