@@ -64,7 +64,7 @@ proc read_svn_dir {dirname} {
       gen_log:log D "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) $relp
       gen_log:log D "relpath: $cvsglb(relpath)"
-      set module_dir $relp
+      set module_dir [join $relp {/}]    
       gen_log:log D "tagname: $current_tagname"
     }
   }

@@ -249,7 +249,8 @@ if { ! [info exists cvscfg(cvsroot)] } {
   }
 }
 # This helps with Samba-mounted CVS repositories
-set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
+# And also completely messes up SVN repositories
+#set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
 # If SVNROOT is set, use that instead.  SVNROOT isn't
 # known by Subversion itself, so if it's set we must have
 # done it for the present purpose
@@ -319,7 +320,8 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     set cvsglb(root) $cvscfg(svnroot)
     modbrowse_run svn
   } else {
-    modbrowse_run cvs
+    # We still don't know if it's SVN or CVS.  Let modbrowse_run figure out.
+    modbrowse_run
   }
 # Start with Branch Browser
 } elseif {$cvscfg(startwindow) == "log"} {
