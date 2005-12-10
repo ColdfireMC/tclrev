@@ -275,9 +275,9 @@ proc modbrowse_menus {} {
      -command {cvs_history all ""}
 
   .modbrowse.modmenu.svn add command -label "SVN Checkout" \
-      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
   .modbrowse.modmenu.svn add command -label "SVN Export" \
-      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
   .modbrowse.modmenu.svn add command -label "Tag Module" -underline 0 \
      -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "tags" }
   .modbrowse.modmenu.svn add command -label "Branch Module" -underline 0 \
@@ -467,9 +467,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
       -command { svn_import_run }
     .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module checkout}
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
-      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_module export}
+      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
     .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
       -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "tags" }
     .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
@@ -707,12 +707,12 @@ proc module_changedir {new_dir} {
     if {$incvs} {
       if {$cvscfg(cvsroot) != $cvsglb(root)} {
         set cvsglb(root) $cvscfg(cvsroot)
-        modbrowse_run
+        modbrowse_run cvs
       }
     } elseif {$insvn} {
-      if {$cvscfg(cvsroot) != $cvsglb(root)} {
-        set cvsglb(root) $cvscfg(cvsroot)
-        modbrowse_run
+      if {$cvscfg(svnroot) != $cvsglb(root)} {
+        set cvsglb(root) $cvscfg(svnroot)
+        modbrowse_run svn
       }
     }
     #if {$insvn || $incvs || $inrcs} {
