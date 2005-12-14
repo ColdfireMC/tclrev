@@ -360,21 +360,27 @@ proc dialog_cvs_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
 
 # Compare two revisions, from the module browser
 # Can make a patch file or send a summary to the screen
-proc dialog_svn_patch { cvsroot path summary } {
+proc dialog_svn_patch { cvsroot pathA pathB summary } {
   global dynamic_dialog
   global dialog_action
 
-  gen_log:log T "ENTER ( $cvsroot $path $summary )"
+  gen_log:log T "ENTER ( $cvsroot $pathA $pathB $summary )"
 
   set dynamic_dialog(cvsroot) $cvsroot
-  set dynamic_dialog(path) $path
+  set dynamic_dialog(pathA) $pathA
+  set dynamic_dialog(pathB) $pathB
   if {$summary} {
     set dynamic_dialog(outmode) 0
   } else {
     set dynamic_dialog(outmode) 1
   }
   set dynamic_dialog(outfile) "patchfile.patch"
-  set dynamic_dialog(pathA) "$cvsroot$path"
+  set dynamic_dialog(fullA) "$cvsroot$pathA"
+  if {$pathB == ""} {
+    set dynamic_dialog(fullB) ""
+  } else {
+    set dynamic_dialog(fullB) "$cvsroot$pathB"
+  }
 
   # field  req type labeltext          data
   set dialog_form_patch {
@@ -392,8 +398,8 @@ proc dialog_svn_patch { cvsroot path summary } {
   dateB     0     t {Date}             {}
   }
   # Action function
-  set dialog_action {svn_patch $dynamic_dialog(pathA) \
-     $dynamic_dialog(pathB) \
+  set dialog_action {svn_patch $dynamic_dialog(fullA) \
+     $dynamic_dialog(fullB) \
      $dynamic_dialog(revA) $dynamic_dialog(dateA) \
      $dynamic_dialog(revB) $dynamic_dialog(dateB) \
      $dynamic_dialog(outmode) $dynamic_dialog(outfile)

@@ -283,9 +283,9 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.svn add command -label "Branch Module" -underline 0 \
      -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "branches" }
   .modbrowse.modmenu.svn add command -label "Make Patch File" -underline 0 \
-     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path 0 }
+     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 0 }
   .modbrowse.modmenu.svn add command -label "View Patch Summary" -underline 0 \
-     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path 1 }
+     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 1 }
   .modbrowse.modmenu.svn add separator
   .modbrowse.modmenu.svn add command -label "Import CWD into Repository" \
      -command svn_import_run
@@ -475,9 +475,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
       -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "branches" }
     .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
-      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 1 }
+      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
-      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path 0 }
+      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 0 }
     .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
     .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
     .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
