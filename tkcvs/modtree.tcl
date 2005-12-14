@@ -73,6 +73,7 @@ proc ModTree:create {w {open_func {}} } {
   set Tree(vsize) 16
   ModTree:buildwhenidle $w
   set Tree($w:selection) {}
+  set Tree($w:selB) {}
   set Tree($w:jtems) 0
 
   focus $w.tree.list
@@ -263,6 +264,8 @@ proc ModTree:buildlayer {w v in} {
     if {[string length $icon]>0} {
       set k [$w.tree.list create image $x $y -image $icon -anchor w ]
       $w.tree.list bind k <1> "ModTree:setselection $w \"$vx/$c\""
+      $w.tree.list bind k <2> "ModTree:setselB $w \"$vx/$c\""
+      $w.tree.list bind k <3> "ModTree:setselB $w \"$vx/$c\""
       incr x 24
     }
     # Draw the label
@@ -282,6 +285,8 @@ proc ModTree:buildlayer {w v in} {
     regsub -all {\$} $fn {\$} fn
 
     $w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$fn\""
+    $w.tree.list bind $w.tree.list.tx$j <2> "ModTree:setselB $w \"$fn\""
+    $w.tree.list bind $w.tree.list.tx$j <3> "ModTree:setselB $w \"$fn\""
     $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w \"$fn\""
     $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w \"$fn\""
 
@@ -380,9 +385,31 @@ proc ModTree:setselection {w v} {
     ModTree:setTextHBox $w $w.tree.list.tx$j
     set modbrowse_module $Tree($w:$v:name)
     set modbrowse_title $Tree($w:$v:title)
-    set modbrowse_path $v
   }
-  #gen_log:log T "LEAVE"
+  set modbrowse_path $v
+}
+
+#
+# Change the secondary selection
+#
+proc ModTree:setselB {w v} {
+  global Tree
+  global selB_path
+
+  # Clear old selection
+  set oldv $Tree($w:selB)
+  if {$oldv != ""} {
+    set j $Tree($w:$oldv:tag)
+    ModTree:clearTextHBox $w $w.tree.list.tx$j
+  }
+
+  # Hilight new selection
+  if {$v != ""} {
+    set Tree($w:selB) $v
+    set j $Tree($w:$v:tag)
+    ModTree:setTextHBox $w $w.tree.list.tx$j
+  }
+  set selB_path $v
 }
 
 # Clear selection, invoked when clicking over a blank 
@@ -390,11 +417,12 @@ proc ModTree:clearselection {w} {
   global Tree
   global modbrowse_module
 
-  #gen_log:log T "ENTER ($w)"
-  # Don't clear unless we are'nt over anything
-  if {[ $w.tree.list gettags current ] == "" } {
-    set Tree($w.tree:selection) {}
+  # Don't clear unless we aren't over anything
+  if {[llength [$w.tree.list gettags current]] == 0 } {
     ModTree:setselection $w ""
+    ModTree:setselB $w ""
+    set Tree($w:selection) {}
+    set Tree($w:selB) {}
     set modbrowse_module ""
   }
 }
@@ -412,7 +440,7 @@ proc ModTree:unflash {widg v} {
   set j $Tree($widg:$v:tag)
 
   # Don't unflash if this is one that is selected:
-  if { $Tree($widg:selection) != $v  } {
+  if { $Tree($widg:selection) != $v && $Tree($widg:selB) != $v } {
   	ModTree:clearTextHBox $widg $widg.tree.list.tx$j
   }
 }
