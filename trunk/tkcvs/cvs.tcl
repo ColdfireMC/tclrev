@@ -1748,6 +1748,7 @@ proc read_cvs_dir {dirname} {
 #
   global module_dir
   global cvscfg
+  global cvsglb
   global current_tagname
 
   gen_log:log T "ENTER ($dirname)"
@@ -1784,6 +1785,9 @@ proc read_cvs_dir {dirname} {
   } else {
     cvsfail "$dirname is not a directory" .workdir
   }
+  set cvsglb(root) $cvscfg(cvsroot)
+  #gen_log:log D "cvsglb(root) $cvsglb(root)"
+  #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
   gen_log:log T "LEAVE"
 }
 
@@ -1827,8 +1831,10 @@ proc parse_cvsmodules {modules_file} {
 #     gen_log:log D "{$modname} {$modstring}"
       regsub -- {^((-l\s*)|(-[ioestud]\s+((\\\s)|\S)+\s*))+} \
         $modstring {} modstring
-     gen_log:log D "{$modname} {$modstring}"
-      set modval($modname) $modstring
+      if {$modname != ""} {
+        set modval($modname) $modstring
+        gen_log:log D "{$modname} {$modstring}"
+      }
     }
   }
 

@@ -363,9 +363,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
     svn {
       set svnurl 1
       gen_log:log D "svn"
-      gen_log:log D "cvsglb(root) $cvsglb(root)"
-      gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-      gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
+      #gen_log:log D "cvsglb(root) $cvsglb(root)"
+      #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
+      #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
       set cvsglb(root) $cvscfg(svnroot) 
       if {! [info exists cvscfg(svnroot)] } {
@@ -384,9 +384,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
     cvs {
       set svnurl 0
       gen_log:log D "cvs"
-      gen_log:log D "cvsglb(root) $cvsglb(root)"
-      gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-      gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
+      #gen_log:log D "cvsglb(root) $cvsglb(root)"
+      #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
+      #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
       set cvsglb(root) $cvscfg(cvsroot)
       set cmd(cvs_co) \
@@ -412,9 +412,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
       if {$svnurl} {
         gen_log:log D "default,detected svn url"
         set cvscfg(svnroot) $cvsglb(root)
-        gen_log:log D "cvsglb(root) $cvsglb(root)"
-        gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-        gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
+        #gen_log:log D "cvsglb(root) $cvsglb(root)"
+        #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
+        #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
         #set cvsglb(root) $cvscfg(svnroot) 
         #if {! [info exists cvscfg(svnroot)] } {
@@ -432,9 +432,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
       } else {
         gen_log:log D "default"
         set cvscfg(cvsroot) $cvsglb(root)
-        gen_log:log D "cvsglb(root) $cvsglb(root)"
-        gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-        gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
+        #gen_log:log D "cvsglb(root) $cvsglb(root)"
+        #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
+        #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
         #set cvsglb(root) $cvscfg(cvsroot)
         set cmd(cvs_co) \
@@ -567,6 +567,9 @@ proc modbrowse_tree { mnames node } {
         continue
       }
       set dimage amod
+    } elseif {[string match "* *" $modval($mname)]} {
+      # The value isn't a simple path
+      #gen_log:log D "Found spaces in modval($mname) $modval($mname)"
     } elseif {[string match "*/*" $modval($mname)]} {
       #gen_log:log D "Set image to dir because $modval($mname) contains a slash"
       set dimage dir
