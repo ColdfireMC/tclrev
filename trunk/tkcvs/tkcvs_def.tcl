@@ -145,8 +145,6 @@ set logcfg(show_box_rev) 1
 set logcfg(show_box_revwho) 1
 set logcfg(show_box_revdate) 1
 set logcfg(show_box_revtime) 0
-set logcfg(show_box_revlines) 0
-set logcfg(show_box_revstate) 0
 
 # --------------------
 # Platform specific configuration.
@@ -175,12 +173,6 @@ if {$tcl_platform(platform) == "windows"} {
     set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
     set cvscfg(print_cmd)          "pr"
     set cvscfg(shell)  ""
-    #
-    # Commands to change file attributes. For lock / unlock.
-    # 12-Jan-2000 lcs
-    #
-    set cvscfg(chmod_ro_cmd) "attrib +R"
-    set cvscfg(chmod_rw_cmd) "attrib -R"
     set cvscfg(allow_abort)  "no"
 } else {
     set cvscfg(tmpdir) "/tmp"
@@ -217,10 +209,6 @@ if {$tcl_platform(platform) == "windows"} {
     set cvscfg(tkdiff) "tkdiff"
     #set cvscfg(print_cmd)          "enscript -Ghr -fCourier8"
     set cvscfg(print_cmd)          "lpr"
-    # Commands to change file attributes.
-    # 12-Jan-2000 lcs
-    set cvscfg(chmod_ro_cmd) "chmod a-w"
-    set cvscfg(chmod_rw_cmd) "chmod u+w"
     set cvscfg(allow_abort)  "yes"
     # What do you want to happen when you ask for a shell?
     set cvscfg(shell) "xterm -name tkcvsxterm -n {TkCVS xterm}"

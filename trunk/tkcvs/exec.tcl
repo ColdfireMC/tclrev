@@ -70,7 +70,7 @@ namespace eval ::exec {
         set v_w [namespace inscope $viewer {set w}]
       }
 
-      proc out_handler {{viewer {}} {filter {}}} {
+      proc out_handler { {viewer {}} {filter {}} } {
         variable procout
         variable procerr
         variable ExecDone
@@ -78,6 +78,7 @@ namespace eval ::exec {
         variable data
         variable v_w
         variable my_idx
+        variable show_stderr
         global errorCode
       
         # Blocking read -- returns -1 on EOF.  Then you get the process return
@@ -101,17 +102,27 @@ namespace eval ::exec {
             # If we don't pop up an error dialog, let's at least try to show
             # what happened in the viewer window, if there is one
             if {$viewer != {}} {
-               $v_w.text insert end "\n$res" stderr
-               if {[tell $procerr]} {
-                 seek $procerr 0
-                 while {[gets $procerr erline] != -1} {
-                   $v_w.text insert end "$erline\n" stderr
-                 }
-               }
-             }
-             ::exec::$my_idx\::abort
+              $v_w.text insert end "\n$res" stderr
+              if {[tell $procerr]} {
+                seek $procerr 0
+                while {[gets $procerr erline] != -1} {
+                  $v_w.text insert end "$erline\n" stderr
+                }
+              }
+            }
+            ::exec::$my_idx\::abort
           } else {
             gen_log:log D "  Close OK"
+            # Many CVS commands write stderr without err exit
+            if {[tell $procerr]} {
+              seek $procerr 0
+              while {[gets $procerr erline] != -1} {
+                gen_log:log E "$erline"
+                #if {$show_stderr && $viewer != {}} {
+                  #$v_w.text insert end "$erline\n" stderr
+                #}
+              }
+            }
             set ExecDone [list 0]
             gen_log:log D "  ExecDone $ExecDone"
             
@@ -340,7 +351,6 @@ namespace eval ::viewer {
         }
       }
 
-      #update
       return [namespace current]
     }
   }

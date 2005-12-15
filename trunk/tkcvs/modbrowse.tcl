@@ -44,7 +44,9 @@ proc modbrowse_setup {} {
   pack .modbrowse.top -side top -fill x
 
   label .modbrowse.top.lmcode -text "Module"
-  entry .modbrowse.top.tmcode -textvariable modbrowse_module
+  entry .modbrowse.top.tmcode -textvariable modbrowse_module \
+    -font $cvscfg(listboxfont) -relief groove \
+    -readonlybackground $cvsglb(readonlybg)
 
   label .modbrowse.top.lroot -text "CVSROOT"
   ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
@@ -61,11 +63,11 @@ proc modbrowse_setup {} {
   grid columnconf .modbrowse.top 1 -weight 1
   grid rowconf .modbrowse.top 3 -weight 1
   grid .modbrowse.top.lroot -column 0 -row 0 -sticky w
-  grid .modbrowse.top.troot -column 1 -row 0 -columnspan 2 -padx 4 -sticky new
+  grid .modbrowse.top.troot -column 1 -row 0 -columnspan 2 -padx 4 -sticky ew
   grid .modbrowse.top.lmcode -column 0 -row 1 -sticky w
-  grid .modbrowse.top.tmcode -column 1 -row 1 -padx 3 -sticky new
+  grid .modbrowse.top.tmcode -column 1 -row 1 -padx 3 -sticky ew
   grid .modbrowse.top.lcwd -column 0 -row 2 -sticky w
-  grid .modbrowse.top.tcwd -column 1 -row 2 -padx 4 -sticky new
+  grid .modbrowse.top.tcwd -column 1 -row 2 -padx 4 -sticky ew
   grid .modbrowse.top.bworkdir -column 2 -row 1 -rowspan 2 -sticky w
 
   # Pack the bottom before the middle so it doesnt disappear if
