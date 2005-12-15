@@ -203,6 +203,7 @@ if { ! [info exists cvscfg(lastdir)] } {
 # Command line options
 #
 set usage "Usage: tkcvs \[-dir directory\] \[-root cvsroot\] \[-win workdir|module|merge\] \[-log file\]"
+append usage "\ntkcvs file"
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
   set val [lindex $argv [expr {$i+1}]]
@@ -231,6 +232,10 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
     {--*h.*} {
       puts $usage
       exit 0
+    }
+    {\w*} {
+      set cvscfg(startwindow) log
+      set lcfile $arg; incr i
     }
     default {
       puts $usage
