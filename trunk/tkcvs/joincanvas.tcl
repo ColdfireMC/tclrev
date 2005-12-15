@@ -598,7 +598,6 @@ namespace eval joincanvas {
       # Create buttons
       #
       button $joincanvas.help -text "Help" \
-        -padx 0 -pady 0 \
         -command directory_branch_viewer
       button $joincanvas.join -image Mergebranch \
           -command [namespace code {
@@ -614,6 +613,8 @@ namespace eval joincanvas {
                    $fromrev $sincerev $fromrev .
                  }]
 
+      frame $joincanvas.down.btnfm
+      frame $joincanvas.down.closefm -relief groove -bd 2
       button $joincanvas.close -text "Close" \
         -command [namespace code "
                    destroy $joincanvas
@@ -621,13 +622,14 @@ namespace eval joincanvas {
                    exit_cleanup 0
                  "]
 
-      pack $joincanvas.help \
-           $joincanvas.join \
+      pack $joincanvas.down.btnfm -side left -fill y -expand 1
+      pack $joincanvas.join \
            $joincanvas.delta \
-        -in $joincanvas.down -side left \
-        -ipadx 1 -ipady 1 -fill both -expand 1
-      pack $joincanvas.close \
-        -in $joincanvas.down -side right \
+        -in $joincanvas.down.btnfm -side left \
+        -ipadx 12 -ipady 4
+      pack $joincanvas.down.closefm -side right
+      pack $joincanvas.close $joincanvas.help \
+        -in $joincanvas.down.closefm -side right \
         -fill both -expand 1
 
       set_tooltips $joincanvas.join \

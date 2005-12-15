@@ -1362,6 +1362,7 @@ namespace eval ::logcanvas {
       #
       # Create buttons
       #
+      frame $logcanvas.down.btnfm
       frame $logcanvas.down.closefm -relief groove -bd 2
       button $logcanvas.refresh -image Refresh \
         -command [namespace code {
@@ -1392,20 +1393,22 @@ namespace eval ::logcanvas {
         -command [namespace code {
                  global cvscfg
                  variable logcanvas
-                 #variable cmd_log
                  set cvscfg(loggeom) [wm geometry $logcanvas]
                  destroy $logcanvas
                  namespace delete [namespace current]
                  exit_cleanup 0
                }]
       pack $logcanvas.refresh \
-           $logcanvas.view \
+        -in $logcanvas.down -side left \
+        -ipadx 4 -ipady 4
+      pack $logcanvas.down.btnfm -side left -fill y -expand 1
+      pack $logcanvas.view \
            $logcanvas.annotate \
            $logcanvas.diff \
            $logcanvas.delta \
            $logcanvas.viewtags \
-        -in $logcanvas.down -side left \
-        -ipadx 1 -ipady 1 -fill both -expand 1
+        -in $logcanvas.down.btnfm -side left \
+        -ipadx 4 -ipady 4
       pack $logcanvas.down.closefm -side right
       pack $logcanvas.close \
         -in $logcanvas.down.closefm -side right \
