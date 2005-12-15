@@ -97,8 +97,10 @@ proc cvs_version {} {
   set commandline "rcs -V"
   set ret [catch {eval "exec $commandline"} output]
   $v\::log $output
-  $v\::log "\nIf you see a usage message here, you have"
-  $v\::log " an old version of RCS.  It should still work.\n"
+  if {$ret != 0} {
+    $v\::log "\nIf you see a usage message here, you have"
+    $v\::log " an old version of RCS.  It should still work.\n"
+  }
 
   gen_log:log T "LEAVE"
 }
@@ -303,7 +305,7 @@ View the log of the file tstheap.c
 
 proc current_directory {} {
 
-  do_help "Current Directory" {
+  do_help "Working Directory" {
 
 <h1>Working Directory Browser</h1>
 
@@ -465,7 +467,7 @@ This button sets the edit flag on the selected files, enabling other developers 
 This button resets the edit flag on the selected files, enabling other developers to see that you are no longer editing those files (See "cvs edit" in the CVS documentation). As the current version of cvs waits on a prompt for "cvs unedit" if changes have been made to the file in question (to ask if you want to revert the changes to the current revision), the current action of tkcvs is to abort the unedit (by piping in nothing to stdin). Therefore, to lose the changes and revert to the current revision, it is necessary to delete the file and do an update (this will also clear the edit flag). To keep the changes, make a copy of the file, delete the original, update, and then move the saved copy back to the original filename.
 
 <itl>Close:</itl>
-Press this button to close the Current Directory Browser. If no other windows are open, TkCVS exits.
+Press this button to close the Working Directory Browser. If no other windows are open, TkCVS exits.
   }
 }
 
@@ -555,9 +557,9 @@ proc module_browser {} {
 
 <h1>Module Browser</h1>
 
-Most of the file-related actions of TkCVS are performed within the current-directory window. The module-related actions are performed within the module browser. The module browser can be started from the command line (tkcvs -win moduile) or started from the main window by pressing the big button.
+Operations that are performed on the repository instead of in a checked-out working directory are done with the Module Browser.  The most common of these operations is checking out or exporting from the repository.  The Module Browser can be started from the command line (tkcvs -win module) or started from the main window by pressing the big button.
 
-TkCVS arranges CVS modules into directories and subdirectories in a tree structure. You can navigate through the module tree using the module browser window.
+Subversion repositories can be browsed like a file tree, and that is what you will see in the Module Browser.  CVS repositories aren't directly browsable, but if the CVSROOT/modules file is maintained appropriately, TkCVS can display the modules and infer tree structures if they are present.
 
 Using the module browser window, you can select a module to check out. When you check out a module, a new directory is created in the current working directory with the same name as the module.
 
@@ -567,7 +569,7 @@ You can tag particular versions of a module or file in the repository, with plai
 
 <h2>Exporting</h2>
 
-Once a software release has been tagged, you can use a special type of check out called an export. This allows you to more cleanly check out files from the repository,  without all of the administrivia that CVS needs to have while working on the files. It is useful for delivery of a software release to a customer.
+Once a software release has been tagged, you can use a special type of checkout called an export. This allows you to cleanly check out files from the repository,  without all of the administrivia that CVS needs to have while working on the files. It is useful for delivery of a software release to a customer.
 
 <h2>Importing</h2>
 
@@ -575,11 +577,7 @@ TkCVS contains a special dialog to allow users to import new files into the repo
 
 When the Module Browser displays a CVS repository, the first column is a tree showing the module codes and directory names of all of the items in the repository. The icon shows whether the item is a directory (which may contain other directories or modules), or whether it is a module (which may be checked out from TkCVS). It is possible for an item to be both a module and a directory. If it has a red ball on it, you can check it out. If it shows a plain folder icon, you have to open the folder to get to the items that you can check out.
 
-To select a module, click on it with the left mouse button. Only one module can be selected at a time. To clear the selection, click on the item again or click in an empty area of the module column.
-
-The second column shows descriptive titles of the items in the repository, if you have added descriptions to the CVS modules file with the #M syntax.
-
-In Subversion, the repository is browsed directly, like an ordinary file tree, with no extra work about modules.
+To select a module, click on it with the left mouse button. The right mouse button will perform a secondary selection, which is used only for Subversion diff and patch. To clear the selection, click on the item again or click in an empty area of the module column. There can only be one primary and one secondary selection.
 
 <h2>Repository Browser Buttons</h2>
 
@@ -589,7 +587,7 @@ The module browser contains the following buttons:
 Shows which modules are checked out by whom.
 
 <itl>Import:</itl>
-This item will import the contents of the current directory (the one shown in the Current Directory Display) into the repository as a module. See the section titled Importing for more information.
+This item will import the contents of the current directory (the one shown in the Working Directory Display) into the repository as a module. See the section titled Importing for more information.
 
 <itl>File Browse:</itl>
 Displays a list of the selected module's files. From the file list, you can view the file, browse its revision history, or see a list of its tags.
@@ -932,5 +930,46 @@ These extension lines commence with a "#" character, so CVS interprets them as c
 
 "#M" is equivalent to "#D". The two had different functions in previous versions of TkCVS, but now both are parsed the same way.
   }
+}
+
+# Populates the Help menu.  Called from the browser windows.
+proc menu_std_help { w } {
+  $w add cascade -label "Help" -menu $w.help -underline 0
+  menu $w.help
+  $w.help add command -label "About TkCVS" -underline 0 \
+     -command aboutbox
+  $w.help add command -label "About CVS SVN RCS" -underline 6 \
+     -command cvs_version
+  $w.help add command -label "About Wish" -underline 6 \
+     -command "wish_version [winfo parent $w]"
+  $w.help add separator
+  $w.help add command -label "Current Directory Display" \
+     -command current_directory
+  $w.help add command -label "Module Browser" \
+     -command module_browser
+  $w.help add command -label "Log Browser" \
+     -command log_browser
+  $w.help add command -label "Merge Tool" \
+     -command directory_branch_viewer
+  $w.help add separator
+  $w.help add command -label "Repository Browser" \
+     -command module_browser
+  $w.help add command -label "Importing New Modules" \
+     -command importing_new_modules
+  $w.help add command -label "Importing To An Existing Module" \
+     -command importing_to_existing_module
+  $w.help add command -label "Vendor Merge" \
+     -command vendor_merge
+  $w.help add separator
+  $w.help add command -label "Configuration Files" \
+     -command configuration_files
+  $w.help add command -label "Environment Variables" \
+     -command environment_variables
+  $w.help add command -label "Command Line Options" \
+     -command cli_options
+  $w.help add command -label "User Defined Menu" \
+     -command user_defined_menu
+  $w.help add command -label "CVS modules File" \
+     -command cvs_modules_file
 }
 
