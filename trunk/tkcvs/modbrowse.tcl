@@ -45,9 +45,7 @@ proc modbrowse_setup {} {
 
   label .modbrowse.top.lmcode -text "Module"
   entry .modbrowse.top.tmcode -textvariable modbrowse_module \
-    -font $cvscfg(listboxfont) -relief groove \
-    -readonlybackground $cvsglb(readonlybg) \
-    -bg $cvsglb(readonlybg)
+    -font $cvscfg(listboxfont) -relief groove
 
   label .modbrowse.top.lroot -text "CVSROOT"
   ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot

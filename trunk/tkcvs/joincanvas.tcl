@@ -534,6 +534,23 @@ namespace eval joincanvas {
       wm protocol $joincanvas WM_DELETE_WINDOW \
         [namespace code {$joincanvas.close invoke}]
 
+      $joincanvas configure -menu $joincanvas.menubar
+      menu $joincanvas.menubar
+
+      $joincanvas.menubar add cascade -label "File" \
+        -menu $joincanvas.menubar.file -underline 0
+      menu $joincanvas.menubar.file -tearoff 0
+      $joincanvas.menubar.file add command -label "Close" -underline 0 \
+        -command [namespace code {$joincanvas.close invoke}]
+      $joincanvas.menubar.file add command -label "Exit" -underline 1 \
+        -command { exit_cleanup 1 }
+
+      $joincanvas.menubar add cascade -label "Help" \
+        -menu $joincanvas.menubar.help -underline 0
+      menu $joincanvas.menubar.help -tearoff 0
+      $joincanvas.menubar.help add command -label "Merge Tool" -underline 0 \
+        -command directory_branch_viewer
+
       frame $joincanvas.up -relief groove -border 2
       pack $joincanvas.up -side top -fill x
 
@@ -597,8 +614,6 @@ namespace eval joincanvas {
       #
       # Create buttons
       #
-      button $joincanvas.help -text "Help" \
-        -command directory_branch_viewer
       button $joincanvas.join -image Mergebranch \
           -command [namespace code {
                    set fromrev [$joincanvas.up.rversFrom get]
@@ -613,6 +628,8 @@ namespace eval joincanvas {
                    $fromrev $sincerev $fromrev .
                  }]
 
+      button $joincanvas.down.blogfile -image Branches \
+         -command "cvs_branches $repfile"
       frame $joincanvas.down.btnfm
       frame $joincanvas.down.closefm -relief groove -bd 2
       button $joincanvas.close -text "Close" \
@@ -622,16 +639,20 @@ namespace eval joincanvas {
                    exit_cleanup 0
                  "]
 
+      pack $joincanvas.down.blogfile -side left \
+        -ipadx 4 -ipady 4
       pack $joincanvas.down.btnfm -side left -fill y -expand 1
       pack $joincanvas.join \
            $joincanvas.delta \
         -in $joincanvas.down.btnfm -side left \
-        -ipadx 12 -ipady 4
+        -ipadx 4 -ipady 4
       pack $joincanvas.down.closefm -side right
-      pack $joincanvas.close $joincanvas.help \
+      pack $joincanvas.close \
         -in $joincanvas.down.closefm -side right \
         -fill both -expand 1
 
+      set_tooltips $joincanvas.down.blogfile \
+         {"Revision Log and Branch Diagram of the current file"}
       set_tooltips $joincanvas.join \
          {"Merge to current"}
       set_tooltips $joincanvas.delta \
@@ -655,7 +676,7 @@ namespace eval joincanvas {
       #
       wm minsize $joincanvas 1 1
 
-      wm title $joincanvas "Branches"
+      wm title $joincanvas "CVS Directory Merge"
       scrollbindings Canvas
       focus $joincanvas.canvas
 
