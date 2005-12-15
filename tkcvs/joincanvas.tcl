@@ -615,7 +615,6 @@ namespace eval joincanvas {
                  }]
 
       button $joincanvas.close -text "Close" \
-        -padx 0 -pady 0 \
         -command [namespace code "
                    destroy $joincanvas
                    namespace delete [namespace current]
@@ -629,7 +628,7 @@ namespace eval joincanvas {
         -ipadx 1 -ipady 1 -fill both -expand 1
       pack $joincanvas.close \
         -in $joincanvas.down -side right \
-        -ipadx 1 -ipady 1 -fill both -expand 1
+        -fill both -expand 1
 
       set_tooltips $joincanvas.join \
          {"Merge to current"}

@@ -325,10 +325,15 @@ proc DirCanvas:flash {w y} {
 
 proc DirCanvas:unflash {w y f} {
   global DirList
+  #global cvsglb
 
   # Don't unflash if this is one that is selected:
   if { ! $DirList($w:$f:selected) } {
-  	DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
+    DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
+    #if {! [file exists ./$f]} {
+      # If a file CVS knows about doesn't exist, write its name in light ink
+      #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(dfg)
+    #}
   }
 }
 
@@ -473,19 +478,18 @@ proc DirCanvas:unselectall {w force} {
   global cvsglb
 
   gen_log:log T "ENTER ($w)"
- # Don't clear unless we are'nt over anything
+  # Don't clear unless we aren't over anything
   if { $force || [ $w.filecol.list gettags current ] == "" } {
-
     foreach s [array names DirList $w:*:name] {
       set f $DirList($s)
       set y $DirList($w:$f:y)
       set DirList($w:$f:selected) 0
       DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
       # Prepending ./ to the filename prevents tilde expansion
-      if {! [file exists ./$f]} {
-	# If a file CVS knows about doesn't exist, write its name in light ink
-	$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(dfg)
-      }
+      #if {! [file exists ./$f]} {
+        # If a file CVS knows about doesn't exist, write its name in light ink
+        #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(dfg)
+      #}
     }
     set DirList($w:selection) {}
     set cvsglb(current_selection) {}
@@ -681,10 +685,10 @@ proc DirCanvas:build {w} {
     #     a new file and have not run add.
 
     # Prepending ./ to the filename prevents tilde expansion
-    if {! [file exists ./$f]} {
+    #if {! [file exists ./$f]} {
       # If a file CVS knows about doesn't exist, write its name in light ink
-      set lblfg $cvsglb(dfg)
-    }
+      #set lblfg $cvsglb(dfg)
+    #}
 
     switch -glob -- $DirList($w:$f:status) {
      "<file>" {

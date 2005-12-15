@@ -141,16 +141,15 @@ namespace eval ::annotate {
         set commandline "$cvs annotate $revision \"$file\""
       } elseif {$local == "cvs_r"} {
         # First see if we can do this
+        # rannotate appeared in 1.11.1
         set cvsglb(cvs_version) [cvs_version_number]
         set versionsplit [split $cvsglb(cvs_version) {.}]
         set major [lindex $versionsplit 1]
         set minor [lindex $versionsplit 2]
-        #puts "major $major"
-        #puts "minor $minor"
         set too_old 0
         if {$major < 11} {
           set too_old 1
-        } elseif {($major == 11) && !($minor >= 1)} {
+        } elseif {($major == 11) && ($minor < 1)} {
           set too_old 1
         }
         if {$too_old} {

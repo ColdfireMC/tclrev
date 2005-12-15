@@ -40,7 +40,7 @@ proc aboutbox {} {
   label .about.top.gif2 -image Anglerfish
 
   append string1 "A friendly interface to CVS\n"
-  append string1 "and Subversion.\n"
+  append string1 " * and Subversion *\n"
 
   message .about.top.msg2 -width 400 -justify c \
     -text $string1
@@ -48,6 +48,8 @@ proc aboutbox {} {
   append string2 "\nConsult the Help menu to\n"
   append string2 "learn about its features.\n\n"
   append string2 "TkCVS was written by Del.\n"
+  append string2 "The Subversion functionality\n"
+  append string2 "was added by Dorothy.\n"
 
   message .about.top.msg3 -width 400 -justify c \
     -text $string2
@@ -768,6 +770,12 @@ Colors for marking tags. For example:
 <h2>Module browser</h2>
 <h3>cvscfg(aliasfolder)</h3>
 In the CVS module browser, if true this will cause the alias modules to be grouped in one folder. Cleans up clutter if there are a lot of aliases.
+
+<h2>Annotation browser</h2>
+<h3>cvscfg(dayspercolor)</h3>
+For CVS, the number of days to be represented by each color in the rainbow. The larger this number is, the older a file will need to be in order to be displayed as blue (cold, "very old")
+<h3>cvscfg(revspercolor)</h3>
+For Subversion, the age is measured in revisions instead of days.
 
 <h2>User preferences</h2>
 <h3>cvscfg(allfiles)</h3>

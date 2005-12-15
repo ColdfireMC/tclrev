@@ -302,7 +302,6 @@ proc cvs_remove_dir {args} {
       gen_log:log F "CD [pwd]"
 
       set commandline "$cvs remove \"$file\""
-      #gen_log:log C "$commandline"
       $v\::do "$commandline" 1 status_colortags
       $v\::wait
     }
@@ -472,7 +471,6 @@ proc cvs_add_dir {binflag args} {
   foreach file $filelist {
     if {[file isdirectory $file]} {
       set commandline "$cvs add \"$file\""
-      #gen_log:log C "$commandline"
       $v\::do "$commandline"
       $v\::wait
 
@@ -504,7 +502,6 @@ proc add_subdirs {binflag v} {
         continue
       }
       set commandline "$cvs add \"$child\""
-      #gen_log:log C "$commandline"
       $v\::do "$commandline"
       $v\::wait
       set awd [pwd]
@@ -546,7 +543,6 @@ proc add_subdirs {binflag v} {
     # LJZ: any files left after filtering?
     if {[llength $plainfiles] > 0} {
       set commandline "$cvs add $binflag $plainfiles"
-      #gen_log:log C "$commandline"
       $v\::do "$commandline"
       $v\::wait
     }
@@ -584,10 +580,9 @@ proc rem_subdirs { v } {
       file delete -force -- $file
       if {[file exists $file]} {cvsfail "Remove $file failed" .workdir}
     }
-    set commandline "$cvs remove $plainfiles"
-    #gen_log:log C "$commandline"
-    $v\::do "$commandline"
-    $v\::wait
+    #set commandline "$cvs remove $plainfiles"
+    #$v\::do "$commandline" 1
+    #$v\::wait
   }
 
   gen_log:log T "LEAVE"
@@ -604,14 +599,12 @@ proc cvs_fileview_update {revision filename} {
   gen_log:log T "ENTER ($revision $filename)"
   if {$revision == {}} {
     set commandline "$cvs -d $cvscfg(cvsroot) update -p \"$filename\""
-    #gen_log:log C "$commandline"
     set v [viewer::new "$filename"]
-    $v\::do "$commandline"
+    $v\::do "$commandline" 0
   } else {
     set commandline "$cvs -d $cvscfg(cvsroot) update -p -r $revision \"$filename\""
-    #gen_log:log C "$commandline"
     set v [viewer::new "$filename Revision $revision"]
-    $v\::do "$commandline"
+    $v\::do "$commandline" 0
   }
   gen_log:log T "LEAVE"
 }
@@ -628,12 +621,10 @@ proc cvs_fileview_checkout {revision filename} {
   gen_log:log T "ENTER ($revision)"
   if {$revision == {}} {
     set commandline "$cvs -d $cvscfg(cvsroot) checkout -p \"$filename\""
-    #gen_log:log C "$commandline"
     set v [viewer::new "$filename"]
     $v\::do "$commandline"
   } else {
     set commandline "$cvs -d $cvscfg(cvsroot) checkout -p -r $revision \"$filename\""
-    #gen_log:log C "$commandline"
     set v [viewer::new "$filename Revision $revision"]
     $v\::do "$commandline"
   }
@@ -770,6 +761,9 @@ proc cvs_annotate {revision args} {
 
   gen_log:log T "ENTER ($revision $args)"
 
+  if {$revision == "trunk"} {
+    set revision ""
+  }
   if {$revision != ""} {
     # We were given a revision
     set revflag "-r$revision"
@@ -899,16 +893,6 @@ proc cvs_tag {tagname force branch update args} {
     return 1
   }
 
-  #set cvsglb(cvs_version) [cvs_version_number]
-  #set versionsplit [split $cvsglb(cvs_version) {.}]
-  #set major [lindex $versionsplit 1]
-  #set minor [lindex $versionsplit 2]
-  #if {$major < 11} {
-    #set too_old 1
-  #} elseif {($major == 11) && !($minor >= 1)} {
-    #set too_old 1
-  #}
-
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
@@ -924,16 +908,33 @@ proc cvs_tag {tagname force branch update args} {
     append command " -F"
   }
   append command " $tagname $filelist"
-  #gen_log:log C "$command"
 
+  if {$branch == "yes" && $force == "yes"} {
+    set too_new 0
+    # As of 1.11.2, -F won't move branch tags without the -B option
+    set cvsglb(cvs_version) [cvs_version_number]
+    set versionsplit [split $cvsglb(cvs_version) {.}]
+    set major [lindex $versionsplit 1]
+    set minor [lindex $versionsplit 2]
+    if {$major > 11} {
+      set too_new 1
+    } elseif {($major == 11) && ($minor >= 2)} {
+      set too_new 1
+    }
+    if {$too_new} {
+      cvsfail "In CVS version >= 1.11.2, you're not allowed to move a branch tag" .workdir
+    }
+    return
+  }
+
+  # If it refuses to tag, it can exit with 0 but still put out some stderr
   set v [viewer::new "CVS Tag"]
-  $v\::do "$command"
+  $v\::do "$command" 1
   $v\::wait
 
   if {$update == "yes"} {
     # update so we're on the branch
     set command "$cvs update -r $tagname $filelist"
-    #gen_log:log C "$command"
     $v\::do "$command" 0 status_colortags
     $v\::wait
   }
@@ -1029,7 +1030,6 @@ proc cvs_update {tagname normal_binary action_if_no_tag get_all_dirs dir args} {
       append commandline " \"$file\""
     }
 
-    #gen_log:log C $commandline
     set co_cmd [viewer::new "CVS Update"]
     $co_cmd\::do $commandline 0 status_colortags
     
@@ -1373,7 +1373,6 @@ proc cvs_version_number {} {
 
   gen_log:log T "ENTER"
   set commandline "$cvs -v"
-  #gen_log:log C "$commandline"
   set e [exec::new "$commandline" {} 0 parse_version]
   set number [$e\::output]
   regsub -all {\s*} $number {} number

@@ -1362,6 +1362,7 @@ namespace eval ::logcanvas {
       #
       # Create buttons
       #
+      frame $logcanvas.down.closefm -relief groove -bd 2
       button $logcanvas.refresh -image Refresh \
         -command [namespace code {
                  $scope\::reloadLog
@@ -1388,7 +1389,6 @@ namespace eval ::logcanvas {
                    view_output::new Tags $taglist
                  }]
       button $logcanvas.close -text "Close" \
-        -padx 0 -pady 0 \
         -command [namespace code {
                  global cvscfg
                  variable logcanvas
@@ -1406,9 +1406,10 @@ namespace eval ::logcanvas {
            $logcanvas.viewtags \
         -in $logcanvas.down -side left \
         -ipadx 1 -ipady 1 -fill both -expand 1
+      pack $logcanvas.down.closefm -side right
       pack $logcanvas.close \
-        -in $logcanvas.down -side right \
-        -ipadx 1 -ipady 1 -fill both -expand 1
+        -in $logcanvas.down.closefm -side right \
+        -fill both -expand 1
 
       set_tooltips $logcanvas.refresh \
         {"Re-read the log information"}
