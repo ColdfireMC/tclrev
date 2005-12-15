@@ -106,7 +106,7 @@ proc ::picklist::entry { w varName listName } {
     set data($listName) {}
   }
 
-  frame $w -relief sunken -border 2
+  frame $w -relief sunken -border 1
   ::entry $w.e -relief flat -border 0 -textvariable $varName -bg $cvsglb(textbg)
   pack $w.e -side left -expand 1 -fill both
   button $w.b -image arr_dn -border 1 \
