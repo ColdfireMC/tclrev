@@ -924,33 +924,44 @@ namespace eval ::logcanvas {
         variable branchrevs
 
         gen_log:log T "ENTER ($now)"
+
+        catch { unset revwho }
         foreach a [array names $scope\::revwho] {
           set revwho($a) [set $scope\::revwho($a)]
         }
+        catch { unset revdate }
         foreach a [array names $scope\::revdate] {
           set revdate($a) [set $scope\::revdate($a)]
         }
+        catch { unset revtime }
         foreach a [array names $scope\::revtime] {
           set revtime($a) [set $scope\::revtime($a)]
         }
+        catch { unset revcomment }
         foreach a [array names $scope\::revcomment] {
           set revcomment($a) [set $scope\::revcomment($a)]
         }
+        catch { unset revstate }
         foreach a [array names $scope\::revstate] {
           set revstate($a) [set $scope\::revstate($a)]
         }
+        catch { unset revtags }
         foreach a [array names $scope\::revtags] {
           set revtags($a) [set $scope\::revtags($a)]
         }
+        catch { unset revpath }
         foreach a [array names $scope\::revpath] {
           set revpath($a) [set $scope\::revpath($a)]
         }
+        catch { unset revbranches }
         foreach a [array names $scope\::revbranches] {
           set revbranches($a) [set $scope\::revbranches($a)]
         }
+        catch { unset revkind }
         foreach a [array names $scope\::revkind] {
           set revkind($a) [set $scope\::revkind($a)]
         }
+        catch { unset branchrevs }
         foreach a [array names $scope\::branchrevs] {
           set branchrevs($a) [set $scope\::branchrevs($a)]
         }

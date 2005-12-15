@@ -135,7 +135,7 @@ proc workdir_setup {} {
   pack .workdir.bottom.buttons -side top -fill x -expand yes
   pack .workdir.bottom.buttons.close -side right -padx 10
   pack .workdir.bottom.buttons.funcs -side left
-  pack .workdir.bottom.buttons.dirfuncs -side left -expand yes -fill y
+  pack .workdir.bottom.buttons.dirfuncs -side left -expand yes
   pack .workdir.bottom.buttons.cvsfuncs -side left -expand yes
   pack .workdir.bottom.buttons.oddfuncs -side left -expand yes
 
@@ -152,8 +152,6 @@ proc workdir_setup {} {
   button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh \
      -command { change_dir [pwd] }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
-  button .workdir.bottom.buttons.dirfuncs.bjoin -image DirBranches \
-     -command cvs_joincanvas
 
   button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches \
      -command { cvs_branches [workdir_list_files] }
@@ -179,6 +177,8 @@ proc workdir_setup {} {
      -command { update_run }
   button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert \
      -command { cvs_revert [workdir_list_files] }
+  button .workdir.bottom.buttons.cvsfuncs.bjoin -image DirBranches \
+     -command cvs_joincanvas
 
   button .workdir.bottom.buttons.oddfuncs.bcvsedit_files -image Edit \
      -command { cvs_edit [workdir_list_files] }
@@ -205,11 +205,9 @@ proc workdir_setup {} {
   # Directory functions
   grid rowconf .workdir.bottom.buttons.dirfuncs 0 -weight 1
   grid .workdir.bottom.buttons.dirfuncs.brefresh       -column 0 -row 0 \
-     -ipadx 4 -rowspan 2 -sticky ns
+     -ipadx 4 -ipady 4
   grid .workdir.bottom.buttons.dirfuncs.bcheckdir      -column 1 -row 0 \
-     -ipadx 4 -rowspan 2 -sticky ns
-  grid .workdir.bottom.buttons.dirfuncs.bjoin          -column 2 -row 0 \
-     -ipadx 2 -rowspan 2 -sticky ns
+     -ipadx 4 -ipady 4
 
   # Revcontrol functions
   grid .workdir.bottom.buttons.cvsfuncs.blogfile      -column 0 -row 0 \
@@ -234,6 +232,8 @@ proc workdir_setup {} {
     -ipadx 4
   grid .workdir.bottom.buttons.cvsfuncs.bbranchtag    -column 5 -row 1 \
     -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bjoin         -column 6 -row 0 \
+    -ipadx 2 -rowspan 2 -sticky ns
 
   # These are specialized an not always available
   grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
@@ -255,7 +255,7 @@ proc workdir_setup {} {
 
   set_tooltips .workdir.bottom.buttons.dirfuncs.brefresh \
      {"Re-read the current directory"}
-  set_tooltips .workdir.bottom.buttons.dirfuncs.bjoin \
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.bjoin \
      {"Directory Branch Diagram and Merge Tool"}
   set_tooltips .workdir.bottom.buttons.dirfuncs.bcheckdir \
      {"Check the status of the directory"}
@@ -912,7 +912,6 @@ proc setup_dir { } {
   .workdir.menubar.reports entryconfigure 3 -state disabled
   # Start with the revision-control buttons disabled and the
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
-  .workdir.bottom.buttons.dirfuncs.bjoin configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
     $widget configure -state disabled
   }
@@ -968,7 +967,7 @@ proc setup_dir { } {
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check [workdir_list_files] }
-    .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
+    .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -command { svn_branches . }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
@@ -1017,7 +1016,7 @@ proc setup_dir { } {
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check [workdir_list_files] }
-    .workdir.bottom.buttons.dirfuncs.bjoin configure -state normal \
+    .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -command cvs_joincanvas
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
