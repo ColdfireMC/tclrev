@@ -644,44 +644,6 @@ proc workdir_menus {} {
   gen_log:log T "LEAVE"
 }
 
-proc menu_std_help { w } {
-  $w add cascade -label "Help" -menu $w.help -underline 0
-  menu $w.help
-  $w.help add command -label "About TkCVS" -underline 0 \
-     -command aboutbox
-  $w.help add command -label "About CVS SVN RCS" -underline 6 \
-     -command cvs_version
-  $w.help add command -label "About Wish" -underline 6 \
-     -command "wish_version [winfo parent $w]"
-  $w.help add separator
-  $w.help add command -label "Current Directory Display" \
-     -command current_directory
-  $w.help add command -label "Log Browser" \
-     -command log_browser
-  $w.help add command -label "Merge Tool" \
-     -command directory_branch_viewer
-  $w.help add separator
-  $w.help add command -label "Repository Browser" \
-     -command module_browser
-  $w.help add command -label "Importing New Modules" \
-     -command importing_new_modules
-  $w.help add command -label "Importing To An Existing Module" \
-     -command importing_to_existing_module
-  $w.help add command -label "Vendor Merge" \
-     -command vendor_merge
-  $w.help add separator
-  $w.help add command -label "Configuration Files" \
-     -command configuration_files
-  $w.help add command -label "Environment Variables" \
-     -command environment_variables
-  $w.help add command -label "Command Line Options" \
-     -command cli_options
-  $w.help add command -label "User Defined Menu" \
-     -command user_defined_menu
-  $w.help add command -label "CVS modules File" \
-     -command cvs_modules_file
-}
-
 proc workdir_list_files {} {
   global cvscfg
   global cvsglb
