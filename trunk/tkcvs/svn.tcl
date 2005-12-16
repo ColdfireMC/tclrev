@@ -119,7 +119,7 @@ proc svn_workdir_status {} {
       C { append displaymod "Conflict" }
       L { append displaymod "Locked" }
       S { append displaymod "Switched to Branch" }
-      ! { append displaymod "Missing or Incomplete Directory" }
+      ! { append displaymod "Missing or Incomplete" }
       ~ { append displaymod "Dir/File Mismatch" }
     }
 

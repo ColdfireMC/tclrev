@@ -35,7 +35,7 @@ proc show_paths {INSTALLROOT} {
   set_paths $INSTALLROOT
 
   set msg(1) [file join $BINDIR $TKCVS]
-  #set msg(2) [file join $BINDIR $TKDIFF]
+  set msg(2) [file join $BINDIR $TKDIFF]
   set msg(3) [file join $LIBDIR tkcvs *.tcl]
   set msg(4) [file join $LIBDIR tkcvs bitmaps *.gif,xbm]
   if {$tcl_platform(platform) == "unix"} {
@@ -71,12 +71,12 @@ proc doinstall { INSTALLROOT } {
   set destfile [file join $BINDIR $TKCVS]
   puts "Installing $TKCVS in $BINDIR"
   file copy -force [file join tkcvs tkcvs.tcl] [file join $BINDIR $TKCVS]
-  #puts "Installing $TKDIFF in $BINDIR"
-  #file copy -force [file join tkdiff tkdiff] [file join $BINDIR $TKDIFF]
+  puts "Installing $TKDIFF in $BINDIR"
+  file copy -force [file join tkdiff tkdiff] [file join $BINDIR $TKDIFF]
 
   if {$tcl_platform(platform) == "unix"} {
     file attributes $destfile -permissions 0755
-    #file attributes [file join $BINDIR $TKDIFF] -permissions 0755
+    file attributes [file join $BINDIR $TKDIFF] -permissions 0755
     file mkdir $MANDIR
     puts "Installing manpage tkcvs.1 in $MANDIR"
     file copy -force [file join tkcvs tkcvs.1] $MANDIR
@@ -161,11 +161,11 @@ if {[string match "*tclsh" [info nameofexecutable]]} {
 if {$tcl_platform(platform) == "windows"} {
   set INSTALLROOT "C:\\"
   set TKCVS "tkcvs.tcl"
-  #set TKDIFF "tkdiff.tcl"
+  set TKDIFF "tkdiff.tcl"
 } else {
   set INSTALLROOT [file join /usr local]
   set TKCVS "tkcvs"
-  #set TKDIFF "tkdiff"
+  set TKDIFF "tkdiff"
 }
 if {$ArgInstallRoot != ""} {
   set INSTALLROOT $ArgInstallRoot
