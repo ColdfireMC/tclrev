@@ -762,6 +762,10 @@ proc DirCanvas:build {w} {
           }
         }
       }
+     "Missing*" {
+        set DirList($w:$f:icon) stat_ex
+        set DirList($w:$f:popup) needsupdate_pop
+      }
      "Needs Checkout" {
        # Prepending ./ to the filename prevents tilde expansion
        if {[file exists ./$f]} {

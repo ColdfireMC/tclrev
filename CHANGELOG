@@ -1,6 +1,7 @@
-Release 7.3     ?
+Release 8.0b1   December, 2005
 
-- Implement Subversion support
+- Subversion support was added, entailing a major re-organization of the
+  program.
 
 
 Release 7.2.4   July, 2005
