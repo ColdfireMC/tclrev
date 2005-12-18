@@ -771,12 +771,6 @@ Colors for marking tags. For example:
 <h3>cvscfg(aliasfolder)</h3>
 In the CVS module browser, if true this will cause the alias modules to be grouped in one folder. Cleans up clutter if there are a lot of aliases.
 
-<h2>Annotation browser</h2>
-<h3>cvscfg(dayspercolor)</h3>
-For CVS, the number of days to be represented by each color in the rainbow. The larger this number is, the older a file will need to be in order to be displayed as blue (cold, "very old")
-<h3>cvscfg(revspercolor)</h3>
-For Subversion, the age is measured in revisions instead of days.
-
 <h2>User preferences</h2>
 <h3>cvscfg(allfiles)</h3>
 Set this to false to see normal files only in the directory browser. Set it to true to see all files including hidden files.

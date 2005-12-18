@@ -26,9 +26,10 @@ namespace eval ::annotate {
         variable revcolors
         variable blameproc
         variable now
+        variable nrevs
+        variable revlist
 
         gen_log:log T "ENTER ($w)"
-        gen_log:log D "dayspercolor $cvscfg(dayspercolor)"
 
         catch {unset revcolors}
         $w.text delete 1.0 end
@@ -49,6 +50,9 @@ namespace eval ::annotate {
         global cvsglb
         variable revcolors
         variable agecolors
+        variable revlist
+        variable nrevs
+        variable revspercolor
         variable log_lines
 
         set line [split $logline]
@@ -58,25 +62,18 @@ namespace eval ::annotate {
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
           #gen_log:log D "revision $revnum needs new color"
-          # get the date of the revision and determine the number of days
+          # determine the number of revisions
           # between this commit and the now, then set color accordingly
-          #set revdate [string range $logline 23 31]
-          set dateend [string first "):" $logline]
-          set revdate [string range $logline [expr {$dateend - 9}] [expr\
-            {$dateend - 1}]]
-          regsub -all -- {-r} $revdate " " revdate
-          #set revticks [expr [clock seconds] - [clock scan $revdate]]
-          set revticks [expr {$now - [clock scan $revdate]}]
-          # array is in increments of dayspercolor days 
-          # 60 * 60 * 24 = 86400 sec.
-          set revindex [expr {$revticks / (86400 * $cvscfg(dayspercolor))}]
+          set revticks [lsearch -exact $revlist $revnum]
+          set revticks [expr {$nrevs - $revticks}]
+          set revindex [expr {$revticks / $revspercolor}]
           set ncolors [expr {[array size agecolors] - 1}]
           if {$revindex > $ncolors} {set revindex $ncolors}
           if {$revindex < 0} {set revindex 0}
 
           set revcolors($revnum) $agecolors($revindex)
 
-          gen_log:log D "revindex $revindex revcolors($revnum)\
+          #gen_log:log D "revindex $revindex revcolors($revnum)\
             $revcolors($revnum)"
           $w tag configure $revnum \
             -background $revcolors($revnum) -foreground black
@@ -92,13 +89,14 @@ namespace eval ::annotate {
         global cvsglb
         variable revcolors
         variable agecolors
+        variable revspercolor
         variable log_lines
 
         set trimline [string trimleft $logline]
         set line [split $trimline]
-        gen_log:log D "$line"
+        #gen_log:log D "$line"
         set revnum [lindex $line 0]
-        gen_log:log D "\"$revnum\""
+        #gen_log:log D "\"$revnum\""
         if {$revnum == ""} return
         if {$revnum == "Skipping"} {
           cvsfail "Skipping binary file" $w
@@ -108,17 +106,15 @@ namespace eval ::annotate {
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
           #gen_log:log D "revision $revnum needs new color"
-          #set revticks [expr [clock seconds] - [clock scan $revdate]]
           set revticks [expr {$now - $revnum}]
-          # array is in increments of revspercolor
-          set revindex [expr {$revticks / $cvscfg(revspercolor)}]
+          set revindex [expr {$revticks / $revspercolor}]
           set ncolors [expr {[array size agecolors] - 1}]
           if {$revindex > $ncolors} {set revindex $ncolors}
           if {$revindex < 0} {set revindex 0}
 
           set revcolors($revnum) $agecolors($revindex)
 
-          gen_log:log D "revindex $revindex revcolors($revnum)\
+          #gen_log:log D "revindex $revindex revcolors($revnum)\
             $revcolors($revnum)"
           $w tag configure $revnum \
             -background $revcolors($revnum) -foreground black
@@ -127,6 +123,9 @@ namespace eval ::annotate {
         }
         $w insert end "$logline\n" $revnum
       }
+
+      regsub {^-} $revision {} revlabel
+      regsub -all {\$} $file {\$} file
 
       if {$local == "svn"} {
         set info_cmd [exec::new "svn info \"$file\""]
@@ -140,7 +139,14 @@ namespace eval ::annotate {
         set blameproc svn_annotate_color
         set commandline "svn blame $revision \"$file\""
       } elseif {$local == "cvs"} {
-        set now [clock seconds]
+        set info_cmd [exec::new "cvs status \"$file\""]
+        set info_lines [split [$info_cmd\::output] "\n"]
+        foreach infoline $info_lines {
+          if {[string match "*Working revision:*" $infoline]} {
+            gen_log:log D "$infoline"
+            set now [lindex $infoline 2]
+          }
+        }
         set blameproc cvs_annotate_color
         set commandline "$cvs annotate $revision \"$file\""
       } elseif {$local == "cvs_r"} {
@@ -162,16 +168,13 @@ namespace eval ::annotate {
           return
         }
 
-        set now [clock seconds]
         set blameproc cvs_annotate_color
         set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
+        set now $revlabel
       } else {
         cvsfail "I don't understand flag \"$local\""
         return
       }
-
-      regsub -all {\$} $file {\$} file
-      regsub {^-} $revision {} revlabel
 
       # Initialize searching
       search_textwidget_init
@@ -187,11 +190,10 @@ namespace eval ::annotate {
       button $w.bottom.close -text "Close" -command "destroy $w; exit_cleanup 0"
       if {$local == "svn"} {
         label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
-        entry $w.bottom.dayentry -width 3 -textvariable cvscfg(revspercolor)
       } else {
         label $w.bottom.days -text "Days per Color" -width 20 -anchor e
-        entry $w.bottom.dayentry -width 3 -textvariable cvscfg(dayspercolor)
       }
+      entry $w.bottom.dayentry -width 3 -textvariable [namespace current]::revspercolor
       button $w.bottom.redo -text "Redo Colors"
 
       button $w.bottom.srchbtn -text Search -command "search_textwidget $w.text"
@@ -249,22 +251,45 @@ namespace eval ::annotate {
       set exec_cmd [exec::new "$commandline"]
       set log [$exec_cmd\::output]
 
-      # Since there's an entry for changing dayspercolor, make sure it's
-      # something you can divide by or it will produce an error.
-      if {[string length $cvscfg(dayspercolor)] == 0 || \
-          $cvscfg(dayspercolor) == 0 || \
-          [regexp {\D+} $cvscfg(dayspercolor)]} {
-        gen_log:log D "dayspercolor was \"$cvscfg(dayspercolor)\": setting to 1"
-        set cvscfg(dayspercolor) 1
-      }
 
       # Read the log lines.  Assign a color to each unique revision.
       catch {unset revcolors}
       set log_lines [split [set log] "\n"]
       busy_start $w
+
+      # We have 24 colors.  How many revs do we have?
+      set revlist {}
+      foreach logline $log_lines {
+        set line [split [string trimleft $logline]]
+        set revnum [lindex $line 0]
+        if {$revnum == ""} {continue}
+        if {[lsearch -exact $revlist $revnum] == -1} {
+          lappend revlist $revnum
+        }
+      }
+      set revlist [lsort -command sortrevs $revlist]
+      set nrevs [llength $revlist]
+      gen_log:log D "$revlist"
+      set ncolors [expr {[array size agecolors] - 1}]
+      if {$nrevs < $ncolors} {
+        set revspercolor 1
+      } else {
+        set rpc [expr {1 + ($nrevs / $ncolors)}]
+        set revspercolor $rpc
+      }
+      gen_log:log D "nrevs $nrevs"
+      gen_log:log D "revs/days per color $revspercolor"
+      # Since there's an entry for changing revspercolor, make sure it's
+      # something you can divide by or it will produce an error.
+      if {[string length $revspercolor] == 0 || $revspercolor == 0} {
+        gen_log:log D "revspercolor was \"$revspercolor\": setting to 1"
+        set revspercolor 1
+      }
+
       foreach logline $log_lines {
         $blameproc $w.text $now $logline
       }
+
       $w.text yview moveto 0
       update
       $w.text configure -state disabled
