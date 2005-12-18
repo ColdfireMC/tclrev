@@ -9,7 +9,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string>TkCVS 8.0b1</string>
 	<key>CFBundleIconFile</key>
-	<string>Ticklefish.icns</string>
+	<string>Anglerfish.icns</string>
 	<key>CFBundleIdentifier</key>
 	<string>tk.tcltk.tkcvs</string>
 	<key>CFBundleInfoDictionaryVersion</key>

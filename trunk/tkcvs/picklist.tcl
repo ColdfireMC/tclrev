@@ -6,8 +6,6 @@ namespace eval ::picklist {
 proc ::picklist::used { name args } {
   variable data
 
-  # FIXME: max items in list should be configurable. Possibly with
-  # different values for different lists.
   if {[info exists data($name)]} {
     foreach item $args {
       if {[set i [lsearch -exact $data($name) $item]] >= 0} {
@@ -21,7 +19,6 @@ proc ::picklist::used { name args } {
 
   return
 }
-
 
 proc ::picklist::choose { w data } {
   global cvscfg
@@ -124,6 +121,10 @@ proc ::picklist::bind { w {sequence {}} {script {}} } {
   return [::bind $w.e $sequence $script]
 }
 
+proc ::picklist::clear {arr} {
+  variable data
+  set data($arr) {}
+}
 
 proc ::picklist::load { } {
   global cvscfg
