@@ -96,10 +96,14 @@ namespace eval ::annotate {
 
         set trimline [string trimleft $logline]
         set line [split $trimline]
-        #gen_log:log D "$line"
+        gen_log:log D "$line"
         set revnum [lindex $line 0]
-        #gen_log:log D "\"$revnum\""
+        gen_log:log D "\"$revnum\""
         if {$revnum == ""} return
+        if {$revnum == "Skipping"} {
+          cvsfail "Skipping binary file" $w
+          return
+        }
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
@@ -257,7 +261,6 @@ namespace eval ::annotate {
       # Read the log lines.  Assign a color to each unique revision.
       catch {unset revcolors}
       set log_lines [split [set log] "\n"]
-      #gen_log:log D "$logline"
       busy_start $w
       foreach logline $log_lines {
         $blameproc $w.text $now $logline

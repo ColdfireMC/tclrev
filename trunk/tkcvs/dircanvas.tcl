@@ -697,23 +697,23 @@ proc DirCanvas:build {w} {
       }
      "<dir> " {
        set DirList($w:$f:icon) folder
-       set DirList($w:$f:popup) folder_pop
+       set DirList($w:$f:popup) svnfolder_pop
      }
      "<dir> Up-to-date" {
        set DirList($w:$f:icon) dir_ok
-       set DirList($w:$f:popup) folder_pop
+       set DirList($w:$f:popup) svnfolder_pop
      }
      "<dir> Not managed*" {
        set DirList($w:$f:icon) dir_ques
-       set DirList($w:$f:popup) folder_pop
+       set DirList($w:$f:popup) svnfolder_pop
      }
      "<dir> Locally Added" {
        set DirList($w:$f:icon) dir_plus
-       set DirList($w:$f:popup) folder_pop
+       set DirList($w:$f:popup) svnfolder_pop
      }
      "<dir> Locally Removed" {
        set DirList($w:$f:icon) dir_minus
-       set DirList($w:$f:popup) folder_pop
+       set DirList($w:$f:popup) svnfolder_pop
      }
      "<directory>" {
        set DirList($w:$f:icon) folder
@@ -739,11 +739,11 @@ proc DirCanvas:build {w} {
       }
      "<directory:SVN>" {
        set DirList($w:$f:icon) svndir
-       set DirList($w:$f:popup) folder_pop
+       set DirList($w:$f:popup) svndir_pop
       }
      "<directory:RCS>" {
        set DirList($w:$f:icon) rcsdir
-       set DirList($w:$f:popup) rcs_pop
+       set DirList($w:$f:popup) rcsdir_pop
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
@@ -1248,8 +1248,6 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.cvsdir_pop add command -label "CVS Release" \
     -command { release_dialog [workdir_list_files] }
-  $w.cvsdir_pop add command -label "Delete Locally" \
-    -command { workdir_delete_file [workdir_list_files] }
 
   # For CVS files
   menu $w.stat_cvsok_pop -tearoff 0
@@ -1319,7 +1317,7 @@ proc DirCanvas:makepopup {w} {
   $w.rcs_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.rcs_pop add command -label "Browse the Log Diagram" \
-    -command { rcs_filelog [workdir_list_files] }
+    -command { rcs_branches [workdir_list_files] }
   $w.rcs_pop add command -label "RCS Lock" \
     -command { rcs_lock lock [workdir_list_files] }
   $w.rcs_pop add command -label "RCS Unlock" \
@@ -1333,14 +1331,39 @@ proc DirCanvas:makepopup {w} {
   menu $w.stat_svnok_pop -tearoff 0
   $w.stat_svnok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
+  $w.stat_svnok_pop add command -label "SVN Log" \
+    -command { svn_log [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
-    -command { svn_branches [pwd] [workdir_list_files] }
+    -command { svn_branches [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Annotate/Blame" \
-    -command { svn_annotate $current_tagname [workdir_list_files] }
+    -command { svn_annotate "" [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Revert" \
     -command { svn_revert [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Remove" \
     -command { subtract_dialog [workdir_list_files] }
+
+  # For SVN directories
+  menu $w.svnfolder_pop -tearoff 0
+  $w.svnfolder_pop add command -label "Descend" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.svnfolder_pop add command -label "SVN Log" \
+    -command { svn_log [workdir_list_files] }
+  $w.svnfolder_pop add command -label "Browse the Log Diagram" \
+    -command { svn_branches [workdir_list_files] }
+  $w.svnfolder_pop add command -label "SVN Remove" \
+    -command { subtract_dialog [workdir_list_files] }
+
+  # For SVN directories
+  menu $w.svndir_pop -tearoff 0
+  $w.svndir_pop add command -label "Descend" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.svndir_pop add command -label "SVN Log" \
+    -command { svn_log [workdir_list_files] }
+
+  # For RCS directories
+  menu $w.rcsdir_pop -tearoff 0
+  $w.rcsdir_pop add command -label "Descend" \
+    -command { workdir_edit_file [workdir_list_files] }
 
   gen_log:log T "LEAVE"
 }
