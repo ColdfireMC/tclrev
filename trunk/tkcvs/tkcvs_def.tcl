@@ -307,13 +307,6 @@ set cvscfg(trace_savelines) 5000
 # level.
 set cvscfg(aliasfolder) true
 
-# For cvs annotate display - number of days to be represented by each
-# color in the rainbow. The larger this number is, the older a file
-# will need to be in order to be displayed as blue (cold, "very old")
-#
-set cvscfg(dayspercolor) 20
-set cvscfg(revspercolor) 20
-
 # Set colours for tagging cvs output
 set cvscfg(outputColor,patched) blue4
 set cvscfg(outputColor,modified) purple
