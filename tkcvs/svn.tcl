@@ -517,8 +517,9 @@ proc svn_delete {root path} {
   if {[cvsconfirm $mess .modbrowse] != "ok"} {
     return
   }
+  set url [safe_url $root/$path]
   set v [viewer::new "SVN delete"]
-  set command "svn delete $root/$path -m \"Removed using TkSVN\""
+  set command "svn delete \"$url\" -m \"Removed using TkSVN\""
   $v\::do "$command"
   modbrowse_run
   gen_log:log T "LEAVE"
@@ -934,16 +935,17 @@ proc svn_checkout {dir url path rev target cmd} {
 proc svn_filecat {root path title} {
   gen_log:log T "ENTER ($root $path $title)"
 
+  set url [safe_url $root/$path]
   # Should do cat if it's a file and ls if it's a path
   if {[string match {*/} $title]} {
-    set commandline "svn ls \"$root/$path\""
+    set commandline "svn ls \"$url\""
     set wintitle "SVN ls"
   } else {
-    set commandline "svn cat \"$root/$path\""
+    set commandline "svn cat \"$url\""
     set wintitle "SVN cat"
   }
 
-  set v [viewer::new "$wintitle $root/$path"]
+  set v [viewer::new "$wintitle $url"]
   $v\::do "$commandline"
 }
 
@@ -951,10 +953,11 @@ proc svn_filecat {root path title} {
 proc svn_filelog {root path title} {
   gen_log:log T "ENTER ($root $path $title)"
 
-  set commandline "svn log \"$root/$path\""
+  set url [safe_url $root/$path]
+  set commandline "svn log \"$url\""
   set wintitle "SVN Log"
 
-  set v [viewer::new "$wintitle $root/$path"]
+  set v [viewer::new "$wintitle $url"]
   $v\::do "$commandline"
 }
 
@@ -1009,11 +1012,21 @@ proc svn_branches {files} {
   gen_log:log D "Relative Path: $cvsglb(relpath)"
 
   foreach file $files {
-    regsub -all { } $file {%20} file
+    set file [safe_url $file]
     ::svn_branchlog::new $cvsglb(relpath) $file
   }
 
   gen_log:log T "LEAVE"
+}
+
+proc safe_url { url } {
+  regsub -all { } $url {%20} url
+  regsub -all {%} $url {%25} url
+  regsub -all {&} $url {%26} url
+  # These don't seem to be necessary
+  #regsub -all {\+} $url {%2B} url
+  #regsub -all {\-} $url {%2D} url
+  return $url
 }
 
 namespace eval ::svn_branchlog {

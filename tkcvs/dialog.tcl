@@ -738,7 +738,7 @@ proc subtract_dialog {args} {
   }
 
   foreach f $filelist {
-    if {[file isdirectory $f]} {
+    if {$incvs && [file isdirectory $f]} {
       cvsfail "$f is a directory. Try \"Remove Recursively\" instead" .workdir
       return
     }
