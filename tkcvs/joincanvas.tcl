@@ -568,6 +568,7 @@ namespace eval joincanvas {
 
       label $joincanvas.up.lversSince -text "   Since" -anchor w
       frame $joincanvas.up.eSince -bg $cvscfg(colourB)
+      ::picklist::clear alltags
       ::picklist::entry $joincanvas.up.rversSince "" alltags
       label $joincanvas.up.lversTo -text "Merge To" -anchor w
       entry $joincanvas.up.rversTo -relief groove \

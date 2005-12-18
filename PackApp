@@ -12,8 +12,8 @@ ditto $HOME/Downloads/Wish\ Shell.app $Target
 chmod -R +w $Target/*
 
 echo "Installing Icons"
-cp tkcvs/bitmaps/Ticklefish.icns $Target/Contents/Resources
-chmod 644 $Target/Contents/Resources/Ticklefish.icns
+cp tkcvs/bitmaps/Anglerfish.icns $Target/Contents/Resources
+chmod 644 $Target/Contents/Resources/Anglerfish.icns
 cp Info.plist $Target/Contents
 
 echo "Making Lib Directories"
