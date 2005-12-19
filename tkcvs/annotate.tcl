@@ -188,12 +188,9 @@ namespace eval ::annotate {
 
       frame $w.bottom
       button $w.bottom.close -text "Close" -command "destroy $w; exit_cleanup 0"
-      if {$local == "svn"} {
-        label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
-      } else {
-        label $w.bottom.days -text "Days per Color" -width 20 -anchor e
-      }
-      entry $w.bottom.dayentry -width 3 -textvariable [namespace current]::revspercolor
+      label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
+      entry $w.bottom.dayentry -width 3 \
+        -textvariable [namespace current]::revspercolor
       button $w.bottom.redo -text "Redo Colors"
 
       button $w.bottom.srchbtn -text Search -command "search_textwidget $w.text"
