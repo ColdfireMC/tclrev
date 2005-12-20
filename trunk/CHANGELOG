@@ -1,7 +1,22 @@
 Release 8.0b1   December, 2005
 
-- Subversion support was added, entailing a major re-organization of the
-  program.
+- TkCVS now supports Subversion.  This involved a major re-organization of the
+  program, and many things have changed a little.  The program will detect
+  which revision-control system a directory is under and react appropriately.
+  The previously undocumented RCS support is explicit now and has been enhanced
+  somewhat.
+
+- Command line "tkcvs <file>" will open the log browser without the -log
+  option, per user request.
+
+- The annotation browser estimates how many days per color or revs per color to
+  use, so cvscfg(dayspercolor) and cvscfg(revspercolor) are gone.  You can
+  still change it per file in the annotation browser.
+
+- The directory-level CVS Merge Tool has a pull-down with a list of the tags,
+  to make it easier to "merge since" a tag.
+
+- TkDiff 4.1.1, which has a security patch.
 
 
 Release 7.2.4   July, 2005
