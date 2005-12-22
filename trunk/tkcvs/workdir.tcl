@@ -1522,7 +1522,7 @@ proc save_options { } {
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
                  showstatcol showdatecol showeditcol auto_tag \
-                 status_filter recurse logging }
+                 status_filter recurse logging blame_linenums}
   set STRGopts { file_filter ignore_file_filter clean_these \
                  printer rdetail ldetail log_classes lastdir \
                  workgeom modgeom loggeom tracgeom}

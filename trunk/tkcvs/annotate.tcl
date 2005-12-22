@@ -16,6 +16,7 @@ namespace eval ::annotate {
       variable file [uplevel {concat $file}]
       variable local [uplevel {concat $local}]
       variable w .annotate$my_idx
+      variable ll
 
       global cvs
       global tcl_platform
@@ -28,40 +29,45 @@ namespace eval ::annotate {
         variable now
         variable nrevs
         variable revlist
+        variable lc
+
 
         gen_log:log T "ENTER ($w)"
 
         catch {unset revcolors}
+        $w.text configure -state normal
         $w.text delete 1.0 end
         busy_start $w
-        foreach logline $log_lines {
-          $blameproc $w.text $now $logline
+        set lc 0
+        foreach logline [lrange $log_lines 0 end-1] {
+          incr lc
+          $blameproc $w.text $now $logline $lc
         }
         $w.text configure -state disabled
         # Focus in the text widget to activate the text bindings
         focus $w.text
-        #bind_show $w.text -verbose
         busy_done $w
+        update idletasks
         gen_log:log T "LEAVE"
       }
 
-      proc cvs_annotate_color {w now logline} {
+      proc cvs_annotate_color {w now logline ln} {
         global cvscfg
-        global cvsglb
         variable revcolors
         variable agecolors
         variable revlist
         variable nrevs
         variable revspercolor
-        variable log_lines
+        variable maxrevlen
+        variable ll
 
         set line [split $logline]
-        #gen_log:log D "$line"
         set revnum [lindex $line 0]
+        set line [string range $logline [string length $revnum] end]
+        set line [string trimleft $line]
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
-          #gen_log:log D "revision $revnum needs new color"
           # determine the number of revisions
           # between this commit and the now, then set color accordingly
           set revticks [lsearch -exact $revlist $revnum]
@@ -73,31 +79,33 @@ namespace eval ::annotate {
 
           set revcolors($revnum) $agecolors($revindex)
 
-          #gen_log:log D "revindex $revindex revcolors($revnum)\
-            $revcolors($revnum)"
           $w tag configure $revnum \
             -background $revcolors($revnum) -foreground black
-          #gen_log:log D "$w tag configure $revnum $revcolors($revnum)"
-          #$w tag lower $revnum 
         }
 
-        $w insert end "$logline\n" $revnum
+        if {$cvscfg(blame_linenums)} {
+          $w insert end [format "%${ll}d  " $ln]
+        }
+        $w insert end [format "%-${maxrevlen}s  " $revnum] $revnum
+        $w insert end "$line\n" $revnum
       }
 
-      proc svn_annotate_color {w now logline} {
+      proc svn_annotate_color {w now logline ln} {
         global cvscfg
-        global cvsglb
         variable revcolors
         variable agecolors
+        variable revlist
+        variable nrevs
         variable revspercolor
-        variable log_lines
+        variable maxrevlen
+        variable ll
 
-        set trimline [string trimleft $logline]
-        set line [split $trimline]
-        #gen_log:log D "$line"
+        set logline [string trimleft $logline]
+        set line [split $logline]
         set revnum [lindex $line 0]
-        #gen_log:log D "\"$revnum\""
-        if {$revnum == ""} return
+        set line [string range $logline [string length $revnum] end]
+        set line [string trimleft $line]
+        set revnum [string trimleft $revnum]
         if {$revnum == "Skipping"} {
           cvsfail "Skipping binary file" $w
           return
@@ -105,8 +113,10 @@ namespace eval ::annotate {
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
-          #gen_log:log D "revision $revnum needs new color"
-          set revticks [expr {$now - $revnum}]
+          # determine the number of revisions
+          # between this commit and the now, then set color accordingly
+          set revticks [lsearch -exact $revlist $revnum]
+          set revticks [expr {$nrevs - $revticks}]
           set revindex [expr {$revticks / $revspercolor}]
           set ncolors [expr {[array size agecolors] - 1}]
           if {$revindex > $ncolors} {set revindex $ncolors}
@@ -114,14 +124,17 @@ namespace eval ::annotate {
 
           set revcolors($revnum) $agecolors($revindex)
 
-          #gen_log:log D "revindex $revindex revcolors($revnum)\
-            $revcolors($revnum)"
           $w tag configure $revnum \
             -background $revcolors($revnum) -foreground black
-          #gen_log:log D "$w tag configure $revnum $revcolors($revnum)"
-          #$w tag lower $revnum 
         }
-        $w insert end "$logline\n" $revnum
+
+        if {$cvscfg(blame_linenums)} {
+          $w insert end [format "%${ll}d  " $ln]
+        }
+        # we're sticking an "r" on - one more character
+        set lr [expr {$maxrevlen+1}]
+        $w insert end [format "r%-${lr}s  " $revnum] $revnum
+        $w insert end "$line\n" $revnum
       }
 
       regsub {^-} $revision {} revlabel
@@ -189,6 +202,9 @@ namespace eval ::annotate {
       frame $w.bottom
       button $w.bottom.close -text "Close" -command "destroy $w; exit_cleanup 0"
       label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
+      checkbutton $w.bottom.linum -text "Show Line Numbers" \
+        -variable cvscfg(blame_linenums) \
+        -onvalue 1 -offvalue 0
       entry $w.bottom.dayentry -width 3 \
         -textvariable [namespace current]::revspercolor
       button $w.bottom.redo -text "Redo Colors"
@@ -200,6 +216,7 @@ namespace eval ::annotate {
       pack $w.bottom -side bottom -fill x
       pack $w.bottom.srchbtn -side left
       pack $w.bottom.entry -side left
+      pack $w.bottom.linum -side left -ipadx 15
       pack $w.bottom.days -side left
       pack $w.bottom.dayentry -side left
       pack $w.bottom.redo -side left
@@ -245,6 +262,7 @@ namespace eval ::annotate {
       }
 
       #gen_log:log C "$commandline"
+      busy_start $w
       set exec_cmd [exec::new "$commandline"]
       set log [$exec_cmd\::output]
 
@@ -252,18 +270,27 @@ namespace eval ::annotate {
       # Read the log lines.  Assign a color to each unique revision.
       catch {unset revcolors}
       set log_lines [split [set log] "\n"]
-      busy_start $w
 
       # We have 24 colors.  How many revs do we have?
       set revlist {}
+      # Might as well use the minimum space needed for revision numbers while
+      # we're at it.  The cvs annotate output wastes space
+      set maxrevlen 0
       foreach logline $log_lines {
         set line [split [string trimleft $logline]]
         set revnum [lindex $line 0]
         if {$revnum == ""} {continue}
         if {[lsearch -exact $revlist $revnum] == -1} {
           lappend revlist $revnum
+          set l [string length $revnum]
+          if {$l > $maxrevlen} {
+            set maxrevlen $l
+          }
         }
       }
+      # Sort the revisions, using the "sortrevs" proc we wrote for
+      # cvs/rcs revision numbers (and which is unneeded but harmless
+      # for svn numbers
       set revlist [lsort -command sortrevs $revlist]
       set nrevs [llength $revlist]
       gen_log:log D "$revlist"
@@ -275,7 +302,7 @@ namespace eval ::annotate {
         set revspercolor $rpc
       }
       gen_log:log D "nrevs $nrevs"
-      gen_log:log D "revs/days per color $revspercolor"
+      gen_log:log D "revs per color $revspercolor"
       # Since there's an entry for changing revspercolor, make sure it's
       # something you can divide by or it will produce an error.
       if {[string length $revspercolor] == 0 || $revspercolor == 0} {
@@ -283,15 +310,21 @@ namespace eval ::annotate {
         set revspercolor 1
       }
 
-      foreach logline $log_lines {
-        $blameproc $w.text $now $logline
+      # linecount
+      set lc 0
+      set ll [string length [llength $log_lines]]
+      foreach logline [lrange $log_lines 0 end-1] {
+        incr lc
+        $blameproc $w.text $now $logline $lc
       }
 
       $w.text yview moveto 0
-      update
+      update idletasks
       $w.text configure -state disabled
       bind $w.bottom.dayentry <Return> [namespace code {redo $w}]
       $w.bottom.redo configure -command [namespace code {redo $w}]
+      $w.bottom.redo configure -command [namespace code {redo $w}]
+      $w.bottom.linum configure -command [namespace code {redo $w}]
       # Focus in the text widget to activate the text bindings
       focus $w.text
       #bind_show $w.text -verbose
