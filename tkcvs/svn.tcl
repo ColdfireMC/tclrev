@@ -62,9 +62,9 @@ proc read_svn_dir {dirname} {
       set cvscfg(svnroot) [string trimright $root "/"]
       gen_log:log D "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
-      set cvsglb(relpath) $relp
+      set cvsglb(relpath) [join $relp {/}]
       gen_log:log D "relpath: $cvsglb(relpath)"
-      set module_dir [join $relp {/}]    
+      set module_dir $cvsglb(relpath)
       gen_log:log D "tagname: $current_tagname"
     }
   }
