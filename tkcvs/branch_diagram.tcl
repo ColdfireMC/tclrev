@@ -832,7 +832,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        #gen_log:log T "ENTER"
+        gen_log:log T "ENTER"
 
         foreach {x1 y1 x2 y2} [$logcanvas.canvas bbox all] { break }
         $logcanvas.canvas configure \
@@ -844,10 +844,6 @@ namespace eval ::logcanvas {
         if {[info exists curr_x]} {
           set canv_width [$logcanvas.canvas cget -width]
           set canv_height [$logcanvas.canvas cget -height]
-          gen_log:log D "visible width $canv_width"
-          gen_log:log D "visible height $canv_height"
-          gen_log:log D "x $curr_x"
-          gen_log:log D "y $curr_y"
           set bbox [$logcanvas.canvas bbox all]
           set llx [lindex $bbox 0]
           set lly [lindex $bbox 1]
@@ -855,33 +851,44 @@ namespace eval ::logcanvas {
           set ury [lindex $bbox 3]
           set bbox_width [expr {$urx - $llx}]
           set bbox_height [expr {$ury - $lly}]
-          gen_log:log D "diagram width $bbox_width"
-          gen_log:log D "diagram height $bbox_height"
-          set curr_y [expr {$curr_y - [image height Man]}]
+          gen_log:log D "diagram size: $bbox_width x $bbox_height"
+          gen_log:log D "canvas size:  $canv_width x $canv_height"
+          set canv_bot [expr {$ury - $canv_height}]
+          set view_y [expr {$canv_bot - $ury}]
+          gen_log:log D "bbox:         $bbox"
+          gen_log:log D "canvas view:  $llx $canv_bot  $canv_width $view_y"
+          gen_log:log D "curr x & y:  $curr_x, $curr_y"
+          gen_log:log D "x: (curr_x $curr_x) >? (canv_width $canv_width)"
           if {$curr_x > $canv_width} {
-            set curr_x [expr {$curr_x - 3 * [font measure $font_bold \
+            set dist_x [expr {$curr_x - $canv_width/2}]
+            set dist_x [expr {$dist_x - 3 * [font measure $font_bold \
                      -displayof $logcanvas.canvas {You are}]}]
-            gen_log:log D "positioning x:  new x $curr_x"
+            gen_log:log D "positioning x:  new x $dist_x"
           } else {
             gen_log:log D "not re-positioning x"
-            set curr_x 0
+            set dist_x 0
           }
-          set abs_y [expr abs($curr_y)]
-          if {$abs_y > [expr {$bbox_height - $canv_height}]} {
-            set abs_y [expr {$canv_height - $curr_y}]
-            gen_log:log D "positioning y:  new y $abs_y"
+          gen_log:log D "y: (curr_y $curr_y) <? (view_y $view_y)"
+          if {$curr_y < $view_y} {
+            set dist_y [expr {$curr_y - $lly}]
+            #gen_log:log D " $curr_y is $dist_y pixels from the top"
+            set dist_y [expr {$dist_y - 2 * [image height Man]}]
+            gen_log:log D "positioning y:  new y $dist_y"
           } else {
             gen_log:log D "not re-positioning y"
-            set curr_y 0
+            set dist_y 0
           }
-          set view_xoff [expr {$curr_x / ($bbox_width * 1.0)}]
-          set view_yoff [expr {1 - ($abs_y / $bbox_height * 1.0)}]
+          # Multiplying by 1.0 keeps it from being rounded to an int
+          set x_proportion [expr {($dist_x * 1.0) / ($bbox_width * 1.0)}]
+          set view_xoff $x_proportion
+          set y_proportion [expr {($dist_y * 1.0) / ($bbox_height * 1.0)}]
+          set view_yoff $y_proportion
         }
         gen_log:log D "set offset $view_xoff $view_yoff"
         $logcanvas.canvas xview moveto $view_xoff
         $logcanvas.canvas yview moveto $view_yoff
         update
-        #gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE"
         return
       }
   
