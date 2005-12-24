@@ -1,6 +1,22 @@
-Release 8.0     ??, 2005
+Release 8.0     December, 2005
 
-- Annotation browser can show line numbers
+- Bugfix: relative path in Branch Browser is constructed correctly for path
+  depths > 2
+
+- The Annotation browser optionally shows line numbers.
+
+- The Branch Browser positions the diagram so "you are here" is in the visible
+  canvas
+
+- The Branch Browser counts the tags when doing a Subversion diagram and gives
+  you a chance to skip the tag step if there are many (where "many" arbitrarily
+  equals 10.)  Constructing the branch diagram from Subversion is inefficient,
+  and drawing the tags tends to take far longer than it's worth for the
+  information it gives you.
+
+- For Subversion directories, the Module Browser shows the number of items
+  within the folder instead of the "svn list -v" info string.  That may
+  help you decide whether to open the folder or not.
 
 
 Release 8.0b1   December, 2005
@@ -12,7 +28,7 @@ Release 8.0b1   December, 2005
   somewhat.
 
 - Command line "tkcvs <file>" will open the log browser without the -log
-  option, per user request.
+  option.
 
 - The annotation browser estimates how many days per color or revs per color to
   use, so cvscfg(dayspercolor) and cvscfg(revspercolor) are gone.  You can

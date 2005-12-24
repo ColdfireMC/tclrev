@@ -1232,7 +1232,7 @@ namespace eval ::logcanvas {
         -onvalue 1 -offvalue 0 \
         -selectcolor $selcolor \
         -command [namespace code { DrawTree }]
-      $logcanvas.menubar.view.branch add checkbutton -label "Show tags" \
+      $logcanvas.menubar.view.branch add checkbutton -label "Show label" \
         -variable [namespace current]::opt(show_root_tags) \
         -onvalue 1 -offvalue 0 \
         -selectcolor $selcolor \
