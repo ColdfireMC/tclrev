@@ -465,7 +465,7 @@ namespace eval ::logcanvas {
             $tx $ty \
             -text $s \
             -anchor s \
-            -font $font_norm -fill blue \
+            -font $font_norm -fill navy \
             -tags [list R$branch box active]
           incr ty -$font_norm_h
           }
@@ -1062,6 +1062,7 @@ namespace eval ::logcanvas {
 
           # Start drawing, beginning with the trunk
           if {[info exists trunkrev]} {
+            gen_log:log D "Drawing trunkrev $trunkrev"
             foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $trunkrev] {
               lappend bxys $lx $lbw $rh $lly
               break
@@ -1079,6 +1080,10 @@ namespace eval ::logcanvas {
             DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
           } elseif {[info exists basebranch]} {
+            gen_log:log D "Drawing basebranch $basebranch"
+            # FIXME: Tags get confused with branches - we should fix it, but
+            # at least avoid a fatal error for now
+            set basebranch [lindex $basebranch 0]
             gen_log:log D "DrawBranch 0 0 {} $basebranch"
             if {! [info exists revtags($basebranch)]} {
               set revtags($basebranch) {}
