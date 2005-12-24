@@ -423,7 +423,7 @@ Shows, in a searchable text window, the status of all the files. By default, it 
 For merging the entire directory. In Subversion, it opens the Branch Browser for "."  In CVS, it chooses a "representative" file in the current directory and opens a graphical tool for directory merges.
 
 <itl>Log (Branch) Browse:</itl>
-This button will bring up the log browser window for each of the selected files in the window. See the Log Browser section
+This button will bring up the log browser window for each of the selected files in the window. See the Log Browser section.
 
 <itl>Annotate:</itl>
 This displays a window in which the selected file is shown with the lines highlighted according to when and by whom they were last revised.  In Subversion, it's also called "blame." 
@@ -481,7 +481,7 @@ proc log_browser {} {
 
 The TkCVS Log Browser window enables you to view a graphical display of the revision log of a file, including all previous versions and any branched versions.
 
-You can get to the log browser window in three ways, either by invoking it directly with "tkcvs -log <filename>", by selecting a file within the main window of TkCVS and pressing the Log Browse button, or by selecting a file in a list invoked from the module browser and pressing the Log Browse button.
+You can get to the log browser window in three ways, either by invoking it directly with "tkcvs [-log] <filename>", by selecting a file within the main window of TkCVS and pressing the Log Browse button, or by selecting a file in a list invoked from the module browser and pressing the Log Browse button.
 
 If the Log Browser is examining a checked-out file, the buttons for performing merge operations are enabled.
 
@@ -494,6 +494,8 @@ The log browser window has three components. These are the file name and version
 The main log display is fairly self explanatory. It shows a group of boxes connected by lines indicating the main trunk of the file development (on the left hand side) and any branches that the file has (which spread out to the right of the main trunk).
 
 Each box contains the version number, author of the version, and other information determined by the menu View -> Revision Layout.
+
+Constructing the branch diagram from Subversion is inefficient, so the Log Browser counts the tags when doing a Subversion diagram and pops up a dialog giving you a chance to skip the tag step if there are too many tags (where "many" arbitrarily equals 10.) 
 
 <h2>Version Numbers</h2>
 
@@ -561,7 +563,7 @@ proc module_browser {} {
 
 Operations that are performed on the repository instead of in a checked-out working directory are done with the Module Browser.  The most common of these operations is checking out or exporting from the repository.  The Module Browser can be started from the command line (tkcvs -win module) or started from the main window by pressing the big button.
 
-Subversion repositories can be browsed like a file tree, and that is what you will see in the Module Browser.  CVS repositories aren't directly browsable, but if the CVSROOT/modules file is maintained appropriately, TkCVS can display the modules and infer tree structures if they are present.
+Subversion repositories can be browsed like a file tree, and that is what you will see in the Module Browser.  CVS repositories aren't directly browsable, but if the CVSROOT/modules file is maintained appropriately, TkCVS can display the modules and infer tree structures if they are present. See the "CVS Modules File" section.
 
 Using the module browser window, you can select a module to check out. When you check out a module, a new directory is created in the current working directory with the same name as the module.
 
@@ -897,7 +899,7 @@ proc cvs_modules_file {} {
 
 <h1>CVS Modules File</h1>
 
-If you haven't put anything in your CVSROOT/modules file, do so. See the "Administrative Files" section of the CVS manual. Then, you can add comments which TkCVS can use to title the modules and to display them in a tree structure.
+If you haven't put anything in your CVSROOT/modules file, please do so. See the "Administrative Files" section of the CVS manual. Then, you can add comments which TkCVS can use to title the modules and to display them in a tree structure.
 
 The simplest use of TkCVS's "#D" directive is to display a meaningful title for the module:
 

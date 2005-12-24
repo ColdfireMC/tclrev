@@ -591,12 +591,13 @@ proc svn_jit_dircmd { tf dir } {
     set contents [$cmd(svnlist)\::output]
   }
   set lbl "[file tail $dir]/"
+  set exp "([llength $contents] items)"
 
   set dirs {}
   set fils {}
   foreach logline [split $contents "\n"] {
     if {$logline == ""} continue
-    gen_log:log D "$logline"
+    #gen_log:log D "$logline"
     if [string match {*/} $logline] {
       set item [string trimright $logline "/"]
       lappend dirs $item
@@ -607,10 +608,10 @@ proc svn_jit_dircmd { tf dir } {
 
   if {$dirs == {} && $fils == {}} {
     #puts "  $dir is empty"
-    catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$lbl\" -image Folder"
+    catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$exp\" -image Folder"
   } else {
     #puts "  $dir has contents"
-    set r [catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$lbl\" -image Folder" err]
+    set r [catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$exp\" -image Folder" err]
     if {! $r} {
       #puts "-> newitem /$dir/d"
       catch "ModTree:newitem $tf \"/$dir/d\" d d -image {}"
@@ -1261,6 +1262,18 @@ namespace eval ::svn_branchlog {
 #puts "$tags"
               set tags ""
           }
+          set n_tags [llength $tags]
+          if {$n_tags > 10} {
+            set mess "There are $n_tags tags.  This may take a long time."
+            append mess "  If you're willing to wait, press OK."
+            append mess "  Otherwise, press Cancel and I will draw the"
+            append mess " diagram without showing tags. You may wish to turn off\n"
+            append mess " View -> Revision Layout -> Show tags"
+            if {[cvsconfirm $mess $lc] != "ok"} {
+              set tags ""
+       
+            }
+          }
           foreach tag $tags {
             gen_log:log D "$tag"
             # There can be files such as "README" here that aren't tags
@@ -1307,7 +1320,7 @@ namespace eval ::svn_branchlog {
             set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
             lappend revtags($bp) $tag
             update idletasks
-          } 
+          }
         }
 
         set branchrevs(current) {}
@@ -1367,13 +1380,10 @@ namespace eval ::svn_branchlog {
 
         set allrevs($r) ""
         foreach line $lines {
-#puts $line
-          gen_log:log D "$line"
           if [regexp {^r} $line] {
+            gen_log:log D "$line"
             set splitline [split $line "|"]
-#puts "$splitline"
             set revnum [string trim [lindex $splitline 0]]
-#puts "revnum $revnum"
             lappend allrevs($r) $revnum
           }
         }
