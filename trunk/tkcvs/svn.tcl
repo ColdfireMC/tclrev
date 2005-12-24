@@ -1136,6 +1136,7 @@ namespace eval ::svn_branchlog {
         set command "svn log $path"
         gen_log:log C "$command"
         set ret [catch {eval exec $command} log_output]
+        update idletasks
         if {$ret == 0} {
           set trunk_lines [split $log_output "\n"]
           set rr [parse_svnlog $trunk_lines trunk]
@@ -1190,6 +1191,7 @@ namespace eval ::svn_branchlog {
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
           set ret [catch {eval exec $command} log_output]
+          update idletasks
           if {$ret != 0} {
             # This can happen a lot -let's not let it stop us
             gen_log:log E "$log_output"
@@ -1225,6 +1227,7 @@ namespace eval ::svn_branchlog {
           set command "svn log -q $path"
           gen_log:log C "$command"
           set ret [catch {eval exec $command} log_output]
+          update idletasks
           if {$ret != 0} {
             cvsfail "$log_output"
             return
@@ -1273,6 +1276,7 @@ namespace eval ::svn_branchlog {
             set command "svn log --stop-on-copy $path"
             gen_log:log C "$command"
             set ret [catch {eval exec $command} log_output]
+            update idletasks
             if {$ret != 0} {
               # This can happen a lot -let's not let it stop us
               gen_log:log E "$log_output"
@@ -1293,6 +1297,7 @@ namespace eval ::svn_branchlog {
             set command "svn log -q $path"
             gen_log:log C "$command"
             set ret [catch {eval exec $command} log_output]
+            update idletasks
             if {$ret != 0} {
               cvsfail "$log_output"
               return
