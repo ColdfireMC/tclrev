@@ -849,9 +849,7 @@ proc svn_merge {fromrev sincerev frombranch file} {
   #if {$cvscfg(auto_tag)} {
     #set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag" err]
     #if {$ret} {
-#puts $err
       #set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
-#puts $commandline
       #$v\::do $commandline
       #$v\::wait
     #}
@@ -863,7 +861,6 @@ proc svn_merge {fromrev sincerev frombranch file} {
     #} else {
       #append commandline " $cvscfg(svnroot)/tags/$fromtag/$file"
     #}
-#puts "$commandline"
     #$v\::do "$commandline"
     #toplevel .reminder
     #message .reminder.m1 -aspect 600 -text \
@@ -1083,6 +1080,7 @@ namespace eval ::svn_branchlog {
         variable revpath
         variable revname
         variable revtags
+        variable revbtags
         variable branchrevs
         variable allrevs
         variable revbranches
@@ -1098,6 +1096,7 @@ namespace eval ::svn_branchlog {
         catch { unset revtime }
         catch { unset revcomment }
         catch { unset revtags }
+        catch { unset revbtags }
         catch { unset branchrevs }
         catch { unset revbranches }
         catch { unset revkind }
@@ -1120,7 +1119,6 @@ namespace eval ::svn_branchlog {
         set svnstat [lindex $loglines 1]
         set revnum_current [lindex $svnstat 0]
         gen_log:log D "revnum_current $revnum_current"
-#puts "revnum_current $revnum_current"
 
         busy_start $lc
         if { $relpath == {} } {
@@ -1129,7 +1127,6 @@ namespace eval ::svn_branchlog {
           set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
         }
         # The trunk
-#puts "\nTrunk"
         set branchrevs(trunk) {}
         # if the file was added on a branch, this will error out.
         # Come to think of it, there's nothing especially privileged
@@ -1163,26 +1160,23 @@ namespace eval ::svn_branchlog {
           set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
           set revkind($rr) "root"
           set revname($rr) "trunk"
-          set revtags($rr) "trunk"
+          set revbtags($rr) "trunk"
           set revpath($rr) $path
         }
 
         # Branches
-#puts "Branches"
         set command "svn list $cvscfg(svnroot)/branches"
         gen_log:log C "$command"
         set ret [catch {eval "exec $command"} branches]
         if {$ret != 0} {
-            gen_log:log E "$branches"
-#puts "$branches"
-            set branches ""
+          gen_log:log E "$branches"
+          set branches ""
         }
         foreach branch $branches {
           gen_log:log D "$branch"
           # There can be files such as "README" here that aren't branches
           if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
-#puts " $branch"
           # Can't use file join or it will mess up the URL
           if { $relpath == {} } {
             set path "$cvscfg(svnroot)/branches/$branch/$filename"
@@ -1222,7 +1216,7 @@ namespace eval ::svn_branchlog {
           set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
           set revkind($rb) "branch"
           set revname($rb) $branch
-          set revtags($rb) $branch
+          set revbtags($rb) $branch
           set revpath($rb) $path
 
           set command "svn log -q $path"
@@ -1243,27 +1237,20 @@ namespace eval ::svn_branchlog {
             incr idx -1
           }
           set bp [lindex $allrevs($branch) $idx]
-#puts " allrevs($branch) $allrevs($branch)"
-          set revbranches($bp) $branch
-
-#puts " revbranches($bp) $branch = $rb"
           set revbranches($bp) $rb
-#puts " revbranches($bp) $revbranches($bp)"
           update idletasks
         }
         # Tags
         if {$show_tags} {
-#puts "Tags"
           set command "svn list $cvscfg(svnroot)/tags"
           gen_log:log C "$command"
           set ret [catch {eval "exec $command"} tags]
           if {$ret != 0} {
               gen_log:log E "$tags"
-#puts "$tags"
               set tags ""
           }
           set n_tags [llength $tags]
-          if {$n_tags > 10} {
+          if {$cvscfg(confirm_prompt) && $n_tags > 10} {
             set mess "There are $n_tags tags.  This may take a long time."
             append mess "  If you're willing to wait, press OK."
             append mess "  Otherwise, press Cancel and I will draw the"
@@ -1271,7 +1258,6 @@ namespace eval ::svn_branchlog {
             append mess " View -> Revision Layout -> Show tags"
             if {[cvsconfirm $mess $lc] != "ok"} {
               set tags ""
-       
             }
           }
           foreach tag $tags {
@@ -1279,7 +1265,6 @@ namespace eval ::svn_branchlog {
             # There can be files such as "README" here that aren't tags
             if {![string match {*/} $tag]} {continue}
             set tag [string trimright $tag "/"]
-#puts " $tag"
             # Can't use file join or it will mess up the URL
             if { $relpath == {} } {
               set path "$cvscfg(svnroot)/tags/$tag/$filename"
@@ -1293,7 +1278,6 @@ namespace eval ::svn_branchlog {
             if {$ret != 0} {
               # This can happen a lot -let's not let it stop us
               gen_log:log E "$log_output"
-#puts "$log_output"
               continue
             }
             set loglines [split $log_output "\n"]
@@ -1403,6 +1387,7 @@ namespace eval ::svn_branchlog {
         variable revpath
         variable revname
         variable revtags
+        variable revbtags
         variable branchrevs
         variable revbranches
         variable logstate
@@ -1413,10 +1398,9 @@ namespace eval ::svn_branchlog {
         gen_log:log T "ENTER"
 
         # Sort the revision and branch lists and remove duplicates
-        gen_log:log D "\nsvn_sort_it_all_out"
         foreach r [lsort -dictionary [array names revkind]] {
            gen_log:log D "revkind($r) $revkind($r)"
-           if {![info exists revbranches($r)]} {set revbranches($r) {} }
+           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
@@ -1425,6 +1409,10 @@ namespace eval ::svn_branchlog {
         gen_log:log D ""
            foreach a [lsort -dictionary [array names revbranches]] {
            gen_log:log D "revbranches($a) $revbranches($a)"
+        }
+        gen_log:log D ""
+           foreach a [lsort -dictionary [array names revbtags]] {
+           gen_log:log D "revbtags($a) $revbtags($a)"
         }
         gen_log:log D ""
            foreach a [lsort -dictionary [array names revtags]] {

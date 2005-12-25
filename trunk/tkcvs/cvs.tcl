@@ -2025,6 +2025,7 @@ namespace eval ::cvs_branchlog {
         variable revstate
         variable revcomment
         variable revtags
+        variable revbtags
         variable revbranches
         variable branchrevs
         variable logstate
@@ -2038,6 +2039,7 @@ namespace eval ::cvs_branchlog {
         catch { unset revstate }
         catch { unset revcomment }
         catch { unset revtags }
+        catch { unset revbtags }
         catch { unset revbranches }
         catch { unset branchrevs }
         set cwd [pwd]
@@ -2071,6 +2073,7 @@ namespace eval ::cvs_branchlog {
         variable revstate
         variable revcomment
         variable revtags
+        variable revbtags
         variable revbranches
         variable branchrevs
         variable logstate
@@ -2127,12 +2130,11 @@ namespace eval ::cvs_branchlog {
                   # Branch tag
                   set rnum [join [lreplace $parts end-1 end-1] {.}]
                   set revkind($rnum) "branch"
-                  set rootbranch($tagstring) [join [lrange $parts 0 end-2] {.}]
                   set revbranch($tagstring) $rnum
-                  lappend revtags($rnum) $tagstring
-                  lappend revbranches([join [lrange $parts 0 end-2] {.}]) \
-                    $rnum
-                  append branchrevs($rnum) {}
+                  set rbranch [join [lrange $parts 0 end-2] {.}]
+                  set rootbranch($tagstring) $rbranch
+                  lappend revbtags($rnum) $tagstring
+                  lappend revbranches($rbranch) $rnum
                 } else {
                   # Ordinary symbolic tag
                   lappend revtags($rnum) $tagstring
@@ -2145,12 +2147,11 @@ namespace eval ::cvs_branchlog {
                     # at all.
                     lappend branchrevs(trunk) $rnum
                   } else {
-                    lappend branchrevs([join [lrange $parts 0 end-1]\
-                        {.}]) $rnum
+                    set rbranch [join [lrange $parts 0 end-1] {.}]
+                    lappend branchrevs($rbranch) $rnum
                   }
                   # Branches for this revision may have already been created
                   # during tag parsing
-                  append revbranches($rnum) {}
                   foreach "revwho($rnum) revdate($rnum) revtime($rnum)
                     revlines($rnum) revstate($rnum) revcomment($rnum)" \
                     {{} {} {} {} {dead} {}} \
@@ -2187,7 +2188,6 @@ namespace eval ::cvs_branchlog {
               }
               # Branches for this revision may have already been created
               # during tag parsing
-              append revbranches($rnum) {}
               foreach "revwho($rnum) revdate($rnum) revtime($rnum)
                 revlines($rnum) revstate($rnum) revcomment($rnum)" \
                 {{} {} {} {} {} {}} \
@@ -2232,7 +2232,6 @@ namespace eval ::cvs_branchlog {
                 foreach br [lrange $logline 1 end] {
                   set br [string trimright $br {;}]
                   lappend revbranches($rnum) $br
-                  append revtags($br) {}
                 }
               } elseif {$logline == {----------------------------}} {
                 set logstate {V}
@@ -2270,6 +2269,7 @@ namespace eval ::cvs_branchlog {
         variable revstate
         variable revcomment
         variable revtags
+        variable revbtags
         variable revbranches
         variable branchrevs
         variable logstate
@@ -2282,7 +2282,6 @@ namespace eval ::cvs_branchlog {
 
         set revkind(1) "root"
 
-        gen_log:log D "\ncvs_sort_it_all_out"
         foreach r [lsort -command sortrevs [array names revkind]] {
           gen_log:log D "revkind($r) $revkind($r)"
         }
@@ -2290,24 +2289,24 @@ namespace eval ::cvs_branchlog {
         foreach r [array names branchrevs] {
           set branchrevs($r) \
             [lsort -unique -decreasing -command sortrevs $branchrevs($r)]
-          gen_log:log D "branchrevs($r) $branchrevs($r)"
+          #gen_log:log D "branchrevs($r) $branchrevs($r)"
         }
 
         # Create a fake revision to be the trunk branchtag
-        set revtags(1) "trunk"
+        set revbtags(1) "trunk"
         set branchrevs(1) $branchrevs(trunk)
 
         foreach r [array names revbranches] {
           set revbranches($r) \
             [lsort -unique -command sortrevs $revbranches($r)]
-          gen_log:log D "revbranches($r) $revbranches($r)"
+          #gen_log:log D "revbranches($r) $revbranches($r)"
         }
         # Find out where to put the working revision icon (if anywhere)
         # FIXME: we don't know that the log parsed was derived from the
         # file in this directory. Maybe we should check CVS/{Root,Repository}?
         # Maybe this check should be done elsewhere?
         if {$sys != "rcs" && $filename != "no file"} {
-          gen_log:log D "$filename is local. Reading CVS/Entries"
+          gen_log:log F "Reading CVS/Entries"
           set basename [file tail $filename]
           if {![catch {open [file join \
                               [file dirname $filename] {CVS}\
@@ -2336,14 +2335,14 @@ namespace eval ::cvs_branchlog {
                   # there is no log and no revisions to show.
                   # FIXME: what if this is a resurrection?
                   lappend branchrevs(trunk) {current}
-                  set revbranches(current) {}
+                  #set revbranches(current) {}
                 } elseif {[info exists rootbranch($tag)] && \
                     $rootbranch($tag) == $rnum} {
                   # The sticky tag specifies a branch and the branch's
                   # root is the same as the source revision. Place the
                   # you-are-here box at the start of the branch.
                   lappend branchrevs($revbranch($tag)) {current}
-                  set revbranches(current) {}
+                  #set revbranches(current) {}
                 } else {
                   if {[catch {info exists $branchrevs($root)}] == 0} {
                     if {$rnum == [lindex $branchrevs($root) 0]} {
@@ -2352,7 +2351,7 @@ namespace eval ::cvs_branchlog {
                       # branch.
                       set branchrevs($root) [linsert $branchrevs($root) 0\
                         {current}]
-                      set revbranches(current) {}
+                      #set revbranches(current) {}
                     } else {
                       # Otherwise we will place it as a branch off the
                       # revision.
@@ -2371,8 +2370,6 @@ namespace eval ::cvs_branchlog {
               }
               close $entries
             }
-        } else {
-          gen_log:log D "$filename"
         }
         gen_log:log D ""
         foreach a [array names branchrevs] {
@@ -2381,6 +2378,10 @@ namespace eval ::cvs_branchlog {
         gen_log:log D ""
         foreach a [array names revbranches] {
           gen_log:log D "revbranches($a) $revbranches($a)"
+        }
+        gen_log:log D ""
+        foreach a [array names revbtags] {
+          gen_log:log D "revbtags($a) $revbtags($a)"
         }
         gen_log:log D ""
         foreach a [array names revtags] {

@@ -51,6 +51,7 @@ namespace eval ::logcanvas {
       variable branchrevs
       variable revcomment
       variable revtags
+      variable revbtags
       variable revpath
       variable sel_tag
       set sel_tag(A) {}
@@ -279,19 +280,9 @@ namespace eval ::logcanvas {
           if {$h > $ntags} {
             set h $ntags
           }
-          if {[info tclversion] >= 8.3} {
-            listbox $mname.lbx -font $cvscfg(listboxfont) \
-              -width 0 -height $h \
-              -listvar [namespace current]::revtags($rev)
-          } else {
-            # The list of tags won't get update on a reload of the log file
-            # unless you close and reopen the pop up :-(
-            listbox $mname.lbx -font $cvscfg(listboxfont) \
-              -width 0 -height $h
-            foreach tag $revtags($rev) {
-              $mname.lbx insert end $tag
-            }
-          }
+          listbox $mname.lbx -font $cvscfg(listboxfont) \
+            -width 0 -height $h \
+            -listvar [namespace current]::revtags($rev)
           # Always have a scroll bar because a reload of the log might find
           # more tags and the list might not fit in the window any longer.
           scrollbar $mname.scroll -command "$mname.lbx yview"
@@ -370,11 +361,8 @@ namespace eval ::logcanvas {
       proc DrawCurrent { x y box_width box_height revision } {
         variable curr
         variable revstate
-        variable revtags
         variable font_bold
-        variable font_bold_h
         variable logcanvas
-        variable root_info
         variable curr_x
         variable curr_y
 
@@ -396,8 +384,8 @@ namespace eval ::logcanvas {
           }
         }
         set pad \
-          [expr {($box_width - [image width Man] \
-            - [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
+          [expr {($box_width - [image width Man] - \
+            [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
             / 3}]
         set ty [expr {$y - [expr {$box_height/2}]}]
         # add the contents
@@ -413,18 +401,61 @@ namespace eval ::logcanvas {
         return
       }
 
-      proc CalcRoot { branch } {
+      proc CalcRoot { root_rev } {
         global cvscfg
+        variable opt
         variable curr
+        variable box_height
         variable font_norm
         variable font_norm_h
-        variable font_bold
         variable logcanvas
         variable root_info
         variable revtags
+        variable revbtags
+        variable tlist
 
-        #gen_log:log T "ENTER ($branch)"
+        #gen_log:log T "ENTER ($root_rev)"
+        set height $box_height
+        set tag_width 0
         set box_width 0
+        set tlist($root_rev) {}
+        if {$opt(show_tags) && [info exists revtags($root_rev)]} {
+          # We want to show all the coloured tags plus others to take
+          # the total to at least cvscfg(tagdepth)
+          set tag_colour {}
+          set tag_black {}
+          foreach tag $revtags($root_rev) {
+            if {[info exists cvscfg(tagcolour,$tag)]} {
+              lappend tag_colour $tag
+            } else {
+              lappend tag_black $tag
+            }
+          }
+          if {[info exists cvscfg(tagdepth)] && $cvscfg(tagdepth) != 0} {
+            set n [expr {$cvscfg(tagdepth) - [llength $tag_colour]}]
+            if {$n < [llength $tag_black]} {
+              set tag_black [concat [lrange $tag_black 0 [expr {$n-1}]] {more...}]
+            }
+          }
+          set tlist($root_rev) [concat $tag_colour $tag_black]
+          foreach tag $tlist($root_rev) {
+            if {$tag == {more...}} {
+              set my_font $font_bold
+            } else {
+              set my_font $font_norm
+            }
+            set w [font measure $my_font -displayof $logcanvas.canvas $tag]
+            if {$w > $tag_width} {
+              set tag_width $w
+            }
+          }
+          incr tag_width $curr(tspcb,2)
+          set h [expr {[llength $tlist($root_rev)] * $font_norm_h}]
+          if {$h > $height} {
+            set height $h
+          }
+        }
+
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
           if {$w > $box_width} {
@@ -433,11 +464,12 @@ namespace eval ::logcanvas {
         }
         incr box_width $curr(padx,2)
         #gen_log:log T "LEAVE"
-        return [list $box_width \
-          [expr {$curr(pady,2) + [llength [subst $root_info]] * $font_norm_h}]]
+        set text_height [expr {$curr(pady,2) + \
+           [llength [subst $root_info]] * $font_norm_h}]
+        return [list $tag_width $box_width $text_height]
       }
 
-      proc DrawRoot { x y box_width box_height root_rev branch } {
+      proc DrawRoot { x y box_width box_height cur_rev root_rev } {
         global cvscfg
         variable curr
         variable font_norm
@@ -445,17 +477,41 @@ namespace eval ::logcanvas {
         variable font_bold
         variable logcanvas
         variable root_info
-        variable revtags
+        variable revbtags
+        variable tlist
 
-        gen_log:log T "ENTER ($x $y $box_width $box_height $root_rev $branch )"
-        #set btag [lindex $revtags($branch) 0]
+        gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
+        # Draw the list of tags
+        set tx [expr {$x - $curr(tspcb)}]
+        set ty $y
+        # Draw the list of tags
+        foreach tag $tlist($root_rev) {
+          set my_font $font_norm
+          set tagcolour black
+          #set taglist [list T$tag R$cur_rev box active]
+          set taglist {}
+          if {$tag == {more...}} {
+            set my_font $font_bold
+            set taglist [list R$cur_rev tag active]
+          } elseif {[info exists cvscfg(tagcolour,$tag)]} {
+            set tagcolour $cvscfg(tagcolour,$tag)
+          }
+          $logcanvas.canvas create text \
+            $tx $ty \
+            -text $tag \
+            -anchor se -fill $tagcolour \
+            -font $my_font \
+            -tags $taglist
+          incr ty -$font_norm_h
+        }
+
         # draw the box
         $logcanvas.canvas create rectangle \
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
             -width $curr(width) \
             -fill gray90 -outline blue \
-            -tags [list box R$branch rect$branch active]
+            -tags [list box R$root_rev rect$root_rev active]
 
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
@@ -466,7 +522,7 @@ namespace eval ::logcanvas {
             -text $s \
             -anchor s \
             -font $font_norm -fill navy \
-            -tags [list R$branch box active]
+            -tags [list R$root_rev box active]
           incr ty -$font_norm_h
           }
         gen_log:log T "LEAVE"
@@ -541,7 +597,7 @@ namespace eval ::logcanvas {
         return [list $tag_width $box_width $height]
       }
 
-      proc DrawRevision { x y tag_width box_width height revision} {
+      proc DrawRevision { x y box_width height revision} {
         global cvscfg
         variable curr
         variable box_height
@@ -566,7 +622,7 @@ namespace eval ::logcanvas {
         variable fromprefix
         variable toprefix
 
-        gen_log:log T "ENTER ($x $y $tag_width $box_width $height $revision)"
+        gen_log:log T "ENTER ($x $y $box_width $height $revision)"
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -655,6 +711,7 @@ namespace eval ::logcanvas {
         variable revbranches
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
+        gen_log:log D "Drawing root \"$root_rev\" branch \"$branch\""
         # What revisions to show on this branch?
         if {$branchrevs($branch) == {}} {
           set revlist {}
@@ -682,13 +739,17 @@ namespace eval ::logcanvas {
         }
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
+        set rdata {}
         if {$branch == {current}} {
+          set rtw 0
           foreach {box_width root_height} [CalcCurrent $branch] { break }
         } else {
-          foreach {box_width root_height} [CalcRoot $branch] { break }
+          foreach {rtw box_width root_height} [CalcRoot $branch] { break }
+        }
+        if {$rtw > $tag_width} {
+          set tag_width $rtw
         }
         set height [expr {$root_height + $curr(spcy)}]
-        set rdata {}
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
@@ -808,7 +869,7 @@ namespace eval ::logcanvas {
           if {$revision == {current}} {
             DrawCurrent $x $y $box_width $rheight $revision
           } else {
-            DrawRevision $x $y $rtag_width $box_width $rheight $revision
+            DrawRevision $x $y $box_width $rheight $revision
           }
           if {$opt(update_drawing) < 1} {
             UpdateBndBox
@@ -925,6 +986,7 @@ namespace eval ::logcanvas {
         variable revcomment
         variable revstate
         variable revtags
+        variable revbtags
         variable revpath
         variable revkind
         variable revbranches
@@ -955,6 +1017,10 @@ namespace eval ::logcanvas {
         catch { unset revtags }
         foreach a [array names $scope\::revtags] {
           set revtags($a) [set $scope\::revtags($a)]
+        }
+        catch { unset revbtags }
+        foreach a [array names $scope\::revbtags] {
+          set revbtags($a) [set $scope\::revbtags($a)]
         }
         catch { unset revpath }
         foreach a [array names $scope\::revpath] {
@@ -987,12 +1053,16 @@ namespace eval ::logcanvas {
           set view_xoff [lindex [$logcanvas.canvas xview] 0]
           set view_yoff [lindex [$logcanvas.canvas yview] 0]
           $logcanvas.canvas delete all
+          # These put the names of variables into one variable to be passed.
+          # Because they're in braces, we don't need to know about the
+          # variables here.  But the proc they're evaluated in has to know
+          # about them.
           set root_info {}
-          if {$opt(show_root_rev)} {
-            append root_info {$branch }
-          }
           if {$opt(show_root_tags)} {
-            append root_info {$revtags($branch) }
+            append root_info {$revbtags($root_rev) }
+          }
+          if {$opt(show_root_rev)} {
+            append root_info {$root_rev }
           }
           set rev_info {}
           if {$opt(show_box_revtime)} {
@@ -1036,8 +1106,8 @@ namespace eval ::logcanvas {
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
 
-          foreach a [array names revtags] {
-            foreach tag $revtags($a) {
+          foreach a [array names revbtags] {
+            foreach tag $revbtags($a) {
               if {$tag == "trunk"} {
                 set trunkrev $a
                 break
@@ -1045,18 +1115,18 @@ namespace eval ::logcanvas {
             }
           }
           if {! [info exists trunkrev]} {
-            set min 100000
-            foreach a [array names revtags] {
+            set min 999999
+            foreach a [array names revbtags] {
               if {$a == "" } {continue}
-              foreach tag $revtags($a) {
-                if {$revtags($a) != {} } {
+              foreach tag $revbtags($a) {
+                if {$revbtags($a) != {} } {
                   set rnum [string trimleft $a {r}]
                   if {$rnum < $min} {set min $rnum}
                 }
               }
             }
-            if {$min != 100000} {
-              set basebranch $revtags(r$min)
+            if {$min != 999999} {
+              set basebranch "r$min"
             }
           }
 
@@ -1076,19 +1146,26 @@ namespace eval ::logcanvas {
               -arrow last -arrowshape $curr(arrowshape) \
               -width $curr(width)
 
-            foreach {box_width root_height} [CalcRoot $trunkrev] { break }
+            foreach {rtw box_width root_height} [CalcRoot $trunkrev] { break }
             DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
           } elseif {[info exists basebranch]} {
             gen_log:log D "Drawing basebranch $basebranch"
-            # FIXME: Tags get confused with branches - we should fix it, but
-            # at least avoid a fatal error for now
-            set basebranch [lindex $basebranch 0]
-            gen_log:log D "DrawBranch 0 0 {} $basebranch"
-            if {! [info exists revtags($basebranch)]} {
-              set revtags($basebranch) {}
+            foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $basebranch] {
+              lappend bxys $lx $lbw $rh $lly
+              break
             }
-            DrawBranch 0 0 {} $basebranch
+            set x2 [expr {$lx + $lbw + $curr(spcx)}]
+            set mx [expr {$lx + $lbw/2}]
+            set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
+            set by [expr {$y2 - $curr(boff)}]
+            $logcanvas.canvas create line \
+              $mx $ry $mx [expr {$by - $rh}] \
+              -arrow last -arrowshape $curr(arrowshape) \
+              -width $curr(width)
+
+            foreach {rtw box_width root_height} [CalcRoot $basebranch] { break }
+            DrawRoot $lx $y2 $lbw $rh $basebranch $basebranch
             UpdateBndBox
           }
 
@@ -1402,12 +1479,16 @@ namespace eval ::logcanvas {
       button $logcanvas.viewtags -image Tags \
         -command [namespace code {
                    variable revtags
+                   variable revbtags
                    set taglist {}
                    foreach r [ \
                      lsort -command sortrevs [array names revtags] \
+                   ] { append taglist "$r: $revtags($r)\n" }
+                   foreach r [ \
+                     lsort -command sortrevs [array names revbtags] \
                    ] {
                      if {$r != "trunk"} {
-                       append taglist "$r: $revtags($r)\n"
+                       append taglist "$r: $revbtags($r)\n"
                      }
                    }
                    view_output::new Tags $taglist
