@@ -456,6 +456,7 @@ namespace eval ::logcanvas {
           }
         }
 
+        if {![info exists revbtags($root_rev)]} {set revbtags($root_rev) {}}
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
           if {$w > $box_width} {
@@ -586,6 +587,11 @@ namespace eval ::logcanvas {
             set height $h
           }
         }
+
+        if {![info exists revtime($revision)]} {set revtime($revision) {}}
+        if {![info exists revdate($revision)]} {set revdate($revision) {}}
+        if {![info exists revinfo($revision)]} {set revinfo($revision) {}}
+        if {![info exists revwho($revision)]} {set revwho($revision) {}}
         foreach s [subst $rev_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
           if {$w > $box_width} {
