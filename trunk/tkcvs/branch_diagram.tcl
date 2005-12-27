@@ -645,12 +645,18 @@ namespace eval ::logcanvas {
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
             set lsplit [lrange [split $revision {.}] 0 end-1]
+            set ltag [join $lsplit {.}]
             if {[llength $lsplit] > 1} {
-              set totag_branch($tag) $revtags([join $lsplit {.}])
+              if [info exists revtags($ltag)] {
+                set totag_branch($tag) $revtags([join $lsplit {.}])
+                gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
+              } else {
+                gen_log:log D "Error revtags($ltag) doesn't exist"
+              }
             } else {
               set totag_branch($tag) "trunk"
+              gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
             }
-            gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
           }
           set my_font $font_norm
           set tagcolour black
@@ -713,6 +719,9 @@ namespace eval ::logcanvas {
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log D "Drawing root \"$root_rev\" branch \"$branch\""
         # What revisions to show on this branch?
+        if {! [info exists branchrevs($branch)]} {
+          set branchrevs($branch) {}
+        }
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
@@ -814,8 +823,8 @@ namespace eval ::logcanvas {
             foreach r2 $revbranches($revision) {
               # Do we display the branch if it is empty?
               # If it's the you-are-here, we do anyway
-              if {$branchrevs($r2) == {} && $r2 != {current} && !\
-                  $opt(show_empty_branches)} {
+              if {[info exists branchrevs($r2)] && $branchrevs($r2) == {} \
+                  && $r2 != {current} && !$opt(show_empty_branches)} {
                 continue
               }
               lappend brevs $r2
