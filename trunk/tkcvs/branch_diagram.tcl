@@ -723,7 +723,7 @@ namespace eval ::logcanvas {
         variable revbranches
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
-        gen_log:log D "Drawing root \"$root_rev\" branch \"$branch\""
+        gen_log:log D "Drawing branch \"$branch\" rooted at \"$root_rev\""
         # What revisions to show on this branch?
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
         if {$branchrevs($branch) == {}} {
@@ -1122,6 +1122,7 @@ namespace eval ::logcanvas {
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
 
+          # Find the root. (needed for SVN).  If there's a trunk, of course use that
           foreach a [array names revbtags] {
             foreach tag $revbtags($a) {
               if {$tag == "trunk"} {
@@ -1130,6 +1131,7 @@ namespace eval ::logcanvas {
               }
             }
           }
+          # If there's no trunk, find the beginning of a branch
           if {! [info exists trunkrev]} {
             set min 999999
             foreach a [array names revbtags] {
