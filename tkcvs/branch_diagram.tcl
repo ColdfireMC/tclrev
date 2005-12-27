@@ -719,17 +719,16 @@ namespace eval ::logcanvas {
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log D "Drawing root \"$root_rev\" branch \"$branch\""
         # What revisions to show on this branch?
-        if {! [info exists branchrevs($branch)]} {
-          set branchrevs($branch) {}
-        }
+        if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
           # Always have the head revision
           set revlist [lindex $branchrevs($branch) 0]
           foreach r [lrange $branchrevs($branch) 1 end-1] {
-            if {$opt(show_inter_revs)
-            || ($opt(show_empty_branches) && $revbranches($r) != {})} {
+            if {![info exists revbranches($r)]} {set revbranches($r) {}}
+            if {$opt(show_inter_revs) || $opt(show_empty_branches) \
+                && $revbranches($r) != {}} {
               lappend revlist $r
             } else {
               # Only if there are non-empty branches off this revision
@@ -823,8 +822,9 @@ namespace eval ::logcanvas {
             foreach r2 $revbranches($revision) {
               # Do we display the branch if it is empty?
               # If it's the you-are-here, we do anyway
-              if {[info exists branchrevs($r2)] && $branchrevs($r2) == {} \
-                  && $r2 != {current} && !$opt(show_empty_branches)} {
+              if {![info exists branchrevs($r2)] } { set branchrevs($r2) {} }
+              if {$branchrevs($r2) == {} && $r2 != {current} && !\
+                  $opt(show_empty_branches)} {
                 continue
               }
               lappend brevs $r2
