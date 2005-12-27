@@ -1151,7 +1151,7 @@ namespace eval ::svn_branchlog {
           foreach r $brevs {
             if {$r == $revnum_current} {
               # We need to make a new artificial branch off of $r
-              set revbranches($r) {current}
+              lappend revbranches($r) {current}
             }
             gen_log:log D " $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
@@ -1207,7 +1207,7 @@ namespace eval ::svn_branchlog {
           foreach r $brevs {
             if {$r == $revnum_current} {
               # We need to make a new artificial branch off of $r
-              set revbranches($r) {current}
+              lappend revbranches($r) {current}
             }
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
@@ -1216,7 +1216,7 @@ namespace eval ::svn_branchlog {
           set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
           set revkind($rb) "branch"
           set revname($rb) $branch
-          set revbtags($rb) $branch
+          lappend revbtags($rb) $branch
           set revpath($rb) $path
 
           set command "svn log -q $path"
@@ -1237,7 +1237,7 @@ namespace eval ::svn_branchlog {
             incr idx -1
           }
           set bp [lindex $allrevs($branch) $idx]
-          set revbranches($bp) $rb
+          lappend revbranches($bp) $rb
           update idletasks
         }
         # Tags
