@@ -733,6 +733,7 @@ namespace eval ::logcanvas {
             } else {
               # Only if there are non-empty branches off this revision
               foreach b $revbranches($r) {
+                if {![info exists branchrevs($b)]} {set branchrevs($b) {}}
                 if {$branchrevs($b) != {}} {
                   lappend revlist $r
                   break
