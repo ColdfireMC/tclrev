@@ -1157,7 +1157,8 @@ namespace eval ::svn_branchlog {
             set revkind($r) "revision"
             set revpath($r) $path
           }
-          set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
+          #set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
+          set branchrevs($rr) $branchrevs(trunk)
           set revkind($rr) "root"
           set revname($rr) "trunk"
           set revbtags($rr) "trunk"
@@ -1213,7 +1214,8 @@ namespace eval ::svn_branchlog {
             set revkind($r) "revision"
             set revpath($r) $path
           }
-          set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
+          #set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
+          set branchrevs($rb) $branchrevs($branch)
           set revkind($rb) "branch"
           set revname($rb) $branch
           lappend revbtags($rb) $branch

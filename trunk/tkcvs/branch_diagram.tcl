@@ -415,6 +415,7 @@ namespace eval ::logcanvas {
         variable tlist
 
         #gen_log:log T "ENTER ($root_rev)"
+        gen_log:log D "CalcRoot ($root_rev)"
         set height $box_height
         set tag_width 0
         set box_width 0
@@ -473,15 +474,18 @@ namespace eval ::logcanvas {
       proc DrawRoot { x y box_width box_height cur_rev root_rev } {
         global cvscfg
         variable curr
+        variable opt
         variable font_norm
         variable font_norm_h
         variable font_bold
         variable logcanvas
         variable root_info
         variable revbtags
+        variable revbranches
         variable tlist
 
         gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
+        gen_log:log D "Drawing Root for \"$root_rev\" \"$cur_rev\""
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -525,7 +529,7 @@ namespace eval ::logcanvas {
             -font $font_norm -fill navy \
             -tags [list R$root_rev box active]
           incr ty -$font_norm_h
-          }
+        }
         gen_log:log T "LEAVE"
         return
       }
@@ -752,6 +756,7 @@ namespace eval ::logcanvas {
             lappend revlist [lindex $branchrevs($branch) end]
           }
         }
+
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
         set rdata {}
@@ -842,6 +847,7 @@ namespace eval ::logcanvas {
               set x2 [expr {$lx + $lbw + $curr(spcx)}]
             }
           }
+
           # y2 may have changed to accomodate a long branch. If so we need
           # to figure out what our y should be
           set y [expr {$y2 + $box_height/2 + $curr(boff)}]
@@ -849,6 +855,7 @@ namespace eval ::logcanvas {
           set ry [expr {$y - $box_height/2}]
           set by [expr {$ry - $curr(boff)}]
           # If it has brevs, it's the root of a branch
+
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
             if {$ly != {}} {
@@ -875,13 +882,12 @@ namespace eval ::logcanvas {
               UpdateBndBox
             }
           }
+
           if {$last_y != {}} {
             $logcanvas.canvas create line \
               $midx $last_y $midx [expr {$y - $box_height}] \
               -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
           }
-          # this misses the case of a branch that doesn't have any revisions
-          # yet in Subversion.  It should do DrawRoot instead of DrawRevision
           if {$revision == {current}} {
             DrawCurrent $x $y $box_width $rheight $revision
           } else {
@@ -1148,7 +1154,7 @@ namespace eval ::logcanvas {
             }
           }
 
-          # Start drawing, beginning with the trunk
+          # Start drawing, beginning with the trunk or the lowest branch
           if {[info exists trunkrev]} {
             gen_log:log D "Drawing trunkrev $trunkrev"
             foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $trunkrev] {
