@@ -515,8 +515,8 @@ namespace eval ::logcanvas {
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
             -width $curr(width) \
-            -fill gray90 -outline blue \
-            -tags [list box R$root_rev rect$root_rev active]
+            -fill gray90 -outline blue
+            #-tags [list box R$root_rev rect$root_rev active]
 
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]

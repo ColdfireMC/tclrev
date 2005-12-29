@@ -140,7 +140,7 @@ set logcfg(show_merges) 1
 set logcfg(show_empty_branches) 1
 set logcfg(show_inter_revs) 1
 set logcfg(show_root_tags) 1
-set logcfg(show_root_rev) 1
+set logcfg(show_root_rev) 0
 set logcfg(show_box_rev) 1
 set logcfg(show_box_revwho) 1
 set logcfg(show_box_revdate) 1
