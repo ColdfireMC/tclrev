@@ -425,21 +425,23 @@ proc workdir_menus {} {
   #
 
   # File
-  .workdir.menubar.file add command -label "Open" -underline 0 \
+  .workdir.menubar.file add command -label "Open Selection" -underline 0 \
      -command { workdir_edit_file [workdir_list_files] }
-  .workdir.menubar.file add command -label "Print" -underline 0 \
+  .workdir.menubar.file add command -label "Print Selected File" -underline 0 \
      -command { workdir_print_file  [workdir_list_files ] }
-  .workdir.menubar.file add command -label "New Directory" -underline 0 \
+  .workdir.menubar.file add command -label "Make New Directory" -underline 0 \
      -command { file_input_and_do "New Directory" workdir_newdir}
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label "Browse Modules" -underline 0 \
      -command modbrowse_run
-  .workdir.menubar.file add command -label "Cleanup" -underline 4 \
+  .workdir.menubar.file add command -label "Cleanup Directory" -underline 4 \
      -command workdir_cleanup
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label "Shell window" -underline 0 \
      -command {eval exec $cvscfg(shell) >& $cvscfg(null) &}
   .workdir.menubar.file add separator
+  .workdir.menubar.file add command -label Close -underline 1 \
+     -command {.workdir.close invoke}
   .workdir.menubar.file add command -label Exit -underline 1 \
      -command { exit_cleanup 1 }
 

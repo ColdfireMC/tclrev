@@ -1080,6 +1080,7 @@ namespace eval ::svn_branchlog {
       proc reloadLog { } {
         global cvscfg
         global cvsglb
+        variable filename
         variable cmd_log
         variable lc
         variable ln
@@ -1267,14 +1268,25 @@ namespace eval ::svn_branchlog {
               set tags ""
           }
           set n_tags [llength $tags]
-          if {$cvscfg(confirm_prompt) && $n_tags > 10} {
-            set mess "There are $n_tags tags.  This may take a long time."
-            append mess "  If you're willing to wait, press OK."
-            append mess "  Otherwise, press Cancel and I will draw the"
-            append mess " diagram without showing tags. You may wish to turn off\n"
-            append mess " View -> Revision Layout -> Show tags"
-            if {[cvsconfirm $mess $lc] != "ok"} {
+          if {$n_tags > $cvscfg(toomany_tags)} {
+            # If confirm is on, give them a chance to say yes or no to tags
+            if {$cvscfg(confirm_prompt)} {
+              set mess    "There are $n_tags tags.  It could take a long time "
+              append mess "to process them. If you're willing to wait, "
+              append mess " press OK and get a cup of coffee.\n"
+              append mess "Otherwise, press Cancel and I will draw the "
+              append mess "diagram now without showing tags.  "
+              append mess "You may wish to turn off\n"
+              append mess "View -> Revision Layout -> Show Tags\n"
+              append mess " and\n"
+              append mess "View -> Save Options"
+              if {[cvsconfirm $mess $lc] != "ok"} {
+                set tags ""
+              }
+            } else {
+            # Otherwise, just don't process tags
               set tags ""
+              gen_log:log E "Skipping tags: $n_tags > cvscfg(toomany_tags) ($cvscfg(toomany_tags)"
             }
           }
           foreach tag $tags {

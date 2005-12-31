@@ -1,22 +1,30 @@
 Release 8.0     December, 2005
 
-- Bugfix: relative path in Branch Browser is constructed correctly for path
-  depths > 2
-
 - The Annotation browser optionally shows line numbers.
 
-- The Branch Browser positions the diagram so "you are here" is in the visible
-  canvas
+- Multiple branch-browser fixes for Subversion: 
+  - Treat branchpoints as real revisions, so they have both a blue box and
+    a black one in the diagram.  It's rather inelegant, but it works with the
+    way the branch browser was designed.  Solves problem of branches not
+    being drawn if they branch straignt from another branchpoint.
+  - Send URL paths instead of -r <file> arguments to the diff, svn-cat, and
+    annotation commands because Subversion doesn't cross branch boundaries with
+    simple revision arguments, and doesn't tell you that it's not giving you
+    the revision you asked for.
+  - Bugfix: relative URL path in Branch Browser is constructed correctly for
+    path depths > 2
 
-- The Branch Browser counts the tags when doing a Subversion diagram and gives
-  you a chance to skip the tag step if there are many (where "many" arbitrarily
-  equals 10.)  Constructing the branch diagram from Subversion is inefficient,
-  and drawing the tags tends to take far longer than it's worth for the
-  information it gives you.
+- The Branch Browser counts the tags when making a Subversion diagram and gives
+  you a chance to skip the tag step if there are many, where "many" is defined
+  by cvscfg(toomany_tags).  Constructing the branch diagram for Subversion is
+  extremely inefficient, and drawing the tags can take longer than it's worth.
 
 - For Subversion directories, the Module Browser shows the number of items
   within the folder instead of the "svn list -v" info string.  That may
   help you decide whether to open the folder or not.
+
+- The Branch Browser positions the diagram so "you are here" is in the visible
+  canvas, fixing a long-time nagging irritation.
 
 
 Release 8.0b1   December, 2005

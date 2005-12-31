@@ -398,11 +398,19 @@ proc dialog_svn_patch { cvsroot pathA pathB summary } {
   dateB     0     t {Date}             {}
   }
   # Action function
-  set dialog_action {svn_patch $dynamic_dialog(fullA) \
-     $dynamic_dialog(fullB) \
-     $dynamic_dialog(revA) $dynamic_dialog(dateA) \
-     $dynamic_dialog(revB) $dynamic_dialog(dateB) \
-     $dynamic_dialog(outmode) $dynamic_dialog(outfile)
+  set dialog_action {
+    # Make new fullA and fullB from the pathA and pathB entries
+    set dynamic_dialog(fullA) "$dynamic_dialog(cvsroot)/$dynamic_dialog(pathA)"
+    if {$dynamic_dialog(pathB) == ""} {
+      set dynamic_dialog(fullB) ""
+    } else {
+      set dynamic_dialog(fullB) "$dynamic_dialog(cvsroot)/$dynamic_dialog(pathB)"
+    }
+    svn_patch $dynamic_dialog(fullA) \
+       $dynamic_dialog(fullB) \
+       $dynamic_dialog(revA) $dynamic_dialog(dateA) \
+       $dynamic_dialog(revB) $dynamic_dialog(dateB) \
+       $dynamic_dialog(outmode) $dynamic_dialog(outfile)
   }
 
   set form [dialog_FormCreate "SVN Diff/Patch" $dialog_form_patch]
