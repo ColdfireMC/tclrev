@@ -175,8 +175,7 @@ namespace eval ::logcanvas {
                    set revB [$logcanvas.up.revB_rvers cget -text]
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
-                   set v [viewer::new "SVN Diff"]
-                   $v\::do "svn diff $revpath($revA)@$A $revpath($revB)@$B"
+                   comparediff_files "$revpath($revA)@$A" "$revpath($revB)@$B"
                 }]
               $logcanvas.annotate configure \
                  -command [namespace code {
@@ -1178,7 +1177,8 @@ namespace eval ::logcanvas {
             }
             set x2 [expr {$lx + $lbw + $curr(spcx)}]
             set mx [expr {$lx + $lbw/2}]
-            set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
+            #set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
+            set ry [expr {$y2 - $rh/4 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
             $logcanvas.canvas create line \
               $mx $ry $mx [expr {$by - $rh}] \
