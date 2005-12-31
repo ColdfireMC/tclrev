@@ -424,7 +424,7 @@ proc svn_commit {comment args} {
 
 }
 
-# Called from workdir browser annotate button and from the log browser
+# Called from workdir browser annotate button
 proc svn_annotate {revision args} {
   global cvscfg
 
@@ -445,6 +445,17 @@ proc svn_annotate {revision args} {
   foreach file $filelist {
     annotate::new $revflag $file "svn"
   }
+  gen_log:log T "LEAVE"
+}
+
+# Called from branch browser annotate button
+proc svn_annotate_r {revision filepath} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($revision $filepath)"
+  set revflag "-r$revision"
+
+  annotate::new $revflag $filepath "svn_r"
   gen_log:log T "LEAVE"
 }
 
@@ -1142,6 +1153,8 @@ namespace eval ::svn_branchlog {
           set curr 0
           set brevs $branchrevs(trunk)
           set tip [lindex $brevs 0]
+          set revpath($tip) $path
+          set revkind($tip) "revision"
           set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of trunk do this.
@@ -1199,6 +1212,8 @@ namespace eval ::svn_branchlog {
           set curr 0
           set brevs $branchrevs($branch)
           set tip [lindex $brevs 0]
+          set revpath($tip) $path
+          set revkind($tip) "revision"
           set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
@@ -1402,6 +1417,10 @@ namespace eval ::svn_branchlog {
         # Sort the revision and branch lists and remove duplicates
         foreach r [lsort -dictionary [array names revkind]] {
            gen_log:log D "revkind($r) $revkind($r)"
+           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
+        }
+        foreach r [lsort -dictionary [array names revpath]] {
+           gen_log:log D "revpath($r) $revpath($r)"
            #if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
         gen_log:log D ""
