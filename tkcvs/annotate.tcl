@@ -151,6 +151,10 @@ namespace eval ::annotate {
         }
         set blameproc svn_annotate_color
         set commandline "svn blame $revision \"$file\""
+      } elseif {$local == "svn_r"} {
+        set blameproc svn_annotate_color
+        set now $revision
+        set commandline "svn blame $revision \"$file\""
       } elseif {$local == "cvs"} {
         set info_cmd [exec::new "cvs status \"$file\""]
         set info_lines [split [$info_cmd\::output] "\n"]
@@ -180,7 +184,6 @@ namespace eval ::annotate {
           namespace delete [namespace current]
           return
         }
-
         set blameproc cvs_annotate_color
         set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
         set now $revlabel
