@@ -29,7 +29,7 @@ proc aboutbox {} {
   frame .about.top
 
   message .about.top.msg1 -width 400 -justify c \
-    -text "\nTkCVS Version 8.0b1\n" -font $cvscfg(guifont)
+    -text "\nTkCVS Version 8.0\n" -font $cvscfg(guifont)
   pack .about.top -side top -expand 1 -fill both
 
   image create photo Tclfish -format gif -file \
@@ -765,6 +765,8 @@ Maximum number of visited directories and repositories to save in the picklist h
 Hilight colours for revision-log boxes
 <h3>cvscfg(tagdepth)</h3>
 Number of tags you want to see for each revision on the branching diagram before it says "more..." and offers a pop-up to show the rest
+<h3>cvscfg(toomany_tags)</h3>
+Number of tags in a Subversion repository that's "too many", ie. will take longer to proecess for the branch diagram than you're willing to wait.  (Building a branch diagram for Subversion is very inefficient.) If there are more than that number and cvscfg(confirm_prompt) is true, a dialog will appear asking whether to process the tags or to draw the diagram without them.
 <h3>cvscfg(tagcolour,tagstring)</h3>
 Colors for marking tags. For example:
 <cmp>    set cvscfg(tagcolour,tkcvs_r6) Purple</cmp>

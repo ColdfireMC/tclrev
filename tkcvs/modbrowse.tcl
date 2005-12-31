@@ -245,6 +245,9 @@ proc modbrowse_menus {} {
   set selcolor [option get .modbrowse selectColor selectColor]
   .modbrowse.modmenu.file add command -label "Browse Working Directory" -underline 0 \
      -command workdir_setup
+  .modbrowse.modmenu.file add separator
+  .modbrowse.modmenu.file add command -label "Close" -underline 1 \
+     -command {.modbrowse.bottom.buttons.closefm.close invoke}
   .modbrowse.modmenu.file add command -label "Exit" -underline 1 \
      -command { module_exit; exit_cleanup 1 }
 

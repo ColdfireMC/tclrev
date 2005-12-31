@@ -1288,12 +1288,11 @@ namespace eval ::logcanvas {
       $logcanvas.menubar add cascade -label "File"\
          -menu $logcanvas.menubar.file -underline 0
       menu $logcanvas.menubar.file -tearoff 0
-      $logcanvas.menubar.file add command -label "Close" -underline 0 \
-        -command [namespace code {$logcanvas.close invoke}]
-      $logcanvas.menubar.file add separator
       $logcanvas.menubar.file add command -label "Shell window" -underline 0 \
         -command {eval exec $cvscfg(shell) >& $cvscfg(null) &}
       $logcanvas.menubar.file add separator
+      $logcanvas.menubar.file add command -label "Close" -underline 0 \
+        -command [namespace code {$logcanvas.close invoke}]
       $logcanvas.menubar.file add command -label "Exit" -underline 1 \
         -command { exit_cleanup 1 }
       set selcolor [option get $logcanvas selectColor selectColor]

@@ -7,6 +7,7 @@
 # over-ride this file.
 #
 
+# Working Directory Browser options
 # If you want to use "cvs edit"
 set cvscfg(econtrol) false
 # If you want to use cvs in locking mode
@@ -18,6 +19,10 @@ set cvscfg(showdatecol) true
 # If you want to see the editors/author/lockers column
 set cvscfg(showeditcol) true
 
+# Branch Diagram options
+# Number of tags in a Subversion repository that's "too many", ie
+# will take longer to proecess than you're willing to wait.
+set cvscfg(toomany_tags) 25
 # Number of tags you want to see for each revision on the branching
 # diagram before it says "more..."
 set cvscfg(tagdepth) 6
