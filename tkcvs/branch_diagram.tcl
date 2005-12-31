@@ -160,20 +160,29 @@ namespace eval ::logcanvas {
               $logcanvas.annotate configure -state disabled
               $logcanvas.view configure \
                  -command [namespace code {
-                    svn_fileview [$logcanvas.up.revA_rvers cget -text] \
-                      $filename directory
+                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    svn_fileview $rev $revpath($rev) directory
                  }]
             } else {
               $logcanvas.view configure \
                  -command [namespace code {
-                    svn_fileview [$logcanvas.up.revA_rvers cget -text] \
-                      $filename file
+                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    svn_fileview $rev $revpath($rev) file
                  }]
+              $logcanvas.diff configure \
+                -command [namespace code {
+                   set revA [$logcanvas.up.revA_rvers cget -text]
+                   set revB [$logcanvas.up.revB_rvers cget -text]
+                   set A [string trimleft $revA {r}]
+                   set B [string trimleft $revB {r}]
+                   set v [viewer::new "SVN Diff"]
+                   $v\::do "svn diff $revpath($revA)@$A $revpath($revB)@$B"
+                }]
               $logcanvas.annotate configure \
                  -command [namespace code {
                    set rev [$logcanvas.up.revA_rvers cget -text]
-                   set rev [string trimleft $rev {r}]
-                   svn_annotate $rev $filename
+                   set R [string trimleft $rev {r}]
+                   svn_annotate_r $R $revpath($rev)
                  }]
             }
             $logcanvas.delta configure \
@@ -181,9 +190,12 @@ namespace eval ::logcanvas {
                  variable sys
                  set fromrev [$logcanvas.up.revA_rvers cget -text]
                  set sincerev [$logcanvas.up.revB_rvers cget -text]
-                 set fromtag $revpath($sincerev)
+                 set fromtag ""
+                 if {[info exists revbtags($sincerev)]} {
+                   set fromtag [lindex $revbtags($sincerev) 0]
+                 }
                  merge_dialog $sys \
-                   $fromrev $sincerev $fromtag \
+                   $fromrev $sincerev $revpath($sincerev) \
                    [list $filename]
                  }]
           }
@@ -228,10 +240,13 @@ namespace eval ::logcanvas {
              $logcanvas.delta configure \
                -command [namespace code {
                   variable sys
+                  variable revbtags
                   set fromrev [$logcanvas.up.revA_rvers cget -text]
                   set sincerev [$logcanvas.up.revB_rvers cget -text]
                   set fromtag ""
-                  if {[info exists revtags($sincerev)]} {
+                  if {[info exists revbtags($sincerev)]} {
+                    set fromtag [lindex $revbtags($sincerev) 0]
+                  } elseif {[info exists revtags($sincerev)]} {
                     set fromtag [lindex $revtags($sincerev) 0]
                   }
                   merge_dialog $sys \
