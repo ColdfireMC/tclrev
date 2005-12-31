@@ -19,6 +19,16 @@ proc comparediff {args} {
   gen_log:log T "LEAVE"
 }
 
+# Two files or two SVN URLs
+proc comparediff_files {file1 file2} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($file1 $file2)"
+  gen_log:log C "$cvscfg(tkdiff) \"$file1\" \"$file2\""
+  catch {eval "exec $cvscfg(tkdiff) \"$file1\" \"$file2\" &"} view_this
+  gen_log:log T "LEAVE"
+}
+
 proc comparediff_r {rev1 rev2 parent args} {
 #
 # This diffs a file with the repository, using two revisions or tags.
