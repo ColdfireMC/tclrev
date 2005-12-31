@@ -463,6 +463,9 @@ Hilight colours for revision-log boxes
 .B cvscfg(tagdepth)
 Number of tags you want to see for each revision on the branching diagram before it says "more..." and offers a pop-up to show the rest
 .TP
+.B cvscfg(toomany_tags)
+Number of tags in a Subversion repository that's "too many", ie. will take longer to proecess for the branch diagram than you're willing to wait.  (Building a branch diagram for Subversion is very inefficient.) If there are more than that number and cvscfg(confirm_prompt) is true, a dialog will appear asking whether to process the tags or to draw the diagram without them.
+.TP
 .B cvscfg(tagcolour,tagstring)
 Colors for marking tags. For example:
 .RS
