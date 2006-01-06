@@ -2355,8 +2355,12 @@ namespace eval ::cvs_branchlog {
                     } else {
                       # Otherwise we will place it as a branch off the
                       # revision.
-                      set revbranches($rnum) [linsert $revbranches($rnum)\
-                        0 {current}]
+                      if {![info exists revbranches($rnum)]} {
+                        set revbranches($rnum) {current}
+                      } else {
+                        set revbranches($rnum) [linsert $revbranches($rnum)\
+                          0 {current}]
+                      }
                     }
                   }
                 }
