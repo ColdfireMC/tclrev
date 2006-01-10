@@ -1062,6 +1062,8 @@ proc DirCanvas:build {w} {
       }
     }
   }
+  # Reset the scrollbar.  Otherwise it fills the trough
+  DirCanvas:scroll_windows $w scroll 0 units
   #gen_log:log D "[array names DirList $w:*:selected]"
   gen_log:log T "LEAVE"
 }
