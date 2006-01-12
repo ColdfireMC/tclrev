@@ -210,8 +210,6 @@ proc modbrowse_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) who.gif]
   image create photo SvnRemove \
     -format gif -file [file join $cvscfg(bitmapdir) delete_red.gif]
-  image create photo Log \
-    -format gif -file [file join $cvscfg(bitmapdir) log.gif]
   if {[catch "image type arr_dn"]} {
     workdir_images
   }

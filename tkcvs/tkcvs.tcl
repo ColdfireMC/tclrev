@@ -290,6 +290,8 @@ set const(spacey) 16
 set const(textheight) 12
 
 # Load the images that are used in more than one module
+image create photo Log \
+  -format gif -file [file join $cvscfg(bitmapdir) log.gif]
 image create photo Checkout \
   -format gif -file [file join $cvscfg(bitmapdir) checkout.gif]
 image create photo CheckoutOpts \
