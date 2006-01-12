@@ -641,17 +641,11 @@ proc cvs_log {args} {
   global cvscfg
   global current_tagname
 
-  gen_log:log T "ENTER ($args)"
-  if {! $incvs} {
-    cvs_notincvs
-    return 1
-  }
-
   set filelist [join $args]
 
   set commandline "$cvs log "
   if {$cvscfg(ldetail) == "latest"} {
-    if {[llength $current_tagname] == 1} {
+    if {$current_tagname != "trunk"} {
       # We have a branch here
       append commandline "-r$current_tagname "
     }

@@ -241,8 +241,12 @@ proc rcs_log {args} {
   gen_log:log D "$filelist"
 
   switch -- $cvscfg(ldetail) {
-   "verbose" { set commandline "rlog $filelist"}
-   "summary" { set commandline "rlog -R $filelist"}
+   "verbose" -
+   "summary" {
+        # -N isn't in old versions
+        #set commandline "rlog -N $filelist"
+        set commandline "rlog $filelist"
+    }
    "latest"  { set commandline "rlog -r $filelist"}
   }
 
