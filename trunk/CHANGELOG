@@ -1,3 +1,14 @@
+Release 8.0.1   January, 2006
+
+- Fix a couple of undefined variables
+
+- Add log button to workdir browser
+
+- Eliminated the parsing for cvs/rcs loglevels "latest" and "summry."
+  Use command line options and a little syntax highglighting.  They aren't
+  as terse as before but they're manageable.
+
+
 Release 8.0     December, 2005
 
 - The Annotation browser optionally shows line numbers.

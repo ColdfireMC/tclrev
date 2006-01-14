@@ -2,7 +2,7 @@
 
 # This makes a MacOS X package starting with stand-alone Wish.app.
 
-set V = 8.0
+set V = 8.0.1
 
 if ( -f $HOME/tkcvs_$V ) rm -rf $HOME/tkcvs_$V
 mkdir $HOME/tkcvs_$V

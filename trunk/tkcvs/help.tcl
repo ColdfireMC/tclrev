@@ -29,7 +29,7 @@ proc aboutbox {} {
   frame .about.top
 
   message .about.top.msg1 -width 400 -justify c \
-    -text "\nTkCVS Version 8.0\n" -font $cvscfg(guifont)
+    -text "\nTkCVS Version 8.0.1\n" -font $cvscfg(guifont)
   pack .about.top -side top -expand 1 -fill both
 
   image create photo Tclfish -format gif -file \
