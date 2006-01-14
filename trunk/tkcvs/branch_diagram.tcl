@@ -420,6 +420,7 @@ namespace eval ::logcanvas {
         variable opt
         variable curr
         variable box_height
+        variable font_bold
         variable font_norm
         variable font_norm_h
         variable logcanvas
