@@ -1050,7 +1050,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { cvs_branches [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
+    .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { cvs_log [workdir_list_files] }
     if {$cvscfg(econtrol)} {
       .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
