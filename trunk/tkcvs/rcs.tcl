@@ -240,18 +240,20 @@ proc rcs_log {args} {
   gen_log:log D "detail $cvscfg(ldetail)"
   gen_log:log D "$filelist"
 
+  set commandline "rlog "
   switch -- $cvscfg(ldetail) {
-   "verbose" -
-   "summary" {
-        # -N isn't in old versions
-        #set commandline "rlog -N $filelist"
-        set commandline "rlog $filelist"
+    latest {
+      append commandline "-r "
     }
-   "latest"  { set commandline "rlog -r $filelist"}
+    summary {
+      append commandline "-t "
+    }
   }
+  append commandline "$filelist"
 
-  set v [viewer::new "RCS Log"]
-  $v\::do "$commandline"
+  set logcmd [viewer::new "RCS log ($cvscfg(ldetail))"]
+  $logcmd\::do "$commandline" 0 hilight_rcslog
+  busy_done .workdir.main
 
   gen_log:log T "LEAVE"
 }

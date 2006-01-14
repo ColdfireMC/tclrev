@@ -637,111 +637,27 @@ proc cvs_log {args} {
 # Called by Workdir menu Reports->"CVS log ..."
 #
   global cvs
-  global incvs
   global cvscfg
-  global current_tagname
 
   set filelist [join $args]
 
-  set commandline "$cvs log "
-  if {$cvscfg(ldetail) == "latest"} {
-    if {$current_tagname != "trunk"} {
-      # We have a branch here
-      append commandline "-r$current_tagname "
+  # Don't recurse
+  set commandline "$cvs log -l "
+  switch -- $cvscfg(ldetail) {
+    latest {
+      # -N means don't list tags
+      append commandline "-Nr "
     }
-    append commandline "-N "
+    summary {
+      append commandline "-Nt "
+    }
   }
   append commandline "$filelist"
 
-  
-  # If verbose, just output the whole thing
-  if {$cvscfg(ldetail) == "verbose"} {
-    set logcmd [viewer::new "CVS log ($cvscfg(ldetail))"]
-    $logcmd\::do "$commandline"
-    busy_done .workdir.main
-    gen_log:log T "LEAVE"
-    return
-  }
-
-
-  # Else we have to take out some of it
-  busy_start .workdir.main
-  set cooked_log ""
-  set logcmd [exec::new "$commandline"]
-  set log_lines [split [$logcmd\::output] "\n"]
-  if {$cvscfg(ldetail) == "summary"} {
-    set n -9999
-    foreach logline $log_lines {
-      # Beginning of a file's record
-      #gen_log:log D "$logline"
-      if {[string match "Working file:*" $logline]} {
-        append cooked_log "$logline\n"
-        # Zingggg - reset!
-        set n -9999
-      }
-      # Beginning of a revision
-      if {[string match "----------------------------" $logline]} {
-        append cooked_log "$logline\n"
-        set n 0
-      }
-      if {$n >= 1} {
-        append cooked_log "$logline\n"
-      }
-      incr n
-    }
-  } elseif {$cvscfg(ldetail) == "latest"} {
-    set br 0
-    while {[llength $log_lines] > 0} {
-      set logline [join [lrange $log_lines 0 0]]
-      set log_lines [lrange $log_lines 1 end]
-      #gen_log:log D "$logline"
-
-      # Beginning of a file's record
-      if {[string match "Working file:*" $logline]} {
-        append cooked_log "$logline\n"
-        while {[llength $log_lines] > 0} {
-          set log_lines [lrange $log_lines 1 end]
-          set logline [join [lrange $log_lines 0 0]]
-          #gen_log:log D " ! $logline !"
-
-          # Reason to skip
-          if {[string match "*selected revisions: 0" $logline]} {
-            append cooked_log "No revisions on branch\n"
-            append cooked_log "======================================="
-            append cooked_log "=======================================\n"
-            #set br 0
-            break
-          }
-          # Beginning of a revision
-          if {[string match "----------------------------" $logline]} {
-            #gen_log:log D "  !! $logline !!"
-            append cooked_log "$logline\n"
-            while {[llength $log_lines] > 0} {
-              set log_lines [lrange $log_lines 1 end]
-              set logline [join [lrange $log_lines 0 0]]
-              #gen_log:log D "        $logline"
-              if { [string match "========================*" $logline] ||
-                  [string match "--------------*" $logline]} {
-                append cooked_log "======================================="
-                append cooked_log "=======================================\n"
-                set br 1
-                break
-              } else {
-                append cooked_log "$logline\n"
-              }
-            }
-          }
-          # If we broke out of the inside loop, break out of this one too
-          if {$br == 1} {set br 0; break}
-        }
-      }
-    }
-  } else {
-    cvsfail "Unknown log option \"$cvscfg(ldetail)\"" .workdir
-  }
-
+  set logcmd [viewer::new "CVS log ($cvscfg(ldetail))"]
+  $logcmd\::do "$commandline" 0 hilight_rcslog
   busy_done .workdir.main
-  view_output::new "CVS Log ($cvscfg(ldetail))" $cooked_log
+
   gen_log:log T "LEAVE"
 }
 

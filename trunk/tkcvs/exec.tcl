@@ -417,6 +417,19 @@ proc parse_version {exec line} {
   return [list {} {}]
 }
 
+proc hilight_rcslog {exec line} {
+  set tag default
+  if {[string match "=============*" $line]} {
+    set tag patched
+  } elseif  {[string match "RCS file:*" $line]} {
+    set tag patched
+  } elseif  {[string match "Working file:*" $line]} {
+    set tag patched
+  }
+
+  return [list $tag $line]
+}
+
 # This is a plain viewer that prints whatever text is sent to it
 namespace eval ::view_output {
   variable instance 0
