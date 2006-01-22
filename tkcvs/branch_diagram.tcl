@@ -657,8 +657,12 @@ namespace eval ::logcanvas {
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
             set lsplit [lrange [split $revision {.}] 0 end-1]
+            set fromtag_branch($tag) "?"
             if {[llength $lsplit] > 1} {
-              set fromtag_branch($tag) $revtags([join $lsplit {.}])
+              set fb [join $lsplit {.}]
+	      if {[info exists revtags($fb)]} {
+                set fromtag_branch($tag) $revtags([join $lsplit {.}])
+              }
             } else {
               set fromtag_branch($tag) "trunk"
             }
