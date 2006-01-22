@@ -97,6 +97,7 @@ set cvscfg(dateformat) "%Y/%m/%d %H:%M"
 #set cvscfg(mergefromformat) "f_BRANCH_%d%b%y"
 set cvscfg(mergetoformat) "mergeto_BRANCH_%d%b%y"
 set cvscfg(mergefromformat) "mergefrom_BRANCH_%d%b%y"
+set cvscfg(mergetrunkname) "trunk"
 
 # --------------------
 # Revision tree log display configuration.

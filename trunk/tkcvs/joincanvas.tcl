@@ -528,6 +528,7 @@ namespace eval joincanvas {
       }
 
       toplevel $joincanvas
+      wm title $joincanvas "CVS Directory Merge"
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $joincanvas @$cvscfg(bitmapdir)/dirbranch.xbm
       }
@@ -677,13 +678,10 @@ namespace eval joincanvas {
       #
       wm minsize $joincanvas 1 1
 
-      wm title $joincanvas "CVS Directory Merge"
       scrollbindings Canvas
       focus $joincanvas.canvas
 
       fillcanvas $localfile $filelog
-      wm deiconify $joincanvas
-      raise $joincanvas
 
       return [namespace current]
     }

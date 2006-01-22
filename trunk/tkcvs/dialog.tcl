@@ -514,8 +514,12 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
   set datef [string range $cvscfg(mergetoformat) $totagend end]
   set today [clock format [clock seconds] -format "$datef"]
 
-  set mtag "${toprefix}_${curr_tag}_$today"
-  set ftag "${fromprefix}_${frombranch}_$today"
+  set curr $curr_tag
+  set from $frombranch
+  if {$curr == "trunk"} {set curr $cvscfg(mergetrunkname)}
+  if {$from == "trunk"} {set from $cvscfg(mergetrunkname)}
+  set mtag "${toprefix}_${curr}_$today"
+  set ftag "${fromprefix}_${from}_$today"
   # I had symbolic tags in mind, but some people are using untagged versions.
   # Substitute the dots, which are illegal for tagnames.
   regsub -all {\.} $mtag {-} mtag
