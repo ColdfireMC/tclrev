@@ -267,6 +267,7 @@ proc rcs_revert {args} {
   set filelist [join $args]
 
   gen_log:log D "Reverting $filelist"
+  gen_log:log F "DELETE $filelist"
   file delete $filelist
   set cmd [exec::new "co $filelist"]
         
