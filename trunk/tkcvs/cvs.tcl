@@ -106,7 +106,6 @@ proc cvs_workdir_status {} {
     set lockers_lines [split [$cmd(cvs_lockers)\::output] "\n"]
   }
   if {[info exists cmd(cvs_status)]} {
-    #gen_log:log F "processing files that CVS knows about"
     # gets cvs status in current directory only, pulling out lines that include
     # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
     # into an array.
@@ -1650,6 +1649,7 @@ proc cvs_revert {args} {
   set filelist [join $args]
 
   gen_log:log D "Reverting $filelist"
+  gen_log:log F "DELETE $filelist"
   file delete $filelist
   set cmd [exec::new "$cvs update $filelist"]
 
