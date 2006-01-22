@@ -664,7 +664,7 @@ namespace eval ::logcanvas {
                 set fromtag_branch($tag) $revtags([join $lsplit {.}])
               }
             } else {
-              set fromtag_branch($tag) "trunk"
+              set fromtag_branch($tag) $cvscfg(mergetrunkname)
             }
             gen_log:log D "  fromtag($tag) - $revision - $fromtag_branch($tag)"
             
@@ -683,7 +683,7 @@ namespace eval ::logcanvas {
                 gen_log:log D "Error revtags($ltag) doesn't exist"
               }
             } else {
-              set totag_branch($tag) "trunk"
+              set totag_branch($tag) $cvscfg(mergetrunkname)
               gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
             }
           }
@@ -1591,8 +1591,6 @@ namespace eval ::logcanvas {
       #
       wm minsize $logcanvas 1 1
       if {[info exists cvscfg(loggeom)]} {
-        #regsub {\d+x\d+} $cvscfg(loggeom) {} winloc
-        #wm geometry $logcanvas $winloc
         wm geometry $logcanvas $cvscfg(loggeom)
       }
   
