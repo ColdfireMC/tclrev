@@ -1,3 +1,17 @@
+Release 8.0.2   January, 2006
+
+- Fix error in Branch Diagram when searching for merge tags
+
+- cvscfg(mergetrunkname) option to replace the literal "trunk" in the code
+  with an arbitrary string
+
+- Fix strange "SVN Path" in top entry of Branch Browser (only cosmetic)
+
+- Lengthen maximum length of error message to trigger an error popup in
+  exec.  That lets a cvs log failure due to permission error tell us
+  what went wrong.
+
+
 Release 8.0.1   January, 2006
 
 - Fix a couple of undefined variables

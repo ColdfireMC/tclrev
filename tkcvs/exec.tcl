@@ -96,7 +96,7 @@ namespace eval ::exec {
             if {! [info exists command]} {set command ""}
             if {! [info exists status]} {set status ""}
             if {$errmsg == ""} {set errmsg "$command exited status $status"}
-            if {[string length $errmsg] < 256} {
+            if {[string length $errmsg] < 512} {
                cvsfail $errmsg .
             }
             # If we don't pop up an error dialog, let's at least try to show
@@ -476,6 +476,7 @@ namespace eval ::view_output {
 
 proc viewer_window {w title parent} {
   global cvscfg
+  global cvsglb
   global tcl_platform
 
   toplevel $w
@@ -485,6 +486,7 @@ proc viewer_window {w title parent} {
   wm protocol $w WM_DELETE_WINDOW "$w.close invoke"
 
   text $w.text -setgrid yes -relief sunken -border 2 \
+      -bg $cvsglb(textbg) \
       -exportselection 1 -height 30 \
       -yscroll "$w.scroll set"
   bind $w.text <KeyPress> {
