@@ -175,7 +175,11 @@ namespace eval ::logcanvas {
                    set revB [$logcanvas.up.revB_rvers cget -text]
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
-                   comparediff_files "$revpath($revA)@$A" "$revpath($revB)@$B"
+                   if {$revB == ""} {
+                     comparediff_files "$revpath($revA)@$A" [file tail $revpath($revA)]
+                   } else {
+                     comparediff_files "$revpath($revA)@$A" "$revpath($revB)@$B"
+                   }
                 }]
               $logcanvas.annotate configure \
                  -command [namespace code {

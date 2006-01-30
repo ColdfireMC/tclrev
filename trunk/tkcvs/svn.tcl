@@ -239,6 +239,8 @@ proc svn_update {args} {
     foreach file $filelist {
       append commandline " \"$file\""
     }
+  } else {
+    return;
   }
 
   set co_cmd [viewer::new "SVN Update"]
