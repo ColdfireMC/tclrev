@@ -2190,6 +2190,11 @@ namespace eval ::cvs_branchlog {
   
         gen_log:log T "ENTER"
 
+        if {[llength [array names revkind]] < 1} {
+          cvsfail "Log empty.  Check error status of cvs log comand"
+          return
+        }
+
         set revkind(1) "root"
 
         foreach r [lsort -command sortrevs [array names revkind]] {

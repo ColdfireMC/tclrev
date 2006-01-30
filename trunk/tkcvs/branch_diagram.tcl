@@ -633,6 +633,7 @@ namespace eval ::logcanvas {
         variable revstate
         variable revkind
         variable revtags
+        variable revbtags
         variable font_norm
         variable font_norm_h
         variable font_bold
@@ -653,39 +654,36 @@ namespace eval ::logcanvas {
         set ty $y
         foreach tag $tlist($revision) {
           if {[string match "${fromprefix}_*" $tag]} {
+            gen_log:log D " From tag: $tag"
             lappend fromtags $tag
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
             set lsplit [lrange [split $revision {.}] 0 end-1]
-            set fromtag_branch($tag) "?"
+            set from_branch [join $lsplit {.}]
+            gen_log:log D "  Looking for tags on $from_branch"
             if {[llength $lsplit] > 1} {
-              set fb [join $lsplit {.}]
-	      if {[info exists revtags($fb)]} {
-                set fromtag_branch($tag) $revtags([join $lsplit {.}])
-              }
+              if {![info exists tags($from_branch)]} {set tags($from_branch) ""}
+              set fromtag_branch($tag) $revbtags($from_branch)
             } else {
               set fromtag_branch($tag) $cvscfg(mergetrunkname)
             }
             gen_log:log D "  fromtag($tag) - $revision - $fromtag_branch($tag)"
-            
           }
           if {[string match "${toprefix}_*" $tag]} {
             lappend totags $tag
+            gen_log:log D " To tag: $tag"
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
             set lsplit [lrange [split $revision {.}] 0 end-1]
-            set ltag [join $lsplit {.}]
+            set to_branch [join $lsplit {.}]
+            gen_log:log D "  Looking for tags on $to_branch"
             if {[llength $lsplit] > 1} {
-              if [info exists revtags($ltag)] {
-                set totag_branch($tag) $revtags([join $lsplit {.}])
-                gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
-              } else {
-                gen_log:log D "Error revtags($ltag) doesn't exist"
-              }
+              if {![info exists revbtags($to_branch)]} {set revbtags($to_branch) ""}
+              set totag_branch($tag) $revbtags($to_branch)
             } else {
               set totag_branch($tag) $cvscfg(mergetrunkname)
-              gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
             }
+            gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
           }
           set my_font $font_norm
           set tagcolour black
@@ -1524,13 +1522,12 @@ namespace eval ::logcanvas {
                    variable revtags
                    variable revbtags
                    set taglist {}
-                   foreach r [ \
-                     lsort -command sortrevs [array names revtags] \
-                   ] { append taglist "$r: $revtags($r)\n" }
-                   foreach r [ \
-                     lsort -command sortrevs [array names revbtags] \
-                   ] {
-                     if {$r != "trunk"} {
+                   foreach r [lsort -command sortrevs \
+                       [concat [array names revtags] \
+                               [array names revbtags]]] {
+                     if [info exists revtags($r)] {
+                       append taglist "$r: $revtags($r)\n"
+                     } elseif [info exists revbtags($r)] {
                        append taglist "$r: $revbtags($r)\n"
                      }
                    }

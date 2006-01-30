@@ -1116,11 +1116,7 @@ namespace eval ::svn_branchlog {
         catch { unset revname }
 
         # Can't use file join or it will mess up the URL
-        if { $relpath == {} } {
-          set path "$cvscfg(url)/$filename"
-        } else {
-          set path "$cvscfg(url)/$relpath/$filename"
-        }
+        set path "$cvscfg(url)/$filename"
         $ln\::ConfigureButtons $path
 
         # Find out where to put the working revision icon (if anywhere)
