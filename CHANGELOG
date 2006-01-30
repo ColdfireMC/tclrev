@@ -5,10 +5,13 @@ Release 8.0.2   January, 2006
 - cvscfg(mergetrunkname) option to replace the literal "trunk" in the code
   with an arbitrary string
 
+- Branch Browser in SVN will diff a single selection in the tree with the
+  file in the current directory
+
 - Fix strange "SVN Path" in top entry of Branch Browser (only cosmetic)
 
 - Lengthen maximum length of error message to trigger an error popup in
-  exec.  That lets a cvs log failure due to permission error tell us
+  exec.  That lets a cvs log failure due to a permission problem tell us
   what went wrong.
 
 
