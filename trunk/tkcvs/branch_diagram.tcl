@@ -198,8 +198,8 @@ namespace eval ::logcanvas {
                    set fromtag [lindex $revbtags($sincerev) 0]
                  }
                  merge_dialog $sys \
-                   $fromrev $sincerev $revpath($sincerev) \
-                   [list $filename]
+                   $fromrev $sincerev $fromtag \
+                   [list $revpath($sincerev)]
                  }]
           }
          "CVS" {

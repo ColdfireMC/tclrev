@@ -532,7 +532,7 @@ proc svn_delete {root path} {
   }
   set url [safe_url $root/$path]
   set v [viewer::new "SVN delete"]
-  set command "svn delete \"$url\" -m \"Removed using TkSVN\""
+  set command "svn delete \"$url\" -m\"Removed using TkSVN\""
   $v\::do "$command"
   modbrowse_run
   gen_log:log T "LEAVE"
@@ -796,16 +796,35 @@ proc svn_tag {tagname force branch update args} {
   }
 
   set v [viewer::new "SVN Tag (Copy)"]
-  set command "svn copy ."
+
   # Can't use file join or it will mess up the URL
   if {$branch == "yes"} {
-    set to_path "$cvscfg(svnroot)/branches/$tagname/$cvsglb(relpath)"
-    set comment "Branched using TkSVN"
+    set to_path "$cvscfg(svnroot)/branches/$tagname"
   } else {
-    set to_path "$cvscfg(svnroot)/tags/$tagname/$cvsglb(relpath)"
-    set comment "Tagged using TkSVN"
+    set to_path "$cvscfg(svnroot)/tags/$tagname"
   }
-  append command " $to_path -m \"$comment\""
+  set ret [catch "eval exec svn list $to_path" err]
+  if {$ret} {
+    set commandline "svn mkdir -m\"Branched or Tagged by TkSVN\" $to_path"
+    $v\::do $commandline
+    $v\::wait
+  }
+
+  # We may need to construct a path to copy the file to
+  set cum_path ""
+  set pathelements [file split $cvsglb(relpath)]
+  for {set i 0} {$i < [llength $pathelements]} {incr i} {
+    set cum_path [file join $cum_path [lindex $pathelements $i]]
+    gen_log:log D "  $i $cum_path"
+    set ret [catch "eval exec svn list $to_path/$cum_path" err]
+    if {$ret} {
+      set commandline "svn mkdir -m\"Branched or Tagged by TkSVN\" $to_path/$cum_path"
+      $v\::do $commandline
+      $v\::wait
+    }
+  }
+
+  set command "svn copy $args -m\"Branched or Tagged by TkSVN\" $to_path/$cum_path"
   $v\::do "$command"
   $v\::wait
 
@@ -835,7 +854,7 @@ proc svn_rcopy {from_path to_path} {
   set command "svn copy $from_path"
   # Can't use file join or it will mess up the URL
   set comment "Copied using TkSVN"
-  append command " $to_path -m \"$comment\""
+  append command " $to_path -m\"$comment\""
   $v\::do "$command"
   $v\::wait
 
@@ -843,7 +862,7 @@ proc svn_rcopy {from_path to_path} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_merge {fromrev sincerev frombranch file} {
+proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
 #
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
@@ -855,52 +874,59 @@ proc svn_merge {fromrev sincerev frombranch file} {
 
   set v [viewer::new "SVN Merge"]
 
-  # Way too many problems with auto-tagging.  I don't think it will work well with
-  # Subversion - dar
+  # Tagging involves commits, so we have to tag before we change any files
+  if {$cvscfg(auto_tag)} {
+    set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag" err]
+    if {$ret} {
+      set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
+      $v\::do $commandline
+      $v\::wait
+    }
+    # We may need to construct a path to copy the file to
+    set fname [file tail $file]
+    set cum_path ""
+    set pathelements [file split $cvsglb(relpath)]
+    for {set i 0} {$i < [llength $pathelements]} {incr i} {
+      set cum_path [file join $cum_path [lindex $pathelements $i]]
+      gen_log:log D "  $i $cum_path"
+      set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag/$cum_path" err]
+      if {$ret} {
+        set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag/$cum_path"
+        $v\::do $commandline
+        $v\::wait
+      }
+    }
+    set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)/$fname" err]
+    if {$ret} {
+      set commandline "svn copy -m\"Tag_Mergefrom\" \
+          $cvscfg(svnroot)/branches/$frombranch/$cvsglb(relpath)/$fname"
+      append commandline " $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)"
+      $v\::do "$commandline"
+    }
 
-  # Tagging involves commits, so we have to tag before we change files
-  #if {$cvscfg(auto_tag)} {
-    #set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag" err]
-    #if {$ret} {
-      #set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
-      #$v\::do $commandline
-      #$v\::wait
-    #}
-## svn mkdir -m"Tagged from TkSVN Merge"  $cvscfg(svnroot)/tags/$fromtag
-    #set commandline "svn copy -m\"Tag_Mergefrom\" $file"
-    #if {$file == "."} {
-      ## Not right.  Makes an extra directory under tag
-      #append commandline " $cvscfg(svnroot)/tags/$fromtag"
-    #} else {
-      #append commandline " $cvscfg(svnroot)/tags/$fromtag/$file"
-    #}
-    #$v\::do "$commandline"
-    #toplevel .reminder
-    #message .reminder.m1 -aspect 600 -text \
-      #"When you are finished checking in your merges, \
-      #you should apply the tag"
-    #entry .reminder.ent -width 32 -relief groove \
-       #-font $cvscfg(guifont) -readonlybackground $cvsglb(readonlybg)
-    #.reminder.ent insert end $totag 
-    #.reminder.ent configure -state readonly
-    #message .reminder.m2 -aspect 600 -text \
-      #"using the \"Tag the selected files\" button"
-    #frame .reminder.bottom -relief raised -bd 2
-    #button .reminder.bottom.close -text "Dismiss" \
-      #-command {destroy .reminder}
-    #pack .reminder.bottom -side bottom -fill x
-    #pack .reminder.bottom.close -side bottom -expand yes
-    #pack .reminder.m1 -side top
-    #pack .reminder.ent -side top -padx 2
-    #pack .reminder.m2 -side top
-  #}
+    toplevel .reminder
+    message .reminder.m1 -aspect 600 -text \
+      "When you are finished checking in your merges, \
+      you should apply the tag"
+    entry .reminder.ent -width 32 -relief groove \
+       -font $cvscfg(guifont) -readonlybackground $cvsglb(readonlybg)
+    .reminder.ent insert end $totag 
+    .reminder.ent configure -state readonly
+    message .reminder.m2 -aspect 600 -text \
+      "using the \"Tag the selected files\" button"
+    frame .reminder.bottom -relief raised -bd 2
+    button .reminder.bottom.close -text "Dismiss" \
+      -command {destroy .reminder}
+    pack .reminder.bottom -side bottom -fill x
+    pack .reminder.bottom.close -side bottom -expand yes
+    pack .reminder.m1 -side top
+    pack .reminder.ent -side top -padx 2
+    pack .reminder.m2 -side top
+  }
 
   set fromrev [string trimleft $fromrev {r}]
   set sincerev [string trimleft $sincerev {r}]
-  # for a file
-  set commandline "svn merge -r$sincerev\:$fromrev $frombranch $file"
-  # for cwd
-  set commandline "svn merge -r$sincerev\:$fromrev $frombranch"
+  set commandline "svn merge -r$sincerev\:$fromrev $file"
     
   $v\::do "$commandline" 0 status_colortags
   $v\::wait
