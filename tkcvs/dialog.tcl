@@ -569,14 +569,20 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
                     destroy .merge"
      }
     "SVN" {
-       set cvscfg(auto_tag) 0
-       # frombranch has the whole URL, can't use that
-       #set mtag "${toprefix}_${curr_tag}_$today"
-       #set ftag "${fromprefix}_${fromrev}_$today"
+       pack .merge.top.f -side top -padx 2 -pady 4
+       pack .merge.top.f.fromtag -side left
+       pack .merge.top.f.ent -side left
+       pack .merge.top.m2 -side top -fill x -expand y
+       #set ftag "${fromprefix}_${from}_$today"
+
+       .merge.top.f.ent insert end $mtag
+       .merge.top.f.ent configure -state readonly
+       if {$fromrev == "trunk"} { set fromrev "HEAD" }
+
        .merge.bottom.apply configure \
-          -command "svn_merge $fromrev $sincerev $frombranch $file"
+          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file"
        .merge.bottom.ok configure \
-          -command "svn_merge $fromrev $sincerev $frombranch $file; \
+          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file; \
                     destroy .merge"
      }
   }
@@ -652,7 +658,8 @@ proc file_tag_dialog {branch} {
     }
   } elseif {$insvn} {
     .tag.down.tag configure -command {
-      svn_tag $usertagname no $branchflag $updflag
+      svn_tag $usertagname no $branchflag $updflag \
+          [workdir_list_files]
       grab release .tag
       destroy .tag
     }
