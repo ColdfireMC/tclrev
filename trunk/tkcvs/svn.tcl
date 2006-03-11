@@ -201,9 +201,9 @@ proc svn_check {directory {v {0}} } {
   if {$flags != ""} {
     set flags "-$flags"
   }
-  set commandline "svn status $flags $directory"
+  set command "svn status $flags $directory"
   set check_cmd [viewer::new "SVN Status Check"]
-  $check_cmd\::do $commandline 0 status_colortags
+  $check_cmd\::do "$command" 0 status_colortags
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"
@@ -233,18 +233,18 @@ proc svn_update {args} {
   }
   append mess "\n\nAre you sure?"
 
-  set commandline "svn update"
+  set command "svn update"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
     foreach file $filelist {
-      append commandline " \"$file\""
+      append command " \"$file\""
     }
   } else {
     return;
   }
 
   set co_cmd [viewer::new "SVN Update"]
-  $co_cmd\::do $commandline 0 status_colortags
+  $co_cmd\::do "$command" 0 status_colortags
     
   if {$cvscfg(auto_status)} {
     $co_cmd\::wait
@@ -275,7 +275,7 @@ proc svn_opt_update {} {
      }
   }
   set upd_cmd [viewer::new "SVN Update/Switch"]
-  $upd_cmd\::do $command 0 status_colortags
+  $upd_cmd\::do "$command" 0 status_colortags
 
   if {$cvscfg(auto_status)} {
     $upd_cmd\::wait
@@ -377,7 +377,7 @@ proc svn_commit {comment args} {
 
   gen_log:log T "ENTER ($comment $args)"
 
-  set filelist [lindex $args 0]
+  set filelist [join $args]
 
   set commit_output ""
   if {$filelist == ""} {
@@ -399,10 +399,10 @@ proc svn_commit {comment args} {
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks
-    set commandline \
+    set command \
       "$cvscfg(terminal) svn commit $filelist"
-    gen_log:log C "$commandline"
-    set ret [catch {eval "exec $commandline"} view_this]
+    gen_log:log C "$command"
+    set ret [catch {eval "exec $command"} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
       gen_log:log T "LEAVE ERROR ($view_this)"
@@ -484,9 +484,9 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
     set rev2 "\{\"$dateB\"\}"
   }
   if {$pathA != {} && $pathB != {}} {
-    set commandline "svn diff $pathA $pathB"
+    set command "svn diff $pathA $pathB"
   } elseif {$rev1 != {} && $rev2 != {}} {
-    set commandline "svn diff $pathA@$rev1 $pathA@$rev2"
+    set command "svn diff $pathA@$rev1 $pathA@$rev2"
   } else {
     cvsfail "Specify either two paths OR one path and two revisions"
     return
@@ -494,9 +494,9 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
 
   if {$outmode == 0} {
     set v [viewer::new "SVN Diff"]
-    $v\::do "$commandline"
+    $v\::do "$command"
   } else {
-    set e [exec::new "$commandline"]
+    set e [exec::new "$command"]
     set patch [$e\::output]
     gen_log:log F "OPEN $outfile"
     if {[catch {set fo [open $outfile w]}]} {
@@ -532,7 +532,7 @@ proc svn_delete {root path} {
   }
   set url [safe_url $root/$path]
   set v [viewer::new "SVN delete"]
-  set command "svn delete \"$url\" -m\"Removed using TkSVN\""
+  set command "svn delete \"$url\" -m\"Removed_using_TkSVN\""
   $v\::do "$command"
   modbrowse_run
   gen_log:log T "LEAVE"
@@ -683,8 +683,8 @@ proc svn_cat {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set cat_cmd [viewer::new "SVN cat $rev $file"]
-  set commandline "svn -r $rev cat $file"
-  $cat_cmd\::do $commandline 0
+  set command "svn -r $rev cat $file"
+  $cat_cmd\::do "$command" 0
 
   gen_log:log T "LEAVE"
 }
@@ -695,17 +695,17 @@ proc svn_log {args} {
   gen_log:log T "ENTER ($args)"
 
   set filelist [join $args]
-  set commandline "svn log "
+  set command "svn log "
   if {$cvscfg(ldetail) == "latest"} {
-    append commandline "-r COMMITTED "
+    append command "-r COMMITTED "
   }
   if {$cvscfg(ldetail) == "summary"} {
-    append commandline "-q "
+    append command "-q "
   }
-  append commandline $filelist
+  append command $filelist
 
   set logcmd [viewer::new "SVN Log ($cvscfg(ldetail))"]
-  $logcmd\::do "$commandline"
+  $logcmd\::do "$command"
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -741,16 +741,16 @@ proc svn_merge_conflict {args} {
     }
     # Invoke tkdiff with the proper option for a conflict file
     # and have it write to the original file
-    set commandline "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
-    gen_log:log C "$commandline"
-    set ret [catch {eval "exec $commandline"} view_this]
+    set command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
+    gen_log:log C "$command"
+    set ret [catch {eval "exec $command"} view_this]
     if {$ret == 0} {
       set mess "Mark $file resolved?"
       if {[cvsconfirm $mess .workdir] != "ok"} {
         continue
       }
-      set commandline "svn resolved \"$file\""
-      exec::new $commandline
+      set command "svn resolved \"$file\""
+      exec::new $command
     } else {
       cvsfail "$view_this" .workdir
     }
@@ -800,13 +800,15 @@ proc svn_tag {tagname force branch update args} {
   # Can't use file join or it will mess up the URL
   if {$branch == "yes"} {
     set to_path "$cvscfg(svnroot)/branches/$tagname"
+    set comment "Branched_using_TkSVN"
   } else {
     set to_path "$cvscfg(svnroot)/tags/$tagname"
+    set comment "Tagged_using_TkSVN"
   }
   set ret [catch "eval exec svn list $to_path" err]
   if {$ret} {
-    set commandline "svn mkdir -m\"Branched or Tagged by TkSVN\" $to_path"
-    $v\::do $commandline
+    set command "svn mkdir -m\"$comment\" $to_path"
+    $v\::do "$command"
     $v\::wait
   }
 
@@ -818,13 +820,13 @@ proc svn_tag {tagname force branch update args} {
     gen_log:log D "  $i $cum_path"
     set ret [catch "eval exec svn list $to_path/$cum_path" err]
     if {$ret} {
-      set commandline "svn mkdir -m\"Branched or Tagged by TkSVN\" $to_path/$cum_path"
-      $v\::do $commandline
+      set command "svn mkdir -m\"$comment\" $to_path/$cum_path"
+      $v\::do "$command"
       $v\::wait
     }
   }
 
-  set command "svn copy $args -m\"Branched or Tagged by TkSVN\" $to_path/$cum_path"
+  set command "svn copy $args -m\"$comment\" $to_path/$cum_path"
   $v\::do "$command"
   $v\::wait
 
@@ -853,7 +855,7 @@ proc svn_rcopy {from_path to_path} {
   set v [viewer::new "SVN Copy"]
   set command "svn copy $from_path"
   # Can't use file join or it will mess up the URL
-  set comment "Copied using TkSVN"
+  set comment "Copied_using_TkSVN"
   append command " $to_path -m\"$comment\""
   $v\::do "$command"
   $v\::wait
@@ -878,8 +880,8 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
   if {$cvscfg(auto_tag)} {
     set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag" err]
     if {$ret} {
-      set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
-      $v\::do $commandline
+      set command "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
+      $v\::do "$command"
       $v\::wait
     }
     # We may need to construct a path to copy the file to
@@ -891,17 +893,22 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
       gen_log:log D "  $i $cum_path"
       set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag/$cum_path" err]
       if {$ret} {
-        set commandline "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag/$cum_path"
-        $v\::do $commandline
+        set command "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag/$cum_path"
+        $v\::do "$command"
         $v\::wait
       }
     }
     set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)/$fname" err]
     if {$ret} {
-      set commandline "svn copy -m\"Tag_Mergefrom\" \
-          $cvscfg(svnroot)/branches/$frombranch/$cvsglb(relpath)/$fname"
-      append commandline " $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)"
-      $v\::do "$commandline"
+      if {$frombranch == "trunk"} {
+        set command "svn copy -m\"Tag_Mergefrom\" \
+            $cvscfg(svnroot)/trunk/$cvsglb(relpath)/$fname"
+      } else {
+        set command "svn copy -m\"Tag_Mergefrom\" \
+            $cvscfg(svnroot)/branches/$frombranch/$cvsglb(relpath)/$fname"
+      }
+      append command " $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)"
+      $v\::do "$command"
     }
 
     toplevel .reminder
@@ -926,9 +933,9 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
 
   set fromrev [string trimleft $fromrev {r}]
   set sincerev [string trimleft $sincerev {r}]
-  set commandline "svn merge -r$sincerev\:$fromrev $file"
+  set command "svn merge -r$sincerev\:$fromrev $file"
     
-  $v\::do "$commandline" 0 status_colortags
+  $v\::do "$command" 0 status_colortags
   $v\::wait
 
   if {$cvscfg(auto_status)} {
@@ -975,15 +982,15 @@ proc svn_filecat {root path title} {
   set url [safe_url $root/$path]
   # Should do cat if it's a file and ls if it's a path
   if {[string match {*/} $title]} {
-    set commandline "svn ls \"$url\""
+    set command "svn ls \"$url\""
     set wintitle "SVN ls"
   } else {
-    set commandline "svn cat \"$url\""
+    set command "svn cat \"$url\""
     set wintitle "SVN cat"
   }
 
   set v [viewer::new "$wintitle $url"]
-  $v\::do "$commandline"
+  $v\::do "$command"
 }
 
 # SVN log.  Called from module browser
@@ -991,11 +998,11 @@ proc svn_filelog {root path title} {
   gen_log:log T "ENTER ($root $path $title)"
 
   set url [safe_url $root/$path]
-  set commandline "svn log \"$url\""
+  set command "svn log \"$url\""
   set wintitle "SVN Log"
 
   set v [viewer::new "$wintitle $url"]
-  $v\::do "$commandline"
+  $v\::do "$command"
 }
 
 proc svn_fileview {revision filename kind} {
@@ -1009,13 +1016,13 @@ proc svn_fileview {revision filename kind} {
      set cmd "ls"
   }
   if {$revision == {}} {
-    set commandline "svn $cmd \"$filename\""
+    set command "svn $cmd \"$filename\""
     set v [viewer::new "$filename"]
-    $v\::do "$commandline"
+    $v\::do "$command"
   } else {
-    set commandline "svn $cmd -$revision \"$filename\""
+    set command "svn $cmd -$revision \"$filename\""
     set v [viewer::new "$filename Revision $revision"]
-    $v\::do "$commandline"
+    $v\::do "$command"
   }
   gen_log:log T "LEAVE"
 }

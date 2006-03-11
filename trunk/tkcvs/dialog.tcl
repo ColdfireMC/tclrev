@@ -577,7 +577,7 @@ proc merge_dialog { sys fromrev sincerev frombranch file } {
 
        .merge.top.f.ent insert end $mtag
        .merge.top.f.ent configure -state readonly
-       if {$fromrev == "trunk"} { set fromrev "HEAD" }
+       #if {$fromrev == "trunk"} { set fromrev "HEAD" }
 
        .merge.bottom.apply configure \
           -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file"

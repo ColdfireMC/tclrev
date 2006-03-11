@@ -1649,10 +1649,17 @@ proc cvs_revert {args} {
   set filelist [join $args]
 
   gen_log:log D "Reverting $filelist"
-  gen_log:log F "DELETE $filelist"
-  file delete $filelist
-  set cmd [exec::new "$cvs update $filelist"]
-
+  # update -C option appeared in 1.11
+  set cvsglb(cvs_version) [cvs_version_number]
+  set versionsplit [split $cvsglb(cvs_version) {.}]
+  if {$major < 11} {
+    gen_log:log F "DELETE $filelist"
+    file delete $filelist
+    set cmd [exec::new "$cvs update $filelist"]
+  } else {
+    set cmd [exec::new "$cvs update -C $filelist"]
+  }
+  
   if {$cvscfg(auto_status)} {
     $cmd\::wait
     setup_dir
