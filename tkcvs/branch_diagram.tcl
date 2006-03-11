@@ -196,6 +196,18 @@ namespace eval ::logcanvas {
                  set fromtag ""
                  if {[info exists revbtags($sincerev)]} {
                    set fromtag [lindex $revbtags($sincerev) 0]
+                 } elseif {[info exists revtags($fromrev)]} {
+                   set fromtag [lindex $revtags($fromrev) 0]
+                 }
+                 if {$fromtag == ""} {
+                   foreach brev [array names revbtags] {
+                     set b $revbtags($brev)
+                     foreach r $branchrevs($b) {
+                       if {$r == $fromrev} {
+                         set fromtag $b
+                       }
+                     }
+                   }
                  }
                  merge_dialog $sys \
                    $fromrev $sincerev $fromtag \
@@ -249,8 +261,11 @@ namespace eval ::logcanvas {
                   set fromtag ""
                   if {[info exists revbtags($sincerev)]} {
                     set fromtag [lindex $revbtags($sincerev) 0]
-                  } elseif {[info exists revtags($sincerev)]} {
-                    set fromtag [lindex $revtags($sincerev) 0]
+                  } elseif {[info exists revtags($fromrev)]} {
+                    set fromtag [lindex $revtags($fromrev) 0]
+                  }
+                  if {$fromtag == ""} {
+                    set fromtag $fromrev
                   }
                   merge_dialog $sys \
                     $fromrev $sincerev $fromtag \
