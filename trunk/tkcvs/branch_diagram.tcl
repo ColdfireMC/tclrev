@@ -374,7 +374,7 @@ namespace eval ::logcanvas {
         variable font_bold_h
         variable logcanvas
 
-        gen_log:log T "ENTER ($revision)"
+        #gen_log:log T "ENTER ($revision)"
         set box_width \
           [expr {[image width Man] \
                  + $curr(padx) \
@@ -387,7 +387,7 @@ namespace eval ::logcanvas {
           set box_height $h
         }
         incr box_height $curr(pady,2)
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return [list $box_width $box_height]
       }
 
@@ -399,7 +399,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
+        #gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
         set curr_x $x
         set curr_y $y
         # draw the box
@@ -430,7 +430,7 @@ namespace eval ::logcanvas {
           -text "You are\nhere" -anchor e \
           -fill red3 \
           -font $font_bold
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return
       }
 
@@ -518,7 +518,7 @@ namespace eval ::logcanvas {
         variable revbranches
         variable tlist
 
-        gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
+        #gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
         gen_log:log D "Drawing Root for \"$root_rev\" \"$cur_rev\""
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
@@ -564,7 +564,7 @@ namespace eval ::logcanvas {
             -tags [list R$root_rev box active]
           incr ty -$font_norm_h
         }
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return
       }
 
@@ -667,7 +667,7 @@ namespace eval ::logcanvas {
         variable fromprefix
         variable toprefix
 
-        gen_log:log T "ENTER ($x $y $box_width $height $revision)"
+        #gen_log:log T "ENTER ($x $y $box_width $height $revision)"
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -749,7 +749,7 @@ namespace eval ::logcanvas {
             -tags [list R$revision box active]
           incr ty -$font_norm_h
         }
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return
       }
 
@@ -762,7 +762,7 @@ namespace eval ::logcanvas {
         variable branchrevs
         variable revbranches
 
-        gen_log:log T "ENTER ($x $y $root_rev $branch)"
+        #gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log D "Drawing branch \"$branch\" rooted at \"$root_rev\""
         # What revisions to show on this branch?
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
@@ -938,7 +938,7 @@ namespace eval ::logcanvas {
         if {$opt(update_drawing) < 2} {
           UpdateBndBox
         }
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return [list $x [expr {$y + $root_height + $curr(spcy)}] \
         $box_width $root_height $last_y]
       }
@@ -951,7 +951,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        gen_log:log T "ENTER"
+        #gen_log:log T "ENTER"
 
         foreach {x1 y1 x2 y2} [$logcanvas.canvas bbox all] { break }
         $logcanvas.canvas configure \
@@ -1007,7 +1007,7 @@ namespace eval ::logcanvas {
         $logcanvas.canvas xview moveto $view_xoff
         $logcanvas.canvas yview moveto $view_yoff
         update
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return
       }
   
