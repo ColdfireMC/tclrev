@@ -116,8 +116,8 @@ proc DirCanvas:column {w column headtext} {
   global inrcs
   global arr
 
-  gen_log:log T "ENTER ($w $column headtext)"
-  gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) showeditcol $cvscfg(showeditcol)"
+  #gen_log:log T "ENTER ($w $column headtext)"
+  #gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) showeditcol $cvscfg(showeditcol)"
 
   $w.$column.list configure -yscrollcommand "$w.yscroll set"
   bind $w.$column.list <Next>  "DirCanvas:scroll_windows $w scroll  1 pages"

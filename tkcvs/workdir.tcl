@@ -1394,7 +1394,7 @@ proc disabled {} {
 }
 
 proc isCmDirectory { file } {
-  gen_log:log T "ENTER ($file)"
+  #gen_log:log T "ENTER ($file)"
   switch -- $file  {
     "CVS"  -
     "RCS"  -
@@ -1402,7 +1402,7 @@ proc isCmDirectory { file } {
     "SCCS" { set value 1 }
     default { set value 0 }
   }
-  gen_log:log T "LEAVE ($value)"
+  #gen_log:log T "LEAVE ($value)"
   return $value
 }
 

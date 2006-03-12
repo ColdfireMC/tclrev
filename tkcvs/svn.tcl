@@ -788,12 +788,13 @@ proc svn_tag {tagname force branch update args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($tagname $force $branch $update)"
+  gen_log:log T "ENTER ($tagname $force $branch $update $args)"
 
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
+  set filelist [join $args]
 
   set v [viewer::new "SVN Tag (Copy)"]
 
@@ -815,7 +816,11 @@ proc svn_tag {tagname force branch update args} {
   # We may need to construct a path to copy the file to
   set cum_path ""
   set pathelements [file split $cvsglb(relpath)]
-  for {set i 0} {$i < [llength $pathelements]} {incr i} {
+  set depth [llength $pathelements]
+  if {$filelist == ""} {
+    incr depth -1
+  }
+  for {set i 0} {$i < $depth} {incr i} {
     set cum_path [file join $cum_path [lindex $pathelements $i]]
     gen_log:log D "  $i $cum_path"
     set ret [catch "eval exec svn list $to_path/$cum_path" err]
@@ -864,7 +869,7 @@ proc svn_rcopy {from_path to_path} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
+proc svn_merge {fromrev sincerev frombranch mtag ftag url} {
 #
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
@@ -872,44 +877,35 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($fromrev $sincerev $frombranch $file)"
+  gen_log:log T "ENTER ($fromrev $sincerev $frombranch $mtag $ftag $url)"
 
   set v [viewer::new "SVN Merge"]
 
-  # Tagging involves commits, so we have to tag before we change any files
   if {$cvscfg(auto_tag)} {
-    set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag" err]
+    set tagpath $cvscfg(svnroot)/tags/$mtag
+    set comment "Tagged_using_TkSVN"
+    set ret [catch "eval exec svn list $tagpath" err]
     if {$ret} {
-      set command "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag"
+      set command "svn mkdir -m\"$comment\" $tagpath"
       $v\::do "$command"
       $v\::wait
     }
     # We may need to construct a path to copy the file to
-    set fname [file tail $file]
     set cum_path ""
     set pathelements [file split $cvsglb(relpath)]
-    for {set i 0} {$i < [llength $pathelements]} {incr i} {
+    set depth [llength $pathelements]
+    incr depth -1
+    for {set i 0} {$i < $depth} {incr i} {
       set cum_path [file join $cum_path [lindex $pathelements $i]]
       gen_log:log D "  $i $cum_path"
-      set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag/$cum_path" err]
+      set ret [catch "eval exec svn list $tagpath/$cum_path" err]
       if {$ret} {
-        set command "svn mkdir -m\"TkSVN_Mergefrom\" $cvscfg(svnroot)/tags/$fromtag/$cum_path"
+        set command "svn mkdir -m\"$comment\" $tagpath/$cum_path"
         $v\::do "$command"
         $v\::wait
       }
     }
-    set ret [catch "eval exec svn list $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)/$fname" err]
-    if {$ret} {
-      if {$frombranch == "trunk"} {
-        set command "svn copy -m\"Tag_Mergefrom\" \
-            $cvscfg(svnroot)/trunk/$cvsglb(relpath)/$fname"
-      } else {
-        set command "svn copy -m\"Tag_Mergefrom\" \
-            $cvscfg(svnroot)/branches/$frombranch/$cvsglb(relpath)/$fname"
-      }
-      append command " $cvscfg(svnroot)/tags/$fromtag/$cvsglb(relpath)"
-      $v\::do "$command"
-    }
+    svn_rcopy $url $tagpath/$cum_path
 
     toplevel .reminder
     message .reminder.m1 -aspect 600 -text \
@@ -917,7 +913,7 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
       you should apply the tag"
     entry .reminder.ent -width 32 -relief groove \
        -font $cvscfg(guifont) -readonlybackground $cvsglb(readonlybg)
-    .reminder.ent insert end $totag 
+    .reminder.ent insert end $ftag 
     .reminder.ent configure -state readonly
     message .reminder.m2 -aspect 600 -text \
       "using the \"Tag the selected files\" button"
@@ -933,7 +929,7 @@ proc svn_merge {fromrev sincerev frombranch fromtag totag file} {
 
   set fromrev [string trimleft $fromrev {r}]
   set sincerev [string trimleft $sincerev {r}]
-  set command "svn merge -r$sincerev\:$fromrev $file"
+  set command "svn merge -r$sincerev\:$fromrev $url"
     
   $v\::do "$command" 0 status_colortags
   $v\::wait
