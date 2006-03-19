@@ -343,9 +343,9 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
-    rcs_branches $lcfile
+    rcs_branches \"$lcfile\"
   } elseif {$insvn} {
-    svn_branches $lcfile
+    svn_branches \"$lcfile\"
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"
   }

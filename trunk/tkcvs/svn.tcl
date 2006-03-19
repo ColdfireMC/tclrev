@@ -483,6 +483,8 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
   } elseif {$dateA != {}} {
     set rev2 "\{\"$dateB\"\}"
   }
+set pathA [safe_url $pathA]
+set pathB [safe_url $pathB]
   if {$pathA != {} && $pathB != {}} {
     set command "svn diff $pathA $pathB"
   } elseif {$rev1 != {} && $rev2 != {}} {
@@ -871,10 +873,10 @@ proc svn_rcopy {from_path to_path} {
   gen_log:log T "ENTER ($from_path $to_path)"
 
   set v [viewer::new "SVN Copy"]
-  set command "svn copy $from_path"
+  set command "svn copy [safe_url $from_path]"
   # Can't use file join or it will mess up the URL
   set comment "Copied_using_TkSVN"
-  append command " $to_path -m\"$comment\""
+  append command " [safe_url $to_path] -m\"$comment\""
   $v\::do "$command"
   $v\::wait
 
@@ -989,6 +991,7 @@ proc svn_checkout {dir url path rev target cmd} {
     set rev [string trimleft $rev {r}] 
     append command " -r$rev"
   }
+  set path [safe_url $path]
   append command " $url/$path"
   if {$target != {} } {
     append command " $target"
@@ -1082,7 +1085,6 @@ proc svn_branches {files} {
   gen_log:log D "Relative Path: $cvsglb(relpath)"
 
   foreach file $files {
-    set file [safe_url $file]
     ::svn_branchlog::new $cvsglb(relpath) $file
   }
 
@@ -1090,9 +1092,9 @@ proc svn_branches {files} {
 }
 
 proc safe_url { url } {
-  regsub -all { } $url {%20} url
   regsub -all {%} $url {%25} url
   regsub -all {&} $url {%26} url
+  regsub -all { } $url {%20} url
   # These don't seem to be necessary
   #regsub -all {\+} $url {%2B} url
   #regsub -all {\-} $url {%2D} url
@@ -1177,11 +1179,12 @@ namespace eval ::svn_branchlog {
         catch { unset revname }
 
         # Can't use file join or it will mess up the URL
-        set path "$cvscfg(url)/$filename"
+        set safe_filename [safe_url $filename]
+        set path "$cvscfg(url)/$safe_filename"
         $ln\::ConfigureButtons $path
 
         # Find out where to put the working revision icon (if anywhere)
-        set command "svn log -q --stop-on-copy $filename"
+        set command "svn log -q --stop-on-copy \"$filename\""
         set cmd [exec::new $command]
         set log_output [$cmd\::output]
         set loglines [split $log_output "\n"]
@@ -1191,9 +1194,9 @@ namespace eval ::svn_branchlog {
 
         busy_start $lc
         if { $relpath == {} } {
-          set path "$cvscfg(svnroot)/trunk/$filename"
+          set path "$cvscfg(svnroot)/trunk/$safe_filename"
         } else {
-          set path "$cvscfg(svnroot)/trunk/$relpath/$filename"
+          set path "$cvscfg(svnroot)/trunk/$relpath/$safe_filename"
         }
         # The trunk
         set branchrevs(trunk) {}
@@ -1250,11 +1253,11 @@ namespace eval ::svn_branchlog {
           if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
           # Can't use file join or it will mess up the URL
-gen_log:log D "BRANCHES: RELPATH $relpath"
+          gen_log:log D "BRANCHES: RELPATH $relpath"
           if { $relpath == {} } {
-            set path "$cvscfg(svnroot)/branches/$branch/$filename"
+            set path "$cvscfg(svnroot)/branches/$branch/$safe_filename"
           } else {
-            set path "$cvscfg(svnroot)/branches/$branch/$relpath/$filename"
+            set path "$cvscfg(svnroot)/branches/$branch/$relpath/$safe_filename"
           }
           set command "svn log --stop-on-copy $path"
           gen_log:log C "$command"
@@ -1353,11 +1356,11 @@ gen_log:log D "BRANCHES: RELPATH $relpath"
             if {![string match {*/} $tag]} {continue}
             set tag [string trimright $tag "/"]
             # Can't use file join or it will mess up the URL
-gen_log:log D "TAGS: RELPATH $relpath"
+            gen_log:log D "TAGS: RELPATH $relpath"
             if { $relpath == {} } {
-              set path "$cvscfg(svnroot)/tags/$tag/$filename"
+              set path "$cvscfg(svnroot)/tags/$tag/$safe_filename"
             } else {
-              set path "$cvscfg(svnroot)/tags/$tag/$relpath/$filename"
+              set path "$cvscfg(svnroot)/tags/$tag/$relpath/$safe_filename"
             }
             set command "svn log --stop-on-copy $path"
             gen_log:log C "$command"

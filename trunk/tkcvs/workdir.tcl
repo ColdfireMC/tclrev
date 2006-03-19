@@ -1096,6 +1096,14 @@ proc setup_dir { } {
       append cvscfg(ignore_file_filter) " $line"
     }
     close $fileId
+  } else {
+    if {$insvn} {
+      set cmd(svnpropget) [exec::new "svn propget svn:ignore"]
+      set contents [split [$cmd(svnpropget)\::output] "\n"]
+      foreach line $contents {
+        append cvscfg(ignore_file_filter) " $line"
+      }
+    }
   }
 
   set filelist [ getFiles ]
