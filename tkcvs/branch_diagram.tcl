@@ -141,7 +141,7 @@ namespace eval ::logcanvas {
         switch -- $sys {
           "SVN" {
             set kind ""
-            set info_cmd [exec::new "svn info [file tail $fname]"]
+            set info_cmd [exec::new "svn info \"[file tail $fname]\""]
             set info_lines [split [$info_cmd\::output] "\n"]
             foreach infoline $info_lines {
               if {[string match "Node Kind:*" $infoline]} {
