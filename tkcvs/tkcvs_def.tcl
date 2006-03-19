@@ -136,7 +136,7 @@ set logcfg(arrowshape) { 6 6.7 3 }
 set logcfg(draw_delay) 2000
 
 # Scaling options to offer user
-set logcfg(scaling_options) {50% 0.5 75% 0.75 100% 1.0 150% 1.5 200% 2.0 250% 2.5}
+set logcfg(scaling_options) {50% 0.5 80% 0.8 90% 0.9 100% 1.0 120% 1.2 150% 1.5}
 
 # User options for info display
 set logcfg(update_drawing) 2
