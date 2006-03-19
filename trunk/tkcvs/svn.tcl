@@ -64,7 +64,7 @@ proc read_svn_dir {dirname} {
       gen_log:log D "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) [join $relp {/}]
       gen_log:log D "relpath: $cvsglb(relpath)"
-      set module_dir $cvsglb(relpath)
+      regsub -all {%20} $cvsglb(relpath) { } module_dir
       gen_log:log D "tagname: $current_tagname"
     }
   }
@@ -845,7 +845,7 @@ proc svn_tag {tagname force branch update args} {
       $v\::wait
     }
   } else {
-    set command "svn copy $args -m\"$comment\" $to_path/$cum_path"
+    set command "svn copy $filelist -m\"$comment\" $to_path/$cum_path"
     $v\::do "$command"
     $v\::wait
   }
