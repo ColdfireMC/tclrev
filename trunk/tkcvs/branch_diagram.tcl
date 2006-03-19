@@ -196,8 +196,6 @@ namespace eval ::logcanvas {
                  set fromtag ""
                  if {[info exists revbtags($sincerev)]} {
                    set fromtag [lindex $revbtags($sincerev) 0]
-                 } elseif {[info exists revtags($fromrev)]} {
-                   set fromtag [lindex $revtags($fromrev) 0]
                  }
                  if {$fromtag == ""} {
                    foreach brev [array names revbtags] {
@@ -254,22 +252,24 @@ namespace eval ::logcanvas {
                }]
              $logcanvas.delta configure \
                -command [namespace code {
-                  variable sys
-                  variable revbtags
-                  set fromrev [$logcanvas.up.revA_rvers cget -text]
-                  set sincerev [$logcanvas.up.revB_rvers cget -text]
-                  set fromtag ""
-                  if {[info exists revbtags($sincerev)]} {
-                    set fromtag [lindex $revbtags($sincerev) 0]
-                  } elseif {[info exists revtags($fromrev)]} {
-                    set fromtag [lindex $revtags($fromrev) 0]
-                  }
-                  if {$fromtag == ""} {
-                    set fromtag $fromrev
-                  }
-                  merge_dialog $sys \
-                    $fromrev $sincerev $fromtag \
-                    [list $filename]
+                 variable sys
+                 set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 set fromtag ""
+                 if {[info exists revbtags($sincerev)]} {
+                   set fromtag [lindex $revbtags($sincerev) 0]
+                 }
+                 if {$fromtag == ""} {
+                   foreach brev [array names branchrevs] {
+                     set b $branchrevs($brev)
+                     if {$b == $fromrev} {
+                       set fromtag $revbtags($brev)
+                     }
+                   }
+                 }
+                 merge_dialog $sys \
+                   $fromrev $sincerev $fromtag \
+                   [list $filename]
                 }]
             }
          }
@@ -499,7 +499,6 @@ namespace eval ::logcanvas {
           }
         }
         incr box_width $curr(padx,2)
-        #gen_log:log T "LEAVE"
         set text_height [expr {$curr(pady,2) + \
            [llength [subst $root_info]] * $font_norm_h}]
         return [list $tag_width $box_width $text_height]
@@ -520,37 +519,13 @@ namespace eval ::logcanvas {
 
         #gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
         gen_log:log D "Drawing Root for \"$root_rev\" \"$cur_rev\""
-        # Draw the list of tags
-        set tx [expr {$x - $curr(tspcb)}]
-        set ty $y
-        # Draw the list of tags
-        foreach tag $tlist($root_rev) {
-          set my_font $font_norm
-          set tagcolour black
-          #set taglist [list T$tag R$cur_rev box active]
-          set taglist {}
-          if {$tag == {more...}} {
-            set my_font $font_bold
-            set taglist [list R$cur_rev tag active]
-          } elseif {[info exists cvscfg(tagcolour,$tag)]} {
-            set tagcolour $cvscfg(tagcolour,$tag)
-          }
-          $logcanvas.canvas create text \
-            $tx $ty \
-            -text $tag \
-            -anchor se -fill $tagcolour \
-            -font $my_font \
-            -tags $taglist
-          incr ty -$font_norm_h
-        }
 
         # draw the box
         $logcanvas.canvas create rectangle \
           $x $y \
           [expr {$x + $box_width}] [expr {$y - $box_height}] \
-            -width $curr(width) \
-            -fill gray90 -outline blue
-            #-tags [list box R$root_rev rect$root_rev active]
+          -width $curr(width) \
+          -fill gray90 -outline blue
 
         set tx [expr {$x + $box_width/2}]
         set ty [expr {$y - $curr(pady)}]
@@ -658,55 +633,44 @@ namespace eval ::logcanvas {
         variable font_bold
         variable logcanvas
         variable tlist
+        variable match
         variable fromtags
         variable totags
-        variable fromtag_branch
-        variable totag_branch
         variable xy
         variable boxwidth
         variable fromprefix
         variable toprefix
+        upvar branch branch
 
-        #gen_log:log T "ENTER ($x $y $box_width $height $revision)"
+        gen_log:log T "ENTER ($x $y $box_width $height $revision)"
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
+        set revbtag $revbtags($branch)
         foreach tag $tlist($revision) {
+          gen_log:log D "$revision: tag $tag"
           if {[string match "${fromprefix}_*" $tag]} {
-            gen_log:log D " From tag: $tag"
             lappend fromtags $tag
+            regsub {.*_(.*$)} $tag {\1} tagend
+            gen_log:log D "  $tag is a FROM TAG"
+            gen_log:log D "  will need a TO TAG ${toprefix}_${revbtag}_$tagend"
+            set match($tag) ${toprefix}_${revbtag}_$tagend
+
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
-            set lsplit [lrange [split $revision {.}] 0 end-1]
-            set from_branch [join $lsplit {.}]
-            gen_log:log D "  Looking for tags on $from_branch"
-            if {[llength $lsplit] > 1} {
-              if {![info exists tags($from_branch)]} {set tags($from_branch) ""}
-              set fromtag_branch($tag) $revbtags($from_branch)
-            } else {
-              set fromtag_branch($tag) $cvscfg(mergetrunkname)
-            }
-            gen_log:log D "  fromtag($tag) - $revision - $fromtag_branch($tag)"
           }
           if {[string match "${toprefix}_*" $tag]} {
             lappend totags $tag
-            gen_log:log D " To tag: $tag"
+            regsub {.*_(.*$)} $tag {\1} tagend
+            gen_log:log D "  $tag is a TO TAG"
+            gen_log:log D "  will need a FROM TAG ${toprefix}_${revbtag}_$tagend"
+            set match($tag) ${toprefix}_${revbtag}_$tagend
+            
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
-            set lsplit [lrange [split $revision {.}] 0 end-1]
-            set to_branch [join $lsplit {.}]
-            gen_log:log D "  Looking for tags on $to_branch"
-            if {[llength $lsplit] > 1} {
-              if {![info exists revbtags($to_branch)]} {set revbtags($to_branch) ""}
-              set totag_branch($tag) $revbtags($to_branch)
-            } else {
-              set totag_branch($tag) $cvscfg(mergetrunkname)
-            }
-            gen_log:log D "  totag($tag) - $revision - $totag_branch($tag)"
           }
           set my_font $font_norm
           set tagcolour black
-          #set taglist [list T$tag R$revision box active]
           set taglist {}
           if {$tag == {more...}} {
             set my_font $font_bold
@@ -938,7 +902,6 @@ namespace eval ::logcanvas {
         if {$opt(update_drawing) < 2} {
           UpdateBndBox
         }
-        #gen_log:log T "LEAVE"
         return [list $x [expr {$y + $root_height + $curr(spcy)}] \
         $box_width $root_height $last_y]
       }
@@ -1021,8 +984,6 @@ namespace eval ::logcanvas {
         variable root_info
         variable fromtags {}
         variable totags {}
-        variable fromtag_branch
-        variable totag_branch
         variable toprefix
         variable fromprefix
         variable xy
@@ -1049,6 +1010,7 @@ namespace eval ::logcanvas {
         variable revkind
         variable revbranches
         variable branchrevs
+        variable match
 
         gen_log:log T "ENTER ($now)"
 
@@ -1230,18 +1192,21 @@ namespace eval ::logcanvas {
             UpdateBndBox
           }
 
+          gen_log:log D "fromtags: $fromtags"
+          gen_log:log D "totags: $totags"
           if {$opt(show_merges)} {
             foreach from $fromtags {
-              gen_log:log D "$from  to $fromtag_branch($from) at $xy($from)"
+              gen_log:log D " $from"
               set xfrom [lindex $xy($from) 0]
               set yfrom [lindex $xy($from) 1]
-              regsub {^.*_} $from {} end
-              set matchstr "${toprefix}_"
-              append matchstr $fromtag_branch($from)
-              append matchstr "_$end"
+              if {! [info exists match($from)]} {
+                gen_log:log D "  No match for $match($from)"
+                continue
+              }
+              gen_log:log D "  need a matching tag $match($from)"
               foreach to $totags {
-                 gen_log:log D " comparing $matchstr to $to"
-                 if {[string equal $to $matchstr]} {
+                 gen_log:log D "    comparing $match($from) to $to"
+                 if {[string equal $to $match($from)]} {
                     gen_log:log D "  to $to at $xy($to)"
                     set xto [lindex $xy($to) 0]
                     set yto [lindex $xy($to) 1]
