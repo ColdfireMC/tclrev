@@ -454,7 +454,7 @@ namespace eval ::logcanvas {
         set tag_width 0
         set box_width 0
         set tlist($root_rev) {}
-        if {$opt(show_tags) && [info exists revtags($root_rev)]} {
+        if {[info exists revtags($root_rev)]} {
           # We want to show all the coloured tags plus others to take
           # the total to at least cvscfg(tagdepth)
           set tag_colour {}
@@ -466,31 +466,33 @@ namespace eval ::logcanvas {
               lappend tag_black $tag
             }
           }
-          if {[info exists cvscfg(tagdepth)] && $cvscfg(tagdepth) != 0} {
-            set n [expr {$cvscfg(tagdepth) - [llength $tag_colour]}]
-            if {$n < [llength $tag_black]} {
-              set tag_black [concat [lrange $tag_black 0 [expr {$n-1}]] {more...}]
-            }
-          }
           set tlist($root_rev) [concat $tag_colour $tag_black]
-          foreach tag $tlist($root_rev) {
-            if {$tag == {more...}} {
-              set my_font $font_bold
-            } else {
-              set my_font $font_norm
+
+          if {$opt(show_tags)} {
+            if {[info exists cvscfg(tagdepth)] && $cvscfg(tagdepth) != 0} {
+              set n [expr {$cvscfg(tagdepth) - [llength $tag_colour]}]
+              if {$n < [llength $tag_black]} {
+                set tag_black [concat [lrange $tag_black 0 [expr {$n-1}]] {more...}]
+              }
             }
-            set w [font measure $my_font -displayof $logcanvas.canvas $tag]
-            if {$w > $tag_width} {
-              set tag_width $w
+            foreach tag $tlist($root_rev) {
+              if {$tag == {more...}} {
+                set my_font $font_bold
+              } else {
+                set my_font $font_norm
+              }
+              set w [font measure $my_font -displayof $logcanvas.canvas $tag]
+              if {$w > $tag_width} {
+                set tag_width $w
+              }
             }
-          }
-          incr tag_width $curr(tspcb,2)
-          set h [expr {[llength $tlist($root_rev)] * $font_norm_h}]
-          if {$h > $height} {
-            set height $h
+            incr tag_width $curr(tspcb,2)
+            set h [expr {[llength $tlist($root_rev)] * $font_norm_h}]
+            if {$h > $height} {
+              set height $h
+            }
           }
         }
-
         if {![info exists revbtags($root_rev)]} {set revbtags($root_rev) {}}
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
@@ -500,7 +502,7 @@ namespace eval ::logcanvas {
         }
         incr box_width $curr(padx,2)
         set text_height [expr {$curr(pady,2) + \
-           [llength [subst $root_info]] * $font_norm_h}]
+          [llength [subst $root_info]] * $font_norm_h}]
         return [list $tag_width $box_width $text_height]
       }
 
@@ -564,7 +566,7 @@ namespace eval ::logcanvas {
         set tag_width 0
         set box_width 0
         set tlist($revision) {}
-        if {$opt(show_tags) && [info exists revtags($revision)]} {
+        if {[info exists revtags($revision)]} {
           # We want to show all the coloured tags plus others to take
           # the total to at least cvscfg(tagdepth)
           set tag_colour {}
@@ -583,21 +585,23 @@ namespace eval ::logcanvas {
             }
           }
           set tlist($revision) [concat $tag_colour $tag_black]
-          foreach tag $tlist($revision) {
-            if {$tag == {more...}} {
-              set my_font $font_bold
-            } else {
-              set my_font $font_norm
+          if {$opt(show_tags)} {
+            foreach tag $tlist($revision) {
+              if {$tag == {more...}} {
+                set my_font $font_bold
+              } else {
+                set my_font $font_norm
+              }
+              set w [font measure $my_font -displayof $logcanvas.canvas $tag]
+              if {$w > $tag_width} {
+                set tag_width $w
+              }
             }
-            set w [font measure $my_font -displayof $logcanvas.canvas $tag]
-            if {$w > $tag_width} {
-              set tag_width $w
+            incr tag_width $curr(tspcb,2)
+            set h [expr {[llength $tlist($revision)] * $font_norm_h}]
+            if {$h > $height} {
+              set height $h
             }
-          }
-          incr tag_width $curr(tspcb,2)
-          set h [expr {[llength $tlist($revision)] * $font_norm_h}]
-          if {$h > $height} {
-            set height $h
           }
         }
 
@@ -618,6 +622,7 @@ namespace eval ::logcanvas {
 
       proc DrawRevision { x y box_width height revision} {
         global cvscfg
+        variable opt
         variable curr
         variable box_height
         variable rev_info
@@ -655,7 +660,6 @@ namespace eval ::logcanvas {
             gen_log:log D "  $tag is a FROM TAG"
             gen_log:log D "  will need a TO TAG ${toprefix}_${revbtag}_$tagend"
             set match($tag) ${toprefix}_${revbtag}_$tagend
-
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
           }
@@ -665,26 +669,27 @@ namespace eval ::logcanvas {
             gen_log:log D "  $tag is a TO TAG"
             gen_log:log D "  will need a FROM TAG ${toprefix}_${revbtag}_$tagend"
             set match($tag) ${toprefix}_${revbtag}_$tagend
-            
             set boxwidth($tag) $box_width
             set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
           }
-          set my_font $font_norm
-          set tagcolour black
-          set taglist {}
-          if {$tag == {more...}} {
-            set my_font $font_bold
-            set taglist [list R$revision tag active]
-          } elseif {[info exists cvscfg(tagcolour,$tag)]} {
-            set tagcolour $cvscfg(tagcolour,$tag)
+          if {$opt(show_tags)} {
+            set my_font $font_norm
+            set tagcolour black
+            set taglist {}
+            if {$tag == {more...}} {
+              set my_font $font_bold
+              set taglist [list R$revision tag active]
+            } elseif {[info exists cvscfg(tagcolour,$tag)]} {
+              set tagcolour $cvscfg(tagcolour,$tag)
+            }
+            $logcanvas.canvas create text \
+              $tx $ty \
+              -text $tag \
+              -anchor se -fill $tagcolour \
+              -font $my_font \
+              -tags $taglist
+            incr ty -$font_norm_h
           }
-          $logcanvas.canvas create text \
-            $tx $ty \
-            -text $tag \
-            -anchor se -fill $tagcolour \
-            -font $my_font \
-            -tags $taglist
-          incr ty -$font_norm_h
         }
         # draw the box...
         set tx [expr {$x + $box_width}]
