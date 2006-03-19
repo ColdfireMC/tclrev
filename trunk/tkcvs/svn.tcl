@@ -831,9 +831,22 @@ proc svn_tag {tagname force branch update args} {
     }
   }
 
-  set command "svn copy $args -m\"$comment\" $to_path/$cum_path"
-  $v\::do "$command"
-  $v\::wait
+  if {$cvsglb(relpath) == "" && $args == "{}" } {
+    set ret [catch "eval exec svn ls" view_this]
+    if {$ret} {
+      cvsfail "$view_this" .workdir
+    } else {
+      set flist [split $view_this "\n"]
+      foreach f $flist {
+        $v\::do "svn copy \"$f\" \"$to_path/$cum_path\" -m\"$comment\""
+      }
+      $v\::wait
+    }
+  } else {
+    set command "svn copy $args -m\"$comment\" $to_path/$cum_path"
+    $v\::do "$command"
+    $v\::wait
+  }
 
   if {$update == "yes"} {
     # update so we're on the branch
@@ -905,7 +918,24 @@ proc svn_merge {fromrev sincerev frombranch mtag ftag url} {
         $v\::wait
       }
     }
-    svn_rcopy $url $tagpath/$cum_path
+
+    set comment "Copied_using_TkSVN"
+    if {$cvsglb(relpath) == "" && [string range $url end-1 end] == "/."} {
+      set ret [catch "eval exec svn ls" view_this]
+      if {$ret} {
+        cvsfail "$view_this" .
+      } else {
+        set flist [split $view_this "\n"]
+        set trimurl [string range $url 0 end-2]
+        foreach f $flist {
+          $v\::do "svn copy \"$trimurl/$f\" \"$tagpath/$cum_path\" -m\"$comment\""
+        }
+        $v\::wait
+      }
+    } else {
+      $v\::do "svn copy \"$url\" $tagpath/$cum_path -m\"$comment\""
+      $v\::wait
+    }
 
     toplevel .reminder
     message .reminder.m1 -aspect 600 -text \
@@ -1220,6 +1250,7 @@ namespace eval ::svn_branchlog {
           if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
           # Can't use file join or it will mess up the URL
+gen_log:log D "BRANCHES: RELPATH $relpath"
           if { $relpath == {} } {
             set path "$cvscfg(svnroot)/branches/$branch/$filename"
           } else {
@@ -1322,6 +1353,7 @@ namespace eval ::svn_branchlog {
             if {![string match {*/} $tag]} {continue}
             set tag [string trimright $tag "/"]
             # Can't use file join or it will mess up the URL
+gen_log:log D "TAGS: RELPATH $relpath"
             if { $relpath == {} } {
               set path "$cvscfg(svnroot)/tags/$tag/$filename"
             } else {

@@ -38,7 +38,7 @@ namespace eval joincanvas {
       set cvscanv(boxy) 20
       set cvscanv(midx) [expr {$cvscanv(boxx) / 2}]
       set cvscanv(midy) [expr {$cvscanv(boxy) / 2}]
-      set cvscanv(boxmin) 72
+      set cvscanv(boxmin) 64
       # Gaps between boxes
       set cvscanv(space) [expr {$cvscanv(boxy) + 16}]
       # Indent at top left of canvas
@@ -331,7 +331,7 @@ namespace eval joincanvas {
         set y $cvscanv(space)
         set px(0) 10
         set x [font measure {Helvetica -12 bold} \
-           -displayof $joincanvas.canvas Trunk]
+           -displayof $joincanvas.canvas $cvscfg(mergetrunkname)]
 
         set px(1) [expr {$px(0) + $x / 2}]
         set py(1) [expr {$cvscanv(boxy) - 4}]
@@ -434,13 +434,14 @@ namespace eval joincanvas {
           }
         }
 
-        set tags($headrev) HEAD
+        set tags($headrev) $cvscfg(mergetrunkname)
         gen_log:log D "HEAD  $headrev"
         gen_log:log D "tagtext \"$tags($headrev)\""
         # Make a box for top of trunk
         set ylevel(trunk) [expr {$maxyind - $cvscanv(boxy)}]
         set tagwidth [font measure {Helvetica -12 bold} \
-           -displayof $joincanvas.canvas Trunk]
+           -displayof $joincanvas.canvas $cvscfg(mergetrunkname)]
+        if {$tagwidth < $cvscanv(boxmin)} { set tagwidth $cvscanv(boxmin) }
         set boxid [$joincanvas.canvas create rectangle \
           [expr {$px(1) - $tagwidth / 2}] $ylevel(trunk) \
           [expr {$px(1) + 5 + $tagwidth / 2}] \
@@ -451,7 +452,7 @@ namespace eval joincanvas {
         $joincanvas.canvas lower $boxid
         $joincanvas.canvas create text \
            [expr {$px(1) + 2}] [expr {$ylevel(trunk) - 2}] \
-           -text "Trunk" \
+           -text "$cvscfg(mergetrunkname)" \
            -anchor s -justify center -fill blue \
            -font {Helvetica -12 bold} \
            -tags b$headrev
@@ -462,7 +463,7 @@ namespace eval joincanvas {
 
         # Bind button-press
         $joincanvas.canvas bind b$headrev <ButtonPress-1> \
-           [namespace code "select_rectangle $headrev HEAD"]
+           [namespace code "select_rectangle $headrev $cvscfg(mergetrunkname)"]
         # Clicking in a blank part of the canvas unselects boxes
         bind $joincanvas.canvas <ButtonPress-1> \
            [namespace code unselect_all]

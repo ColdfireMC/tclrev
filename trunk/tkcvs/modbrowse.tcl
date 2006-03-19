@@ -114,19 +114,18 @@ proc modbrowse_setup {} {
      -command { import_run }
   button .modbrowse.bottom.buttons.cvsfuncs.who -image Who \
      -command {cvs_history all $modbrowse_module}
+  button .modbrowse.bottom.buttons.cvsfuncs.brefresh  -image Refresh \
+     -command { modbrowse_run }
 
   button .modbrowse.bottom.buttons.closefm.close -text "Close" \
     -command { module_exit; exit_cleanup 0 }
 
-  grid columnconf .modbrowse.bottom.buttons.cvsfuncs 1 -weight 1
-  grid rowconf .modbrowse.bottom.buttons.cvsfuncs 0 -weight 1
-  grid .modbrowse.bottom.buttons.cvsfuncs.who -column 0 -row 0 \
+  grid .modbrowse.bottom.buttons.cvsfuncs.brefresh -column 0 -row 0 \
+     -ipadx 4 -ipady 4
+  grid .modbrowse.bottom.buttons.cvsfuncs.who -column 1 -row 0 \
      -ipadx 4 -ipady 4
   grid .modbrowse.bottom.buttons.cvsfuncs.import -column 2 -row 0 \
      -ipadx 4 -ipady 4
-
-  grid columnconf .modbrowse.bottom.buttons.modfuncs 7 -weight 1
-  grid rowconf .modbrowse.bottom.buttons.modfuncs 1 -weight 1
 
   grid .modbrowse.bottom.buttons.modfuncs.filebrowse -column 0 -row 0 \
      -ipadx 4 -ipady 4
@@ -177,6 +176,8 @@ proc modbrowse_setup {} {
      {"Import the current directory into the repository"}
   set_tooltips .modbrowse.bottom.buttons.cvsfuncs.who \
      {"Show who has modules checked out"}
+  set_tooltips .modbrowse.bottom.buttons.cvsfuncs.brefresh \
+     {"Re-read the modules"}
   set_tooltips .modbrowse.bottom.buttons.closefm.close \
      {"Close the repository browser"}
 
@@ -459,9 +460,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
   ::picklist::used cvsroot $cvsglb(root)
 
   set bstate [expr {$svnurl ? {disabled} : {normal}}]
-  foreach widget [grid slaves .modbrowse.bottom.buttons.cvsfuncs ] {
-    $widget configure -state $bstate
-  }
+  .modbrowse.bottom.buttons.cvsfuncs.import configure -state $bstate
+  .modbrowse.bottom.buttons.cvsfuncs.who configure -state $bstate
+  .modbrowse.bottom.buttons.cvsfuncs.brefresh configure -state normal
   foreach widget [grid slaves .modbrowse.bottom.buttons.modfuncs ] {
     $widget configure -state $bstate
   }
