@@ -18,9 +18,12 @@ proc ModTree:create {w {open_func {}} } {
     ModTree:loadimages
   }
 
-  ModTree:panedwindow_create $w
-  ModTree:panedwindow_divide $w 0.4
-  set parent [winfo parent $w]
+  panedwindow $w.pw -bg $cvsglb(canvbg) -bd 0
+  $w.pw configure -handlepad 35
+  $w.pw configure -sashpad 0
+  $w.pw configure -sashrelief raised
+  frame $w.tree
+  frame $w.labl
 
   canvas $w.tree.list
   canvas $w.labl.list
@@ -39,12 +42,12 @@ proc ModTree:create {w {open_func {}} } {
     set cvsglb(hlbg) $buttonhilite
   }
 
-  scrollbar $parent.yscroll -orient vertical -highlightthickness 0 \
+  scrollbar $w.yscroll -orient vertical -highlightthickness 0 \
       -command "ModTree:scroll_windows $w"
-  pack $parent.yscroll -side right -fill y
+  pack $w.yscroll -side right -fill y
   bind $w.tree.list <1> "ModTree:clearselection $w"
   foreach canv {tree labl} {
-    $w.$canv.list configure -yscrollcommand "$parent.yscroll set"
+    $w.$canv.list configure -yscrollcommand "$w.yscroll set"
     bind $w.$canv.list <Next>  "ModTree:scroll_windows $w scroll  1 pages"
     bind $w.$canv.list <Prior> "ModTree:scroll_windows $w scroll -1 pages"
     bind $w.$canv.list <Down>  "ModTree:scroll_windows $w scroll  1 units"
@@ -58,16 +61,15 @@ proc ModTree:create {w {open_func {}} } {
     bind $w.$canv.list <ButtonPress-5> \
       "ModTree:scroll_windows $w scroll 1 units"
 
-    # These frames are just to keep the label-windows on the canvas
-    # from drawing over the frame relief when scrolling
-    frame $w.$canv.head -relief raised -bd 2
-    label $w.$canv.head.lbl
-    pack $w.$canv.head -side top -fill x -expand no -padx 2
-    pack $w.$canv.head.lbl -fill x -expand yes
+    label $w.$canv.lbl -relief raised -bd 2
+    pack $w.$canv -side left -fill both -expand yes
+    pack $w.$canv.lbl -ipady 2 -fill x -expand no
     pack $w.$canv.list -side top -ipadx 2 -fill both -expand yes
   }
-  $w.tree.head.lbl configure -text "Module"
-  $w.labl.head.lbl configure -text "Information"
+  $w.tree.lbl configure -text "Module"
+  $w.labl.lbl configure -text "Information"
+  $w.pw add $w.tree
+  $w.pw add $w.labl
 
   ModTree:dfltconfig $w /
   set Tree(vsize) 16
@@ -75,6 +77,14 @@ proc ModTree:create {w {open_func {}} } {
   set Tree($w:selection) {}
   set Tree($w:selB) {}
   set Tree($w:jtems) 0
+#puts "[winfo reqwidth $w.tree.list]"
+#puts "[winfo reqwidth $w.labl.list]"
+#puts "[$w.tree.list cget -width]"
+#puts "[$w.labl.list cget -width]"
+#$w.pw paneconfigure $w.tree -width [$w.tree.list cget -width]
+#$w.pw paneconfigure $w.labl -width [winfo reqwidth $w.labl.list]
+#puts "[$w.pw paneconfigure $w.tree -minsize 100]"
+#puts "[$w.pw paneconfigure $w.tree]"
 
   focus $w.tree.list
   gen_log:log T "LEAVE"
@@ -113,8 +123,8 @@ proc ModTree:newitem {w v name title args} {
   }
   set i [lsearch -exact $Tree($w:$dir:children) $n]
   if {$i>=0} {
-    return
     #cvsfail "item \"$v\" already exists" .modbrowse
+    return
   }
   lappend Tree($w:$dir:children) $n
   set Tree($w:$dir:children) [lsort $Tree($w:$dir:children)]
@@ -145,7 +155,7 @@ proc ModTree:delitem {w v} {
     catch {destroy $w.tree}
     catch {destroy $w.labl}
     set parent [winfo parent $w]
-    catch {destroy $parent.yscroll}
+    catch {destroy $w.yscroll}
     foreach t [array names Tree $w:*] {
       unset Tree($t)
     }
@@ -225,10 +235,26 @@ proc ModTree:build {w} {
   catch {unset Tree($w:buildpending)}
   set Tree($w:y) 30
   ModTree:buildlayer $w / $Tree(vsize)
-  $w.tree.list config -scrollregion [$w.tree.list bbox all]
+  set tbox [$w.tree.list bbox all]
+  #if {$tbox == ""} {return}
+  $w.tree.list config -scrollregion $tbox
   # Use tree's bbox for labl, because labl's is a little shorter
   # but we need to keep them in sync
-  $w.labl.list config -scrollregion [$w.tree.list bbox all]
+  $w.labl.list config -scrollregion $tbox
+
+#set lbox [$w.labl.list bbox all]
+#set tb [expr {[lindex $tbox 2] - [lindex $tbox 0]}]
+#set lb [expr {[lindex $lbox 2] - [lindex $lbox 0]}]
+#puts "$tb"
+#puts "$lb"
+  #$w.tree.list configure -width $tb
+  #$w.labl.list configure -width $lb
+  #$w.pw paneconfigure $w.tree -width $tb
+  #$w.pw paneconfigure $w.labl -width $lb
+  #puts "[$w.tree.list cget -width]"
+  #puts "[$w.labl.list cget -width]"
+#puts "$tw"
+#puts "$lw"
   gen_log:log T "LEAVE"
 }
 
@@ -449,7 +475,7 @@ proc ModTree:scroll_windows {w args} {
   #gen_log:log T "ENTER ($w $args)"
   set parent [winfo parent $w]
 
-  set yget [$parent.yscroll get]
+  set yget [$w.yscroll get]
   set way [lindex $args 2]
   set cmd [lindex $args 1]
   set first [lindex $yget 0]
@@ -474,75 +500,10 @@ proc ModTree:scroll_windows {w args} {
   eval $w.labl.list yview $args
 }
 
-proc ModTree:drag_windows {w W y} {
-#Scrolling caused by dragging
-
-  set height [$W cget -height]
-  #gen_log:log D "$w %y $height"
-  if {$y < 0} {set y 0}
-  if {$y > $height} {set y $height}
-  set yfrac [expr {double($y) / $height}]
-
-  eval $w.tree.list yview moveto $yfrac
-  eval $w.labl.list yview moveto $yfrac
-}
-
-proc ModTree:panedwindow_create {w} {
-
-  frame $w
-  frame $w.tree
-  place $w.tree -relx 0.0 -rely 0.5 -anchor w -relwidth 0.5 -relheight 1.0
-  frame $w.labl
-  place $w.labl -relx 1.0 -rely 0.5 -anchor e -relwidth 0.5 -relheight 1.0
-
-  frame $w.sash -width 4 -borderwidth 2 -relief raised
-  place $w.sash -relx 0.5 -rely 0.5 -relheight 1.0 -anchor c
-
-  frame $w.grip -width 10 -height 10 -borderwidth 2 -relief raised \
-      -cursor sb_h_double_arrow
-  place $w.grip -relx 0.5 -y 25 -anchor c
-
-  bind $w.grip <ButtonPress-1>   "ModTree:panedwindow_grab $w"
-  bind $w.grip <B1-Motion>       "ModTree:panedwindow_drag $w %X"
-  bind $w.grip <ButtonRelease-1> "ModTree:panedwindow_drop $w %X"
-}
-
-proc ModTree:panedwindow_grab {w} {
-  $w.grip configure -relief sunken
-}
-
-proc ModTree:panedwindow_drag {w x} {
-  # Where we are now, relative to the west side of $w
-  set relX [expr {$x - [winfo rootx $w]}]
-  # How far we can go to the right relative to the west side of $w
-  set maxX [winfo width $w]
-  # minX is 0
-  # Our position as a fraction of the traversible space
-  set frac [expr {double($relX) / $maxX}]
-  # Rails to keep us from going any further
-  if {$frac < 0.05} {
-    set frac 0.05
+proc ModTree:destroy {w} {
+  foreach u [winfo children $w] {
+    catch {destroy $u}
   }
-  if {$frac > 0.95} {
-    set frac 0.95
-  }
-  place $w.sash -relx $frac
-  place $w.grip -relx $frac
-  return $frac
-}
-
-proc ModTree:panedwindow_drop {w x} {
-  set frac [ModTree:panedwindow_drag $w $x]
-  ModTree:panedwindow_divide $w $frac
-  $w.grip configure -relief raised
-}
-
-proc ModTree:panedwindow_divide {w frac} {
-  place $w.sash -relx $frac
-  place $w.grip -relx $frac
-
-  place $w.tree -relwidth $frac
-  place $w.labl -relwidth [expr {1 - $frac}]
 }
 
 # clear any text highlight box (used by set/clearselection)

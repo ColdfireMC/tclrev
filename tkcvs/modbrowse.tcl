@@ -185,7 +185,7 @@ proc modbrowse_setup {} {
     {"Open the Working Directory Browser"}
 
   frame .modbrowse.treeframe
-  pack .modbrowse.treeframe -side bottom -fill both -expand yes
+  pack .modbrowse.treeframe -side bottom -fill both -expand yes -pady 0
 
   set screenWidth [winfo vrootwidth .]
   set screenHeight [winfo vrootheight .]
@@ -296,10 +296,10 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
      -variable cvscfg(aliasfolder) -onvalue true -offvalue false \
      -selectcolor $selcolor -command {
-        ModTree:delitem .modbrowse.treeframe.pw /
-        destroy .modbrowse.treeframe.pw
+        ModTree:delitem .modbrowse.treeframe /
+        ModTree:destroy .modbrowse.treeframe
         busy_start .modbrowse
-        ModTree:create .modbrowse.treeframe.pw
+        ModTree:create .modbrowse.treeframe
         pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
         modbrowse_tree [lsort [array names modval]] "/"
      }
@@ -362,13 +362,13 @@ proc modbrowse_run { {CVSorSVN {}} } {
   wm deiconify .modbrowse
   raise .modbrowse
 
+  ModTree:delitem .modbrowse.treeframe /
+  ModTree:destroy .modbrowse.treeframe
+  busy_start .modbrowse
   switch $CVSorSVN {
     svn {
       set svnurl 1
       gen_log:log D "svn"
-      #gen_log:log D "cvsglb(root) $cvsglb(root)"
-      #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-      #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
       set cvsglb(root) $cvscfg(svnroot) 
       if {! [info exists cvscfg(svnroot)] } {
@@ -377,12 +377,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
       .modbrowse.top.lroot configure -text "SVN URL"
       .modbrowse.top.lmcode configure -text "Selection"
       # Call ModTree with the just-in-time level maker
-      ModTree:delitem .modbrowse.treeframe.pw /
-      destroy .modbrowse.treeframe.pw
-      busy_start .modbrowse
-      ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
+      ModTree:create .modbrowse.treeframe svn_jit_listdir
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
+      parse_svnmodules .modbrowse.treeframe $cvscfg(svnroot)
     }
     cvs {
       set svnurl 0
@@ -396,10 +393,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
           [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
       .modbrowse.top.lroot configure -text "CVSROOT"
       .modbrowse.top.lmcode configure -text "Module"
-      ModTree:delitem .modbrowse.treeframe.pw /
-      destroy .modbrowse.treeframe.pw
-      busy_start .modbrowse
-      ModTree:create .modbrowse.treeframe.pw
+      ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
       if {[info exists cmd(cvs_co)]} {
         parse_cvsmodules [$cmd(cvs_co)\::output]
@@ -415,9 +409,6 @@ proc modbrowse_run { {CVSorSVN {}} } {
       if {$svnurl} {
         gen_log:log D "default,detected svn url"
         set cvscfg(svnroot) $cvsglb(root)
-        #gen_log:log D "cvsglb(root) $cvsglb(root)"
-        #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-        #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
 
         #set cvsglb(root) $cvscfg(svnroot) 
         #if {! [info exists cvscfg(svnroot)] } {
@@ -426,12 +417,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
         .modbrowse.top.lroot configure -text "SVN URL"
         .modbrowse.top.lmcode configure -text "Selection"
         # Call ModTree with the just-in-time level maker
-        ModTree:delitem .modbrowse.treeframe.pw /
-        destroy .modbrowse.treeframe.pw
-        busy_start .modbrowse
-        ModTree:create .modbrowse.treeframe.pw svn_jit_listdir
+        ModTree:create .modbrowse.treeframe svn_jit_listdir
         pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-        parse_svnmodules .modbrowse.treeframe.pw $cvscfg(svnroot)
+        parse_svnmodules .modbrowse.treeframe $cvscfg(svnroot)
       } else {
         gen_log:log D "default"
         set cvscfg(cvsroot) $cvsglb(root)
@@ -444,10 +432,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
             [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
         .modbrowse.top.lroot configure -text "CVSROOT"
         .modbrowse.top.lmcode configure -text "Module"
-        ModTree:delitem .modbrowse.treeframe.pw /
-        destroy .modbrowse.treeframe.pw
-        busy_start .modbrowse
-        ModTree:create .modbrowse.treeframe.pw
+        ModTree:create .modbrowse.treeframe
         pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
         if {[info exists cmd(cvs_co)]} {
             parse_cvsmodules [$cmd(cvs_co)\::output]
@@ -547,7 +532,7 @@ proc modbrowse_tree { mnames node } {
     set cvscfg(aliasfolder) false
   }
 
-  set tf ".modbrowse.treeframe.pw"
+  set tf ".modbrowse.treeframe"
   foreach mname $mnames {
     #gen_log:log D "{$mname} {$modval($mname)}"
     set dimage "dir"
@@ -643,10 +628,10 @@ proc modbrowse_tree { mnames node } {
       continue
     }
     #gen_log:log D "3 Making $mname"
-        if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
+    if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
     ModTree:newitem $tf $treepath $mname $title -image $dimage
   }
-  update
+  update idletasks
   gather_mod_index
   gen_log:log T "LEAVE"
 }
@@ -683,7 +668,7 @@ proc module_exit { } {
   cd $cwd
   gen_log:log F "CD [pwd]"
 
-  ModTree:delitem .modbrowse.treeframe.pw /
+  ModTree:delitem .modbrowse.treeframe /
   set cvscfg(modgeom) [wm geometry .modbrowse]
   destroy .modbrowse
   catch {destroy .tooltips_wind}

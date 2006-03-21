@@ -140,13 +140,7 @@ namespace eval joincanvas {
         $joincanvas.canvas create line \
           $x [expr {$y + $cvscanv(boxy)}] \
           $x [expr {$y + $cvscanv(space)}]
-        if {$cvscfg(logging) && [regexp -nocase {d} $cvscfg(log_classes)] && $ind < 2} {
-          $joincanvas.canvas create text \
-            [expr {$x + 4}] [expr {$y + 18}] \
-            -text $rev \
-            -fill red2 \
-            -anchor nw
-        }
+
         gen_log:log T "LEAVE"
       }
 
@@ -178,15 +172,6 @@ namespace eval joincanvas {
         set tagwidth [font measure {Helvetica -12 bold} \
            -displayof $joincanvas.canvas $tagtext]
         if {$tagwidth < $cvscanv(boxmin)} { set tagwidth $cvscanv(boxmin) }
-
-        # Put the version number under the box if in debug mode.
-        if {$cvscfg(logging) && [regexp -nocase {d} $cvscfg(log_classes)]} {
-          $joincanvas.canvas create text \
-            [expr {$x + 4}] [expr {$y + 18}] \
-            -text $rev \
-            -fill red2 \
-            -anchor nw
-        }
 
         # draw the box
         set boxid [$joincanvas.canvas create rectangle \
@@ -378,7 +363,7 @@ namespace eval joincanvas {
           }
           if {[info exists parent($rev)] && $parent($rev) != ""} {
             gen_log:log D "  this one has a parent in col >=1"
-            if {$py($ind) > $ylevel($parent($rev))} {
+            if {[info exists ylevel($parent($rev))] && $py($ind) > $ylevel($parent($rev))} {
               gen_log:log D "  jumping to level of parent"
               set py($ind) $ylevel($parent($rev))
               if {$ind > 2} {
@@ -418,6 +403,7 @@ namespace eval joincanvas {
             } else {
                set ly [expr {$py($ind) + $cvscanv(midy)}]
             }
+            if {![info exists xlevel($parent($rev))]} {set xlevel($parent($rev)) $px([expr $ind-1])}
             $joincanvas.canvas create line \
               $xlevel($parent($rev)) [expr {$ly + 10}] \
               [expr {$xlevel($parent($rev)) + 10}] $ly \
