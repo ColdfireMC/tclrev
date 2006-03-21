@@ -18,15 +18,14 @@ proc ModTree:create {w {open_func {}} } {
     ModTree:loadimages
   }
 
-  panedwindow $w.pw -bg $cvsglb(canvbg) -bd 0
-  $w.pw configure -handlepad 35
-  $w.pw configure -sashpad 0
-  $w.pw configure -sashrelief raised
-  frame $w.tree
-  frame $w.labl
+  set winwid [winfo width $w]
+  panedwindow $w.pw -bg $cvsglb(canvbg) -relief sunk -bd 2
+  $w.pw configure -handlepad 35 -sashwidth 4 -sashpad 0 -handlesize 10
+  frame $w.tree -bg $cvsglb(canvbg)
+  frame $w.labl -bg $cvsglb(canvbg)
 
-  canvas $w.tree.list
-  canvas $w.labl.list
+  canvas $w.tree.list -highlightthickness 0 -width [expr {$winwid * 3/8}]
+  canvas $w.labl.list -highlightthickness 0
 
   set cvsglb(fg) [lindex [.modbrowse.bottom.buttons.modfuncs.filebrowse configure -foreground] 4]
   set cvsglb(dfg) \
@@ -64,12 +63,13 @@ proc ModTree:create {w {open_func {}} } {
     label $w.$canv.lbl -relief raised -bd 2
     pack $w.$canv -side left -fill both -expand yes
     pack $w.$canv.lbl -ipady 2 -fill x -expand no
-    pack $w.$canv.list -side top -ipadx 2 -fill both -expand yes
+    pack $w.$canv.list -side top -fill both -expand yes -padx 8
   }
   $w.tree.lbl configure -text "Module"
   $w.labl.lbl configure -text "Information"
   $w.pw add $w.tree
   $w.pw add $w.labl
+
 
   ModTree:dfltconfig $w /
   set Tree(vsize) 16
@@ -77,14 +77,6 @@ proc ModTree:create {w {open_func {}} } {
   set Tree($w:selection) {}
   set Tree($w:selB) {}
   set Tree($w:jtems) 0
-#puts "[winfo reqwidth $w.tree.list]"
-#puts "[winfo reqwidth $w.labl.list]"
-#puts "[$w.tree.list cget -width]"
-#puts "[$w.labl.list cget -width]"
-#$w.pw paneconfigure $w.tree -width [$w.tree.list cget -width]
-#$w.pw paneconfigure $w.labl -width [winfo reqwidth $w.labl.list]
-#puts "[$w.pw paneconfigure $w.tree -minsize 100]"
-#puts "[$w.pw paneconfigure $w.tree]"
 
   focus $w.tree.list
   gen_log:log T "LEAVE"
@@ -229,7 +221,7 @@ proc ModTree:loadimages {} {
 proc ModTree:build {w} {
   global Tree
 
-  gen_log:log T "ENTER ($w)"
+  #gen_log:log T "ENTER ($w)"
   $w.tree.list delete all
   $w.labl.list delete all
   catch {unset Tree($w:buildpending)}
@@ -242,20 +234,7 @@ proc ModTree:build {w} {
   # but we need to keep them in sync
   $w.labl.list config -scrollregion $tbox
 
-#set lbox [$w.labl.list bbox all]
-#set tb [expr {[lindex $tbox 2] - [lindex $tbox 0]}]
-#set lb [expr {[lindex $lbox 2] - [lindex $lbox 0]}]
-#puts "$tb"
-#puts "$lb"
-  #$w.tree.list configure -width $tb
-  #$w.labl.list configure -width $lb
-  #$w.pw paneconfigure $w.tree -width $tb
-  #$w.pw paneconfigure $w.labl -width $lb
-  #puts "[$w.tree.list cget -width]"
-  #puts "[$w.labl.list cget -width]"
-#puts "$tw"
-#puts "$lw"
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # Internal use only.
@@ -265,7 +244,7 @@ proc ModTree:buildlayer {w v in} {
   global cvscfg
   global cvsglb
 
-  #gen_log:log T "ENTER ($w $v $in)"
+  gen_log:log T "ENTER ($w $v $in)"
   if {$v=="/"} {
     set vx {}
   } else {
