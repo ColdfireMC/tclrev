@@ -1652,6 +1652,7 @@ proc cvs_revert {args} {
   # update -C option appeared in 1.11
   set cvsglb(cvs_version) [cvs_version_number]
   set versionsplit [split $cvsglb(cvs_version) {.}]
+  set major [lindex $versionsplit 1]
   if {$major < 11} {
     gen_log:log F "DELETE $filelist"
     file delete $filelist
