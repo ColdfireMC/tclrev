@@ -4,8 +4,6 @@
 if [ -z "$DISPLAY"  -o "X$1" = "X-nox" ]; then exec tclsh "$0" -- ${1+"$@"}; else exec wish "$0" -- ${1+"$@"}; fi
 
 #
-# $Id: doinstall.tcl,v 1.19 2004/03/16 05:40:54 dorothyr Exp $
-#
 # Usage: doinstall.tcl [-nox] [destination]
 #
 # For a non-interactive installation which doesn't require an X server, do
