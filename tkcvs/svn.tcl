@@ -483,8 +483,8 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
   } elseif {$dateA != {}} {
     set rev2 "\{\"$dateB\"\}"
   }
-set pathA [safe_url $pathA]
-set pathB [safe_url $pathB]
+  set pathA [safe_url $pathA]
+  set pathB [safe_url $pathB]
   if {$pathA != {} && $pathB != {}} {
     set command "svn diff $pathA $pathB"
   } elseif {$rev1 != {} && $rev2 != {}} {
@@ -1092,9 +1092,14 @@ proc svn_branches {files} {
 }
 
 proc safe_url { url } {
-  regsub -all {%} $url {%25} url
-  regsub -all {&} $url {%26} url
-  regsub -all { } $url {%20} url
+  set url [string map {
+    "%" "%25"
+    "&" "%26"
+    " " "%20"
+  } $url]
+  #regsub -all {%} $url {%25} url
+  #regsub -all {&} $url {%26} url
+  #regsub -all { } $url {%20} url
   # These don't seem to be necessary
   #regsub -all {\+} $url {%2B} url
   #regsub -all {\-} $url {%2D} url
