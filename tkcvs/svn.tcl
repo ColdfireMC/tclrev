@@ -7,7 +7,7 @@ proc read_svn_dir {dirname} {
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
-  # svn info gets the URL
+ # svn info gets the URL
   set cmd(info) [exec::new "svn info"]
   set info_lines [$cmd(info)\::output]
   foreach infoline [split $info_lines "\n"] {
@@ -1204,14 +1204,39 @@ namespace eval ::svn_branchlog {
         }
         # The trunk
         set branchrevs(trunk) {}
+        set got_trunkrevs 0
         # if the file was added on a branch, this will error out.
         # Come to think of it, there's nothing especially privileged
-        #  about the trunk
+        # about the trunk except that one branch must not stop-on-copy
         set command "svn log $path"
         gen_log:log C "$command"
         set ret [catch {eval exec $command} log_output]
         update idletasks
         if {$ret == 0} {
+          set got_trunkrevs 1
+        } else {
+          # Maybe the file isn't on the trunk anymore but it once was.
+          # Work backward from the current revision to find the last one.
+          set j [string trimleft $revnum_current "r"]
+          set range "${j}:1"
+          for {set i $j} {$i > 0} {incr i -1} {
+            set ret [catch {eval exec "svn log -r $i $path"} output]
+            # As soon as we find a live one, bail
+            if {[llength $output] > 1} {
+              gen_log:log D "$output"
+              set range "${i}:1"
+              break
+            }
+          }
+          set command "svn log -r $range $path"
+          gen_log:log C "$command"
+          set ret [catch {eval exec $command} log_output]
+          update idletasks
+          if {$ret == 0} {
+            set got_trunkrevs 1
+          }
+        }
+        if {$got_trunkrevs} {
           set trunk_lines [split $log_output "\n"]
           set rr [parse_svnlog $trunk_lines trunk]
           # See if the current revision is on the trunk

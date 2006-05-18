@@ -140,6 +140,7 @@ namespace eval ::logcanvas {
 
         switch -- $sys {
           "SVN" {
+            # Find out if it's a directory, if we can
             set kind ""
             set info_cmd [exec::new "svn info \"[file tail $fname]\""]
             set info_lines [split [$info_cmd\::output] "\n"]
