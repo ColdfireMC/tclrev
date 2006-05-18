@@ -2,6 +2,10 @@ Release 8.0.4
 
 - Added a button for a text history log of the file to the branch browser.
 
+- Fix [ 1483057 ] Empty Branch Diagram for deleted files (TkSVN)
+  If a file had been removed from the trunk and was diagrammed from a
+  branch, some or all of the diagram could be missing.
+
 - Display TkCVS version in window title of workdir and module browsers.
 
 
