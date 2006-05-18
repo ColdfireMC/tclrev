@@ -314,7 +314,7 @@ set cvscfg(trace_savelines) 5000
 set cvscfg(aliasfolder) true
 
 # Set colours for tagging cvs output
-set cvscfg(outputColor,patched) blue4
+set cvscfg(outputColor,patched) blue3
 set cvscfg(outputColor,modified) purple
 set cvscfg(outputColor,conflict) red
 set cvscfg(outputColor,updated) darkgoldenrod

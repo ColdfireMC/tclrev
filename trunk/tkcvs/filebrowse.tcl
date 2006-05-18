@@ -68,8 +68,10 @@ proc browse_files {module} {
 
   button $filebrowse.view -image Fileview \
     -command "module_fileview $filebrowse $module"
-  button $filebrowse.log -image Branches \
-    -command "module_filelog $filebrowse $module"
+  button $filebrowse.log -image Log \
+    -command "module_filelog $filebrowse $module 0"
+  button $filebrowse.branches -image Branches \
+    -command "module_filelog $filebrowse $module 1"
   button $filebrowse.tag -image Tags \
     -command "module_tagview $filebrowse $module"
   button $filebrowse.quit -text "Close" \
@@ -78,6 +80,7 @@ proc browse_files {module} {
 
   pack $filebrowse.view \
        $filebrowse.log \
+       $filebrowse.branches \
        $filebrowse.tag \
     -in $filebrowse.down -side left -ipadx 1 -ipady 1 -fill x -expand 1
   pack $filebrowse.quit \
@@ -85,8 +88,10 @@ proc browse_files {module} {
 
   set_tooltips $filebrowse.view \
     {"View the selected file"}
+  set_tooltips $filebrowse.branches \
+    {"See the revision log of the selected file"}
   set_tooltips $filebrowse.log \
-    {"See the revision log and branches of the selected file"}
+    {"See the branch diagram of the selected file"}
   set_tooltips $filebrowse.tag \
     {"List the tags of the selected file"}
 
@@ -156,14 +161,14 @@ proc filepath {module filename} {
   return $file
 }
 
-proc module_filelog {toplevelname module} {
+proc module_filelog {toplevelname module {graphic {0}} } {
   # Open the logbrowser from the file list
-  gen_log:log T "ENTER ($toplevelname $module)"
+  gen_log:log T "ENTER ($toplevelname $module $graphic)"
   set listname $toplevelname.list
   foreach item [$listname curselection] {
     set v [$listname get $item]
     set f [filepath $module $v]
-    cvs_filelog "$f" $toplevelname
+    cvs_filelog "$f" $toplevelname $graphic
   }
   gen_log:log T "LEAVE"
 }

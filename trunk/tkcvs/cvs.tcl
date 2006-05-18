@@ -655,7 +655,6 @@ proc cvs_log {args} {
 
   set logcmd [viewer::new "CVS log ($cvscfg(ldetail))"]
   $logcmd\::do "$commandline" 0 hilight_rcslog
-  busy_done .workdir.main
 
   gen_log:log T "LEAVE"
 }
@@ -1153,7 +1152,7 @@ proc cvs_checkout { dir cvsroot prune kflag revtag date target mtag1 mtag2 modul
   return
 }
 
-proc cvs_filelog {filename parent} {
+proc cvs_filelog {filename parent {graphic {0}} } {
 #
 # This looks at the revision log of a file.  It's called from filebrowse.tcl, 
 # so we can't do operations such as merges.
@@ -1162,7 +1161,7 @@ proc cvs_filelog {filename parent} {
   global cvscfg
   global cwd
   
-  gen_log:log T "ENTER ($filename)"
+  gen_log:log T "ENTER ($filename $parent $graphic)"
   set pid [pid]
   set filetail [file tail $filename]
   
@@ -1176,10 +1175,15 @@ proc cvs_filelog {filename parent} {
     return
   }
 
-  set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
-
+  if {$graphic} {
   # Log canvas viewer
-  ::cvs_branchlog::new "CVS,rep" $filename
+    ::cvs_branchlog::new "CVS,rep" $filename
+  } else {
+    set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
+    set logcmd [viewer::new "CVS log $filename"]
+    $logcmd\::do "$commandline" 0 hilight_rcslog
+    $logcmd\::wait
+  }
   cd $cwd
   gen_log:log T "LEAVE"
 }

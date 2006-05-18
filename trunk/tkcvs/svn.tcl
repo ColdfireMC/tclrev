@@ -708,7 +708,6 @@ proc svn_log {args} {
 
   set logcmd [viewer::new "SVN Log ($cvscfg(ldetail))"]
   $logcmd\::do "$command"
-  busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 
