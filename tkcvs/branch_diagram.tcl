@@ -155,6 +155,11 @@ namespace eval ::logcanvas {
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$fname"
             $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+            $logcanvas.log configure \
+                -command [namespace code {
+                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    svn_log $filename
+                 }]
             if {$kind == "directory"} {
               $logcanvas.diff configure -state disabled
               $logcanvas.annotate configure -state disabled
@@ -219,13 +224,16 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname,v"
            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
-
            if {$loc == "rep"} {
              # Working on repository files, not checked out
              $logcanvas.view configure \
                 -command [namespace code {
                   cvs_fileview_checkout [$logcanvas.up.revA_rvers cget -text] $filename
                 }]
+             $logcanvas.log configure \
+                  -command [namespace code {
+                    cvs_filelog $filename $logcanvas 0
+                  }]
              $logcanvas.annotate configure \
                 -command [namespace code {
                    cvs_annotate_r [$logcanvas.up.revA_rvers cget\
@@ -240,6 +248,10 @@ namespace eval ::logcanvas {
              $logcanvas.delta configure -state disabled
            } else {
              # We have a checked-out local file
+             $logcanvas.log configure \
+                  -command [namespace code {
+                    cvs_log $filename
+                  }]
              $logcanvas.view configure \
                -command [namespace code {
                   cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] \
@@ -279,6 +291,7 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
            $logcanvas.view configure -state disabled
            $logcanvas.annotate configure -state disabled
+           $logcanvas.log configure -command "rcs_log $filename"
            $logcanvas.delta configure -state disabled
           }
         }
@@ -1499,6 +1512,7 @@ namespace eval ::logcanvas {
                  $scope\::reloadLog
                }]
       button $logcanvas.view -image Fileview
+      button $logcanvas.log -image Log
       button $logcanvas.annotate -image Annotate
       button $logcanvas.diff -image Diff \
         -command [namespace code {
@@ -1536,6 +1550,7 @@ namespace eval ::logcanvas {
         -ipadx 4 -ipady 4
       pack $logcanvas.down.btnfm -side left -fill y -expand 1
       pack $logcanvas.view \
+           $logcanvas.log \
            $logcanvas.annotate \
            $logcanvas.diff \
            $logcanvas.delta \
@@ -1555,6 +1570,8 @@ namespace eval ::logcanvas {
         {"Open the Repository Browser"}
       set_tooltips $logcanvas.view \
         {"View a version of the file"}
+      set_tooltips $logcanvas.log \
+        {"Revision Log of the file"}
       set_tooltips $logcanvas.annotate \
         {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \

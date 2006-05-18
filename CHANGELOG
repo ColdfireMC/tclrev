@@ -1,3 +1,10 @@
+Release 8.0.4
+
+- Added a button for a text history log of the file to the branch browser.
+
+- Display TkCVS version in window title of workdir and module browsers.
+
+
 Release 8.0.3   March, 2006
 
 - Automatic tagging of merges works for SVN the same as CVS
