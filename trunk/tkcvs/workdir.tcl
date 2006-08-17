@@ -442,7 +442,10 @@ proc workdir_menus {} {
      -command workdir_cleanup
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label "Shell window" -underline 0 \
-     -command {eval exec $cvscfg(shell) >& $cvscfg(null) &}
+     -command {
+          gen_log:log C "$cvscfg(shell) >& $cvscfg(null)"
+          eval exec $cvscfg(shell) >& $cvscfg(null) &
+     }
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label Close -underline 1 \
      -command {.workdir.close invoke}
