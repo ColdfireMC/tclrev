@@ -1014,6 +1014,7 @@ proc DirCanvas:build {w} {
 
     set wview [winfo height $flist]
     $w.yscroll set 0 [expr ($wview * 1.0) / ($ylen * 1.0)]
+    update idletasks
 
     $flist config -scrollregion $fbbox
     $flist yview moveto 0
@@ -1062,8 +1063,6 @@ proc DirCanvas:build {w} {
       }
     }
   }
-  # Reset the scrollbar.  Otherwise it fills the trough
-  DirCanvas:scroll_windows $w scroll 0 units
   #gen_log:log D "[array names DirList $w:*:selected]"
   gen_log:log T "LEAVE"
 }
@@ -1092,21 +1091,7 @@ proc DirCanvas:scroll_windows {w args} {
   set yget [$w.yscroll get]
   set first [lindex $yget 0]
   set last [lindex $yget 1]
-  # If you dont do this, the scrollbar fills the whole trough when
-  # you page past the top or bottom with the arrow keys
-  case $units {
-    {units pages} {
-      if {$way < 0} {
-        if {$first == 0} {
-          return
-        }
-      } else {
-        if {$last == 1} {
-          return
-        }
-      }
-    }
-  }
+
   eval $w.filecol.list yview $args
   if {$cvscfg(showdatecol)} {
     eval $w.datecol.list yview $args
