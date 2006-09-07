@@ -1111,7 +1111,7 @@ namespace eval ::logcanvas {
             append rev_info {$revdate($revision) }
           }
           if {$opt(show_box_revwho)} {
-            append rev_info {$revwho($revision) }
+            append rev_info {"$revwho($revision)" }
           }
           if {$opt(show_box_rev)} {
             append rev_info {$revision}
