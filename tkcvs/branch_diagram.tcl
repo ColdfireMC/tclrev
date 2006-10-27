@@ -292,7 +292,8 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
            $logcanvas.view configure -state disabled
            $logcanvas.annotate configure -state disabled
-           $logcanvas.log configure -command "rcs_log $filename"
+           $logcanvas.log configure -command [namespace code \
+                                               {rcs_log $filename}]
            $logcanvas.delta configure -state disabled
           }
         }
