@@ -1204,7 +1204,9 @@ proc addir_dialog {args} {
     -command {
       grab release .add
       destroy .add
-      cvs_add_dir $binflag [workdir_list_files]
+      foreach dir [workdir_list_files] {
+        cvs_add_dir $binflag $dir
+      }
     }
   button .add.down.cancel -text "Cancel" \
     -command { grab release .add; destroy .add }

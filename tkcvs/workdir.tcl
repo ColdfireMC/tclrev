@@ -42,8 +42,6 @@ proc workdir_setup {} {
   if {[catch "image type Conflict"]} {
     workdir_images
   }
-  # Ignore the dimensions, because they depend on the content.  Use
-  # the remembered position though.
   if {[info exists cvscfg(workgeom)]} {
     wm geometry .workdir $cvscfg(workgeom)
   }
