@@ -146,6 +146,8 @@ proc workdir_setup {} {
      -command { workdir_view_file [workdir_list_files] }
   button .workdir.bottom.buttons.funcs.bdelete_file -image Delete \
      -command { workdir_delete_file [workdir_list_files] }
+  button .workdir.bottom.buttons.funcs.bmkdir -image Dir_new \
+     -command { file_input_and_do "New Directory" workdir_newdir}
 
   button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh \
      -command { change_dir [pwd] }
@@ -196,8 +198,10 @@ proc workdir_setup {} {
 
   # These buttons work in any directory
   grid .workdir.bottom.buttons.funcs.bdelete_file -column 0 -row 0 \
-    -ipadx 2 -rowspan 4 -sticky ns
+    -ipadx 4
   grid .workdir.bottom.buttons.funcs.bedit_files -column 1 -row 0 \
+     -ipadx 4
+  grid .workdir.bottom.buttons.funcs.bmkdir -column 0 -row 1 \
      -ipadx 4
   grid .workdir.bottom.buttons.funcs.bview_files -column 1 -row 1 \
      -ipadx 4
@@ -252,6 +256,8 @@ proc workdir_setup {} {
      {"View the selected files"}
   set_tooltips .workdir.bottom.buttons.funcs.bdelete_file \
      {"Delete the selected files from the current directory"}
+  set_tooltips .workdir.bottom.buttons.funcs.bmkdir \
+     {"Make a new directory"}
 
   set_tooltips .workdir.bottom.buttons.dirfuncs.brefresh \
      {"Re-read the current directory"}
@@ -338,6 +344,8 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) annotate.gif]
   image create photo Delete \
     -format gif -file [file join $cvscfg(bitmapdir) delete.gif]
+  image create photo Dir_new \
+    -format gif -file [file join $cvscfg(bitmapdir) dir_new.gif]
   image create photo Refresh \
     -format gif -file [file join $cvscfg(bitmapdir) loop-glasses.gif]
   image create photo Branches \

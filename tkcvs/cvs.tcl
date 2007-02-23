@@ -140,6 +140,8 @@ proc cvs_workdir_status {} {
             [string match "Result *" $date]} {
           ; # Leave as is
         } else {
+          # Work around odd date formats that cause trouble with tcl8.4
+          set date [concat [lindex $date 0] [lindex $date 1]]
           set juliandate [clock scan $date -gmt yes]
           set date [clock format $juliandate -format $cvscfg(dateformat)]
           set Filelist($filename:date) $date
@@ -637,6 +639,8 @@ proc cvs_log {args} {
 #
   global cvs
   global cvscfg
+
+  gen_log:log T "ENTER ($args)"
 
   set filelist [join $args]
 
@@ -1651,6 +1655,20 @@ proc cvs_revert {args} {
 
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
+
+  if {$filelist == ""} {
+    set mess "This will revert (discard) your changes to ** ALL ** files in this directory"
+  } else {
+    foreach file $filelist {
+      append revert_output "\n$file"
+    }
+    set mess "This will revert (discard) your changes to:$revert_output"
+  }
+  append mess "\n\nAre you sure?"
+
+  if {[cvsconfirm $mess .workdir] != "ok"} {
+    return 1
+  }
 
   gen_log:log D "Reverting $filelist"
   # update -C option appeared in 1.11

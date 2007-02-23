@@ -19,7 +19,8 @@ if {! [info exists tk_version] } {
 }
 
 if {$tk_version < 8.4} {
-  cvserror "TkCVS requires Tcl/Tk 8.4 or better!"
+  puts "TkCVS requires Tcl/Tk 8.4 or better!"
+  exit 1
 }
 
 if {[info exists TclRoot]} {
@@ -44,6 +45,10 @@ if {$tcl_platform(platform) == "windows"} {
 }
 
 set TclRoot [file join [file dirname $ScriptBin]]
+#puts "TclRoot $TclRoot"
+if {$TclRoot == "."} {
+  set TclRoot [pwd]
+}
 #puts "TclRoot $TclRoot"
 set TclRoot [file join [file dirname $TclRoot] "lib"]
 #puts "TclRoot $TclRoot"
@@ -249,7 +254,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
 # If CVSROOT envvar is set, use it
 if { ! [info exists cvscfg(cvsroot)] } {
   if { ! [info exists env(CVSROOT)] } {
-    #puts "warning: your \$CVSROOT environment variable is not set."
+    puts "warning: your \$CVSROOT environment variable is not set."
     set cvscfg(cvsroot) ""
   } else {
     set cvscfg(cvsroot) $env(CVSROOT)
