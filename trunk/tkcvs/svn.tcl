@@ -1144,6 +1144,17 @@ namespace eval ::svn_branchlog {
         set show_tags [set $ln\::opt(show_tags)]
       }
 
+      # Implementation of Perl-like "grep {/re/} in_list"
+      proc grep_filter { re in_list } {
+        set res ""
+        foreach x $in_list {
+          if {[regexp $re $x]} {
+            lappend res $x
+          }
+        }
+        return $res
+      }
+
       proc reloadLog { } {
         global cvscfg
         global cvsglb
@@ -1276,6 +1287,16 @@ namespace eval ::svn_branchlog {
           gen_log:log E "$branches"
           set branches ""
         }
+
+        if {[info exists cvscfg(svn_branch_filter) && \
+            [info exists cvscfg(svn_branch_max_count)]} {
+          # Only include branches that match regexp svn_branch_filter.
+          # And on top of that, keep only the top svn_branch_max_count.
+          set branches [grep_filter $cvscfg(svn_branch_filter) $branches]
+          set branches [lrange [lsort -decreasing $branches] \
+                      0 [expr {$cvscfg(svn_branch_max_count) - 1}]]
+        }
+
         foreach branch $branches {
           gen_log:log D "$branch"
           # There can be files such as "README" here that aren't branches
