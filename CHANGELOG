@@ -6,13 +6,16 @@ Release 8.0.4
   If a file had been removed from the trunk and was diagrammed from a
   branch, some or all of the diagram could be missing.
 
+- Ask for confirmation before reverting files
+
 - Display TkCVS version in window title of workdir and module browsers.
 
-- Work-around for date format issue
+- Don't fail if CVS gives a date format that tcl can't handle
 
-- Ask for confirmation before reverting
+- The "New Directory" button is back
 
-- The "New Directory" button is back (why do people like that thing?)
+- cvscfg(svn_branch_filter) and cvscfg(svn_branch_max_count) to filter
+  which branches to draw in the log browser
 
 
 Release 8.0.3   March, 2006
