@@ -140,13 +140,17 @@ proc cvs_workdir_status {} {
             [string match "Result *" $date]} {
           ; # Leave as is
         } else {
-          # Work around odd date formats that cause trouble with tcl8.4
-          #puts $date
-          #set date [concat [lindex $date 0] [lindex $date 1]]
-          #puts [concat [lindex $date 0] [lindex $date 1]]
-          set juliandate [clock scan $date -gmt yes]
-          set date [clock format $juliandate -format $cvscfg(dateformat)]
-          set Filelist($filename:date) $date
+          # CVS outputs time strings tcl can't handle, such as
+          # ones with +0100.  Let's discard them rather than
+          # trying to convert them.
+          set ret [catch {clock scan $date -gmt yes} ans]
+          if {$ret == 0} {
+            set juliandate $ans
+            set date [clock format $juliandate -format $cvscfg(dateformat)]
+            set Filelist($filename:date) $date
+          } else {
+            gen_log:log E "$ans"
+          }
         }
         set Filelist($filename:wrev) $revision
         set Filelist($filename:status) $status
