@@ -141,7 +141,9 @@ proc cvs_workdir_status {} {
           ; # Leave as is
         } else {
           # Work around odd date formats that cause trouble with tcl8.4
-          set date [concat [lindex $date 0] [lindex $date 1]]
+          #puts $date
+          #set date [concat [lindex $date 0] [lindex $date 1]]
+          #puts [concat [lindex $date 0] [lindex $date 1]]
           set juliandate [clock scan $date -gmt yes]
           set date [clock format $juliandate -format $cvscfg(dateformat)]
           set Filelist($filename:date) $date
