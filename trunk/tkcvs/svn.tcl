@@ -1288,7 +1288,7 @@ namespace eval ::svn_branchlog {
           set branches ""
         }
 
-        if {[info exists cvscfg(svn_branch_filter) && \
+        if {[info exists cvscfg(svn_branch_filter)] && \
             [info exists cvscfg(svn_branch_max_count)]} {
           # Only include branches that match regexp svn_branch_filter.
           # And on top of that, keep only the top svn_branch_max_count.
