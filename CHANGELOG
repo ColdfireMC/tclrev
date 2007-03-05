@@ -1,16 +1,18 @@
 Release 8.0.4
 
-- Added a button for a text history log of the file to the branch browser.
-
 - Fix [ 1483057 ] Empty Branch Diagram for deleted files (TkSVN)
   If a file had been removed from the trunk and was diagrammed from a
   branch, some or all of the diagram could be missing.
+
+- Fix [ 1673519 ] tcl error with SVN->Browse the Log Diagram
 
 - Ask for confirmation before reverting files
 
 - Display TkCVS version in window title of workdir and module browsers.
 
 - Don't fail if CVS gives a date format that tcl can't handle
+
+- Added a button for a text history log of the file to the branch browser.
 
 - The "New Directory" button is back
 

@@ -506,7 +506,7 @@ proc workdir_menus {} {
   .workdir.menubar.svn add command -label "Remove Files" -underline 0 \
      -command { subtract_dialog [workdir_list_files] }
   .workdir.menubar.svn add command -label "Browse the Log Diagram" \
-     -command { svn_branches [pwd] [workdir_list_files] }
+     -command { svn_branches [workdir_list_files] }
   .workdir.menubar.svn add separator
   .workdir.menubar.svn add command -label "Import CWD into Repository" \
      -underline 0 -command svn_import_run
