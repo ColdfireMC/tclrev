@@ -61,6 +61,7 @@ namespace eval ::logcanvas {
       set sel_rev(B) {}
       variable logcanvas ".logcanvas$my_idx"
 
+      gen_log:log T "ENTER [namespace current]"
       set sys_loc [split $how {,}]
       set sys [lindex $sys_loc 0]
       set loc [lindex $sys_loc 1]
@@ -1547,6 +1548,11 @@ namespace eval ::logcanvas {
                  namespace delete [namespace current]
                  exit_cleanup 0
                }]
+      button $logcanvas.stop -text "Stop" -bg red4 -fg white \
+        -activebackground red4 -activeforeground white \
+        -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
+        -command "$scope\::abortLog"
+
       pack $logcanvas.refresh \
         -in $logcanvas.down -side left \
         -ipadx 4 -ipady 4
