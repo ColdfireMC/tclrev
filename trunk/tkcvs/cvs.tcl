@@ -1899,7 +1899,6 @@ proc cvs_branches {files} {
   foreach file $files {
     ::cvs_branchlog::new "CVS,loc" "$file"
   }
-
   gen_log:log T "LEAVE"
 }
 
@@ -1960,6 +1959,19 @@ namespace eval ::cvs_branchlog {
         }
       }
 
+      proc abortLog { } {
+        global cvscfg
+        variable cmd_log
+        variable lc
+
+        gen_log:log D "  $cmd_log\::abort"
+        catch {$cmd_log\::abort}
+        busy_done $lc
+        pack forget $lc.stop
+        pack $lc.close -in $lc.down.closefm -side right
+        $lc.close configure -state normal
+      }
+
       proc reloadLog { } {
         variable command
         variable cmd_log
@@ -1990,12 +2002,19 @@ namespace eval ::cvs_branchlog {
         catch { unset branchrevs }
         set cwd [pwd]
 
-        busy_start $lc
+        pack forget $lc.close
+        pack $lc.stop -in $lc.down.closefm -side right
+        $lc.stop configure -state normal
+
         set logstate {R}
 
         set cmd_log [::exec::new $command {} 0 [namespace current]::parse_cvslog]
         # wait for it to finish so our arrays are all populated
         $cmd_log\::wait
+
+        pack forget $lc.stop
+        pack $lc.close -in $lc.down.closefm -side right
+        $lc.close configure -state normal
 
         [namespace current]::cvs_sort_it_all_out
         gen_log:log T "LEAVE"

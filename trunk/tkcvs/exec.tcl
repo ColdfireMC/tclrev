@@ -41,19 +41,20 @@ proc cvs_catchcmd {args} {
 namespace eval ::exec {
   variable instance 0
 
-  proc new {command {viewer {}} {show_stderr {1}} {filter {}}} {
+  proc new {command {viewer {}} {show_stderr {1}} {filter {}} {errok {0}} } {
     variable instance
     set my_idx $instance
     incr instance
 
-    gen_log:log T "ENTER (\"$command\" \"$show_stderr\" \"$filter\")"
+    gen_log:log T "ENTER (\"$command\" \"$viewer\" \"$show_stderr\" \"$filter\" \"$errok\")"
 
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       variable command [uplevel {concat $command}]
+      variable show_stderr [uplevel {concat $show_stderr}]
       variable viewer [uplevel {concat $viewer}]
       variable filter [uplevel {concat $filter}]
-      variable show_stderr [uplevel {concat $show_stderr}]
+      variable errok [uplevel {concat $errok}]
 
       global cvscfg
       global errorCode
@@ -75,6 +76,7 @@ namespace eval ::exec {
         variable procerr
         variable ExecDone
         variable errmsg
+        variable errok
         variable data
         variable v_w
         variable my_idx
@@ -96,7 +98,7 @@ namespace eval ::exec {
             if {! [info exists command]} {set command ""}
             if {! [info exists status]} {set status ""}
             if {$errmsg == ""} {set errmsg "$command exited status $status"}
-            if {[string length $errmsg] < 512} {
+            if {[string length $errmsg] < 512 && ! $errok} {
                cvsfail $errmsg .
             }
             # If we don't pop up an error dialog, let's at least try to show
@@ -532,6 +534,7 @@ proc viewer_window {w title parent} {
     exit_cleanup 0
   "
   button $w.stop -text "Stop" -bg red4 -fg white \
+      -activebackground red4 -activeforeground white \
       -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
       -command "$parent\::abort"
   pack $w.bottom -side bottom -fill x ;#-padx 25

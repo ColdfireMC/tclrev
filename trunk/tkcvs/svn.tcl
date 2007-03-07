@@ -1155,6 +1155,19 @@ namespace eval ::svn_branchlog {
         return $res
       }
 
+      proc abortLog { } {
+        global cvscfg
+        variable cmd_log
+        variable lc
+
+        gen_log:log D "  $cmd_log\::abort"
+        catch {$cmd_log\::abort}
+        busy_done $lc
+        pack forget $lc.stop
+        pack $lc.close -in $lc.down.closefm -side right
+        $lc.close configure -state normal
+      }
+
       proc reloadLog { } {
         global cvscfg
         global cvsglb
@@ -1193,6 +1206,10 @@ namespace eval ::svn_branchlog {
         catch { unset revpath }
         catch { unset revname }
 
+        pack forget $lc.close
+        pack $lc.stop -in $lc.down.closefm -side right
+        $lc.stop configure -state normal
+
         # Can't use file join or it will mess up the URL
         set safe_filename [safe_url $filename]
         set path "$cvscfg(url)/$safe_filename"
@@ -1200,14 +1217,13 @@ namespace eval ::svn_branchlog {
 
         # Find out where to put the working revision icon (if anywhere)
         set command "svn log -q --stop-on-copy \"$filename\""
-        set cmd [exec::new $command]
-        set log_output [$cmd\::output]
+        set cmd_log [exec::new $command]
+        set log_output [$cmd_log\::output]
         set loglines [split $log_output "\n"]
         set svnstat [lindex $loglines 1]
         set revnum_current [lindex $svnstat 0]
         gen_log:log D "revnum_current $revnum_current"
 
-        busy_start $lc
         if { $relpath == {} } {
           set path "$cvscfg(svnroot)/trunk/$safe_filename"
         } else {
@@ -1220,73 +1236,50 @@ namespace eval ::svn_branchlog {
         # Come to think of it, there's nothing especially privileged
         # about the trunk except that one branch must not stop-on-copy
         set command "svn log $path"
-        gen_log:log C "$command"
-        set ret [catch {eval exec $command} log_output]
-        update idletasks
-        if {$ret == 0} {
-          set got_trunkrevs 1
-        } else {
+        set cmd_log [exec::new $command {} 0 {} 1]
+        set log_output [$cmd_log\::output]
+        if {$log_output == ""} {
           # Maybe the file isn't on the trunk anymore but it once was.
-          # Work backward from the current revision to find the last one.
           set j [string trimleft $revnum_current "r"]
           set range "${j}:1"
-          for {set i $j} {$i > 0} {incr i -1} {
-            set ret [catch {eval exec "svn log -r $i $path"} output]
-            # As soon as we find a live one, bail
-            if {[llength $output] > 1} {
-              gen_log:log D "$output"
-              set range "${i}:1"
-              break
-            }
-          }
           set command "svn log -r $range $path"
-          gen_log:log C "$command"
-          set ret [catch {eval exec $command} log_output]
-          update idletasks
-          if {$ret == 0} {
-            set got_trunkrevs 1
-          }
+          set cmd_log [exec::new $command {} 0 {} 1]
+          set log_output [$cmd_log\::output]
         }
-        if {$got_trunkrevs} {
-          set trunk_lines [split $log_output "\n"]
-          set rr [parse_svnlog $trunk_lines trunk]
-          # See if the current revision is on the trunk
-          set curr 0
-          set brevs $branchrevs(trunk)
-          set tip [lindex $brevs 0]
-          set revpath($tip) $path
-          set revkind($tip) "revision"
-          set brevs [lreplace $brevs 0 0]
-          if {$tip == $revnum_current} {
-            # If current is at end of trunk do this.
-            set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
-            set curr 1
-          }
-          foreach r $brevs {
-            if {$r == $revnum_current} {
-              # We need to make a new artificial branch off of $r
-              lappend revbranches($r) {current}
-            }
-            gen_log:log D " $r $revdate($r) ($revcomment($r))"
-            set revkind($r) "revision"
-            set revpath($r) $path
-          }
-          #set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
-          set branchrevs($rr) $branchrevs(trunk)
-          set revkind($rr) "root"
-          set revname($rr) "trunk"
-          set revbtags($rr) "trunk"
-          set revpath($rr) $path
+        set trunk_lines [split $log_output "\n"]
+        set rr [parse_svnlog $trunk_lines trunk]
+        # See if the current revision is on the trunk
+        set curr 0
+        set brevs $branchrevs(trunk)
+        set tip [lindex $brevs 0]
+        set revpath($tip) $path
+        set revkind($tip) "revision"
+        set brevs [lreplace $brevs 0 0]
+        if {$tip == $revnum_current} {
+          # If current is at end of trunk do this.
+          set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
+          set curr 1
         }
+        foreach r $brevs {
+          if {$r == $revnum_current} {
+            # We need to make a new artificial branch off of $r
+            lappend revbranches($r) {current}
+          }
+          gen_log:log D " $r $revdate($r) ($revcomment($r))"
+          set revkind($r) "revision"
+          set revpath($r) $path
+        }
+        #set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
+        set branchrevs($rr) $branchrevs(trunk)
+        set revkind($rr) "root"
+        set revname($rr) "trunk"
+        set revbtags($rr) "trunk"
+        set revpath($rr) $path
 
         # Branches
         set command "svn list $cvscfg(svnroot)/branches"
-        gen_log:log C "$command"
-        set ret [catch {eval "exec $command"} branches]
-        if {$ret != 0} {
-          gen_log:log E "$branches"
-          set branches ""
-        }
+        set cmd_log [exec::new $command {} 0 {} 1]
+        set branches [$cmd_log\::output]
 
         if {[info exists cvscfg(svn_branch_filter)] && \
             [info exists cvscfg(svn_branch_max_count)]} {
@@ -1303,19 +1296,16 @@ namespace eval ::svn_branchlog {
           if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
           # Can't use file join or it will mess up the URL
-          gen_log:log D "BRANCHES: RELPATH $relpath"
+          gen_log:log D "BRANCHES: RELPATH \"$relpath\""
           if { $relpath == {} } {
             set path "$cvscfg(svnroot)/branches/$branch/$safe_filename"
           } else {
             set path "$cvscfg(svnroot)/branches/$branch/$relpath/$safe_filename"
           }
           set command "svn log --stop-on-copy $path"
-          gen_log:log C "$command"
-          set ret [catch {eval exec $command} log_output]
-          update idletasks
-          if {$ret != 0} {
-            # This can happen a lot -let's not let it stop us
-            gen_log:log E "$log_output"
+          set cmd_log [exec::new $command {} 0 {} 1]
+          set log_output [$cmd_log\::output]
+          if {$log_output == ""} {
             continue
           }
           set loglines [split $log_output "\n"]
@@ -1349,11 +1339,10 @@ namespace eval ::svn_branchlog {
           set revpath($rb) $path
 
           set command "svn log -q $path"
-          gen_log:log C "$command"
-          set ret [catch {eval exec $command} log_output]
-          update idletasks
-          if {$ret != 0} {
-            cvsfail "$log_output"
+          set cmd_log [exec::new $command {} 0 {} 1]
+          set log_output [$cmd_log\::output]
+          if {$log_output == ""} {
+            cvsfail "$command returned no output"
             return
           }
           set loglines [split $log_output "\n"]
@@ -1367,17 +1356,12 @@ namespace eval ::svn_branchlog {
           }
           set bp [lindex $allrevs($branch) $idx]
           lappend revbranches($bp) $rb
-          update idletasks
         }
         # Tags
         if {$show_tags} {
           set command "svn list $cvscfg(svnroot)/tags"
-          gen_log:log C "$command"
-          set ret [catch {eval "exec $command"} tags]
-          if {$ret != 0} {
-              gen_log:log E "$tags"
-              set tags ""
-          }
+          set cmd_log [exec::new $command {} 0 {} 1]
+          set tags [$cmd_log\::output]
           set n_tags [llength $tags]
           if {$n_tags > $cvscfg(toomany_tags)} {
             # If confirm is on, give them a chance to say yes or no to tags
@@ -1395,7 +1379,7 @@ namespace eval ::svn_branchlog {
                 set tags ""
               }
             } else {
-            # Otherwise, just don't process tags
+              # Otherwise, just don't process tags
               set tags ""
               gen_log:log E "Skipping tags: $n_tags > cvscfg(toomany_tags) ($cvscfg(toomany_tags)"
             }
@@ -1406,19 +1390,17 @@ namespace eval ::svn_branchlog {
             if {![string match {*/} $tag]} {continue}
             set tag [string trimright $tag "/"]
             # Can't use file join or it will mess up the URL
-            gen_log:log D "TAGS: RELPATH $relpath"
+            gen_log:log D "TAGS: RELPATH \"$relpath\""
             if { $relpath == {} } {
               set path "$cvscfg(svnroot)/tags/$tag/$safe_filename"
             } else {
               set path "$cvscfg(svnroot)/tags/$tag/$relpath/$safe_filename"
             }
             set command "svn log --stop-on-copy $path"
-            gen_log:log C "$command"
-            set ret [catch {eval exec $command} log_output]
-            update idletasks
-            if {$ret != 0} {
-              # This can happen a lot -let's not let it stop us
-              gen_log:log E "$log_output"
+            set cmd_log [exec::new $command {} 0 {} 1]
+            set log_output [$cmd_log\::output]
+            #update idletasks
+            if {$log_output == ""} {
               continue
             }
             set loglines [split $log_output "\n"]
@@ -1433,11 +1415,10 @@ namespace eval ::svn_branchlog {
             set revpath($rb) $path
   
             set command "svn log -q $path"
-            gen_log:log C "$command"
-            set ret [catch {eval exec $command} log_output]
-            update idletasks
-            if {$ret != 0} {
-              cvsfail "$log_output"
+            set cmd_log [exec::new $command {} 0 {} 1]
+            set log_output [$cmd_log\::output]
+            if {$log_output == ""} {
+              cvsfail "$command returned no output"
               return
             }
             set loglines [split $log_output "\n"]
@@ -1447,6 +1428,10 @@ namespace eval ::svn_branchlog {
             update idletasks
           }
         }
+
+        pack forget $lc.stop
+        pack $lc.close -in $lc.down.closefm -side right
+        $lc.close configure -state normal
 
         set branchrevs(current) {}
         [namespace current]::svn_sort_it_all_out
@@ -1461,6 +1446,8 @@ namespace eval ::svn_branchlog {
         variable revcomment
         variable branchrevs
 
+        gen_log:log T "ENTER (<...> $r)"
+        set revnum ""
         set i 0
         set l [llength $lines]
         while {$i < $l} {
