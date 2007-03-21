@@ -875,6 +875,17 @@ proc change_dir {new_dir} {
   gen_log:log T "LEAVE"
 }
 
+proc auto_setup_dir {cmd} {
+  global cvscfg
+
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir
+  } else {
+    after 0 {$cmd\::wait; $cmd\::destroy}
+  }
+}
+
 proc setup_dir { } {
   #
   # Call this when entering a directory.  It puts all of the file names
@@ -1107,11 +1118,12 @@ proc setup_dir { } {
     close $fileId
   } else {
     if {$insvn} {
-      set cmd(svnpropget) [exec::new "svn propget svn:ignore"]
-      set contents [split [$cmd(svnpropget)\::output] "\n"]
+      set cmd [exec::new "svn propget svn:ignore"]
+      set contents [split [$cmd\::output] "\n"]
       foreach line $contents {
         append cvscfg(ignore_file_filter) " $line"
       }
+      $cmd\::destroy
     }
   }
 

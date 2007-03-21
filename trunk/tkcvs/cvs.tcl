@@ -184,6 +184,7 @@ proc cvs_workdir_status {} {
 
   if {[info exists cmd(cvs_editors)]} {
     set filename {}
+    $cmd(cvs_editors)\::destroy
     catch {unset cmd(cvs_editors)}
     foreach logline $editors_lines {
       set line [split $logline "\t"]
@@ -214,6 +215,7 @@ proc cvs_workdir_status {} {
   if {[info exists cmd(cvs_lockers)]} {
     set filename {}
     set lockers {}
+    $cmd(cvs_lockers)\::destroy
     catch {unset cmd(cvs_lockers)}
     foreach line $lockers_lines {
       if {[string match "Working file: *" $line]} {
@@ -267,10 +269,7 @@ proc cvs_remove {args} {
   }
 
   set cmd [exec::new "$cvs remove $filelist"]
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -443,10 +442,7 @@ proc cvs_add {binflag args} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
   set cmd [exec::new "$cvs add $binflag $filelist"]
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -588,9 +584,6 @@ proc rem_subdirs { v } {
       file delete -force -- $file
       if {[file exists $file]} {cvsfail "Remove $file failed" .workdir}
     }
-    #set commandline "$cvs remove $plainfiles"
-    #$v\::do "$commandline" 1
-    #$v\::wait
   }
 
   gen_log:log T "LEAVE"
@@ -951,11 +944,7 @@ proc cvs_update {tagname normal_binary action_if_no_tag get_all_dirs dir args} {
 
     set co_cmd [viewer::new "CVS Update"]
     $co_cmd\::do $commandline 0 status_colortags
-    
-    if {$cvscfg(auto_status)} {
-      $co_cmd\::wait
-      setup_dir
-    }
+    auto_setup_dir $co_cmd
   }
   gen_log:log T "LEAVE"
 }
@@ -1620,10 +1609,7 @@ proc cvs_ascii { args } {
   set cmd [exec::new "$cvs admin -kkv $filelist"]
   # gen_log:log D "Updating file list"
   # set cmd [exec::new "$cvs update $filelist"]
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -1647,10 +1633,7 @@ proc cvs_binary { args } {
   set cmd [exec::new "$cvs admin -kb $filelist"]
   # gen_log:log D "Updating file list"
   # set cmd [exec::new "$cvs update $filelist"]
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -1692,10 +1675,7 @@ proc cvs_revert {args} {
     set cmd [exec::new "$cvs update -C $filelist"]
   }
   
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -1812,11 +1792,7 @@ proc cvs_lock {do files} {
     unlock { set commandline "cvs admin -u $files"}
   }
   set cmd [::exec::new "$commandline"]
-  
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 }
 
 # Sends directory "." to the directory-merge tool

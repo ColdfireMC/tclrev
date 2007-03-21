@@ -337,6 +337,12 @@ namespace eval ::viewer {
         namespace inscope $v_e wait
       }
 
+      proc destroy {} {
+        variable v_e
+        namespace inscope $v_e destroy
+        catch {namespace delete [namespace current]}
+      }
+
       # Call this proc to write arbitrary text to the viewer
       proc log { text {texttag {}} } {
         variable w
@@ -535,7 +541,7 @@ proc viewer_window {w title parent} {
   
   button $w.save -text "Save to File" -command "save_viewcontents $w"
   button $w.close -text "Close" -command "
-    namespace delete $parent
+    $parent\::destroy
     destroy $w
     exit_cleanup 0
   "
