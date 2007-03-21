@@ -162,11 +162,8 @@ proc svn_add {args} {
   if {$filelist == ""} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
-  set cmd(svnadd) [exec::new "svn add $filelist"]
-  if {$cvscfg(auto_status)} {
-    $cmd(svnadd)\::wait
-    setup_dir
-  }
+  set cmd [exec::new "svn add $filelist"]
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -179,11 +176,8 @@ proc svn_remove {args} {
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
 
-  set cmd(svndel) [exec::new "svn remove $filelist"]
-  if {$cvscfg(auto_status)} {
-    $cmd(svndel)\::wait
-    setup_dir
-  }
+  set cmd [exec::new "svn remove $filelist"]
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
@@ -250,11 +244,8 @@ proc svn_update {args} {
 
   set co_cmd [viewer::new "SVN Update"]
   $co_cmd\::do "$command" 0 status_colortags
-    
-  if {$cvscfg(auto_status)} {
-    $co_cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $co_cmd
+
   gen_log:log T "LEAVE"
 }
 
@@ -282,10 +273,7 @@ proc svn_opt_update {} {
   set upd_cmd [viewer::new "SVN Update/Switch"]
   $upd_cmd\::do "$command" 0 status_colortags
 
-  if {$cvscfg(auto_status)} {
-    $upd_cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $upd_cmd
 }
 
 # dialog for svn commit - called from workdir browser
@@ -785,11 +773,7 @@ proc svn_revert {args} {
   }
   gen_log:log D "Reverting $filelist"
   set cmd [exec::new "svn revert $filelist"]
-
-  if {$cvscfg(auto_status)} {
-    $cmd\::wait
-    setup_dir
-  }
+  auto_setup_dir $cmd
 
   gen_log:log T "LEAVE"
 }
