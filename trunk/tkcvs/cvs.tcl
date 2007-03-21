@@ -1302,7 +1302,7 @@ proc cvs_version_number {} {
   set number [$e\::output]
   regsub -all {\s*} $number {} number
   
-  $d\::destroy
+  $e\::destroy
   gen_log:log T "LEAVE ($number)"
   return $number
 }
