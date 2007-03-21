@@ -16,6 +16,8 @@ proc read_svn_dir {dirname} {
       set cvscfg(url) [lrange $infoline 1 end]
     }
   }
+  $cmd(info)\::destroy
+  catch {unset cmd(info)}
   if {$cvscfg(url) == ""} {
     cvsfail "Can't get the SVN URL"
     return
@@ -79,7 +81,10 @@ proc svn_workdir_status {} {
   gen_log:log T "ENTER"
   set cmd(svn_status) [exec::new "svn status -uvN"]
   set status_lines [split [$cmd(svn_status)\::output] "\n"]
-  catch {unset cmd(svn_status)}
+  if [info exists cmd(svn_status)] {
+    $cmd(svn_status)\::destroy
+    catch {unset cmd(svn_status)}
+  }
   # The first five columns in the output are each one character wide
   foreach logline $status_lines {
     if {[string match "Status*" $logline]} {continue}
@@ -507,6 +512,7 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
     }
     puts $fo $patch
     close $fo
+    $e\::destroy
     gen_log:log F "CLOSE $outfile"
   }
   gen_log:log T "LEAVE"
@@ -554,6 +560,8 @@ proc svn_jit_listdir { tf into } {
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [split [$cmd(svnlist)\::output] "\n"]
+    $cmd(svnlist)\::destroy
+    catch {unset cmd(svnlist)}
   }
   set dirs {}
   set fils {}
@@ -604,6 +612,8 @@ proc svn_jit_dircmd { tf dir } {
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
+    $cmd(svnlist)\::destroy
+    catch {unset cmd(svnlist)}
   }
   set lbl "[file tail $dir]/"
   set exp "([llength $contents] items)"
@@ -654,6 +664,8 @@ proc parse_svnmodules {tf svnroot} {
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
+    $cmd(svnlist)\::destroy
+    catch {unset cmd(svnlist)}
   }
   set dirs {}
   set fils {}
@@ -1219,6 +1231,7 @@ namespace eval ::svn_branchlog {
         set command "svn log -q --stop-on-copy \"$filename\""
         set cmd_log [exec::new $command]
         set log_output [$cmd_log\::output]
+        $cmd_log\::destroy
         set loglines [split $log_output "\n"]
         set svnstat [lindex $loglines 1]
         set revnum_current [lindex $svnstat 0]
@@ -1238,6 +1251,7 @@ namespace eval ::svn_branchlog {
         set command "svn log $path"
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
+        $cmd_log\::destroy
         if {$log_output == ""} {
           # Maybe the file isn't on the trunk anymore but it once was.
           set j [string trimleft $revnum_current "r"]
@@ -1245,6 +1259,7 @@ namespace eval ::svn_branchlog {
           set command "svn log -r $range $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
+          $cmd_log\::destroy
         }
         set trunk_lines [split $log_output "\n"]
         set rr [parse_svnlog $trunk_lines trunk]
@@ -1280,6 +1295,7 @@ namespace eval ::svn_branchlog {
         set command "svn list $cvscfg(svnroot)/branches"
         set cmd_log [exec::new $command {} 0 {} 1]
         set branches [$cmd_log\::output]
+        $cmd_log\::destroy
 
         if {[info exists cvscfg(svn_branch_filter)] && \
             [info exists cvscfg(svn_branch_max_count)]} {
@@ -1305,6 +1321,7 @@ namespace eval ::svn_branchlog {
           set command "svn log --stop-on-copy $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
+          $cmd_log\::destroy
           if {$log_output == ""} {
             continue
           }
@@ -1341,6 +1358,7 @@ namespace eval ::svn_branchlog {
           set command "svn log -q $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
+          $cmd_log\::destroy
           if {$log_output == ""} {
             cvsfail "$command returned no output"
             return
@@ -1362,6 +1380,7 @@ namespace eval ::svn_branchlog {
           set command "svn list $cvscfg(svnroot)/tags"
           set cmd_log [exec::new $command {} 0 {} 1]
           set tags [$cmd_log\::output]
+          $cmd_log\::destroy
           set n_tags [llength $tags]
           if {$n_tags > $cvscfg(toomany_tags)} {
             # If confirm is on, give them a chance to say yes or no to tags
@@ -1381,7 +1400,7 @@ namespace eval ::svn_branchlog {
             } else {
               # Otherwise, just don't process tags
               set tags ""
-              gen_log:log E "Skipping tags: $n_tags > cvscfg(toomany_tags) ($cvscfg(toomany_tags)"
+              gen_log:log E "Skipping tags: $n_tags > cvscfg(toomany_tags) ($cvscfg(toomany_tags))"
             }
           }
           foreach tag $tags {
@@ -1399,6 +1418,7 @@ namespace eval ::svn_branchlog {
             set command "svn log --stop-on-copy $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
+            $cmd_log\::destroy
             #update idletasks
             if {$log_output == ""} {
               continue
@@ -1417,6 +1437,7 @@ namespace eval ::svn_branchlog {
             set command "svn log -q $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
+            $cmd_log\::destroy
             if {$log_output == ""} {
               cvsfail "$command returned no output"
               return
@@ -1484,6 +1505,7 @@ namespace eval ::svn_branchlog {
           }
           incr i
         }
+        gen_log:log T "LEAVE \"$revnum\""
         return $revnum
       }
 

@@ -214,6 +214,12 @@ namespace eval ::exec {
         gen_log:log T "LEAVE"
       }
 
+      proc destroy {} {
+        gen_log:log T "ENTER"
+        catch {namespace delete [namespace current]}
+        gen_log:log T "LEAVE"
+      }
+
       proc wait {} {
         variable ExecDone
         gen_log:log T "ENTER"

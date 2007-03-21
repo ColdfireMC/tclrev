@@ -110,6 +110,7 @@ proc cvs_workdir_status {} {
     # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
     # into an array.
 
+    $cmd(cvs_status)\::destroy
     catch {unset cmd(cvs_status)}
     foreach logline $status_lines {
       if {[string match "File:*" $logline]} {
@@ -1051,6 +1052,7 @@ proc cvs_status {args} {
   # support verious levels of verboseness. Ideas derived from GIC
   set statcmd [exec::new "$cvs -Q status $cmd_options $filelist"]
   set raw_status [$statcmd\::output]
+  $statcmd\::destroy
 
   if {$cvscfg(rdetail) == "verbose"} {
     view_output::new "CVS Status ($cvscfg(rdetail))" $raw_status
@@ -1300,6 +1302,7 @@ proc cvs_version_number {} {
   set number [$e\::output]
   regsub -all {\s*} $number {} number
   
+  $d\::destroy
   gen_log:log T "LEAVE ($number)"
   return $number
 }
@@ -2046,7 +2049,7 @@ namespace eval ::cvs_branchlog {
         variable rnum
         variable rootbranch
         variable revbranch
-        #gen_log:log T "ENTER ($exec $logline)"
+        gen_log:log T "ENTER ($exec $logline)"
 
         #gen_log:log D "$logline"
         if {$logline != {}} {
