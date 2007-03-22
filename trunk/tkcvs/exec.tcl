@@ -339,12 +339,12 @@ namespace eval ::viewer {
 
       proc clean_exec {} {
         variable v_e
-        namespace inscope $v_e destroy
+        catch {namespace inscope $v_e destroy}
       }
 
       proc destroy {} {
         variable v_e
-        namespace inscope $v_e destroy
+        catch {namespace inscope $v_e destroy}
         catch {namespace delete [namespace current]}
       }
 
