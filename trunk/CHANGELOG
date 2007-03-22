@@ -19,6 +19,9 @@ Release 8.0.4
 - cvscfg(svn_branch_filter) and cvscfg(svn_branch_max_count) to filter
   which branches to draw in the log browser
 
+- Delete the exec namespaces after the execs are finished.  This should
+  cause better memory usage behavior.
+
 
 Release 8.0.3   March, 2006
 
