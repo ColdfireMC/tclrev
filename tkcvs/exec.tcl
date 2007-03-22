@@ -337,6 +337,11 @@ namespace eval ::viewer {
         namespace inscope $v_e wait
       }
 
+      proc clean_exec {} {
+        variable v_e
+        namespace inscope $v_e destroy
+      }
+
       proc destroy {} {
         variable v_e
         namespace inscope $v_e destroy

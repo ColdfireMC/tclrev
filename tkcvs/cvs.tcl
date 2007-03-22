@@ -311,6 +311,7 @@ proc cvs_remove_dir {args} {
       set commandline "$cvs remove \"$file\""
       $v\::do "$commandline" 1 status_colortags
       $v\::wait
+      $v\::clean_exec
     }
   }
 
@@ -477,6 +478,7 @@ proc cvs_add_dir {binflag args} {
       set commandline "$cvs add \"$file\""
       $v\::do "$commandline"
       $v\::wait
+      $v\::clean_exec
 
       cd $file
       gen_log:log F "CD [pwd]"
@@ -508,6 +510,8 @@ proc add_subdirs {binflag v} {
       set commandline "$cvs add \"$child\""
       $v\::do "$commandline"
       $v\::wait
+      $v\::clean_exec
+
       set awd [pwd]
       cd $child
       gen_log:log F "CD [pwd]"
