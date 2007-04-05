@@ -546,7 +546,7 @@ proc viewer_window {w title parent} {
   
   button $w.save -text "Save to File" -command "save_viewcontents $w"
   button $w.close -text "Close" -command "
-    $parent\::destroy
+    catch {$parent\::destroy}
     destroy $w
     exit_cleanup 0
   "
