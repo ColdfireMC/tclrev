@@ -159,6 +159,7 @@ namespace eval ::logcanvas {
             $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
             $logcanvas.log configure \
                 -command [namespace code {
+                    # FIXME: we get the rev and dont use it
                     set rev [$logcanvas.up.revA_rvers cget -text] 
                     svn_log $filename
                  }]
@@ -192,7 +193,11 @@ namespace eval ::logcanvas {
                  -command [namespace code {
                    set rev [$logcanvas.up.revA_rvers cget -text]
                    set R [string trimleft $rev {r}]
-                   svn_annotate_r $R $revpath($rev)
+                   if {$R == ""} {
+                     svn_annotate_r $R $filename
+                   } else {
+                     svn_annotate_r $R $revpath($rev)
+                   }
                  }]
             }
             $logcanvas.delta configure \

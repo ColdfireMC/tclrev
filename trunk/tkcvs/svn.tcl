@@ -11,7 +11,7 @@ proc read_svn_dir {dirname} {
   set cmd(info) [exec::new "svn info"]
   set info_lines [$cmd(info)\::output]
   foreach infoline [split $info_lines "\n"] {
-    if {[string match "URL:*" $infoline]} {
+    if {[string match "URL*" $infoline]} {
       #gen_log:log D "$infoline"
       set cvscfg(url) [lrange $infoline 1 end]
     }
@@ -448,7 +448,12 @@ proc svn_annotate_r {revision filepath} {
   global cvscfg
 
   gen_log:log T "ENTER ($revision $filepath)"
-  set revflag "-r$revision"
+  if {$revision != ""} {
+    # We were given a revision
+    set revflag "-r$revision"
+  } else {
+    set revflag ""
+  }
 
   annotate::new $revflag $filepath "svn_r"
   gen_log:log T "LEAVE"
