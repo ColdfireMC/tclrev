@@ -6,6 +6,8 @@ Release 8.0.4
 
 - Fix [ 1673519 ] tcl error with SVN->Browse the Log Diagram
 
+- Fix [ 1581111 ] svn url trouble with French localization
+
 - Ask for confirmation before reverting files
 
 - Display TkCVS version in window title of workdir and module browsers.
@@ -21,6 +23,9 @@ Release 8.0.4
 
 - Delete the exec namespaces after the execs are finished.  This should
   cause better memory usage behavior.
+
+- Add a contrib directory containing a wrapper for gvimdiff to replace
+  tkdiff, and a program to compare the contents of directories.
 
 
 Release 8.0.3   March, 2006

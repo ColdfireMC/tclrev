@@ -1,0 +1,135 @@
+#!/bin/sh
+
+# Uses gvim to compare CVS versions.
+# Written by Phil Brooks and Brent Geske at Mentor Graphics.
+# To use with TkCVS, "set cvscfg(tkdiff) cvsdiff"
+
+# Rudimentary arg check:
+if [ ! $# -gt 0 ]
+then
+    echo "Usage:  $0 [-r revA] [-r revB] file [files ...]"
+    exit 127
+fi
+
+unset   REV
+unset   REVB
+
+CVS=""
+if [ -d CVS ]
+then
+    CVS="cvs update -p"
+fi
+if [ -d .svn ]
+then 
+    CVS="svn cat"
+fi
+if [ "$CVS" == "" ]
+then
+    echo "No CVS or .svn directory. Exiting."
+    exit 1
+fi
+
+if [ "$1" = "-r" ]
+then
+    REV=$2
+    shift; shift
+else
+    REV="HEAD"
+fi
+
+if [ "$1" = "-r" ]
+then
+    REVB=$2
+    shift; shift
+fi
+
+
+# Presumed env vars:
+if [ "$VDIFF" = "" ]
+then
+    VDIFF="gvim -d -f"
+fi
+if [ "$OS" = "Windows_NT" ]
+then
+    TMP="${SYSTEMDRIVE}/TEMP"
+else
+    TMP="/tmp"
+fi
+
+ME=`basename $0`
+SCRIPTFILE="${TMP}/${ME}.script.$$"
+
+
+# Get files
+
+echo "" > $SCRIPTFILE
+
+# loop once to generate diff commands for each file (also spit out some useful info)
+for f in $*
+do
+    FILEPATH="$f"
+    FILEBASE="`basename ${FILEPATH}`"
+    TMPPATH="${TMP}/${REV}-${FILEBASE}"
+    TMPPATHB="${TMP}/${REVB}-${FILEBASE}"
+
+    if [ ! -r "${FILEPATH}" ]
+    then
+        echo "$0:  Local File '${FILEPATH}' not found."
+        continue
+    fi
+
+    if [ "$REVB" != "" ] ; then
+        echo -n "${REV} vs. ${REVB} ${FILEBASE}..."
+    else
+        echo -n "${REV} vs. LOCAL ${FILEBASE}..."
+    fi
+
+    $CVS -r${REV} $FILEPATH > $TMPPATH 2> /dev/null
+    if [ "$REVB" != "" ] ; then
+        $CVS -r${REVB} $FILEPATH > $TMPPATHB 2> /dev/null
+    fi
+
+    if [ -s "$TMPPATH" ]
+    then
+        if [ "$REVB" != "" ] ; then
+            if [ -s "$TMPPATHB" ]; then
+                echo "$VDIFF $TMPPATH $TMPPATHB >/dev/null &" >> $SCRIPTFILE
+                echo -n "   :        diffcount ="
+                diff $TMPPATH $TMPPATHB | grep '^[0-9]' | wc -l
+            else
+                echo "   :"
+                echo "$0:  CVS revision ${REV} for '${FILEPATH}' not found."
+            fi
+        else
+            echo "$VDIFF $TMPPATH $FILEPATH >/dev/null &" >> $SCRIPTFILE
+            echo -n "   :        diffcount ="
+            diff $TMPPATH $FILEPATH | grep '^[0-9]' | wc -l
+        fi
+    else
+        echo "   :"
+        echo "$0:  CVS revision ${REV} for '${FILEPATH}' not found."
+    fi
+done
+
+echo "# wait for all diffs to finish, then cleanup temporaries" >> $SCRIPTFILE
+echo "wait" >> $SCRIPTFILE
+
+# loop again for cleanup
+for f in $*
+do
+    FILEPATH="$f"
+    FILEBASE="`basename ${FILEPATH}`"
+    TMPPATH="${TMP}/${REV}-${FILEBASE}"
+    TMPPATHB="${TMP}/${REVB}-${FILEBASE}"
+
+    # loop for these:
+    echo "rm -f '$TMPPATH' '$TMPPATHB'" >> $SCRIPTFILE
+done
+
+# One last step of non-looped cleanup stuff:
+# Can the script remove itself?  YES.
+echo "rm -f '$SCRIPTFILE'" >> $SCRIPTFILE
+
+# Display files
+. $SCRIPTFILE &
+
