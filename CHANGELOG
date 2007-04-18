@@ -1,5 +1,8 @@
 Release 8.0.4
 
+- The Branch Browser detects lack of a trunk directory, warns that
+  it can't do much without that structure, and continues without it.
+
 - Fix [ 1483057 ] Empty Branch Diagram for deleted files (TkSVN)
   If a file had been removed from the trunk and was diagrammed from a
   branch, some or all of the diagram could be missing.

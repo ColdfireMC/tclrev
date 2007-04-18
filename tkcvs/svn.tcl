@@ -23,6 +23,7 @@ proc read_svn_dir {dirname} {
     return
   }
 
+  set root ""
   foreach s {trunk branches tags} {
     if {[regexp "/$s/" $cvscfg(url)] || [regexp "/$s" $cvscfg(url)]} {
       set spl [split $cvscfg(url) "/"]
@@ -70,7 +71,17 @@ proc read_svn_dir {dirname} {
       gen_log:log D "tagname: $current_tagname"
     }
   }
-  gen_log:log T "LEAVE"
+  if {$root == ""} {
+    gen_log:log D "Nonconforming repository"
+    gen_log:log D "SVN URL: $cvscfg(url)"
+    set cvscfg(svnroot) $cvscfg(url)
+    gen_log:log D "svnroot: $cvscfg(svnroot)"
+    set cvsglb(relpath) ""
+    gen_log:log T "LEAVE (1)"
+    return 1
+  }
+  gen_log:log T "LEAVE (0)"
+  return 0
 }
 
 # Get stuff for main workdir browser
@@ -1231,9 +1242,13 @@ namespace eval ::svn_branchlog {
         } else {
           set path "$cvscfg(svnroot)/trunk/$relpath/$safe_filename"
         }
+        if {[read_svn_dir .] == 1} {
+          set path "$cvscfg(svnroot)/$safe_filename"
+          set msg "Your repository does not seem to be arranged in trunk, branch, and root directories.  The Branch Browser can't detect branches and tags."
+          cvsok "$msg" $lc
+        }
         # The trunk
         set branchrevs(trunk) {}
-        set got_trunkrevs 0
         # if the file was added on a branch, this will error out.
         # Come to think of it, there's nothing especially privileged
         # about the trunk except that one branch must not stop-on-copy

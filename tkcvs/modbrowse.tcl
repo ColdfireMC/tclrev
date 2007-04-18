@@ -410,10 +410,6 @@ proc modbrowse_run { {CVSorSVN {}} } {
         gen_log:log D "default,detected svn url"
         set cvscfg(svnroot) $cvsglb(root)
 
-        #set cvsglb(root) $cvscfg(svnroot) 
-        #if {! [info exists cvscfg(svnroot)] } {
-          #read_svn_dir .
-        #}
         .modbrowse.top.lroot configure -text "SVN URL"
         .modbrowse.top.lmcode configure -text "Selection"
         # Call ModTree with the just-in-time level maker
