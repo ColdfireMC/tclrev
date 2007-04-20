@@ -19,6 +19,9 @@ Release 8.0.4
 
 - Added a button for a text history log of the file to the branch browser.
 
+- Added a command line option -annotate or -blame to open the annotation
+  browser from the command line
+
 - The "New Directory" button is back
 
 - cvscfg(svn_branch_filter) and cvscfg(svn_branch_max_count) to filter
