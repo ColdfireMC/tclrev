@@ -209,28 +209,36 @@ if { ! [info exists cvscfg(lastdir)] } {
 #
 # Command line options
 #
-set usage "Usage: tkcvs \[-dir directory\] \[-root cvsroot\] \[-win workdir|module|merge\] \[-log file\]"
-append usage "\ntkcvs file"
+set usage "Usage:"
+append usage "\n tkcvs \[-dir <directory>\] \[-root <cvsroot>\] \[-win workdir|module|merge\]"
+append usage "\n tkcvs \[-dir <directory>\] \[-root <cvsroot>\] \[-log|blame <file>\]"
+append usage "\n tkcvs <file> - same as tkcvs -log <file>"
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
   set val [lindex $argv [expr {$i+1}]]
   switch -regexp -- $arg {
     {--*d.*} {
+      # -ddir: Starting directory
       set dir $val; incr i
       cd $val
     }
     {--*r.*} {
+      # -root: CVS root
       set cvscfg(cvsroot) $val; incr i
     }
     {--*w.*} {
+      # workdir|module|merge: window to start with. workdir is default.
       set cvscfg(startwindow) $val; incr i
     }
     {--*l.*} {
+      # -log <filename>: Browse the log of specified file
       set cvscfg(startwindow) log
       set lcfile $val; incr i
     }
-    {--*j.*} {
-      set cvscfg(startwindow) $val; incr i
+    {--*[ab].*} {
+      # annotate|blame: Browse colorcoded history of specified file
+      set cvscfg(startwindow) blame
+      set lcfile $val; incr i
     }
     -psn_* {
       # Ignore the Carbon Process Serial Number
@@ -241,6 +249,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
       exit 0
     }
     {\w*} {
+      # If a filename is provided as an argument, assume -log
       set cvscfg(startwindow) log
       set lcfile $arg; incr i
     }
@@ -356,7 +365,22 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "File doesn't seem to be in CVS, SVN, or RCS"
   }
-# Start with Direcotry Merge
+# Start with Annotation Browser
+} elseif {$cvscfg(startwindow) == "blame"} {
+  if {! [file exists $lcfile]} {
+    puts "ERROR: $lcfile doesn't exist!"
+    exit 1
+  }
+  wm withdraw .
+  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+  if {$incvs} {
+    cvs_annotate "" \"$lcfile"\
+  } elseif {$insvn} {
+    svn_annotate "" \"$lcfile\"
+  } else {
+    puts "File doesn't seem to be in CVS or SVN"
+  }
+# Start with Directory Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
   foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
