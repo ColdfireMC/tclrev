@@ -5,12 +5,13 @@ Q2. The "Hide" and "Show" fields don't seem to do anything.
 Q3. How do I log in to a remote server?
 Q4. Can I use a diff tool other than tkdiff with tkcvs?
 Q5. How do I import a new module?
-Q5. I can't get the Module Browser to work with my CVSROOT/modules file!
-Q6. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
+Q6. I can't get the Module Browser to work with my CVSROOT/modules file!
+Q7. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
     I still use tkcvs to check out a project?
-Q7. What good are modules anyway?
-Q8. I'm seeing strange behavior - things just don't act right.
-Q9. How do you get the colors shown in your screenshots?
+Q8. What good are modules anyway?
+Q9. I'm seeing strange behavior - things just don't act right.
+Q10. How do you get the colors shown in your screenshots?
+Q11. Why is the Branch Browser so slow in Subversion?
 
 -----------------------------------------------------------------
 Q1. I get an error that says "error in startup script-invalid command name
@@ -159,4 +160,23 @@ A. I put this in my ~/.tkcvs file:
    option add *Menu.background gray
    option add *Text.background gray92
    option add *Entry.background gray92
+
+-----------------------------------------------------------------
+Q11. Why is the Branch Browser so slow in Subversion?
+
+A. It's because SVN doesn't have tags or branches, it only has copies.  The
+   brute-force method I came up with to reconstruct a diagram requires two
+   repository accesses per tag.  Open the trace window and take a look at
+   what tkcvs is doing to build that diagram. It will give you something to
+   watch while it's chugging, at least.
+
+   If you convert a CVS repository to SVN, my recommendation would be to
+   discard non-branch tags. If there are very many, most likely all but the
+   most recent ones have value only as archaeological curiosities anyway. 
+ 
+   There's a cvscfg setting that determines how many tags are too many to
+   process. I figured that would be different depending on how remote the
+   repository is. There's also an option on the branch browser not to process
+   non-branch tags at all. If you can't get rid of them, that's probably what
+   you'll need to do.
 
