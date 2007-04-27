@@ -1,19 +1,45 @@
-
-Q1. How do I log in to a remote server?
-Q2. How do I import a new module?
-Q3. I can't get the Module Browser to work with my CVSROOT/modules file!
-Q4. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
-    I still use tkcvs to check out a project?
-Q5. What good are modules anyway?
-Q6. I get an error that says "error in startup script-invalid command name
+Q1. I get an error that says "error in startup script-invalid command name
     "get_cde_params" while executing "get_cde_params" 
      (file"usr/local/bin/tkcvs"line 1)
-Q7. The "Hide" and "Show" fields don't seem to do anything.
+Q2. The "Hide" and "Show" fields don't seem to do anything.
+Q3. How do I log in to a remote server?
+Q4. Can I use a diff tool other than tkdiff with tkcvs?
+Q5. How do I import a new module?
+Q5. I can't get the Module Browser to work with my CVSROOT/modules file!
+Q6. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
+    I still use tkcvs to check out a project?
+Q7. What good are modules anyway?
 Q8. I'm seeing strange behavior - things just don't act right.
 Q9. How do you get the colors shown in your screenshots?
 
 -----------------------------------------------------------------
-Q1. How do I log in to a remote server?
+Q1. I get an error that says "error in startup script-invalid command name
+    "get_cde_params" while executing "get_cde_params" 
+     (file"usr/local/bin/tkcvs"line 1)
+
+A. Did you run doinstall.tcl?
+
+   If yes, make sure you don't have a TCLROOT environment variable
+   that's pointing to somewhere other than where it put tkcvs' .tcl
+   files.
+
+   If that's not the trouble, do "which tkcvs" or whatever tells you which tkcvs
+   file you're executing.  Look at that file and see what TclRoot is set to.
+   Are the .tcl files in $TclRoot/tkcvs?  Is there a tclIndex there? 
+
+-----------------------------------------------------------------
+Q2. The "Hide" and "Show" fields don't seem to do anything.
+
+A. "Hide" works exactly the way a .cvsignore file works.  That is, it
+   causes non-CVS files with the pattern to be ignored.  It's meant
+   for hiding .o files and such.  Any file under CVS control will be
+   listed anyway.
+
+   "Show" is the inverse - it hides non-CVS files except for those with
+   the pattern.
+
+-----------------------------------------------------------------
+Q3. How do I log in to a remote server?
 
 A. There's no way to transmit a password through tkcvs, but luckily you
    don't have to.  If it's a pserver, do "cvs login" once from the command
@@ -35,7 +61,18 @@ A. There's no way to transmit a password through tkcvs, but luckily you
    % tkcvs
 
 -----------------------------------------------------------------
-Q2. How do I import a new module?
+Q4. Can I use a diff tool other than tkdiff with tkcvs?
+
+A. Yes, by changing cvscfg(tkdiff).  You usually have to write a wrapper for
+   your diff tool to get it to check out the versions, and and deal with its
+   particular command-line options, which are probably different from tkdiff's.
+
+   In the contrib directory, there is a gvim-wrapper called "cvsdiff" which can
+   be used as-is or as a model for wrapping your favorite diff tool.
+
+
+-----------------------------------------------------------------
+Q5. How do I import a new module?
 
    Get your new directory the way you want it.
    Cd into the directory.
@@ -58,23 +95,19 @@ Q2. How do I import a new module?
    permissions to write to the repository.
 
 -----------------------------------------------------------------
-Q3. I can't get the Module Browser to work with my CVSROOT/modules file!
+Q6. I can't get the Module Browser to work with my CVSROOT/modules file!
 
-A. (Version 6.x) You're not alone.  Here are some common mistakes:
-
-   Make sure the fields in your file are separated by TABS!  Does your editor
+A. Make sure the fields in your file are separated by TABS!  Does your editor
    automatically de-tab when you save a file?  (Hint: if your editor has syntax
    highlighting, use the Makefile mode.)
 
-   Every group of modules (#M) must be preceded by a directory (#D).
-
    Not quite every possible module arrangement that can be specified in the
    modules file can be reflected in the Module Browser.  That's a little
-   better in version 7.x, but you lose some freedom to create fictional
-   directory trees.
+   better in version 7.x than it was previously, but the tradeoff was that
+   there's less freedom to create fictional directory trees.
 
 -----------------------------------------------------------------
-Q4. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
+Q7. I haven't put the tkcvs extensions in my CVSROOT/modules file yet.  Can
     I still use tkcvs to check out a project?
 
 A. Yes.  Start tkcvs.  Open the Module Browser.  It will be empty because
@@ -82,7 +115,7 @@ A. Yes.  Start tkcvs.  Open the Module Browser.  It will be empty because
    entry.  Press the Checkout button (the ball with the arrow). 
 
 -----------------------------------------------------------------
-Q5. What good are modules anyway?
+Q8. What good are modules anyway?
 
 A. It's hard to see the utility of modules unless you have projects that
    have nested directories.  Defining a directory as a module makes it
@@ -111,40 +144,14 @@ A. It's hard to see the utility of modules unless you have projects that
    make a module that includes some files in a directory and not others.
 
 -----------------------------------------------------------------
-Q6. I get an error that says "error in startup script-invalid command name
-    "get_cde_params" while executing "get_cde_params" 
-     (file"usr/local/bin/tkcvs"line 1)
-
-A. Did you run doinstall.tcl?
-
-   If yes, make sure you don't have a TCLROOT environment variable
-   that's pointing to somewhere other than where it put tkcvs' .tcl
-   files.
-
-   If that's not the trouble, do "which tkcvs" or whatever tells you which tkcvs
-   file you're executing.  Look at that file and see what TclRoot is set to.
-   Are the .tcl files in $TclRoot/tkcvs?  Is there a tclIndex there? 
-
------------------------------------------------------------------
-Q7. The "Hide" and "Show" fields don't seem to do anything.
-
-A. "Hide" works exactly the way a .cvsignore file works.  That is, it
-   causes non-CVS files with the pattern to be ignored.  It's meant
-   for hiding .o files and such.  Any file under CVS control will be
-   listed anyway.
-
-   "Show" is the inverse - it hides non-CVS files except for those with
-   the pattern.
-
------------------------------------------------------------------
-Q8. I'm seeing strange behavior - things just don't act right.
+Q9. I'm seeing strange behavior - things just don't act right.
 
 A. Do you have a .cvsrc file or other .cvs* files lurking about?  If you
    change cvs's behaviour in certain ways, it can trick tkcvs.  Be especially
    careful of modifying "cvs log".
 
 -----------------------------------------------------------------
-Q9. How do you get the colors shown in your screenshots?
+Q10. How do you get the colors shown in your screenshots?
 
 A. I put this in my ~/.tkcvs file:
    option add *Canvas.background #c3c3c3
