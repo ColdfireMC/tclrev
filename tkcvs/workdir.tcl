@@ -882,7 +882,7 @@ proc auto_setup_dir {cmd} {
     $cmd\::wait
     setup_dir
   } else {
-    after 0 {$cmd\::wait; $cmd\::destroy}
+    after 0 "$cmd\::wait; $cmd\::destroy"
   }
 }
 
