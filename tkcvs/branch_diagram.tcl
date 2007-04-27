@@ -74,7 +74,9 @@ namespace eval ::logcanvas {
         catch {$logcanvas.canvas itemconfigure Sel$AorB -fill gray90}
         $logcanvas.canvas dtag Sel$AorB
         $logcanvas.up.rev${AorB}_rvers configure -text {}
+        $logcanvas.up.log${AorB}_rlogfm.rcomment configure -state normal
         $logcanvas.up.log${AorB}_rlogfm.rcomment delete 1.0 end
+        $logcanvas.up.log${AorB}_rlogfm.rcomment configure -state disabled
         $logcanvas.up.rev${AorB}_rwho configure -text {}
         $logcanvas.up.rev${AorB}_rdate configure -text {}
         set sel_tag($AorB) {}
@@ -107,7 +109,9 @@ namespace eval ::logcanvas {
           $logcanvas.up.rev${AorB}_rwho configure -text $revwho($rev)
           $logcanvas.up.rev${AorB}_rdate configure -text\
               "$revdate($rev) $revtime($rev)"
+          $logcanvas.up.log${AorB}_rlogfm.rcomment configure -state normal
           $logcanvas.up.log${AorB}_rlogfm.rcomment insert end $revcomment($rev)
+          $logcanvas.up.log${AorB}_rlogfm.rcomment configure -state disabled
         }
         $logcanvas.canvas addtag Sel$AorB withtag rect$rev
         $logcanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
@@ -1463,7 +1467,7 @@ namespace eval ::logcanvas {
          
         frame $logcanvas.up.log${fm}_rlogfm -bd 3 -bg $cvscfg(colour$fm)
         text  $logcanvas.up.log${fm}_rlogfm.rcomment -height 5 \
-           -fg $cvsglb(textfg) -bg $cvsglb(textbg)\
+           -fg $cvsglb(textfg) -bg $cvsglb(textbg) -state disabled \
            -yscrollcommand [namespace code\
            "$logcanvas.up.log${fm}_rlogfm.yscroll set"]
            scrollbar $logcanvas.up.log${fm}_rlogfm.yscroll \
