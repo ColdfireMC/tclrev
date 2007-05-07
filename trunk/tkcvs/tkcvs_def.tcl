@@ -211,6 +211,7 @@ if {$tcl_platform(platform) == "windows"} {
     #    bitmap *.xbm
     #    gimp *.xpm
     #    gimp *.gif
+    #    {calibredrv -m} *.gds
     #}
     set cvscfg(tkdiff) "tkdiff"
     #set cvscfg(print_cmd)          "enscript -Ghr -fCourier8"
