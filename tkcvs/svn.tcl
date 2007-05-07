@@ -1244,8 +1244,11 @@ namespace eval ::svn_branchlog {
         }
         if {[read_svn_dir .] == 1} {
           set path "$cvscfg(svnroot)/$safe_filename"
-          set msg "Your repository does not seem to be arranged in trunk, branch, and root directories.  The Branch Browser can't detect branches and tags."
-          cvsok "$msg" $lc
+          if {! [info exists cvscfg(svnconform_seen)]} {
+            set msg "Your repository does not seem to be arranged in trunk, branch, and root directories.  The Branch Browser can't detect branches and tags."
+            cvsok "$msg" $lc
+            set cvscfg(svnconform_seen) 1
+          }
         }
         # The trunk
         set branchrevs(trunk) {}
