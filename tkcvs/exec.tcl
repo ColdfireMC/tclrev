@@ -20,8 +20,7 @@ proc cvs_execcmd {args} {
   # called for execmenu() entries.
   #
   gen_log:log T "ENTER ($args)"
-  gen_log:log C "$args"
-  eval "exec $args &"
+  exec::new $args
   gen_log:log T "LEAVE"
 }
 

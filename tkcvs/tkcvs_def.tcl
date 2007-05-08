@@ -172,12 +172,11 @@ if {$tcl_platform(platform) == "windows"} {
     #set cvs "cvs -T $cvscfg(tmpdir)"
     set cvs "cvs"
     set cvscfg(editor) "notepad"
-    set cvscfg(editorargs) {}
 
     # set temp directory
     set cvscfg(tmpdir) "c:/temp"
     set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
-    set cvscfg(print_cmd)          "pr"
+    set cvscfg(print_cmd)    "pr"
     set cvscfg(shell)  ""
     set cvscfg(allow_abort)  "no"
 } else {
@@ -196,8 +195,7 @@ if {$tcl_platform(platform) == "windows"} {
     # installed) a user can set the cvscfg(editor) variable to the editor
     # of choice in their .tkcvs file (if they have one).
     #set cvscfg(editor) "dtpad"
-    set cvscfg(editor) "xterm"
-    set cvscfg(editorargs) "-e vi"
+    set cvscfg(editor) {xterm -e vi}
     # The file editor to be used may also be identified by pattern-matching the
     # filename by setting the cvscfg(editors) variable.  This contains a series
     # of string pairs giving the editor-command and string-match-pattern.  The
@@ -214,19 +212,17 @@ if {$tcl_platform(platform) == "windows"} {
     #    {calibredrv -m} *.gds
     #}
     set cvscfg(tkdiff) "tkdiff"
-    #set cvscfg(print_cmd)          "enscript -Ghr -fCourier8"
+    #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
     set cvscfg(print_cmd)          "lpr"
     set cvscfg(allow_abort)  "yes"
     # What do you want to happen when you ask for a shell?
-    set cvscfg(shell) "xterm -name tkcvsxterm -n {TkCVS xterm}"
+    set cvscfg(shell) {xterm -name tkcvsxterm -n {TkCVS xterm}}
 
     # Some special stuff for MacOSX "native" Tk
     if {! [catch {set windowingsystem [tk windowingsystem]}] && $windowingsystem == "aqua"} {
       set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
-      set cvscfg(editorargs) {}
       # If you invoke vim this way, -psn_ tells it to run in its own window
-      #set cvscfg(editor) /Applications/Vim.app/Contents/MacOS/Vim
-      #set cvscfg(editorargs) -psn
+      #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
       set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
       set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/Wish Shell\""
 

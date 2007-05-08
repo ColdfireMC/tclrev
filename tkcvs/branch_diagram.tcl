@@ -188,9 +188,9 @@ namespace eval ::logcanvas {
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
                    if {$revB == ""} {
-                     comparediff_files "$revpath($revA)@$A" [file tail $revpath($revA)]
+                     comparediff_files $logcanvas "$revpath($revA)@$A" [file tail $revpath($revA)]
                    } else {
-                     comparediff_files "$revpath($revA)@$A" "$revpath($revB)@$B"
+                     comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
                    }
                 }]
               $logcanvas.annotate configure \
@@ -1306,7 +1306,7 @@ namespace eval ::logcanvas {
          -menu $logcanvas.menubar.file -underline 0
       menu $logcanvas.menubar.file -tearoff 0
       $logcanvas.menubar.file add command -label "Shell window" -underline 0 \
-        -command {eval exec $cvscfg(shell) >& $cvscfg(null) &}
+        -command {exec::new $cvscfg(shell)}
       $logcanvas.menubar.file add separator
       $logcanvas.menubar.file add command -label "Close" -underline 0 \
         -command [namespace code {$logcanvas.close invoke}]
