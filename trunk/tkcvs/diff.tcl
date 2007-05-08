@@ -1,3 +1,6 @@
+# NOTE: tkdiff exit status is nonzero if there are differences, so we
+# can't take it to mean failure
+
 proc comparediff {args} {
 #
 # This diffs a file with the repository.
@@ -13,29 +16,31 @@ proc comparediff {args} {
     foreach file $filelist {
       regsub -all {\$} $file {\$} file
       gen_log:log C "$cvscfg(tkdiff) \"$file\""
-      catch {eval "exec $cvscfg(tkdiff) \"$file\" &"} view_this
+      set ret [catch {eval "exec $cvscfg(tkdiff) \"$file\" &"} view_this]
+      if {$ret} { cvsfail $view_this .workdir }
     }
   }
   gen_log:log T "LEAVE"
 }
 
 # Two files or two SVN URLs
-proc comparediff_files {file1 file2} {
+proc comparediff_files {parent file1 file2} {
   global cvscfg
 
   gen_log:log T "ENTER ($file1 $file2)"
   gen_log:log C "$cvscfg(tkdiff) \"$file1\" \"$file2\""
-  catch {eval "exec $cvscfg(tkdiff) \"$file1\" \"$file2\" &"} view_this
+  set ret [catch {eval "exec $cvscfg(tkdiff) \"$file1\" \"$file2\" &"} view_this]
+  if {$ret} { cvsfail $view_this $parent }
   gen_log:log T "LEAVE"
 }
 
-proc comparediff_r {rev1 rev2 parent args} {
+proc comparediff_r {rev1 rev2 parent file} {
 #
 # This diffs a file with the repository, using two revisions or tags.
 #
   global cvscfg
  
-  gen_log:log T "ENTER ($rev1 $rev2 $args)"
+  gen_log:log T "ENTER ($rev1 $rev2 $file)"
 
   if {$rev1 == {} && $rev2 == {}} {
     cvsfail "Must have at least one revision number or tag for this function!" $parent
@@ -51,12 +56,10 @@ proc comparediff_r {rev1 rev2 parent args} {
     set rev2 "-r \"$rev2\""
   }
  
-  # dont join args because we dont get them from workdir_list_files
-  foreach file $args {
-    set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$file\""
-    gen_log:log C "$commandline"
-    catch {eval "exec $commandline &"} view_this
-  }
+  set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$file\""
+  gen_log:log C "$commandline"
+  set ret [catch {eval "exec $commandline &"} view_this]
+  if {$ret} { cvsfail $view_this $parent }
   gen_log:log T "LEAVE"
 }
 

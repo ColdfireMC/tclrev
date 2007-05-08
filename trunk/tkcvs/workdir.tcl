@@ -448,10 +448,7 @@ proc workdir_menus {} {
      -command workdir_cleanup
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label "Shell window" -underline 0 \
-     -command {
-          gen_log:log C "$cvscfg(shell) >& $cvscfg(null)"
-          eval exec $cvscfg(shell) >& $cvscfg(null) &
-     }
+     -command { exec::new $cvscfg(shell) }
   .workdir.menubar.file add separator
   .workdir.menubar.file add command -label Close -underline 1 \
      -command {.workdir.close invoke}
@@ -688,7 +685,7 @@ proc workdir_edit_command {file} {
       }
     }
   }
-  return "\"$cvscfg(editor)\" $cvscfg(editorargs) \"$file\""
+  return "$cvscfg(editor) $cvscfg(editorargs) \"$file\""
 }
 
 proc workdir_newdir {file} {
@@ -726,9 +723,8 @@ proc workdir_edit_file {args} {
         # If the file doesn't exist it's tempting to touch the file and
         # trigger a reread, but is an empty file of this type valid?
         regsub -all {\$} $file {\$} file
-        set commandline "[workdir_edit_command $file] >& $cvscfg(null) &"
-        gen_log:log C "$commandline"
-        eval "exec $commandline"
+        set commandline [workdir_edit_command $file]
+        set editcmd [exec::new $commandline]
       } else {
         cvsfail "$file is not a plain file" .workdir
       }
@@ -1356,14 +1352,8 @@ proc workdir_print_file {args} {
   if {[cvsconfirm $mess .workdir] == "ok"} {
     set final_result ""
     foreach file $filelist {
-      gen_log:log C "$cvscfg(print_cmd) \"$file\""
-      catch { eval exec $cvscfg(print_cmd) \"$file\" } file_result
-      if { $file_result != "" } {
-        set final_result "$final_result\n$file_result"
-      }
-    }
-    if { $final_result != "" } {
-      view_output::new "Print" $final_result
+      set commandline [concat $cvscfg(print_cmd) \"$file\"]
+      exec::new $commandline
     }
   }
   gen_log:log T "LEAVE"
@@ -1569,7 +1559,7 @@ proc save_options { } {
                  svnconform_seen}
   set STRGopts { file_filter ignore_file_filter clean_these \
                  printer rdetail ldetail log_classes lastdir \
-                 workgeom modgeom loggeom tracgeom}
+                 workgeom modgeom loggeom tracgeom editor editorargs}
 
   # Plus the logcanvas options
   set LOGopts [concat [array names logcfg show_*] scale]
@@ -1579,6 +1569,14 @@ proc save_options { } {
     return
   }
   set cvscfg(lastdir) [pwd]
+
+  if {[info exists cvscfg(editorargs)] } {
+    # editorargs is no longer necessary
+    if {$cvscfg(editorargs) != ""} {
+      set cvscfg(editor) [concat $cvscfg(editor) $cvscfg(editorargs)]
+    }
+    unset cvscfg(editorargs)
+  }
 
   # Save the list so we can keep track of what we've done
   set BOOLset $BOOLopts
@@ -1638,6 +1636,10 @@ proc save_options { } {
             set match 1
             break
           }
+        }
+        if {[string match "*set *cvscfg(editorargs)*" $line]} {
+          # editorargs is no longer necessary
+          continue
         }
         foreach opt $LOGopts {
           if {! [info exists logcfg($opt)]} { continue }
