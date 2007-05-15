@@ -12,6 +12,9 @@ Q8. What good are modules anyway?
 Q9. I'm seeing strange behavior - things just don't act right.
 Q10. How do you get the colors shown in your screenshots?
 Q11. Why is the Branch Browser so slow in Subversion?
+Q12. How can I set CVS_RSH before starting the application under Mac OSX?
+     It does not seem like the application reads my .cshrc or my .tcshrc.
+     Where do I set the environment I need?
 
 -----------------------------------------------------------------
 Q1. I get an error that says "error in startup script-invalid command name
@@ -179,4 +182,30 @@ A. It's because SVN doesn't have tags or branches, it only has copies.  The
    repository is. There's also an option on the branch browser not to process
    non-branch tags at all. If you can't get rid of them, that's probably what
    you'll need to do.
+
+-----------------------------------------------------------------
+Q12. How can I set CVS_RSH before starting the application under Mac OSX?
+   It does not seem like the application reads my .cshrc or my .tcshrc.
+   Where do I set the environment I need?
+
+A. It depends on how you start the Wish application.  My favorite way of running
+   tkcvs on the Mac is simply to install the platform-independent tkcvs in /sw/bin
+   or someplace like that, and invoke it from the command line.  With the full Mac
+   version of Wish installed, there will be a /usr/bin/wish that invokes the
+   Wish.app.  (Install the Batteries Included version and then do "cat `which
+   wish8.4`" to see how that works.)  Invoking a Wish app such as TkCVS in this
+   way preserves your environment.
+
+   If you double-click on the Mac TkCVS.app that I distribute, your environment
+   isn't preserved.  For TkCVS, that can be helped by setting the environment
+   variables you need in your ~/.tkcvs, using tcl syntax, like this:
+
+   set env(CVS_RSH) ssh
+
+   Then too, you can just start X11 and use the X11 version of Tk.  In fact, your
+   .tcshrc might detect whether it's being sourced in an X11 environment 
+   ($TERM == xterm), and put /sw/bin/wish (the X11 version) in your PATH before
+   /usr/bin/wish (the Aqua version) if it is.  Then any Tk program that is invoked
+   on the command line and starts by invoking wish will automatically start the
+   correct version of wish.
 

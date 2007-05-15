@@ -1,4 +1,4 @@
-Release 8.0.4
+Release 8.0.4   May, 2007
 
 - The Branch Browser detects lack of a trunk directory, warns that
   it can't do much without that structure, and continues without it.
