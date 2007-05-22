@@ -194,22 +194,23 @@ proc svn_remove {args} {
 }
 
 # called from the workdir browser checkmark button
-proc svn_check {directory {v {0}} } {
+proc svn_check {directory} {
   global cvscfg
 
-  gen_log:log T "ENTER ($directory $v)"
+  gen_log:log T "ENTER ($directory)"
 
   busy_start .workdir.main
 
-  set flags ""
-  if {$v} {
-    append flags "uv"
-  }
+  # Always show updates
+  set flags "-u"
+  # Only recurse if flag is set
   if {! $cvscfg(recurse)} {
     append flags "N"
   }
-  if {$flags != ""} {
-    set flags "-$flags"
+  # unknown files are removed by the filter but we might as well minimize
+  # the work the filter has to do
+  if {$cvscfg(status_filter)} {
+    append flags "q"
   }
   set command "svn status $flags $directory"
   set check_cmd [viewer::new "SVN Status Check"]
