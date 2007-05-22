@@ -8,7 +8,6 @@
 #
 proc ModTree:create {w {open_func {}} } {
   global Tree
-  global cvscfg
   global cvsglb
 
   gen_log:log T "ENTER ($w $open_func)"
@@ -19,13 +18,16 @@ proc ModTree:create {w {open_func {}} } {
   }
 
   set winwid [winfo width $w]
-  panedwindow $w.pw -bg $cvsglb(canvbg) -relief sunk -bd 2
+  panedwindow $w.pw -relief sunk -bd 2
   $w.pw configure -handlepad 35 -sashwidth 4 -sashpad 0 -handlesize 10
-  frame $w.tree -bg $cvsglb(canvbg)
-  frame $w.labl -bg $cvsglb(canvbg)
+  frame $w.tree
+  frame $w.labl
 
   canvas $w.tree.list -highlightthickness 0 -width [expr {$winwid * 3/8}]
   canvas $w.labl.list -highlightthickness 0
+  set canvbg [option get $w.labl.list background background]
+  $w.tree configure -bg $canvbg
+  $w.labl configure -bg $canvbg
 
   set cvsglb(fg) [lindex [.modbrowse.bottom.buttons.modfuncs.filebrowse configure -foreground] 4]
   set cvsglb(dfg) \
@@ -37,7 +39,7 @@ proc ModTree:create {w {open_func {}} } {
   if {[string length $selcolor]} {
     set cvsglb(hlbg) $selcolor
   }
-  if {$cvsglb(hlbg) == $cvsglb(canvbg)} {
+  if {$cvsglb(hlbg) == $canvbg} {
     set cvsglb(hlbg) $buttonhilite
   }
 
