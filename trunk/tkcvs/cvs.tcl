@@ -1028,11 +1028,10 @@ proc cvs_status {args} {
   busy_start .workdir.main
   set filelist [join $args]
   # if recurse option is true or there are no selected files, recurse
-  set cmd_options ""
-  if {! [info exists cvscfg(recurse)]} {
-    set cmd_options "-l"
+  set flags ""
+  if {$cvscfg(recurse)} {
+    set flags "-l"
   }
-
   # if there are selected files, use verbose output
   # but save the current setting so it can be reset
   # - added by Jo
@@ -1043,7 +1042,7 @@ proc cvs_status {args} {
   }
 
   # support verious levels of verboseness. Ideas derived from GIC
-  set statcmd [exec::new "$cvs -Q status $cmd_options $filelist"]
+  set statcmd [exec::new "$cvs -Q status $flags $filelist"]
   set raw_status [$statcmd\::output]
   $statcmd\::destroy
 

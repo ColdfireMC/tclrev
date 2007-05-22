@@ -1021,10 +1021,10 @@ proc setup_dir { } {
     # Reports Menu
     # Check Directory (svn status)
     .workdir.menubar.reports entryconfigure 0 -state normal \
-       -command { svn_check {} 0 }
+       -command { svn_check {} }
     # Status (svn status <filelist>)
     .workdir.menubar.reports entryconfigure 1 -state normal \
-       -command { svn_check [workdir_list_files] 1}
+       -command { svn_check [workdir_list_files] }
     # Log (svn log)
     .workdir.menubar.reports entryconfigure 2 -state normal \
        -command { svn_log [workdir_list_files] }
