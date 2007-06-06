@@ -114,8 +114,14 @@ proc svn_workdir_status {} {
       #             965       687 joe          wc/zig.c
       set wrev [lindex $varcols 0]
       set crev [lindex $varcols 1]
-      set cauthor [lindex $varcols 2]
-      set filename [lrange $varcols 3 end]
+      set nb [string first "/emailAddress=" [lrange $varcols 3 end] ]
+      if {$nb == "-1"} {
+        set cauthor [lindex $varcols 2]
+        set filename [lrange $varcols 3 end]
+      } else {
+        set cauthor [lrange $varcols 2 3]
+        set filename [lrange $varcols 4 end]
+      }
     } else {
       #?                                       newfile
       set filename [lrange $logline 1 end]
