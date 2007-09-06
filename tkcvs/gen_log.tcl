@@ -19,6 +19,7 @@ proc gen_log:init {} {
   frame .trace.bottom
 
   button .trace.bottom.clear -text "Clear" -command gen_log:clear
+  button .trace.bottom.save -text "Save to File" -command gen_log:save
 
   search_textwidget_init
   button .trace.bottom.srchbtn -text Search \
@@ -37,6 +38,7 @@ proc gen_log:init {} {
   pack .trace.bottom.srchbtn -side left
   pack .trace.bottom.entry -side left
   pack .trace.bottom.clear -side left -expand 1 -anchor c
+  pack .trace.bottom.save -side left
   pack .trace.close -in .trace.bottom -side right
 
   # Lets hard-code these colors - otherwise at least one is very
@@ -91,6 +93,28 @@ proc gen_log:quit { } {
 
 proc gen_log:clear { } {
    .trace.text delete 1.0 end
+}
+
+proc gen_log:save { } {
+  set initialfile "tkcvs_log.txt"
+
+  set types  { {{All Files} *} }
+  set savfile [ \
+    tk_getSaveFile -title "Save Trace" \
+       -filetypes $types \
+       -initialfile $initialfile \
+       -parent .trace
+  ]
+  if {$savfile == ""} {
+    return
+  }
+
+  if {[catch {set fo [open $savfile w]}]} {
+    catchputs "Cannot open $savfile for writing"
+    return
+  }
+  puts $fo [.trace.text get 1.0 end]
+  close $fo
 }
 
 proc gen_log:changeclass { } {

@@ -12,7 +12,7 @@ proc modbrowse_setup {} {
   global cvscfg
   global tcl_platform
 
-  gen_log:log T "ENTER"
+  #gen_log:log T "ENTER"
   set cwd [pwd]
 
   # Window manager stuff.
@@ -193,7 +193,7 @@ proc modbrowse_setup {} {
   wm maxsize .modbrowse $screenWidth $screenHeight
   wm minsize .modbrowse 430 300
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc modbrowse_images {} {
@@ -221,7 +221,7 @@ proc modbrowse_menus {} {
   global cvs
   global logclass
 
-  gen_log:log T "ENTER"
+  #gen_log:log T "ENTER"
 
   menu .modbrowse.modmenu
   .modbrowse configure -menu .modbrowse.modmenu
@@ -329,7 +329,7 @@ proc modbrowse_menus {} {
 
   menu_std_help .modbrowse.modmenu
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc modbrowse_run { {CVSorSVN {}} } {

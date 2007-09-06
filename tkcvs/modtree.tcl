@@ -25,9 +25,10 @@ proc ModTree:create {w {open_func {}} } {
 
   canvas $w.tree.list -highlightthickness 0 -width [expr {$winwid * 3/8}]
   canvas $w.labl.list -highlightthickness 0
-  set canvbg [option get $w.labl.list background background]
-  $w.tree configure -bg $canvbg
-  $w.labl configure -bg $canvbg
+  $w.tree configure -bg $cvsglb(canvbg)
+  $w.labl configure -bg $cvsglb(canvbg)
+  $w.tree.list configure -bg $cvsglb(canvbg)
+  $w.labl.list configure -bg $cvsglb(canvbg)
 
   set cvsglb(fg) [lindex [.modbrowse.bottom.buttons.modfuncs.filebrowse configure -foreground] 4]
   set cvsglb(dfg) \
@@ -39,7 +40,7 @@ proc ModTree:create {w {open_func {}} } {
   if {[string length $selcolor]} {
     set cvsglb(hlbg) $selcolor
   }
-  if {$cvsglb(hlbg) == $canvbg} {
+  if {$cvsglb(hlbg) == $cvsglb(canvbg)} {
     set cvsglb(hlbg) $buttonhilite
   }
 
@@ -246,7 +247,7 @@ proc ModTree:buildlayer {w v in} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($w $v $in)"
+  #gen_log:log T "ENTER ($w $v $in)"
   if {$v=="/"} {
     set vx {}
   } else {
@@ -393,7 +394,7 @@ proc ModTree:setselection {w v} {
     set modbrowse_module $Tree($w:$v:name)
     set modbrowse_title $Tree($w:$v:title)
   }
-  set modbrowse_path $v
+  set modbrowse_path [string trimleft $v /]
 }
 
 #

@@ -274,20 +274,30 @@ proc dialog_svn_copy { svnroot path kind } {
 
   set dynamic_dialog(path) $path
   set dynamic_dialog(svnroot) $svnroot
+  if {[regexp {^(.*)/trunk$} $svnroot nil root]} {
+    set dynamic_dialog(svnroot) "$svnroot/trunk"
+    set dynamic_dialog(path) $root
+  }
+  if {[regexp {^(.*)/branches$} $svnroot nil root]} {
+    set dynamic_dialog(svnroot) "$svnroot/branches"
+    set dynamic_dialog(path) $root
+  }
+
   set dynamic_dialog(dir) $svnroot/$kind
   #set dynamic_dialog(kind) $kind
+
 
   # field  req type labeltext          data
   set dialog_form_copy {
     1       0   l {SVN Repository}     1
     svnroot 1   t {SVN URL}            {}
-    path    1   t {Path in Repository} {}
+    path    0   t {Path in Repository} {}
     2       0   l {Destination}        1
     dir     1   t {Destination URL}    {}
     target  1   t {New Branch/Tag}     {}
   }
   # Action function
-  set dialog_action {svn_rcopy $dynamic_dialog(svnroot)/$dynamic_dialog(path) \
+  set dialog_action {svn_rcopy $dynamic_dialog(svnroot) \
                                $dynamic_dialog(dir)/$dynamic_dialog(target)
   }
 
@@ -473,119 +483,6 @@ proc add_dialog {args} {
   wm title .add "Add Files"
   wm minsize .add 1 1
 
-  gen_log:log T "LEAVE"
-}
-
-proc merge_dialog { sys fromrev sincerev frombranch file } {
-  global cvscfg
-  global cvsglb
-  global cvs
-  global current_tagname
-
-  gen_log:log T "ENTER ($sys \"$fromrev\" \"$sincerev\" \"$frombranch\" \"$file\")"
-
-  if {$fromrev == {}} {
-     cvsfail "You must specify a branch to merge from!"
-     return
-  }
-
-  # Tag where we merged from
-  if {[llength $current_tagname] == 1} {
-    set curr_tag $current_tagname
-  } else {
-    set curr_tag "trunk"
-  }
-
-  if {$sincerev == {}} {
-    set since "\"\""
-    set mess "Merge revision $fromrev"
-  } else {
-    set mess "Merge the changes between revision $sincerev and $fromrev"
-    append mess " (if $sincerev > $fromrev the changes are removed)"
-  }
-  append mess " to the current revision ($curr_tag)"
-
-  # Construct tag names
-  set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat)]
-  set totagend [expr {$totagbegin + 8}]
-  set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
-  set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat)]
-  set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1}]]
-  set datef [string range $cvscfg(mergetoformat) $totagend end]
-  set today [clock format [clock seconds] -format "$datef"]
-
-  set curr $curr_tag
-  set from $frombranch
-  if {$curr == "trunk"} {set curr $cvscfg(mergetrunkname)}
-  if {$from == "trunk"} {set from $cvscfg(mergetrunkname)}
-  set mtag "${toprefix}_${curr}_$today"
-  set ftag "${fromprefix}_${from}_$today"
-  # I had symbolic tags in mind, but some people are using untagged versions.
-  # Substitute the dots, which are illegal for tagnames.
-  regsub -all {\.} $mtag {-} mtag
-  regsub -all {\.} $ftag {-} ftag
-
-  toplevel .merge
-  frame .merge.top
-
-  message .merge.top.m1 -aspect 600 -text "$mess"
-  frame .merge.top.f
-  checkbutton .merge.top.f.fromtag \
-    -text "Apply the tag" \
-    -variable cvscfg(auto_tag)
-  entry .merge.top.f.ent -textvariable mtag \
-    -width 32 -relief groove \
-    -readonlybackground $cvsglb(readonlybg)
-  .merge.top.f.ent delete 0 end
-  message .merge.top.m2 -aspect 600 -text "to revision $fromrev"
-  frame .merge.bottom -relief raised -bd 2
-  button .merge.bottom.apply -text "Apply"
-  button .merge.bottom.ok -text "OK"
-  button .merge.bottom.cancel -text "Cancel" \
-     -command {destroy .merge}
-
-  pack .merge.bottom -side bottom -expand 1 -fill x
-  pack .merge.bottom.apply -side left -expand 1
-  pack .merge.bottom.ok -side left -expand 1
-  pack .merge.bottom.cancel -side left -expand 1
-
-  pack .merge.top -side top -fill x
-  pack .merge.top.m1 -side top -fill x -expand y
-
-
-  switch -- $sys {
-    "CVS" {
-       pack .merge.top.f -side top -padx 2 -pady 4
-       pack .merge.top.f.fromtag -side left
-       pack .merge.top.f.ent -side left
-       pack .merge.top.m2 -side top -fill x -expand y
-       .merge.top.f.ent insert end $mtag
-       .merge.top.f.ent configure -state readonly
-       if {$fromrev == "trunk"} { set fromrev "HEAD" }
-       .merge.bottom.apply configure \
-          -command "cvs_merge $fromrev \"$sincerev\" $mtag $ftag $file"
-       .merge.bottom.ok configure \
-          -command "cvs_merge $fromrev \"$sincerev\" $mtag $ftag $file; \
-                    destroy .merge"
-     }
-    "SVN" {
-       pack .merge.top.f -side top -padx 2 -pady 4
-       pack .merge.top.f.fromtag -side left
-       pack .merge.top.f.ent -side left
-       pack .merge.top.m2 -side top -fill x -expand y
-       #set ftag "${fromprefix}_${from}_$today"
-
-       .merge.top.f.ent insert end $mtag
-       .merge.top.f.ent configure -state readonly
-       #if {$fromrev == "trunk"} { set fromrev "HEAD" }
-
-       .merge.bottom.apply configure \
-          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file"
-       .merge.bottom.ok configure \
-          -command "svn_merge $fromrev $sincerev $frombranch $mtag $ftag $file; \
-                    destroy .merge"
-     }
-  }
   gen_log:log T "LEAVE"
 }
 
@@ -1482,5 +1379,90 @@ you may want to commit any local changes to that branch first."
   wm title .svn_update "Update from Repository"
   wm minsize .svn_update 1 1
   gen_log:log T "LEAVE"
+}
+
+proc assemble_mergetags {from} {
+  global cvscfg
+  global current_tagname
+
+  gen_log:log T "ENTER ($from)"
+
+  # Construct tag names
+  set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat)]
+  set totagend [expr {$totagbegin + 8}]
+  set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
+  set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat)]
+  set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin - 1}]]
+  set datef [string range $cvscfg(mergetoformat) $totagend end]
+  set today [clock format [clock seconds] -format "$datef"]
+
+  if {[llength $current_tagname] == 1} {
+    set curr_tag $current_tagname
+  } else {
+    set curr_tag "trunk"
+  }
+
+  set curr $curr_tag
+  gen_log:log D "curr_tag $curr"
+  if {$curr == "trunk"} {set curr $cvscfg(mergetrunkname)}
+  if {$from == "trunk"} {set from $cvscfg(mergetrunkname)}
+  set totag "${toprefix}_${curr}_$today"
+  set fromtag "${fromprefix}_${from}_$today"
+  # I had symbolic tags in mind, but some people are using untagged versions.
+  # Substitute the dots, which are illegal for tagnames.
+  regsub -all {\.} $totag {-} totag
+  regsub -all {\.} $fromtag {-} fromtag
+
+  gen_log:log T "LEAVE ($curr_tag $fromtag $totag)"
+  return [list $curr_tag $fromtag $totag]
+}
+
+proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
+  global cvscfg
+
+  toplevel .reminder
+  wm title .reminder "Tag and Commit"
+  label .reminder.m1 -text \
+    "Now, you must examine the merged files and resolve any conflicts.\
+    \nLeave this dialog up, and when you are ready to commit,\
+    press the Ready button" 
+  button .reminder.ready -text "I'm ready" \
+    -command {
+       foreach w {m2 totag fromtag bottom.ok} {
+         .reminder.$w configure -state normal
+       }
+       foreach w {m1 ready} {
+         .reminder.$w configure -state disabled
+       }
+    }
+  label .reminder.m2 -text \
+    "If you check the box, TkCVS will apply the \"to\" tag,\
+    \ncommit your changes, and finally\napply the \"from\" tag.\
+    \nIf you don't check the box, the changes will be committed\
+    \nbut no tagging will be done"
+  checkbutton .reminder.autotag -text "Apply these tags" \
+    -variable cvscfg(auto_tag)
+  entry .reminder.totag -width 32
+  .reminder.totag insert end $totag 
+  entry .reminder.fromtag -width 32
+  .reminder.fromtag insert end $fromtag 
+  frame .reminder.bottom -relief raised -bd 2
+  button .reminder.bottom.cancel -text "Cancel" \
+    -command {destroy .reminder}
+  button .reminder.bottom.ok -text "OK" \
+    -command "${sys}_merge_tag_seq $from $frombranch $totag $fromtag $filelist;\
+              destroy .reminder"
+  pack .reminder.bottom -side bottom -fill x
+  pack .reminder.bottom.ok -side left -expand yes
+  pack .reminder.bottom.cancel -side right -expand yes
+  pack .reminder.m1 -side top
+  pack .reminder.ready -side top
+  pack .reminder.m2 -side top
+  pack .reminder.autotag -side top
+  pack .reminder.fromtag -side top -padx 2
+  pack .reminder.totag -side top -padx 2
+  foreach w {m2 totag fromtag bottom.ok} {
+    .reminder.$w configure -state disabled
+  }
 }
 

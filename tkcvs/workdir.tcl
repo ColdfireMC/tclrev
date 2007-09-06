@@ -310,6 +310,7 @@ proc workdir_setup {} {
 
   frame .workdir.main
   pack .workdir.main -side bottom -fill both -expand 1 -fill both
+  update idletasks
 
   if {! [winfo ismapped .workdir]} {
     wm deiconify .workdir
@@ -496,6 +497,8 @@ proc workdir_menus {} {
   # SVN
   .workdir.menubar.svn add command -label "Update" -underline 0 \
      -command {svn_update [workdir_list_files]}
+  .workdir.menubar.svn add command -label "Resolve (Un-mark Conflict)" -underline 0 \
+     -command {svn_resolve [workdir_list_files]}
   .workdir.menubar.svn add command -label "Commit/Checkin" -underline 0 \
      -command svn_commit_dialog
   .workdir.menubar.svn add command -label "Add Files" -underline 0 \
@@ -540,7 +543,7 @@ proc workdir_menus {} {
      -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
                   DirCanvas:map_column .workdir.main editcol
                 } else {
-                  pack forget .workdir.main.editcol
+                  DirCanvas:unmap_column .workdir.main editcol
                 }
               }
   .workdir.menubar.options add checkbutton -label "Status Column" \
@@ -549,7 +552,7 @@ proc workdir_menus {} {
      -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
                   DirCanvas:map_column .workdir.main statcol
                 } else {
-                  pack forget .workdir.main.statcol
+                  DirCanvas:unmap_column .workdir.main statcol
                 }
               }
   .workdir.menubar.options add checkbutton -label "Date Column" \
@@ -558,7 +561,7 @@ proc workdir_menus {} {
      -command { if {$cvscfg(showdatecol)} {
                   DirCanvas:map_column .workdir.main datecol
                 } else {
-                  pack forget .workdir.main.datecol
+                  DirCanvas:unmap_column .workdir.main datecol
                 }
               }
   .workdir.menubar.options add separator
@@ -1001,7 +1004,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
       -command { svn_annotate BASE [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
-      -command { svn_merge_conflict [workdir_list_files] }
+      -command { foreach f [workdir_list_files] {svn_merge_conflict \"$f\"} }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
@@ -1097,9 +1100,8 @@ proc setup_dir { } {
        -command { cvs_annotate $current_tagname [workdir_list_files] }
   }
 
-  DirCanvas:create .workdir.main \
-    -relief flat -bd 0 -highlightthickness 0 \
-    -width 100 -height 350
+  DirCanvas:create .workdir.main
+  pack .workdir.main.pw -side bottom -fill both -expand yes
 
   set cvsglb(current_selection) {}
 

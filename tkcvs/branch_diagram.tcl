@@ -57,6 +57,7 @@ namespace eval ::logcanvas {
       set sel_tag(A) {}
       set sel_tag(B) {}
       variable sel_rev
+      variable revnum_current
       set sel_rev(A) {}
       set sel_rev(B) {}
       variable logcanvas ".logcanvas$my_idx"
@@ -142,10 +143,11 @@ namespace eval ::logcanvas {
         variable logcanvas
         variable sys
         variable loc
+        variable revnum_current
 
         switch -- $sys {
           "SVN" {
-            # Find out if it's a directory, if we can
+            # Find out current rev and if it's a directory, if we can
             set kind ""
             set info_cmd [exec::new "svn info \"[file tail $fname]\""]
             set info_lines [split [$info_cmd\::output] "\n"]
@@ -153,7 +155,13 @@ namespace eval ::logcanvas {
               if {[string match "Node Kind:*" $infoline]} {
                 gen_log:log D "$infoline"
                 set kind [lindex $infoline end]
+              } elseif {[string match "Last Changed Rev:*" $infoline]} {
+                gen_log:log D "$infoline"
+                set revnum_current [lindex $infoline end]
               }
+            }
+            if {! [info exists revnum_current]} {
+                gen_log:log E "Warning: couldn't find current revision number!"
             }
             $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn} \
               -image Modules_svn
@@ -163,9 +171,12 @@ namespace eval ::logcanvas {
             $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
             $logcanvas.log configure \
                 -command [namespace code {
-                    # FIXME: we get the rev and dont use it
                     set rev [$logcanvas.up.revA_rvers cget -text] 
-                    svn_log $filename
+                    if {$rev =="" || [file isdirectory $filename]} {
+                      svn_log $filename
+                    } else {
+                      svn_log $revpath($rev) $filename
+                    }
                  }]
             if {$kind == "directory"} {
               $logcanvas.diff configure -state disabled
@@ -173,12 +184,14 @@ namespace eval ::logcanvas {
               $logcanvas.view configure \
                  -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text] 
+                    if {$rev ==""} { set rev "r$revnum_current" }
                     svn_fileview $rev $revpath($rev) directory
                  }]
             } else {
               $logcanvas.view configure \
                  -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text] 
+                    if {$rev ==""} { set rev "r$revnum_current" }
                     svn_fileview $rev $revpath($rev) file
                  }]
               $logcanvas.diff configure \
@@ -187,8 +200,11 @@ namespace eval ::logcanvas {
                    set revB [$logcanvas.up.revB_rvers cget -text]
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
+                   # Let's be generous and let either A or B be selected
                    if {$revB == ""} {
-                     comparediff_files $logcanvas "$revpath($revA)@$A" [file tail $revpath($revA)]
+                     comparediff_r "$revpath($revA)@$A" "" $logcanvas $filename
+                   } elseif {$revA == ""} {
+                     comparediff_r "" "$revpath($revB)@$B" $logcanvas $filename
                    } else {
                      comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
                    }
@@ -196,18 +212,18 @@ namespace eval ::logcanvas {
               $logcanvas.annotate configure \
                  -command [namespace code {
                    set rev [$logcanvas.up.revA_rvers cget -text]
-                   set R [string trimleft $rev {r}]
-                   if {$R == ""} {
-                     svn_annotate_r $R $filename
+                   if {$rev == ""} {
+                     svn_annotate_r "" $filename
                    } else {
-                     svn_annotate_r $R $revpath($rev)
+                     svn_annotate_r [string trimleft $rev {r}] $revpath($rev)
                    }
                  }]
             }
             $logcanvas.delta configure \
               -command [namespace code {
-                 variable sys
+                 set currentrevpath "$revpath(r$revnum_current)@$revnum_current"
                  set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 set fromrevpath "$revpath($fromrev)@[string trimleft $fromrev {r}]"
                  set sincerev [$logcanvas.up.revB_rvers cget -text]
                  set fromtag ""
                  if {[info exists revbtags($sincerev)]} {
@@ -223,10 +239,13 @@ namespace eval ::logcanvas {
                      }
                    }
                  }
-                 merge_dialog $sys \
-                   $fromrev $sincerev $fromtag \
-                   [list $revpath($sincerev)]
-                 }]
+                 if {$sincerev == ""} {
+                   svn_merge $logcanvas $fromrevpath "" $currentrevpath $fromtag $filename
+                 } else {
+                   set sincerevpath "$revpath($sincerev)@[string trimleft $sincerev {r}]"
+                   svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
+                 }
+               }]
           }
          "CVS" {
            $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs} \
@@ -275,24 +294,17 @@ namespace eval ::logcanvas {
                }]
              $logcanvas.delta configure \
                -command [namespace code {
-                 variable sys
                  set fromrev [$logcanvas.up.revA_rvers cget -text]
                  set sincerev [$logcanvas.up.revB_rvers cget -text]
                  set fromtag ""
-                 if {[info exists revbtags($sincerev)]} {
-                   set fromtag [lindex $revbtags($sincerev) 0]
+                 set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
+                 if {[info exists revbtags($fromrev_root)]} {
+                   set fromtag [lindex $revbtags($fromrev_root) 0]
+                 } else {
+                   # Just a rev number will do
+                   set fromtag $fromrev_root
                  }
-                 if {$fromtag == ""} {
-                   foreach brev [array names branchrevs] {
-                     set b $branchrevs($brev)
-                     if {$b == $fromrev} {
-                       set fromtag $revbtags($brev)
-                     }
-                   }
-                 }
-                 merge_dialog $sys \
-                   $fromrev $sincerev $fromtag \
-                   [list $filename]
+                 cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
                 }]
             }
          }
@@ -302,8 +314,7 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
            $logcanvas.view configure -state disabled
            $logcanvas.annotate configure -state disabled
-           $logcanvas.log configure -command [namespace code \
-                                               {rcs_log $filename}]
+           $logcanvas.log configure -command [namespace code {rcs_log $filename}]
            $logcanvas.delta configure -state disabled
           }
         }
@@ -1279,7 +1290,6 @@ namespace eval ::logcanvas {
       proc SaveOptions {} {
         global logcfg
         variable opt
-        variable sys
         variable loc
 
         # Save the options to the global set
@@ -1594,7 +1604,7 @@ namespace eval ::logcanvas {
       set_tooltips $logcanvas.diff \
         {"Compare two versions of the file"}
       set_tooltips $logcanvas.delta \
-        {"Merge changes to current"}
+        {"Merge to current"}
       set_tooltips $logcanvas.viewtags \
         {"List all the file\'s tags"}
   

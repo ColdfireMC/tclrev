@@ -96,8 +96,11 @@ namespace eval ::exec {
 
             if {! [info exists command]} {set command ""}
             if {! [info exists status]} {set status ""}
-            if {$errmsg == ""} {set errmsg "$command exited status $status"}
-            if {[string length $errmsg] < 512 && ! $errok} {
+            if {$errmsg == "" && $status != ""} {
+              set errmsg "$command exited status $status"
+            }
+            set errlen [string length $errmsg]
+            if {0 < $errlen > 512 && ! $errok} {
                cvsfail $errmsg .
             }
             # If we don't pop up an error dialog, let's at least try to show
@@ -119,9 +122,9 @@ namespace eval ::exec {
               seek $procerr 0
               while {[gets $procerr erline] != -1} {
                 gen_log:log E "$erline"
-                #if {$show_stderr && $viewer != {}} {
-                  #$v_w.text insert end "$erline\n" stderr
-                #}
+                if {$show_stderr && $viewer != {}} {
+                  $v_w.text insert end "$erline\n" stderr
+                }
               }
             }
             set ExecDone [list 0]
@@ -190,7 +193,7 @@ namespace eval ::exec {
         variable v_w
 	global tcl_platform
 
-        gen_log:log T "ENTER"
+        #gen_log:log T "ENTER"
         # This does the trick but it wont work on windows
         if {![info exists procid]} {
           gen_log:log D "procid is not defined"
@@ -210,34 +213,34 @@ namespace eval ::exec {
         catch {close $procerr} cres
         gen_log:log D "$kres"
 
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
       }
 
       proc destroy {} {
-        gen_log:log T "ENTER"
+        #gen_log:log T "ENTER"
         catch {namespace delete [namespace current]}
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
       }
 
       proc wait {} {
         variable ExecDone
-        gen_log:log T "ENTER"
+        #gen_log:log T "ENTER"
 
         if {!$ExecDone} {
           vwait [namespace current]::ExecDone
         }
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
       }
 
       proc output {} {
         variable data
         variable ExecDone
 
-        gen_log:log T "ENTER"
+        #gen_log:log T "ENTER"
         if {!$ExecDone} {
           [namespace current]::wait
         }
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
         return $data
       }
 
@@ -382,6 +385,7 @@ namespace eval ::viewer {
 proc status_colortags {exec line} {
   global cvscfg
 
+  #gen_log:log T "ENTER ($exec \"$line\")"
   set tag default
   # Return the type of the line being output
   # Neat trick I found on clt: -> is a valid variable name!
@@ -403,14 +407,14 @@ proc status_colortags {exec line} {
   } elseif {[regexp {^cvs server: warning: .*} $line]} {
     set tag warning
   }
-  gen_log:log T "LEAVE: $tag"
+  #gen_log:log T "LEAVE: $tag"
   return [list $tag $line]
 }
 
 proc patch_colortags {exec line} {
   global cvscfg
 
-  gen_log:log T "ENTER ($exec \"$line\")"
+  #gen_log:log T "ENTER ($exec \"$line\")"
 
   set tag default
   # Return the type of the line being output
@@ -424,6 +428,7 @@ proc patch_colortags {exec line} {
     default          { set tag default }
   }
 
+  #gen_log:log T "LEAVE: $tag"
   return [list $tag $line]
 }
 
@@ -594,6 +599,7 @@ proc search_textwidget_init {} {
 
   if {! [info exists cvsglb(searchstr)] } {
     set cvsglb(searchstr) ""
+    set cvsglb(last_searchstr) ""
   }
   set cvsglb(searchidx) "1.0"
 }
@@ -604,15 +610,27 @@ proc search_textwidget { wtx } {
   global cvscfg
 
   #gen_log:log T "ENTER ($wtx)"
+
+  if {$cvsglb(searchstr) != $cvsglb(last_searchstr)} {
+    $wtx tag delete match
+    set cvsglb(searchidx) "1.0"
+  }
+
+  $wtx tag configure sel -background gray -foreground black
+  $wtx tag raise sel
+  $wtx tag configure match -background gray -foreground black \
+     -relief groove -borderwidth 2
+  $wtx tag raise match
   set searchstr $cvsglb(searchstr)
 
   set match [$wtx search -- $searchstr $cvsglb(searchidx)]
   if {[string length $match] > 0} {
     set length [string length $searchstr]
     $wtx mark set insert $match
-    $wtx tag add sel $match "$match + ${length}c"
+    $wtx tag add match $match "$match + ${length}c"
     $wtx see $match
     set cvsglb(searchidx) "$match + ${length}c"
   }
+  set cvsglb(last_searchstr) $cvsglb(searchstr)
 }
 

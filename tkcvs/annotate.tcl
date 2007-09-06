@@ -197,8 +197,9 @@ namespace eval ::annotate {
 
       # Make the window 
       toplevel $w
-      text $w.text -setgrid yes -relief sunken -border 2 \
-        -height 40 -width 122 -yscroll "$w.scroll set"
+      text $w.text -setgrid yes -exportselection 1 \
+        -relief sunken -border 2 -height 40 -width 122 \
+        -yscroll "$w.scroll set"
       scrollbar $w.scroll -relief sunken -command "$w.text yview"
 
 

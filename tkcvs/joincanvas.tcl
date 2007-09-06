@@ -603,18 +603,11 @@ namespace eval joincanvas {
       #
       # Create buttons
       #
-      button $joincanvas.join -image Mergebranch \
-          -command [namespace code {
-                   set fromrev [$joincanvas.up.rversFrom get]
-                   merge_dialog CVS \
-                     $fromrev "" $fromrev .
-                 }]
       button $joincanvas.delta -image Mergediff \
           -command [namespace code {
                  set fromrev [$joincanvas.up.rversFrom get]
                  set sincerev [$joincanvas.up.rversSince.e get]
-                 merge_dialog CVS \
-                   $fromrev $sincerev $fromrev .
+                 cvs_merge $joincanvas $fromrev $sincerev $fromrev .
                  }]
 
       button $joincanvas.down.blogfile -image Branches \
@@ -631,8 +624,7 @@ namespace eval joincanvas {
       pack $joincanvas.down.blogfile -side left \
         -ipadx 4 -ipady 4
       pack $joincanvas.down.btnfm -side left -fill y -expand 1
-      pack $joincanvas.join \
-           $joincanvas.delta \
+      pack $joincanvas.delta \
         -in $joincanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
       pack $joincanvas.down.closefm -side right
@@ -642,10 +634,8 @@ namespace eval joincanvas {
 
       set_tooltips $joincanvas.down.blogfile \
          {"Revision Log and Branch Diagram of the current file"}
-      set_tooltips $joincanvas.join \
-         {"Merge to current"}
       set_tooltips $joincanvas.delta \
-         {"Merge changes to current"}
+         {"Merge to current"}
       set_tooltips $joincanvas.up.bworkdir \
         {"Open the Working Directory Browser"}
       set_tooltips $joincanvas.up.bmodbrowse \
