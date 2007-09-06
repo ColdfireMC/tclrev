@@ -3,7 +3,7 @@
 
 proc comparediff {args} {
 #
-# This diffs a file with the repository.
+# This diffs a file with the repository (tkdiff <file>)
 #
   global cvscfg
 
@@ -36,11 +36,12 @@ proc comparediff_files {parent file1 file2} {
 
 proc comparediff_r {rev1 rev2 parent file} {
 #
-# This diffs a file with the repository, using two revisions or tags.
+# This diffs versions of a file, using one or two revisions (tkdiff -r1 [-r2] file)
 #
   global cvscfg
+  global insvn
  
-  gen_log:log T "ENTER ($rev1 $rev2 $file)"
+  gen_log:log T "ENTER (\"$rev1\" \"$rev2\" $file)"
 
   if {$rev1 == {} && $rev2 == {}} {
     cvsfail "Must have at least one revision number or tag for this function!" $parent
@@ -49,11 +50,15 @@ proc comparediff_r {rev1 rev2 parent file} {
 
   if {$rev1 != {}} {
     set rev1 [string trimleft $rev1 {r}]
-    set rev1 "-r \"$rev1\""
+    if {! $insvn} {
+      set rev1 "-r \"$rev1\""
+    }
   }
   if {$rev2 != {}} {
     set rev2 [string trimleft $rev2 {r}]
-    set rev2 "-r \"$rev2\""
+    if {! $insvn} {
+      set rev2 "-r \"$rev2\""
+    }
   }
  
   set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$file\""
@@ -69,7 +74,7 @@ proc comparediff_sandbox {rev1 rev2 parent file} {
 #
   global cvscfg
  
-  gen_log:log T "ENTER ($rev1 $rev2 $file)"
+  gen_log:log T "ENTER (\"$rev1\" \"$rev2\" $file)"
 
   if {$rev1 == {} && $rev2 == {}} {
     cvsfail "Must have at least one revision number or tag for this function!" $parent

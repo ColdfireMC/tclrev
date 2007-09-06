@@ -2,7 +2,7 @@
 # Columns for listing CVS files and their status
 #
 
-proc DirCanvas:create {w args} {
+proc DirCanvas:create {w} {
   global cvscfg
   global cvsglb
   global arr
@@ -10,35 +10,37 @@ proc DirCanvas:create {w args} {
   global insvn
   global inrcs
 
-  gen_log:log T "ENTER ($w $args)"
+  gen_log:log T "ENTER ($w)"
 
   if {[catch "image type folder"]} {
     DirCanvas:loadimages
   }
+  if [winfo exists $w.pw] {
+    catch {DirCanvas:destroy $w.pw}
+    catch {destroy $w.pw}
+  }
 
-  frame $w.filecol -relief sunken -bd 2
-  frame $w.statcol -relief sunken -bd 2
-  frame $w.datecol -relief sunken -bd 2
-  frame $w.wrevcol -relief sunken -bd 2
-  frame $w.editcol -relief sunken -bd 2
+  set winwid [winfo width $w]
+  set beginwid [expr {$winwid / 5}]
+  panedwindow $w.pw -relief sunk -bd 2
+  $w.pw configure -handlepad 35 -sashwidth 4 -sashpad 0 -handlesize 10
 
-  eval canvas $w.filecol.list $args
-  eval canvas $w.statcol.list $args
-  eval canvas $w.datecol.list $args
-  eval canvas $w.wrevcol.list $args
-  eval canvas $w.editcol.list $args
+  foreach column {filecol statcol datecol wrevcol editcol} {
+    frame $w.$column
+    canvas $w.$column.list -highlightthickness 0 -width $beginwid
+    $w.$column configure -bg $cvsglb(canvbg)
+    $w.$column.list configure -bg $cvsglb(canvbg)
+    gen_log:log D "$column start width $beginwid"
+  }
   scrollbar $w.yscroll -orient vertical -command "DirCanvas:scroll_windows $w" \
     -highlightthickness 0
-
   pack $w.yscroll -side right -fill y
 
-  set cvsglb(fmbg) [lindex [$w.filecol configure -background] 4]
   if {[winfo exists .workdir]} {
     set cvsglb(fg) [lindex [.workdir.top.bmodbrowse configure -foreground] 4]
     set cvsglb(dfg) [lindex [.workdir.top.bmodbrowse configure -disabledforeground] 4]
     set buttonhilite [lindex [.workdir.top.bmodbrowse configure -highlightbackground] 4]
   }
-  #set cvsglb(canvbg) [lindex [$w.filecol.list configure -background] 4]
   set selcolor [option get . selectColor selectColor]
   if {[string length $selcolor]} {
     set cvsglb(hlbg) $selcolor
@@ -62,7 +64,7 @@ proc DirCanvas:create {w args} {
 
   # Put an extra arrow on the file column for sorting by status
   set statusbutton $w.filecol.head.statbut
-  button $statusbutton -image arr_dn -bg $cvsglb(fmbg) \
+  button $statusbutton -image arr_dn \
     -relief raised -bd 1 -highlightthickness 0
   set arr(filestatcol) $statusbutton
   pack $statusbutton -side left
@@ -116,8 +118,8 @@ proc DirCanvas:column {w column headtext} {
   global inrcs
   global arr
 
-  #gen_log:log T "ENTER ($w $column headtext)"
-  #gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) showeditcol $cvscfg(showeditcol)"
+  gen_log:log T "ENTER ($w $column headtext)"
+  gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) showeditcol $cvscfg(showeditcol)"
 
   $w.$column.list configure -yscrollcommand "$w.yscroll set"
   bind $w.$column.list <Next>  "DirCanvas:scroll_windows $w scroll  1 pages"
@@ -135,18 +137,13 @@ proc DirCanvas:column {w column headtext} {
   frame $w.$column.head -relief raised -bd 2
   label $w.$column.head.lbl -text "$headtext"
   button $w.$column.head.sbut -image arr_dn -relief flat \
-    -highlightthickness 0 -bg $cvsglb(fmbg)
+    -highlightthickness 0
   set arr($column) $w.$column.head.sbut
   gen_log:log D "$w.$column.head.sbut"
-
 
   bind $w.$column.head.sbut <ButtonPress-1> "DirCanvas:toggle_col $w $column"
   bind $w.$column.head.sbut <ButtonPress-2> "DirCanvas:sort_by_col $w $column -decreasing"
   bind $w.$column.head.sbut <ButtonPress-3> "DirCanvas:sort_by_col $w $column -increasing"
-
-  scrollbar $w.$column.xscroll -orient horizontal -width 10 \
-     -command "$w.$column.list xview"
-  pack $w.$column.xscroll -side bottom -fill x
 
   if {$column == "datecol"} {
     if {$cvscfg(showdatecol)} {
@@ -177,9 +174,9 @@ proc DirCanvas:column {w column headtext} {
 
 proc DirCanvas:map_column {w column} {
 
-  #gen_log:log T "ENTER ($w $column)"
-  set mapped_columns [pack slaves $w]
-  gen_log:log D "$mapped_columns"
+  gen_log:log T "ENTER ($w $column)"
+  set mapped_columns [$w.pw panes]
+  gen_log:log D "mapped columns: $mapped_columns"
 
   if {[lsearch -exact $mapped_columns "$w.statcol"] > -1} {
     set leftcol "$w.statcol"
@@ -188,32 +185,55 @@ proc DirCanvas:map_column {w column} {
   }
 
   if {$column == "datecol"} {
-    pack $w.$column -after $leftcol -side left -fill both -expand yes
+    $w.pw add $w.$column -after $leftcol -minsize 50
+    gen_log:log D "ADD $w.$column"
   } elseif {$column == "statcol"} {
-    pack $w.$column -after $w.filecol -side left -fill both -expand yes
+    $w.pw add $w.$column -after $w.filecol -minsize 50
+    gen_log:log D "ADD $w.$column"
   } elseif {$column == "editcol"} {
-    pack $w.$column -after $w.wrevcol -side left -fill both -expand yes
+    $w.pw add $w.$column -after $w.wrevcol -minsize 50
+    gen_log:log D "ADD $w.$column"
   } else {
-    pack $w.$column -side left -fill both -expand yes
+    $w.pw add $w.$column -minsize 50
+    gen_log:log D "ADD $w.$column"
   }
   pack $w.$column.head -side top -fill x -expand no
   pack $w.$column.head.sbut -side right
   pack $w.$column.head.lbl -side right -fill x -expand yes
   pack $w.$column.list -side top -fill both -ipadx 2 -expand yes
 
-  #gen_log:log T "LEAVE"
+  set winwid [winfo width $w]
+  gen_log:log D "WIDTH $winwid"
+  set mapped_columns [$w.pw panes]
+  set num_columns [llength $mapped_columns]
+  gen_log:log D "mapped_columns: $mapped_columns"
+  set newwid [expr {$winwid / $num_columns}]
+  update idletasks
+  for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
+    set coords [$w.pw sash coord $i]
+    $w.pw sash place $i [expr {($i+1) * $newwid}] [lindex $coords 1]
+    gen_log:log D "$column: moving sash $i from  $coords to [expr {($i+1) * $newwid}] [lindex $coords 1]"
+  }
+  update idletasks
+
+  gen_log:log T "LEAVE"
 }
 
-#
-# Pass configuration options to the list widget
-#
-proc DirCanvas:config {w args} {
-  gen_log:log T "ENTER ($w $args)"
-  eval $w.filecol.list config $args
-  eval $w.statcol config $args
-  eval $w.datecol config $args
-  eval $w.wrevcol config $args
-  eval $w.editcol config $args
+proc DirCanvas:unmap_column {w column} {
+  gen_log:log T "ENTER ($w $column)"
+
+  $w.pw forget $w.$column
+  set winwid [winfo width $w]
+gen_log:log D "WIDTH $winwid"
+  set mapped_columns [$w.pw panes]
+  set num_columns [llength $mapped_columns]
+  gen_log:log D "mapped_columns: $mapped_columns"
+  set newwid [expr {$winwid /$num_columns}]
+  for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
+    set coords [$w.pw sash coord $i]
+    $w.pw sash place $i [expr {($i+1) * $newwid}] [lindex $coords 1]
+    gen_log:log D "$column: moving sash $i from  $coords to [expr {($i+1) * $newwid}] [lindex $coords 1]"
+  }
   gen_log:log T "LEAVE"
 }
 
@@ -306,11 +326,9 @@ proc DirCanvas:delitem {w v} {
 proc DirCanvas:deltree {w} {
   global DirList
 
-  catch {destroy $w.filecol}
-  catch {destroy $w.statcol}
-  catch {destroy $w.datecol}
-  catch {destroy $w.wrevcol}
-  catch {destroy $w.editcol}
+  foreach column {filecol statcol datecol wrevcol editcol} {
+    catch {destroy $w.$column}
+  }
   catch {destroy $w.yscroll}
   foreach t [array names DirList $w:*] {
     unset DirList($t)
@@ -320,20 +338,27 @@ proc DirCanvas:deltree {w} {
 proc DirCanvas:flash {w y} {
   global cvsglb
 
-  DirCanvas:setTextHBox $w $w.filecol.list.tx$y
+  #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(hlbg)
+  set ft [$w.filecol.list itemcget $w.filecol.list.tx$y -font]
+  set bf [font actual $ft]
+  $w.filecol.list itemconfigure $w.filecol.list.tx$y -font "$bf -underline 1"
+  foreach column [lrange [$w.pw panes] 1 end] {
+    set i [$column.list find withtag $w.filecol.list.tx$y]
+    #$column.list itemconfigure $i -fill $cvsglb(hlbg)
+    $column.list itemconfigure $i -font "$bf -underline 1"
+  }
 }
 
-proc DirCanvas:unflash {w y f} {
-  global DirList
-  #global cvsglb
+proc DirCanvas:unflash {w y} {
+  global cvsglb
+  global cvscfg
 
-  # Don't unflash if this is one that is selected:
-  if { ! $DirList($w:$f:selected) } {
-    DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
-    #if {! [file exists ./$f]} {
-      # If a file CVS knows about doesn't exist, write its name in light ink
-      #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(dfg)
-    #}
+  #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(fg)
+  $w.filecol.list itemconfigure $w.filecol.list.tx$y -font $cvscfg(listboxfont)
+  foreach column [lrange [$w.pw panes] 1 end] {
+    set i [$column.list find withtag $w.filecol.list.tx$y]
+    #$column.list itemconfigure $i -fill $cvsglb(fg)
+    $column.list itemconfigure $i -font $cvscfg(listboxfont)
   }
 }
 
@@ -352,10 +377,6 @@ proc DirCanvas:setselection {w y f} {
   set DirList($w:selection) [list "$f"]
   set cvsglb(current_selection) $DirList($w:selection)
   DirCanvas:setTextHBox $w $w.filecol.list.tx$y
-
-  # This seems to be necessary to enable some OS's (esp. Mandrake)
-  # to get a double-click
-  after 250
 
   gen_log:log T "LEAVE"
 }
@@ -393,28 +414,42 @@ proc DirCanvas:addselection {w y f} {
 
 # clear any text highlight box (used by set/clearselection)
 proc DirCanvas:clearTextHBox {w id} {
-   global cvsglb
+  global cvsglb
 
-    # clear the tag corresponding to the text label
-    catch {$w.filecol.list delete HBox$id}
-    $w.filecol.list itemconfigure $id -fill $cvsglb(fg)
+  # clear the tag corresponding to the text label
+  foreach column [$w.pw panes] {
+    catch {$column.list delete HBox$id}
+    $column.list itemconfigure $id -fill $cvsglb(fg)
+  }
 }
 
 # set a text highligh box (used by set/clearselection)
 proc DirCanvas:setTextHBox {w id} {
-   global cvsglb
+  global cvsglb
 
-   # get the bounding box for the text id
-   set bbox [$w.filecol.list bbox $id]
-   if {[llength $bbox]==4} {
-    # create rectangle with fill, tagged with the same ID as the text, so we can delete it later
-    set i [eval $w.filecol.list create rectangle $bbox -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
-
-    $w.filecol.list itemconfigure $id -fill $cvsglb(hlfg)
-    $w.filecol.list lower $i
+  # get the bounding box for the text id
+  set bbox [$w.filecol.list bbox $id]
+  if {[llength $bbox] != 4} {
+    return
+  }
+  set lx [lindex $bbox 0]
+  set uy [lindex $bbox 1]
+  set ly [lindex $bbox 3]
+  set i [eval $w.filecol.list create rectangle \
+    $lx $ly [winfo width $w.filecol] $uy \
+    -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
+  $w.filecol.list itemconfigure $id -fill $cvsglb(hlfg)
+  $w.filecol.list lower $i
+  foreach column [lrange [$w.pw panes] 1 end] {
+    # create rectangle with fill, tagged with the same ID as the text,
+    # so we can delete it later
+    set i [eval $column.list create rectangle \
+      0 $ly [winfo width $column] $uy \
+      -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
+    $column.list itemconfigure $id -fill $cvsglb(hlfg)
+    $column.list lower $i
   }
 }
-
 
 proc DirCanvas:addrange {w y f} {
   global DirList
@@ -485,11 +520,6 @@ proc DirCanvas:unselectall {w force} {
       set y $DirList($w:$f:y)
       set DirList($w:$f:selected) 0
       DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
-      # Prepending ./ to the filename prevents tilde expansion
-      #if {! [file exists ./$f]} {
-        # If a file CVS knows about doesn't exist, write its name in light ink
-        #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(dfg)
-      #}
     }
     set DirList($w:selection) {}
     set cvsglb(current_selection) {}
@@ -565,22 +595,19 @@ proc DirCanvas:build {w} {
   global inrcs
 
   gen_log:log T "ENTER ($w)"
-  set flist $w.filecol.list
-  foreach b [winfo children $flist] {
+  foreach b [winfo children $w.filecol.list] {
     destroy $b
   }
-  $flist delete all
-  $w.statcol.list delete all
-  $w.datecol.list delete all
-  $w.wrevcol.list delete all
-  $w.editcol.list delete all
+  foreach column [$w.pw panes] {
+    $column.list delete all
+  }
   catch {unset DirList($w:buildpending)}
 
   set x 3
   set lblx 21
   set y 20
   set imy [expr {[image height paper] + 2}]
-  set fy [font metrics $cvscfg(listboxfont) -displayof $flist -linespace]
+  set fy [font metrics $cvscfg(listboxfont) -displayof $w.filecol.list -linespace]
   set fy [expr {$fy + 2}]
   if {$imy > $fy} {
     set yincr $imy
@@ -829,20 +856,23 @@ proc DirCanvas:build {w} {
     }
 
     # Easy way to unselect everything by clicking in a blank area
-    bind $flist <1> "DirCanvas:unselectall $w 0"
-    bind $flist <Shift-1> " "
+    bind $w.filecol.list <1> "DirCanvas:unselectall $w 0"
+    bind $w.filecol.list <Shift-1> " "
+    # For columns except filecol, this breaks selecting the text item.  Why??
+    #bind $w.datecol.list <1> "DirCanvas:unselectall $w 0"
 
-    bind $flist <2> "DirCanvas:areaStart $flist %x %y"
-    bind $flist <B2-Motion> "DirCanvas:areaStroke $flist %x %y; \
+    # Select by dragging a rectangle in the filelist
+    bind $w.filecol.list <2> "DirCanvas:areaStart $w.filecol.list %x %y"
+    bind $w.filecol.list <B2-Motion> "DirCanvas:areaStroke $w.filecol.list %x %y; \
                              DirCanvas:drag_windows $w %W %y"
-    bind $flist <B2-Motion><ButtonRelease-2> "DirCanvas:unselectall $w 1; \
-                                              DirCanvas:areaFind $flist"
-    bind $flist <3> "DirCanvas:areaStart $flist %x %y"
-    bind $flist <Shift-3> "DirCanvas:areaStart $flist %x %y"
-    bind $flist <B3-Motion> "DirCanvas:areaStroke $flist %x %y; \
+    bind $w.filecol.list <B2-Motion><ButtonRelease-2> "DirCanvas:unselectall $w 1; \
+                                              DirCanvas:areaFind $w.filecol.list"
+    bind $w.filecol.list <3> "DirCanvas:areaStart $w.filecol.list %x %y"
+    bind $w.filecol.list <Shift-3> "DirCanvas:areaStart $w.filecol.list %x %y"
+    bind $w.filecol.list <B3-Motion> "DirCanvas:areaStroke $w.filecol.list %x %y; \
                              DirCanvas:drag_windows $w %W %y"
-    bind $flist <B3-Motion><ButtonRelease-3> "DirCanvas:unselectall $w 1; \
-                                              DirCanvas:areaFind $flist"
+    bind $w.filecol.list <B3-Motion><ButtonRelease-3> "DirCanvas:unselectall $w 1; \
+                                              DirCanvas:areaFind $w.filecol.list"
     # In the bindings, filenames need any single percents replaced with
     # double to avoid interpretation as an event field
     regsub -all {\%} $f {%%} fn
@@ -850,37 +880,43 @@ proc DirCanvas:build {w} {
 
     # The "x" tag is used for area selection.
     # Draw the icon
-     set k [$flist create image $x $y -image $DirList($w:$f:icon) \
+     set k [$w.filecol.list create image $x $y -image $DirList($w:$f:icon) \
        -anchor w -tags [list x $y] ]
-     $flist bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-     $flist bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-     $flist bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-     $flist bind $k <Double-1> {workdir_edit_file [workdir_list_files]}
-     $flist bind $k <2> "DirCanvas:areaStart $flist %x %y; \
-                         DirCanvas:popup $flist $y %X %Y \"$fn\""
-     $flist bind $k <3> "DirCanvas:areaStart $flist %x %y; \
-                         DirCanvas:popup $flist $y %X %Y \"$fn\""
+     $w.filecol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
+     $w.filecol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+     $w.filecol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
+     $w.filecol.list bind $k <Double-1> {workdir_edit_file [workdir_list_files]}
+     $w.filecol.list bind $k <2> "DirCanvas:areaStart $w.filecol.list %x %y; \
+                         DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
+     $w.filecol.list bind $k <3> "DirCanvas:areaStart $w.filecol.list %x %y; \
+                         DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
 
     # Draw the label
-     $flist create text $lblx $y  -text $f -font $cvscfg(listboxfont) \
-       -anchor w -tags [list $flist.tx$y $y $fn] -fill $lblfg
-     $flist bind $flist.tx$y <1> "DirCanvas:setselection $w $y \"$fn\""
-     $flist bind $flist.tx$y <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-     $flist bind $flist.tx$y <Enter> "DirCanvas:flash $w $y"
-     $flist bind $flist.tx$y <Leave> "DirCanvas:unflash $w $y \"$fn\""
-     $flist bind $flist.tx$y <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-     $flist bind $flist.tx$y <Double-1> {workdir_edit_file [workdir_list_files]}
-     $flist bind $flist.tx$y <2> "DirCanvas:areaStart $flist %x %y; \
-                                  DirCanvas:popup $flist $y %X %Y \"$fn\""
-     $flist bind $flist.tx$y <3> "DirCanvas:areaStart $flist %x %y; \
-                                  DirCanvas:popup $flist $y %X %Y \"$fn\""
+     $w.filecol.list create text $lblx $y  -text $f -font $cvscfg(listboxfont) \
+       -anchor w -tags [list $w.filecol.list.tx$y $y $fn] -fill $lblfg
+     $w.filecol.list bind $w.filecol.list.tx$y <1> "DirCanvas:setselection $w $y \"$fn\""
+     $w.filecol.list bind $w.filecol.list.tx$y <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+     $w.filecol.list bind $w.filecol.list.tx$y <Enter> "DirCanvas:flash $w $y"
+     $w.filecol.list bind $w.filecol.list.tx$y <Leave> "DirCanvas:unflash $w $y"
+     $w.filecol.list bind $w.filecol.list.tx$y <Control-1> "DirCanvas:addselection $w $y \"$fn\""
+     $w.filecol.list bind $w.filecol.list.tx$y <Double-1> {workdir_edit_file [workdir_list_files]}
+     $w.filecol.list bind $w.filecol.list.tx$y <2> "DirCanvas:areaStart $w.filecol.list %x %y; \
+                                  DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
+     $w.filecol.list bind $w.filecol.list.tx$y <3> "DirCanvas:areaStart $w.filecol.list %x %y; \
+                                  DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
 
     set DirList($w:$f:y) $y
-    set DirList($flist:$y) $f
+    set DirList($w.filecol.list:$y) $f
 
     set status $DirList($w:$f:status)
-    set k [$w.statcol.list create text 8 $y -fill $cvsglb(fg) \
-       -text $status -font $cvscfg(listboxfont) -anchor w]
+    set k [$w.statcol.list create text 8 $y -text $status \
+      -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
+      -tags [list $w.filecol.list.tx$y $y $fn]]
+    $w.statcol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
+    $w.statcol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+    $w.statcol.list bind $k <Enter> "DirCanvas:flash $w $y"
+    $w.statcol.list bind $k <Leave> "DirCanvas:unflash $w $y"
+    $w.statcol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
     set slen [string length $status]
     if {$slen > $maxstat} {
       set maxstat $slen
@@ -888,8 +924,14 @@ proc DirCanvas:build {w} {
     }
 
     set date $DirList($w:$f:date)
-    set k [$w.datecol.list create text 4 $y -fill $cvsglb(fg) \
-       -text $date -font $cvscfg(listboxfont) -anchor w]
+    set k [$w.datecol.list create text 4 $y -text $date \
+      -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
+      -tags [list $w.filecol.list.tx$y $y $fn]]
+    $w.datecol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
+    $w.datecol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+    $w.datecol.list bind $k <Enter> "DirCanvas:flash $w $y"
+    $w.datecol.list bind $k <Leave> "DirCanvas:unflash $w $y"
+    $w.datecol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
     set dlen [string length $date]
     if {$dlen > $maxdate} {
       set maxdate $dlen
@@ -898,8 +940,14 @@ proc DirCanvas:build {w} {
 
     if {[info exists DirList($w:$f:sticky)]} {
       set tag $DirList($w:$f:sticky)
-      set k [$w.wrevcol.list create text 4 $y -fill $cvsglb(fg) \
-         -text $tag -font $cvscfg(listboxfont) -anchor w]
+      set k [$w.wrevcol.list create text 4 $y -text $tag \
+        -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
+        -tags [list $w.filecol.list.tx$y $y $fn]]
+      $w.wrevcol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
+      $w.wrevcol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+      $w.wrevcol.list bind $k <Enter> "DirCanvas:flash $w $y"
+      $w.wrevcol.list bind $k <Leave> "DirCanvas:unflash $w $y"
+      $w.wrevcol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
       set tlen [string length $tag]
       if {$tlen > $maxtag} {
         set maxtag $tlen
@@ -908,8 +956,14 @@ proc DirCanvas:build {w} {
     }
 
     set editors $DirList($w:$f:editors)
-    set k [$w.editcol.list create text 4 $y -fill $cvsglb(fg) \
-       -text $editors -font $cvscfg(listboxfont) -anchor w]
+    set k [$w.editcol.list create text 4 $y -text $editors \
+      -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
+      -tags [list $w.filecol.list.tx$y $y $fn]]
+    $w.editcol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
+    $w.editcol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+    $w.editcol.list bind $k <Enter> "DirCanvas:flash $w $y"
+    $w.editcol.list bind $k <Leave> "DirCanvas:unflash $w $y"
+    $w.editcol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
     set edlen [string length $editors]
     if {$edlen > $maxed} {
       set maxed $edlen
@@ -921,144 +975,54 @@ proc DirCanvas:build {w} {
   if {$incvs || $insvn || $inrcs} {
     if {$cvscfg(showstatcol)} {
       DirCanvas:map_column $w statcol
-    } else {
-      pack forget $w.statcol
     }
     if {$cvscfg(showeditcol)} {
       DirCanvas:map_column $w editcol
-    } else {
-      pack forget $w.editcol
     }
   }
   if {$cvscfg(showdatecol)} {
     DirCanvas:map_column $w datecol
-  } else {
-    pack forget $w.datecol
   }
 
-
-  set wid [font measure $cvscfg(listboxfont) -displayof $w $longlbl]
-  set DirList($w:filecolwidth) [expr {$x + $wid + $lblx + 8}]
   # Set a minimum width for the labels.  Otherwise ".." can be hard to select.
   set minlabel 6
-  foreach labl [$flist find withtag lbl] {
-    set itags [$flist gettags $labl]
+  foreach labl [$w.filecol.list find withtag lbl] {
+    set itags [$w.filecol.list gettags $labl]
     set iy [lindex $itags 1]
-    if {[string length $DirList($flist:$iy)] < $minlabel} {
-      $flist.tx$iy configure -width $minlabel
+    if {[string length $DirList($w.filecol.list:$iy)] < $minlabel} {
+      $w.filecol.list.tx$iy configure -width $minlabel
     }
-  }
-  # Don't let the column be too wide.
-  set maxcolwid 200
-  gen_log:log D "filecol width $DirList($w:filecolwidth)"
-  if {$wid < $maxcolwid} {
-    $flist configure -width $DirList($w:filecolwidth)
-  } else {
-    gen_log:log D "Reducing filecol width from $wid to $maxcolwid"
-    $flist configure -width $maxcolwid
-  }
-  $flist configure -xscrollcommand "$w.filecol.xscroll set"
-
-  set wid [font measure $cvscfg(listboxfont) -displayof $w $longstat]
-  set DirList($w:statcolwidth) [expr {$wid + 6}]
-  gen_log:log D "statcol width $DirList($w:statcolwidth)"
-  if {$wid < $maxcolwid} {
-    $w.statcol.list configure -width $DirList($w:statcolwidth)
-  } else {
-    gen_log:log D "Reducing statcol width from $wid to $maxcolwid"
-    $w.statcol.list configure -width $maxcolwid
-  }
-  $w.statcol.list configure -xscrollcommand "$w.statcol.xscroll set"
-
-  set wid [font measure $cvscfg(listboxfont) -displayof $w $longdate]
-  set DirList($w:datecolwidth) [expr {$wid + 6}]
-  if {$wid < $maxcolwid} {
-    $w.datecol.list configure -width $DirList($w:datecolwidth)
-  } else {
-    gen_log:log D "Reducing datecol width from $wid to $maxcolwid"
-    $w.datecol.list configure -width $maxcolwid
-  }
-  $w.datecol.list configure -xscrollcommand "$w.datecol.xscroll set"
-
-
-  if {$incvs || $insvn || $inrcs} {
-    set wid [font measure $cvscfg(listboxfont) -displayof $w $longtag]
-    set DirList($w:revcolwidth) [expr {$wid + 6}]
-    gen_log:log D "width of $w.wrevcol $maxtag chars ($wid)"
-    # Don't let the column be too wide.
-    if {$wid < $maxcolwid} {
-      $w.wrevcol.list configure -width $DirList($w:revcolwidth)
-    } else {
-      gen_log:log D "Reducing wrevcol width from $wid to $maxcolwid"
-      $w.wrevcol.list configure -width $maxcolwid
-    }
-    $w.wrevcol.list configure -xscrollcommand "$w.wrevcol.xscroll set"
-
-    set wid [font measure $cvscfg(listboxfont) -displayof $w $longed]
-    set DirList($w:edcolwidth) [expr {$wid + 6}]
-    gen_log:log D "width of $w.editcol $maxed chars ($wid)"
-    if {$wid < $maxcolwid} {
-      $w.editcol.list configure -width $DirList($w:edcolwidth)
-    } else {
-      gen_log:log D "Reducing editcol width from $wid to $maxcolwid"
-      $w.editcol.list configure -width $maxcolwid
-    }
-    $w.editcol.list configure -xscrollcommand "$w.editcol.xscroll set"
   }
 
   # Scroll to the top of the lists
-  set fbbox [$flist bbox all]
-  #gen_log:log D "fbbox   \"$fbbox\""
+  set fbbox [$w.filecol.list bbox all]
+  gen_log:log D "fbbox   \"$fbbox\""
   if {[llength $fbbox] == 4} {
     set ylen [expr {[lindex $fbbox 3] - [lindex $fbbox 1]}]
 
-    set wview [winfo height $flist]
+    set wview [winfo height $w.filecol.list]
     $w.yscroll set 0 [expr ($wview * 1.0) / ($ylen * 1.0)]
     update idletasks
 
-    $flist config -scrollregion $fbbox
-    $flist yview moveto 0
+    $w.filecol.list config -scrollregion $fbbox
+    $w.filecol.list yview moveto 0
 
     if {$cvscfg(showdatecol)} {
-      set fbbox [$w.datecol.list bbox all]
-      set botx [lindex $fbbox 0]
-      set boty [lindex $fbbox 1]
-      $w.datecol.list config -scrollregion \
-        [list $botx $boty \
-          [expr {$botx + $DirList($w:datecolwidth)}] \
-          [expr {$boty + $ylen}]]
+      $w.datecol.list config -scrollregion [$w.datecol.list bbox all]
       $w.datecol.list yview moveto 0
     }
 
     if {$incvs || $insvn || $inrcs} {
-      set fbbox [$w.wrevcol.list bbox all]
-      set botx [lindex $fbbox 0]
-      set boty [lindex $fbbox 1]
-      $w.wrevcol.list config -scrollregion \
-        [list $botx $boty \
-          [expr {$botx + $DirList($w:revcolwidth)}] \
-          [expr {$boty + $ylen}]]
+      $w.wrevcol.list config -scrollregion [$w.wrevcol.list bbox all]
       $w.wrevcol.list yview moveto 0
 
       if {$cvscfg(showstatcol)} {
-        set fbbox [$w.statcol.list bbox all]
-        set botx [lindex $fbbox 0]
-        set boty [lindex $fbbox 1]
-        $w.statcol.list config -scrollregion \
-          [list $botx $boty \
-            [expr {$botx + $DirList($w:statcolwidth)}] \
-            [expr {$boty + $ylen}]]
+        $w.statcol.list config -scrollregion [$w.statcol.list bbox all]
         $w.statcol.list yview moveto 0
       }
 
       if {$cvscfg(showeditcol)} {
-        set fbbox [$w.editcol.list bbox all]
-        set botx [lindex $fbbox 0]
-        set boty [lindex $fbbox 1]
-        $w.editcol.list config -scrollregion \
-          [list $botx $boty \
-            [expr {$botx + $DirList($w:edcolwidth)}] \
-            [expr {$boty + $ylen}]]
+        $w.editcol.list config -scrollregion [$w.editcol.list bbox all]
         $w.editcol.list yview moveto 0
       }
     }
@@ -1364,4 +1328,11 @@ proc DirCanvas:popup {w y X Y f} {
   tk_popup $parent.$DirList($parent:$f:popup) $X $Y
   gen_log:log T "LEAVE"
 }
+
+proc DirCanvas:destroy {w} {
+  foreach u [winfo children $w] {
+    catch {destroy $u}
+  }
+}
+
 

@@ -295,6 +295,7 @@ set cvscfg(status_filter)      false
 
 # Kinds of messages for debugging:
 #         C       CVS commands
+#         E       stderr from commands
 #         F       File creation/deletion
 #         T       Function entry/exit tracing
 #         D       Debugging"

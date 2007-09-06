@@ -790,12 +790,12 @@ proc get-file-rev {f index {r ""}} {
         if {"$r" == "" || "$rev" == "rBASE"} {
             set finfo(lbl,$index) "$f (SVN BASE)"
             debug-info "  Setting lbl $finfo(lbl,$index)"
-            die-unless "exec cat $dirname/.svn/text-base/$tailname.svn-base" \
+            die-unless "exec cat \"$dirname/.svn/text-base/$tailname.svn-base\"" \
               $finfo(pth,$index)
         } else {
             set finfo(lbl,$index) "$f (SVN $rev)"
             debug-info "  Setting lbl $finfo(lbl,$index)"
-            die-unless "exec $cmd cat $svnopt $f" $finfo(pth,$index)
+            die-unless "exec $cmd cat $svnopt \"$f\"" $finfo(pth,$index)
         }
     } elseif {[regexp {://} $f]} {
         # Subversion command can have the form

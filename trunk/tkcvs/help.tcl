@@ -236,6 +236,7 @@ proc do_help {title helptext} {
   set cvshelpview ".cvshelpview$helpviewer"
   toplevel $cvshelpview
   text $cvshelpview.text -setgrid yes -wrap word \
+    -exportselection 1 \
     -width 55 -relief sunken -border 2 \
     -yscroll "$cvshelpview.scroll set"
   scrollbar $cvshelpview.scroll -relief sunken \

@@ -1,3 +1,21 @@
+Release 8.0.5
+
+- Rework the merge functionality.  There's only one dialog for tagging, which
+  you OK when you're ready to commit the merges.
+
+- Fix invocation of tkdiff when one SVN revision is selected in the branch
+  browser, diffing it against the current file like the cvs behavior
+
+- Use panedwindow for the Workdir Browser. It has advantages and disadvantages,
+  but it will have more advantages in tk8.5.
+
+- Add a menu item to do "svn resolved"
+
+- Improve visibility of search in annotation text.
+
+- Fix for when an e-mail address appears in svn status in https protocol
+
+
 Release 8.0.4   May, 2007
 
 - The Branch Browser detects lack of a trunk directory, warns that

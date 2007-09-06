@@ -136,9 +136,11 @@ proc cvs_workdir_status {} {
         set revision [lindex $line 1]
         regsub {New .*} $revision "New" revision
         set date [lindex $line 2]
+        #puts "from Working Revision: $date"
         # The date field is not supplied to remote clients.
         if {$date == "" || [string match "New *" $date ] || \
             [string match "Result *" $date]} {
+          #puts "Leaving date as is"
           ; # Leave as is
         } else {
           # CVS outputs time strings tcl can't handle, such as
@@ -148,11 +150,12 @@ proc cvs_workdir_status {} {
           if {$ret == 0} {
             set juliandate $ans
             set date [clock format $juliandate -format $cvscfg(dateformat)]
-            set Filelist($filename:date) $date
+            #puts "Clock Scan on $ans: $date"
           } else {
             gen_log:log E "$ans"
           }
         }
+        set Filelist($filename:date) $date
         set Filelist($filename:wrev) $revision
         set Filelist($filename:status) $status
       } elseif {[string match "*Sticky Tag:*" $logline]} {
@@ -953,7 +956,7 @@ proc cvs_update {tagname normal_binary action_if_no_tag get_all_dirs dir args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_merge {from since fromtag totag args} {
+proc cvs_merge {parent from since frombranch args} {
 #
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
@@ -962,50 +965,99 @@ proc cvs_merge {from since fromtag totag args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER (\"$from\" \"$since\" \"$fromtag\" \"$totag\" \"$args\")"
+  gen_log:log T "ENTER (\"$from\" \"$since\" \"$frombranch\" \"$args\")"
 
-  set filelist $args
-  set v [viewer::new "CVS Join"]
+  set filelist [join $args]
 
-  if {$since == ""} {
+  set mergetags [assemble_mergetags $frombranch]
+  set curr_tag [lindex $mergetags 0]
+  set fromtag [lindex $mergetags 1]
+  set totag [lindex $mergetags 2]
+
+  if {$since == {}} {
+    set mess "Merge revision $from\n"
+  } else {
+    set mess "Merge the changes between revision\n $since and $from"
+    append mess " (if $since > $from the changes are removed)\n"
+  }
+  append mess " to the current revision ($curr_tag)"
+  if {[cvsalwaysconfirm $mess $parent] != "ok"} {
+    return
+  }
+
+  # Do the update here, and defer the tagging until later
+  if {$since == {}} {
     set commandline "$cvs update -d -j$from $filelist"
   } else {
     set commandline "$cvs update -d -j$since -j$from $filelist"
   }
-    
-  $v\::do "$commandline"
+  set v [viewer::new "CVS Join"]
+  $v\::do "$commandline" 1 status_colortags
   $v\::wait
-
-  if {$cvscfg(auto_tag)} {
-    set commandline "$cvs tag -F -r $from $fromtag $filelist"
-    $v\::do "$commandline"
-    toplevel .reminder
-    wm title .reminder "Reminder"
-    message .reminder.m1 -aspect 600 -text \
-      "When you are finished checking in your merges, \
-      you should apply the tag"
-    entry .reminder.ent -width 32 -relief groove \
-       -readonlybackground $cvsglb(readonlybg)
-    .reminder.ent insert end $totag 
-    .reminder.ent configure -state readonly
-    message .reminder.m2 -aspect 600 -text \
-      "using the \"Tag the selected files\" button"
-    frame .reminder.bottom -relief raised -bd 2
-    button .reminder.bottom.close -text "Dismiss" \
-      -command {destroy .reminder}
-    pack .reminder.bottom -side bottom -fill x
-    pack .reminder.bottom.close -side bottom -expand yes
-    pack .reminder.m1 -side top
-    pack .reminder.ent -side top -padx 2
-    pack .reminder.m2 -side top
-  }
 
   if [winfo exists .workdir] {
     if {$cvscfg(auto_status)} {
       setup_dir
     }
+  } else {
+    workdir_setup
   }
+
+  dialog_merge_notice cvs $from $frombranch $fromtag $totag $filelist
+
   gen_log:log T "LEAVE"
+}
+
+proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
+  global cvs
+  global cvscfg
+
+  gen_log:log T "ENTER (\"$from\" \"$totag\" \"$fromtag\" $args)"
+
+  set filelist ""
+  foreach f $args {
+    append filelist "\"$f\" "
+  }
+
+  # It's muy importante to make sure everything is OK at this point
+  set commandline "$cvs -n -q update $filelist"
+  gen_log:log C "$commandline"
+  set ret [catch {eval "exec $commandline"} view_this]
+  set logmode [expr {$ret ? {E} : {D}}]
+  view_output::new "CVS Check" $view_this
+  gen_log:log $logmode $view_this
+  if {$ret} {
+    set mess "CVS Check shows errors which would prevent a successful\
+    commit. Please resolve them before continuing."
+    if {[cvsalwaysconfirm $mess .workdir] != "ok"} {
+      return
+    }
+  }
+  # Do the commit
+  set v [viewer::new "CVS Commit and Tag a Merge"]
+  $v\::log "$cvs commit -m \"Merge from $from\" $filelist\n"
+  $v\::do "$cvs commit -m \"Merge from $from\" $filelist" 1
+  $v\::wait
+  # Tag if desired
+  if {$cvscfg(auto_tag) && $totag != ""} {
+    # First, the "from" file that's not in this branch (needs -r)
+    set commandline "$cvs tag -F -r$from $totag $filelist"
+    $v\::log "$commandline\n"
+    $v\::do "$commandline" 1
+    $v\::wait
+  }
+  if {$cvscfg(auto_tag) && $fromtag != ""} {
+    # Now, the version that's in the current branch
+    set commandline "$cvs tag -F $fromtag $filelist"
+    $v\::log "$commandline\n"
+    $v\::do "$commandline" 1
+    $v\::wait
+  } 
+  catch {destroy .reminder}
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
 }
 
 proc cvs_status {args} {
@@ -1316,8 +1368,9 @@ proc cvs_merge_conflict {args} {
     regsub -all {\$} $file {\$} filename
     set commandline "$cvs -n -q update \"$filename\""
     gen_log:log C "$commandline"
-    catch {eval "exec $commandline"} status
-    gen_log:log C "$status"
+    set ret [catch {eval "exec $commandline"} status]
+    set logmode [expr {$ret ? {E} : {D}}]
+    gen_log:log $logmode "$status"
 
     gen_log:log F "OPEN $file"
     set f [open $file]
@@ -1337,14 +1390,15 @@ proc cvs_merge_conflict {args} {
       # we can resolve the conflict
       gen_log:log C "$commandline"
       set commandline "$cvs update \"$file\""
-      gen_log:log C "$status"
-      catch {eval "exec $commandline"} status
+      set ret [catch {eval "exec $commandline"} status]
+      set logmode [expr {$ret ? {E} : {D}}]
+      gen_log:log $logmode "$status"
     } elseif { $match == 1 } { 
       # There are conflict markers already, dont update
       ;
     } else {
-      cvsfail "This file does not appear to have a conflict." .workdir
-      return
+      cvsfail "$file does not appear to have a conflict." .workdir
+      continue
     }
     # Invoke tkdiff with the proper option for a conflict file
     # and have it write to the original file
