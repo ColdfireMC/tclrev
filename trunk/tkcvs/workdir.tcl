@@ -176,7 +176,7 @@ proc workdir_setup {} {
       -command cvs_commit_dialog
   button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout
   button .workdir.bottom.buttons.cvsfuncs.bupdateopts -image CheckoutOpts \
-     -command { update_run }
+     -command { cvs_update_options }
   button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert \
      -command { cvs_revert [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bjoin -image DirBranches \
@@ -459,9 +459,9 @@ proc workdir_menus {} {
   # CVS
   .workdir.menubar.cvs add command -label "Update" -underline 0 \
      -command { \
-        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
+        cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Update with Options" -underline 7 \
-     -command update_run
+     -command cvs_update_options
   .workdir.menubar.cvs add command -label "Commit/Checkin" -underline 0 \
      -command cvs_commit_dialog
   .workdir.menubar.cvs add command -label "Add Files" -underline 0 \
@@ -1058,9 +1058,9 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
        -command { \
-       cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
+       cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal \
-     -command { update_run }
+     -command { cvs_update_options }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command cvs_commit_dialog
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \

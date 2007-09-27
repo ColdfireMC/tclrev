@@ -1219,9 +1219,9 @@ proc DirCanvas:makepopup {w} {
   menu $w.needsupdate_pop -tearoff 0
   $w.needsupdate_pop add command -label "Update" \
     -command { \
-        cvs_update {BASE} {Normal} {Remove} {No} { } [workdir_list_files] }
+        cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
   $w.needsupdate_pop add command -label "Update with Options" \
-    -command update_run
+    -command cvs_update_options
 
   # For CVS files that need merging
   menu $w.stat_merge_pop -tearoff 0

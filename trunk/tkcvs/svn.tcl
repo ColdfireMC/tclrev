@@ -434,7 +434,6 @@ proc svn_commit {comment args} {
     setup_dir
   }
   gen_log:log T "LEAVE"
-
 }
 
 # Called from workdir browser annotate button
@@ -593,8 +592,7 @@ proc svn_jit_listdir { tf into } {
 
   busy_start $tf
   ModTree:close $tf /$dir
-  #puts "<- delitem /$dir/d"
-  ModTree:delitem $tf /$dir/d
+  ModTree:delitem $tf /$dir/_jit_placeholder
   foreach f $fils {
     set command "ModTree:newitem $tf \"/$dir/$f\" \"$f\" \"$info($f)\" -image Fileview"
     set r [catch "$command" err]
@@ -612,9 +610,9 @@ proc svn_jit_listdir { tf into } {
 
 proc svn_jit_dircmd { tf dir } {
   global cvscfg
+  global Tree
 
   #gen_log:log T "ENTER ($tf $dir)"
-  #puts "\nEntering svn_jit_dircmd ($dir)"
 
   # Here we are just figuring out if the top level directory is empty or not.
   # We don't have to collect any other information, so no -v flag
@@ -628,6 +626,7 @@ proc svn_jit_dircmd { tf dir } {
   }
   set lbl "[file tail $dir]/"
   set exp "([llength $contents] items)"
+  set parent "[file root $dir]"
 
   set dirs {}
   set fils {}
@@ -642,20 +641,24 @@ proc svn_jit_dircmd { tf dir } {
     }
   }
 
+  # To avoid having to look ahead and build the whole tree at once, we put
+  # a "marker" item in non-empty directories so it will look non-empty
+  # and be openable
   if {$dirs == {} && $fils == {}} {
-    #puts "  $dir is empty"
     catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$exp\" -image Folder"
   } else {
-    #puts "  $dir has contents"
+    # Newitem returns nothing if the item already exists, or an "after" from
+    # buildwhenidle if the item had to be inserted
     set r [catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$exp\" -image Folder" err]
     if {! $r} {
-      #puts "-> newitem /$dir/d"
-      catch "ModTree:newitem $tf \"/$dir/d\" d d -image {}"
+      if {! $Tree($tf:/$dir:open)} {
+        # If the node is already open, we don't need a placeholder
+        catch "ModTree:newitem $tf \"/$dir/_jit_placeholder\" \"\" \"\" -image {}"
+      }
     }
   }
 
   #gen_log:log T "LEAVE"
-  #puts "Leaving svn_jit_dircmd\n"
 }
 
 # called from module browser - list branches & tags
@@ -833,50 +836,40 @@ proc svn_revert {args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_tag {tagname force branch update args} {
+proc svn_tag {tagname b_or_t update args} {
 #
 # This tags a file or directory in the current sandbox.
 #
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($tagname $force $branch $update $args)"
-
+  gen_log:log T "ENTER ($tagname $b_or_t $update $args)"
+  
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
-  if {$filelist == {}} {
-    set wctype "."
-  } else {
-    set wctype "f"
-  }
 
-  if {$branch == "yes"} {
-    set comment "Branched_using_TkSVN"
-  } else {
-    set comment "Tagged_using_TkSVN"
-  }
-
-  set v [viewer::new "SVN Tag (Copy)"]
-
-  # We may need to construct a path to copy the file to
-  set to_path [svn_pathforcopy $tagname $branch $wctype $v]
-  gen_log:log D "to_path $to_path"
-  
-  if {$wctype == "."} {
-    set command "svn copy -m\"$comment\" \".\" \"$to_path\""
+  set comment "${b_or_t}_copy_by_TkSVN"
+  set v [viewer::new "SVN Copy $tagname"]
+  set to_url "$cvscfg(svnroot)/$b_or_t/$tagname/$cvsglb(relpath)"
+  if { $filelist == {} } {
+    set command "svn copy -m\"$comment\" $cvscfg(url) $to_url"
+    $v\::log "$command"
     $v\::do "$command"
-    $v\::wait
   } else {
     foreach f $filelist {
-      # FIXME: This creates a rev for each file.  Is that the best
-      # we can do?
-      set command "svn copy -m\"$comment\" \"$f\" \"$to_path\""
+      if {$f == "."} {
+        set command "svn copy -m\"comment\" $cvscfg(url) $to_url"
+      } else {
+        svn_pathforcopy $tagname $b_or_t $v
+        set from_url [safe_url $cvscfg(url)/$f]
+        set command "svn copy -m\"$comment\" $from_url $to_url"
+      }
+      $v\::log "$command"
       $v\::do "$command"
-      $v\::wait
     }
   }
 
@@ -893,28 +886,70 @@ proc svn_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_rcopy {from_path to_path} {
+proc svn_rcopy {from_path b_or_t newtag} {
 #
 # makes a tag or branch.  Called from the module browser
 #
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($from_path $to_path)"
+  gen_log:log T "ENTER ($from_path $b_or_t $newtag)"
 
-  set v [viewer::new "SVN Copy"]
+  # We're going to do some dangerous second-guessing here.  If "trunk", or
+  # something just below the "branches" or "tags" path, is selected, we guess
+  # they want to copy its contents.
+  # Otherwise, we'll copy exactly what they have selected.
+  set need_list 0
+  set idx [string length $cvscfg(svnroot)]
+  incr idx ;# advance past /
+  set from_path_remainder [string range $from_path $idx end]
+  set pathelements [file split $from_path_remainder]
+  if {$from_path_remainder == "trunk"} {
+    set need_list 1
+  } elseif {[llength $pathelements] == 2} {
+    set from_type [lindex $pathelements 0]
+    switch -- $from_type {
+      "tags" -
+      "branches" {
+        set need_list 1
+      }
+    }
+  }
+  set comment "${b_or_t}_copy_by_TkSVN"
+
+  set v [viewer::new "SVN Copy $newtag"]
   set comment "Copied_using_TkSVN"
-  set command "svn copy -m\"$comment\" [safe_url $from_path]"
-  # Can't use file join or it will mess up the URL
-  append command " [safe_url $to_path]"
-  $v\::do "$command"
-  $v\::wait
+  set to_path [svn_pathforcopy $newtag $b_or_t $v]
 
+  if {! $need_list } {
+    # Copy the selected path
+    set command "svn copy -m\"$comment\" [safe_url $from_path] $to_path"
+    $v\::do "$command"
+    $v\::wait
+  } else {
+    # Copy the contents of the selected path
+    set command "svn list [safe_url $from_path]"
+    set cmd(svnlist) [exec::new "$command"]
+    if {[info exists cmd(svnlist)]} {
+      set contents [split [$cmd(svnlist)\::output] "\n"]
+      $cmd(svnlist)\::destroy
+      catch {unset cmd(svnlist)}
+    }
+    foreach f $contents {
+      if {$f == ""} {continue}
+      set file_from_path [safe_url "$from_path/$f"]
+      set command "svn copy -m\"$comment\" $file_from_path $to_path"
+      $v\::log "$command\n"
+      $v\::do "$command"
+      $v\::wait
+    }
+  }
+  # Update with what we've done
   modbrowse_run svn
   gen_log:log T "LEAVE"
 }
 
-proc svn_pathforcopy {tagname branch wctype viewer} {
+proc svn_pathforcopy {tagname b_or_t viewer} {
 # For svn copy, the destination path in the repository must already
 # exist. If we're tagging somewhere other than the top level, it may
 # not exist yet.  This proc creates the path if necessary and returns
@@ -922,20 +957,16 @@ proc svn_pathforcopy {tagname branch wctype viewer} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER (\"$tagname\" \"$branch\" \"$wctype\" \"$viewer\")"
+  gen_log:log T "ENTER (\"$tagname\" \"$b_or_t\" \"$viewer\")"
   # Can't use file join or it will mess up the URL
-  if {$branch == "yes"} {
-    set to_path "$cvscfg(svnroot)/branch/$tagname"
-    set comment "Branched_using_TkSVN"
-  } else {
-    set to_path "$cvscfg(svnroot)/tags/$tagname"
-    set comment "Tagged_using_TkSVN"
-  }
+  set to_path [safe_url "$cvscfg(svnroot)/$b_or_t/$tagname"]
+  set comment "${b_or_t}_directory_path_by_TkSVN"
 
   # If no file yet has this tag/branch name, create it
   set ret [catch "eval exec svn list $to_path" err]
   if {$ret} {
     set command "svn mkdir -m\"$comment\" $to_path"
+    $viewer\::log "$command\n"
     $viewer\::do "$command"
     $viewer\::wait
   }
@@ -943,9 +974,6 @@ proc svn_pathforcopy {tagname branch wctype viewer} {
   set cum_path ""
   set pathelements [file split $cvsglb(relpath)]
   set depth [llength $pathelements]
-  if {$wctype == "."} {
-    incr depth -1
-  }
   for {set i 0} {$i < $depth} {incr i} {
     set cum_path [file join $cum_path [lindex $pathelements $i]]
     gen_log:log D "  $i $cum_path"
@@ -960,7 +988,7 @@ proc svn_pathforcopy {tagname branch wctype viewer} {
     set to_path "$to_path/$cum_path"
   }
   gen_log:log T "LEAVE (\"$to_path\")"
-  return [safe_url $to_path]
+  return $to_path
 }
 
 proc svn_merge {parent frompath since currentpath frombranch args} {
@@ -1036,32 +1064,34 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   }
 
   # Do the commit
-  set v [viewer::new "SVN Commit and Tag a Merge"]
+  set v [viewer::new "SVN Commit a Merge"]
   $v\::log "svn commit -m \"Merge from $from\" $filelist\n"
   $v\::do "svn commit -m \"Merge from $from\" $filelist" 1
   $v\::wait
 
-  # Tag if desired (no means not a branch, f means a file list
-  # was provided.  It will never be empty here.
+  # Tag if desired (no means not a branch
   if {$cvscfg(auto_tag) && $fromtag != ""} {
-    set to_path [svn_pathforcopy $totag no f $v]
-    set to_curr_path [svn_pathforcopy $fromtag no f $v]
-    set comment "Tagged_using_TkSVN"
     if {$frombranch == "trunk"} {
       set from_path "$cvscfg(svnroot)/trunk/$cvsglb(relpath)"
     } else {
       set from_path "$cvscfg(svnroot)/branches/$frombranch/$cvsglb(relpath)"
     }
-    set comment "Tagged_using_TkSVN"
+    # tag the current (mergedto) branch
+    svn_tag $fromtag tags false $args ;# opens its own viewer
+    # Tag the mergedfrom branch
+    set filelist [join $args]
     foreach file $filelist {
-      set from_url [safe_url "$from_path/$file"]
-      $v\::do "svn copy -m\"$comment\" \"$from_url\" \"$to_path\""
-      $v\::wait
-      $v\::do "svn copy -m\"$comment\" \"$file\" \"$to_curr_path\""
-      $v\::wait
+      if {$file == "."} {
+        svn_rcopy [safe_url $from_path] "tags" $totag ;# opens its own viewer
+      } else {
+        svn_rcopy [safe_url $from_path/$f] "tags" $totag ;# opens its own viewer
+      }
     }
   }
 
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
   gen_log:log T "LEAVE"
 }
 
@@ -1426,7 +1456,6 @@ namespace eval ::svn_branchlog {
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
           #puts "parse_svnlog returned base revision $rb for $branch"
-          gen_log:log E "parse_svnlog returned base revision $rb for $branch"
           # See if the current revision is on this branch
           set curr 0
           set brevs $branchrevs($branch)

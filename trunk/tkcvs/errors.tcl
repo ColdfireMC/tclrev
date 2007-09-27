@@ -36,6 +36,7 @@ proc cvsconfirm {mess {parent {.}} } {
   return $answer
 }
 
+# This one doesn't check cvscfg(confirm_prompt) preference
 proc cvsalwaysconfirm {mess {parent {.}} } {
 
   if {! [winfo exists $parent]} {set parent .}
@@ -49,6 +50,7 @@ proc cvsalwaysconfirm {mess {parent {.}} } {
   gen_log:log D "$answer"
   return $answer
 }
+
 proc cvsfail {mess {parent {.}} } {
 
   if {! [winfo exists $parent]} {set parent .}

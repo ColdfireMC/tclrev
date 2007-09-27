@@ -223,6 +223,7 @@ namespace eval ::logcanvas {
               -command [namespace code {
                  set currentrevpath "$revpath(r$revnum_current)@$revnum_current"
                  set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 if {$fromrev == ""} {cvsfail "Please select a revision!" $logcanvas; return}
                  set fromrevpath "$revpath($fromrev)@[string trimleft $fromrev {r}]"
                  set sincerev [$logcanvas.up.revB_rvers cget -text]
                  set fromtag ""

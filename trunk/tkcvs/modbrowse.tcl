@@ -99,9 +99,9 @@ proc modbrowse_setup {} {
   button .modbrowse.bottom.buttons.modfuncs.export -image Export \
     -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
   button .modbrowse.bottom.buttons.modfuncs.tag -image Tag \
-    -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
+    -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
   button .modbrowse.bottom.buttons.modfuncs.branchtag -image Branchtag \
-    -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
+    -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
 
   button .modbrowse.bottom.buttons.svnfuncs.filecat -image Fileview \
     -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
@@ -255,9 +255,9 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.cvs add command -label "CVS Export" \
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module}
   .modbrowse.modmenu.cvs add command -label "Tag Module" -underline 0 \
-     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
+     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
   .modbrowse.modmenu.cvs add command -label "Branch Tag Module" -underline 0 \
-     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
+     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
   .modbrowse.modmenu.cvs add command -label "Make Patch File" -underline 0 \
      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
   .modbrowse.modmenu.cvs add command -label "View Patch Summary" -underline 0 \
@@ -282,9 +282,9 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.svn add command -label "SVN Export" \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
   .modbrowse.modmenu.svn add command -label "Tag Module" -underline 0 \
-     -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "tags" }
+     -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "tags" }
   .modbrowse.modmenu.svn add command -label "Branch Module" -underline 0 \
-     -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "branches" }
+     -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
   .modbrowse.modmenu.svn add command -label "Make Patch File" -underline 0 \
      -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 0 }
   .modbrowse.modmenu.svn add command -label "View Patch Summary" -underline 0 \
@@ -455,9 +455,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
     .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
-      -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "tags" }
+      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "tags" }
     .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
-      -command { dialog_svn_copy $cvscfg(svnroot) $modbrowse_path "branches" }
+      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
     .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
       -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
@@ -477,9 +477,9 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
     .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
-      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "no" }
+      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
     .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
-      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "yes" }
+      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
     .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
       -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
     .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
