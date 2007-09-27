@@ -797,7 +797,7 @@ proc cvs_commit {revision comment args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_tag {tagname force branch update args} {
+proc cvs_tag {tagname force b_or_t update args} {
 #
 # This tags a file in a directory.
 #
@@ -805,7 +805,7 @@ proc cvs_tag {tagname force branch update args} {
   global cvscfg
   global incvs
 
-  gen_log:log T "ENTER ($tagname $force $branch $update $args)"
+  gen_log:log T "ENTER ($tagname $force $b_or_t $update $args)"
 
   if {! $incvs} {
     cvs_notincvs
@@ -820,7 +820,7 @@ proc cvs_tag {tagname force branch update args} {
   set filelist [join $args]
 
   set command "$cvs tag"
-  if {$branch == "yes"} {
+  if {$b_or_t == "branch"} {
    append command " -b"
   }
   if {$force == "yes"} {
@@ -828,7 +828,7 @@ proc cvs_tag {tagname force branch update args} {
   }
   append command " $tagname $filelist"
 
-  if {$branch == "yes" && $force == "yes"} {
+  if {$b_or_t == "branch" && $force == "yes"} {
     set too_new 0
     # As of 1.11.2, -F won't move branch tags without the -B option
     set cvsglb(cvs_version) [cvs_version_number]
@@ -864,7 +864,7 @@ proc cvs_tag {tagname force branch update args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_update {tagname normal_binary action_if_no_tag get_all_dirs dir args} {
+proc cvs_update {tagname k no_tag recurse prune d dir args} {
 #
 # This updates the files in the current directory.
 #
@@ -872,82 +872,92 @@ proc cvs_update {tagname normal_binary action_if_no_tag get_all_dirs dir args} {
   global cvscfg
   global incvs
 
-  gen_log:log T "ENTER ($tagname $normal_binary $action_if_no_tag $get_all_dirs $dir $args)"
+  gen_log:log T "ENTER (tagname=$tagname k=$k no_tag=$no_tag recurse=$recurse prune=$prune d=$d dir=$dir args=$args)"
 
-  if { $normal_binary == "Normal" } {
-      set mess "Using normal (text) mode.\n"
-  } elseif { $normal_binary == "Binary" } {
-      set mess "Using binary mode.\n"
-  } else {
-      set mess "Unknown mode:  $normal_binary\n"
-  }
+  set filelist [join $args]
 
-  if { $tagname != "BASE"  && $tagname != "HEAD" } {
-      append mess "\nIf a file does not have tag $tagname"
-      if { $action_if_no_tag == "Remove" } {
-          append mess " it will be removed from your local directory.\n"
-      } elseif { $action_if_no_tag == "Get_head" } {
-          append mess " the head revision will be retrieved.\n"
-      } elseif { $action_if_no_tag == "Skip" } {
-          append mess " it will be skipped.\n"
-      }
+  #
+  # cvs update [-APCdflRp] [-k kopt] [-r rev] [-D date] [-j rev]
+  #
+  set commandline "$cvs update"
+
+  if { $k == "Normal" } {
+    set kmsg "\nUsing normal (text) mode."
+  } elseif { $k == "Binary" } {
+    set kmsg "\nUsing binary mode (-kb)."
+    append commandline " -kb"
   }
 
   if { $tagname == "HEAD" } {
     append mess "\nYour local files will be updated to the"
-    append mess " latest main trunk (head) revision."
-    append mess " CVS will try to preserve any local, un-committed changes.\n"
+    append mess " latest main trunk (head) revision (-A)."
+    append commandline " -A"
   }
 
-  append mess "\nIf there is a directory in the repository"
-  append mess " that is not in your local, working directory,"
-  if { $get_all_dirs == "Yes" } {
-    append mess " it will be checked out at this time.\n"
+  if {$recurse == "local"} {
+    append commandline " -l"
   } else {
-    append mess " it will not be checked out.\n"
-  }
-
-  set filelist [join $args]
-  if {$filelist == ""} {
-    append mess "\nYou are about to download from"
-    append mess " the repository to your local"
-    append mess " filespace ** ALL ** files which"
-    append mess " have changed in it."
-  } else {
-    append mess "\nYou are about to download from"
-    append mess " the repository to your local"
-    append mess " filespace these files which"
-    append mess " have changed:\n"
-  
-    foreach file $filelist {
-      append mess "\n\t$file"
+    append mess "\nIf there is a local sub-directory which has"
+    append mess " become empty through deletion of its contents,"
+    if { $prune == "prune" } {
+      append mess " it will be deleted (-P).\n"
+      append commandline " -P"
+    } else {
+      append mess " it will remain.\n"
     }
-  }
-  append mess "\n\nAre you sure?"
-  if {[cvsconfirm $mess .workdir] == "ok"} {
-    # modified by jo to build the commandline incrementally
-    set commandline "$cvs update -P"
-    if { $normal_binary == "Binary" } {
-      append commandline " -kb"
-    }
-    if { $get_all_dirs == "Yes" } {
-      append commandline " -d $dir"
-    }
-    if { $tagname != "BASE" && $tagname != "HEAD" } {
-      if { $action_if_no_tag == "Remove" } {
-          append commandline " -r $tagname"
-      } elseif { $action_if_no_tag == "Get_head" } {
-          append commandline " -f -r $tagname"
-      } elseif { $action_if_no_tag == "Skip" } {
-          append commandline " -s -r $tagname"
+    append mess "\nIf there is a sub-directory in the repository"
+    append mess " that is not here in your local directory,"
+    if { $d == "Yes" } {
+      append mess " it will be checked out at this time (-d).\n"
+      if {$dir != " "} {
+        append mess "($dir only)\n"
       }
+      append commandline " -d $dir"
+    } else {
+      append mess " it will not be checked out.\n"
     }
-    if { $tagname == "HEAD" } {
-      append commandline " -A"
+  }
+
+  if { $tagname != "BASE"  && $tagname != "HEAD" } {
+    append mess "\nYour local files will be updated to the"
+    append mess " tagged revision (-r $tagname)."
+    append mess "  If a file does not have the tag,"
+    if { $no_tag == "Remove" } {
+      append mess " it will be removed from your local directory.\n"
+      append commandline " -r $tagname"
+    } elseif { $no_tag == "Get_head" } {
+      append mess " the head revision will be retrieved.\n"
+      append commandline " -f -r $tagname"
     }
+  }
+
+  if {$filelist == ""} {
+    set filemsg    "\nYou are about to download from"
+    append filemsg " the repository to your local"
+    append filemsg " filespace the files which"
+    append filemsg " are different in the repository,"
+    if {$recurse == "local"} {
+      append filemsg " in this directory only.\n"
+    } else {
+      append filemsg " recursing the sub-directories.\n"
+    }
+  } else {
+    append filemsg "\nYou are about to download from"
+    append filemsg " the repository to your local"
+    append filemsg " filespace these files if they"
+    append filemsg " have changed:\n"
+
     foreach file $filelist {
+      append filemsg "\n\t$file"
       append commandline " \"$file\""
     }
+  }
+  append filemsg "If you have made local changes, they will"
+  append filemsg " be merged into the new local copy.\n"
+  set mess "$filemsg $mess $kmsg"
+  append mess "\n\nAre you sure?"
+
+  if {[cvsconfirm $mess .workdir] == "ok"} {
 
     set co_cmd [viewer::new "CVS Update"]
     $co_cmd\::do $commandline 0 status_colortags
@@ -1493,7 +1503,7 @@ proc cvs_release {delflag directory} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_rtag { cvsroot mcode branch force oldtag newtag } {
+proc cvs_rtag { cvsroot mcode b_or_t force oldtag newtag } {
 #
 # This tags a module in the repository.
 # Called by the tag commands in the Repository Browser
@@ -1501,14 +1511,14 @@ proc cvs_rtag { cvsroot mcode branch force oldtag newtag } {
   global cvs
   global cvscfg
   
-  gen_log:log T "ENTER ($cvsroot $mcode $branch $force $oldtag $newtag)"
+  gen_log:log T "ENTER ($cvsroot $mcode $b_or_t $force $oldtag $newtag)"
   if {$newtag == ""} {
     cvsfail "You must enter a tag name!" .modbrowse
     return 1
   }
 
   set command "$cvs -d \"$cvsroot\" rtag"
-  if {$branch == "yes"} {
+  if {$b_or_t == "branch"} {
     append command " -b"
   } 
   if {$force == "yes"} {

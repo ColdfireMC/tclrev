@@ -606,6 +606,9 @@ namespace eval joincanvas {
       button $joincanvas.delta -image Mergediff \
           -command [namespace code {
                  set fromrev [$joincanvas.up.rversFrom get]
+                 if {$fromrev == ""} {
+                   cvsfail "Please select a branch!" $joincanvas; return
+                 }
                  set sincerev [$joincanvas.up.rversSince.e get]
                  cvs_merge $joincanvas $fromrev $sincerev $fromrev .
                  }]

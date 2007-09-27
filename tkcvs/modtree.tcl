@@ -310,11 +310,13 @@ proc ModTree:buildlayer {w v in} {
     # Put an open/close image on it if it has children
     if {[string length $Tree($w:$vx/$c:children)]} {
       if {$Tree($w:$vx/$c:open)} {
+         # It's closed.  Draw a plus sign and bind a function to close the sub-tree
          set k [$w.tree.list create image $in $y -image ModTree:openbm]
          $w.tree.list bind $k <1> "set \"Tree($w:$vx/$c:open)\" 0; \
                                    ModTree:build $w"
          ModTree:buildlayer $w $vx/$c [expr {$in+$Tree(vsize)+8}]
       } else {
+         # It's open.  Draw a minus sign and bind a function to build the sub-tree
          set k [$w.tree.list create image $in $y -image ModTree:closedbm]
          if {$Tree(open_function) == {} } {
            $w.tree.list bind $k <1> "set \"Tree($w:$vx/$c:open)\" 1; \
