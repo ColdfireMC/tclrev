@@ -52,7 +52,8 @@ proc modbrowse_setup {} {
   ::picklist::bind .modbrowse.top.troot <Return> \
     {if {$repository_root != $cvsglb(root)} {modbrowse_run}}
 
-  button .modbrowse.top.bworkdir -image Workdir -command {workdir_setup}
+  button .modbrowse.top.bworkdir -image Workdir -highlightbackground $cvsglb(bg) \
+    -command {workdir_setup}
 
   label .modbrowse.top.lcwd -text "Current Directory"
   ::picklist::entry .modbrowse.top.tcwd cwd directory
@@ -88,36 +89,36 @@ proc modbrowse_setup {} {
   #
   # Create buttons
   #
-  button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files \
+  button .modbrowse.bottom.buttons.modfuncs.filebrowse -image Files -highlightbackground $cvsglb(bg) \
     -command { browse_files $modbrowse_module }
-  button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches \
+  button .modbrowse.bottom.buttons.modfuncs.patchsummary -image Patches -highlightbackground $cvsglb(bg) \
     -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
-  button .modbrowse.bottom.buttons.modfuncs.patchfile -image Patchfile \
+  button .modbrowse.bottom.buttons.modfuncs.patchfile -image Patchfile -highlightbackground $cvsglb(bg) \
     -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
-  button .modbrowse.bottom.buttons.modfuncs.checkout -image Checkout \
+  button .modbrowse.bottom.buttons.modfuncs.checkout -image Checkout -highlightbackground $cvsglb(bg) \
     -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
-  button .modbrowse.bottom.buttons.modfuncs.export -image Export \
+  button .modbrowse.bottom.buttons.modfuncs.export -image Export -highlightbackground $cvsglb(bg) \
     -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
-  button .modbrowse.bottom.buttons.modfuncs.tag -image Tag \
+  button .modbrowse.bottom.buttons.modfuncs.tag -image Tag -highlightbackground $cvsglb(bg) \
     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
-  button .modbrowse.bottom.buttons.modfuncs.branchtag -image Branchtag \
+  button .modbrowse.bottom.buttons.modfuncs.branchtag -image Branchtag -highlightbackground $cvsglb(bg) \
     -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
 
-  button .modbrowse.bottom.buttons.svnfuncs.filecat -image Fileview \
+  button .modbrowse.bottom.buttons.svnfuncs.filecat -image Fileview -highlightbackground $cvsglb(bg) \
     -command { svn_filecat $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
-  button .modbrowse.bottom.buttons.svnfuncs.filelog -image Log \
+  button .modbrowse.bottom.buttons.svnfuncs.filelog -image Log -highlightbackground $cvsglb(bg) \
     -command { svn_filelog $cvscfg(svnroot) $modbrowse_path $modbrowse_title}
-  button .modbrowse.bottom.buttons.svnfuncs.remove -image SvnRemove \
+  button .modbrowse.bottom.buttons.svnfuncs.remove -image SvnRemove -highlightbackground $cvsglb(bg) \
     -command { svn_delete $cvscfg(svnroot) $modbrowse_path }
 
-  button .modbrowse.bottom.buttons.cvsfuncs.import -image Import \
+  button .modbrowse.bottom.buttons.cvsfuncs.import -image Import -highlightbackground $cvsglb(bg) \
      -command { import_run }
-  button .modbrowse.bottom.buttons.cvsfuncs.who -image Who \
+  button .modbrowse.bottom.buttons.cvsfuncs.who -image Who -highlightbackground $cvsglb(bg) \
      -command {cvs_history all $modbrowse_module}
-  button .modbrowse.bottom.buttons.cvsfuncs.brefresh  -image Refresh \
+  button .modbrowse.bottom.buttons.cvsfuncs.brefresh  -image Refresh -highlightbackground $cvsglb(bg) \
      -command { modbrowse_run }
 
-  button .modbrowse.bottom.buttons.closefm.close -text "Close" \
+  button .modbrowse.bottom.buttons.closefm.close -text "Close" -highlightbackground $cvsglb(bg) \
     -command { module_exit; exit_cleanup 0 }
 
   grid .modbrowse.bottom.buttons.cvsfuncs.brefresh -column 0 -row 0 \

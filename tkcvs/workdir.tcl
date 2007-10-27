@@ -58,7 +58,7 @@ proc workdir_setup {} {
   ::picklist::bind .workdir.top.tcwd <Return> \
      {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
-  button .workdir.top.updir_btn -image updir \
+  button .workdir.top.updir_btn -image updir -highlightbackground $cvsglb(bg) \
     -command {change_dir ..}
 
   label .workdir.top.lmodule -text "Path"
@@ -69,12 +69,12 @@ proc workdir_setup {} {
      -anchor w -relief groove
 
   # Make the Repository Browser button prominent
-  button .workdir.top.bmodbrowse -image Modules \
+  button .workdir.top.bmodbrowse -image Modules -highlightbackground $cvsglb(bg) \
      -command modbrowse_run
 
   label .workdir.top.lcvsroot -text "CVSROOT"
   entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) \
-     -relief groove -state readonly \
+     -relief groove -bd 2 -state readonly \
      -font $cvscfg(guifont) -readonlybackground $cvsglb(readonlybg)
 
   grid columnconf .workdir.top 1 -weight 1
@@ -107,7 +107,7 @@ proc workdir_setup {} {
      -textvariable cvsglb(default_ignore_filter)
   label .workdir.bottom.filters.space -text "    "
   button .workdir.bottom.filters.cleanbutton -text "Clean:" \
-     -pady 0 -highlightthickness 0 \
+     -pady 0 -highlightthickness 0 -highlightbackground $cvsglb(bg) \
      -command workdir_cleanup
   entry .workdir.bottom.filters.cleanentry -width 12 \
      -textvariable cvscfg(clean_these)
@@ -140,55 +140,55 @@ proc workdir_setup {} {
   #
   # Action buttons along the bottom of the screen.
   #
-  button .workdir.bottom.buttons.funcs.bedit_files -image Fileedit \
+  button .workdir.bottom.buttons.funcs.bedit_files -image Fileedit -highlightbackground $cvsglb(bg) \
      -command { workdir_edit_file [workdir_list_files] }
-  button .workdir.bottom.buttons.funcs.bview_files -image Fileview \
+  button .workdir.bottom.buttons.funcs.bview_files -image Fileview -highlightbackground $cvsglb(bg) \
      -command { workdir_view_file [workdir_list_files] }
-  button .workdir.bottom.buttons.funcs.bdelete_file -image Delete \
+  button .workdir.bottom.buttons.funcs.bdelete_file -image Delete -highlightbackground $cvsglb(bg) \
      -command { workdir_delete_file [workdir_list_files] }
-  button .workdir.bottom.buttons.funcs.bmkdir -image Dir_new \
+  button .workdir.bottom.buttons.funcs.bmkdir -image Dir_new -highlightbackground $cvsglb(bg) \
      -command { file_input_and_do "New Directory" workdir_newdir}
 
-  button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh \
+  button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh -highlightbackground $cvsglb(bg) \
      -command { change_dir [pwd] }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
 
-  button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches \
+  button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches -highlightbackground $cvsglb(bg) \
      -command { cvs_branches [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate \
+  button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate -highlightbackground $cvsglb(bg) \
      -command { cvs_annotate $current_tagname [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bfilelog -image Log \
+  button .workdir.bottom.buttons.cvsfuncs.bfilelog -image Log -highlightbackground $cvsglb(bg) \
     -command { cvs_log [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bdiff -image Diff \
+  button .workdir.bottom.buttons.cvsfuncs.bdiff -image Diff -highlightbackground $cvsglb(bg) \
      -command { comparediff [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict \
+  button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict -highlightbackground $cvsglb(bg) \
      -command { cvs_merge_conflict [workdir_list_files] }
 
-  button .workdir.bottom.buttons.cvsfuncs.btag -image Tag \
+  button .workdir.bottom.buttons.cvsfuncs.btag -image Tag -highlightbackground $cvsglb(bg) \
      -command { file_tag_dialog "no" }
-  button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag \
+  button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag -highlightbackground $cvsglb(bg) \
      -command { file_tag_dialog "yes" }
-  button .workdir.bottom.buttons.cvsfuncs.badd_files -image Add \
+  button .workdir.bottom.buttons.cvsfuncs.badd_files -image Add -highlightbackground $cvsglb(bg) \
      -command { add_dialog [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bremove -image Remove \
+  button .workdir.bottom.buttons.cvsfuncs.bremove -image Remove -highlightbackground $cvsglb(bg) \
      -command { subtract_dialog [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bcheckin -image Checkin \
+  button .workdir.bottom.buttons.cvsfuncs.bcheckin -image Checkin -highlightbackground $cvsglb(bg) \
       -command cvs_commit_dialog
-  button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout
-  button .workdir.bottom.buttons.cvsfuncs.bupdateopts -image CheckoutOpts \
+  button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout -highlightbackground $cvsglb(bg)
+  button .workdir.bottom.buttons.cvsfuncs.bupdateopts -image CheckoutOpts -highlightbackground $cvsglb(bg) \
      -command { cvs_update_options }
-  button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert \
+  button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert -highlightbackground $cvsglb(bg) \
      -command { cvs_revert [workdir_list_files] }
-  button .workdir.bottom.buttons.cvsfuncs.bjoin -image DirBranches \
+  button .workdir.bottom.buttons.cvsfuncs.bjoin -image DirBranches -highlightbackground $cvsglb(bg) \
      -command cvs_joincanvas
 
-  button .workdir.bottom.buttons.oddfuncs.bcvsedit_files -image Edit \
+  button .workdir.bottom.buttons.oddfuncs.bcvsedit_files -image Edit -highlightbackground $cvsglb(bg) \
      -command { cvs_edit [workdir_list_files] }
-  button .workdir.bottom.buttons.oddfuncs.bunedit_files -image Unedit \
+  button .workdir.bottom.buttons.oddfuncs.bunedit_files -image Unedit -highlightbackground $cvsglb(bg) \
      -command { cvs_unedit [workdir_list_files] }
-  button .workdir.bottom.buttons.oddfuncs.block -image Lock
-  button .workdir.bottom.buttons.oddfuncs.bunlock -image UnLock
-  button .workdir.close -text "Close" \
+  button .workdir.bottom.buttons.oddfuncs.block -image Lock -highlightbackground $cvsglb(bg)
+  button .workdir.bottom.buttons.oddfuncs.bunlock -image UnLock -highlightbackground $cvsglb(bg)
+  button .workdir.close -text "Close" -highlightbackground $cvsglb(bg) \
       -command {
         global cvscfg
         set cvscfg(workgeom) [wm geometry .workdir]
@@ -802,6 +802,7 @@ proc add_bookmark { } {
 # A listbox to choose a bookmark to delete
 proc delete_bookmark_dialog { } {
    global cvscfg
+   global cvsglb
    global bookmarks
 
    gen_log:log T "ENTER"
@@ -826,10 +827,10 @@ proc delete_bookmark_dialog { } {
    }
    frame $wname.buttons
    pack $wname.buttons -side top -fill x
-   button $wname.delete -text "Delete" \
+   button $wname.delete -text "Delete" -highlightbackground cvsglb(bg) \
      -command "delete_bookmark $wname"
         
-   button $wname.close -text "Done" \
+   button $wname.close -text "Done" -highlightbackground cvsglb(bg) \
      -command "
        grab release $wname
        destroy $wname

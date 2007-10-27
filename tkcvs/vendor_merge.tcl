@@ -13,6 +13,7 @@ proc merge_run {mcode} {
 # By: Eugene Lee, Aerospace Corporation, 11/12/95
 # Modified by E. Lee 10/16/03
   global cvs
+  global cvsglb
   global modbrowse_module
   global from_to
   global sel_to
@@ -64,7 +65,8 @@ proc merge_run {mcode} {
   pack .merge.vendor.name -side top -fill x -expand yes
   label .merge.vendor.name.l -text "Vendor Module" -width 16 -anchor w
   label .merge.vendor.name.e -relief sunken -textvariable venselect_mcode -anchor w
-  button .merge.vendor.name.b -text "Browse ..." -command "vendorDialog"
+  button .merge.vendor.name.b -text "Browse ..." -highlightbackground $cvsglb(bg) \
+    -command "vendorDialog"
   pack .merge.vendor.name.l -side left -fill x -pady 3
   pack .merge.vendor.name.b -side right -anchor w -fill x 
   pack .merge.vendor.name.e -side right -anchor w -fill x -pady 3 -expand yes
@@ -115,7 +117,7 @@ proc merge_run {mcode} {
     pack .merge.vendor.$i.f.s -side left -pady 3
   }
 
-  button .merge.ok -text "OK" \
+  button .merge.ok -text "OK" -highlightbackground $cvsglb(bg) \
     -command {
       if { $venselect_mcode == "" } {
          cvsfail "Please select a Vendor" .merge
@@ -126,7 +128,7 @@ proc merge_run {mcode} {
       grab release .merge
       wm withdraw .merge
     }
-  button .merge.quit -text "Cancel" \
+  button .merge.quit -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command {
       grab release .merge
       wm withdraw .merge
@@ -476,6 +478,8 @@ proc merge_taglist {files} {
 proc vendorDialog {} {
   global ExModList ExModDirList
   global venselect_mcode
+  global cvsglb
+
   set w .venDialog
   grab release .merge
   catch {destroy $w}
@@ -485,7 +489,7 @@ proc vendorDialog {} {
 
   frame $w.buttons
   pack $w.buttons -side bottom -fill x -pady 2m
-  button $w.buttons.ok -text Ok \
+  button $w.buttons.ok -text Ok -highlightbackground $cvsglb(bg) \
     -command {
       if {$venselect_mcode == ""} {
          return
@@ -495,7 +499,7 @@ proc vendorDialog {} {
       raise .merge
       #grab set .merge
     }
-  button $w.buttons.cancel -text Cancel \
+  button $w.buttons.cancel -text Cancel -highlightbackground $cvsglb(bg) \
     -command {
       grab release .venDialog
       wm withdraw .venDialog

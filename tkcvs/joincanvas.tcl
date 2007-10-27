@@ -542,8 +542,10 @@ namespace eval joincanvas {
       frame $joincanvas.up -relief groove -border 2
       pack $joincanvas.up -side top -fill x
 
-      button $joincanvas.up.bworkdir -image Workdir -command { workdir_setup }
-      button $joincanvas.up.bmodbrowse -image Modules_cvs -command { modbrowse_run cvs }
+      button $joincanvas.up.bworkdir -image Workdir -highlightbackground $cvsglb(bg) \
+       -command { workdir_setup }
+      button $joincanvas.up.bmodbrowse -image Modules_cvs -highlightbackground $cvsglb(bg) \
+       -command { modbrowse_run cvs }
 
       label $joincanvas.up.lfname -text "Representative File" -anchor w
       entry $joincanvas.up.rfname -textvariable [namespace current]::repfile
@@ -603,7 +605,7 @@ namespace eval joincanvas {
       #
       # Create buttons
       #
-      button $joincanvas.delta -image Mergediff \
+      button $joincanvas.delta -image Mergediff -highlightbackground $cvsglb(bg) \
           -command [namespace code {
                  set fromrev [$joincanvas.up.rversFrom get]
                  if {$fromrev == ""} {
@@ -613,11 +615,11 @@ namespace eval joincanvas {
                  cvs_merge $joincanvas $fromrev $sincerev $fromrev .
                  }]
 
-      button $joincanvas.down.blogfile -image Branches \
+      button $joincanvas.down.blogfile -image Branches -highlightbackground $cvsglb(bg) \
          -command "cvs_branches $repfile"
       frame $joincanvas.down.btnfm
       frame $joincanvas.down.closefm -relief groove -bd 2
-      button $joincanvas.close -text "Close" \
+      button $joincanvas.close -text "Close" -highlightbackground $cvsglb(bg) \
         -command [namespace code "
                    destroy $joincanvas
                    namespace delete [namespace current]

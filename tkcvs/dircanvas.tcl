@@ -39,14 +39,13 @@ proc DirCanvas:create {w} {
   if {[winfo exists .workdir]} {
     set cvsglb(fg) [lindex [.workdir.top.bmodbrowse configure -foreground] 4]
     set cvsglb(dfg) [lindex [.workdir.top.bmodbrowse configure -disabledforeground] 4]
-    set buttonhilite [lindex [.workdir.top.bmodbrowse configure -highlightbackground] 4]
   }
   set selcolor [option get . selectColor selectColor]
   if {[string length $selcolor]} {
     set cvsglb(hlbg) $selcolor
   }
   if {$cvsglb(hlbg) == $cvsglb(canvbg)} {
-    set cvsglb(hlbg) $buttonhilite
+    #set cvsglb(hlbg) $buttonhilite
   }
   if {! [info exists cvsglb(glb_highlight)]} {
     set cvsglb(glb_highlight) $cvsglb(hlbg)
@@ -64,7 +63,7 @@ proc DirCanvas:create {w} {
 
   # Put an extra arrow on the file column for sorting by status
   set statusbutton $w.filecol.head.statbut
-  button $statusbutton -image arr_dn \
+  button $statusbutton -image arr_dn -highlightbackground $cvsglb(bg) \
     -relief raised -bd 1 -highlightthickness 0
   set arr(filestatcol) $statusbutton
   pack $statusbutton -side left
@@ -137,7 +136,7 @@ proc DirCanvas:column {w column headtext} {
   frame $w.$column.head -relief raised -bd 2
   label $w.$column.head.lbl -text "$headtext"
   button $w.$column.head.sbut -image arr_dn -relief flat \
-    -highlightthickness 0
+    -highlightthickness 0 -highlightbackground $cvsglb(bg)
   set arr($column) $w.$column.head.sbut
   gen_log:log D "$w.$column.head.sbut"
 
@@ -338,13 +337,12 @@ proc DirCanvas:deltree {w} {
 proc DirCanvas:flash {w y} {
   global cvsglb
 
-  #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(hlbg)
   set ft [$w.filecol.list itemcget $w.filecol.list.tx$y -font]
   set bf [font actual $ft]
+
   $w.filecol.list itemconfigure $w.filecol.list.tx$y -font "$bf -underline 1"
   foreach column [lrange [$w.pw panes] 1 end] {
     set i [$column.list find withtag $w.filecol.list.tx$y]
-    #$column.list itemconfigure $i -fill $cvsglb(hlbg)
     $column.list itemconfigure $i -font "$bf -underline 1"
   }
 }
@@ -353,11 +351,9 @@ proc DirCanvas:unflash {w y} {
   global cvsglb
   global cvscfg
 
-  #$w.filecol.list itemconfigure $w.filecol.list.tx$y -fill $cvsglb(fg)
   $w.filecol.list itemconfigure $w.filecol.list.tx$y -font $cvscfg(listboxfont)
   foreach column [lrange [$w.pw panes] 1 end] {
     set i [$column.list find withtag $w.filecol.list.tx$y]
-    #$column.list itemconfigure $i -fill $cvsglb(fg)
     $column.list itemconfigure $i -font $cvscfg(listboxfont)
   }
 }

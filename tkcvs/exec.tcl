@@ -544,18 +544,18 @@ proc viewer_window {w title parent} {
 
   scrollbar $w.scroll -relief sunken -command "$w.text yview"
   frame $w.bottom
-  button $w.bottom.srchbtn -text Search -command "$parent\::search"
+  button $w.bottom.srchbtn -text Search -highlightbackground $cvsglb(bg) \
+    -command "$parent\::search"
   entry $w.bottom.entry -width 20 -textvariable searchstr
   bind $w.bottom.entry <Return> "$parent\::search"
   
-  button $w.save -text "Save to File" -command "save_viewcontents $w"
-  button $w.close -text "Close" -command "
-    catch {$parent\::destroy}
-    destroy $w
-    exit_cleanup 0
-  "
+  button $w.save -text "Save to File" -highlightbackground $cvsglb(bg) \
+   -command "save_viewcontents $w"
+  button $w.close -text "Close" -highlightbackground $cvsglb(bg) \
+   -command "catch {$parent\::destroy}; destroy $w; exit_cleanup 0"
   button $w.stop -text "Stop" -bg red4 -fg white \
       -activebackground red4 -activeforeground white \
+      -highlightbackground $cvsglb(bg) \
       -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
       -command "$parent\::abort"
   pack $w.bottom -side bottom -fill x ;#-padx 25

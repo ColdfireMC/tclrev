@@ -145,7 +145,11 @@ if {! [get_cde_params]} {
   # backgrounds the same which I don't like, so I'm going to use the same
   # trick I use for CDE to give the canvases a little shading.  I don't
   # do this for raw X11 because the user might have set their own options.
-  set bg [option get .testlbl background background]
+  #set bg [option get .testlbl background background]
+  #puts $bg
+  set bg [lindex [.testlbl cget -background] 0]
+  #puts $bg
+  set cvsglb(bg) $bg
   if {[string length $bg]} {
     set rgb_bg [winfo rgb .testlbl $bg]
     set shadow [format #%02x%02x%02x [expr (9*[lindex $rgb_bg 0])/2560] \

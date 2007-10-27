@@ -18,17 +18,19 @@ proc gen_log:init {} {
       -command ".trace.text yview"
   frame .trace.bottom
 
-  button .trace.bottom.clear -text "Clear" -command gen_log:clear
-  button .trace.bottom.save -text "Save to File" -command gen_log:save
+  button .trace.bottom.clear -text "Clear" -highlightbackground $cvsglb(bg) \
+    -command gen_log:clear
+  button .trace.bottom.save -text "Save to File" -highlightbackground $cvsglb(bg) \
+    -command gen_log:save
 
   search_textwidget_init
-  button .trace.bottom.srchbtn -text Search \
+  button .trace.bottom.srchbtn -text Search -highlightbackground $cvsglb(bg) \
     -command "search_textwidget .trace.text"
   entry .trace.bottom.entry -width 20 -textvariable cvsglb(searchstr)
   bind .trace.bottom.entry <Return> \
       "search_textwidget .trace.text"
 
-  button .trace.close -text "Stop Tracing" \
+  button .trace.close -text "Stop Tracing" -highlightbackground $cvsglb(bg) \
     -command { gen_log:quit; exit_cleanup 0 }
 
   pack .trace.bottom -side bottom -fill x

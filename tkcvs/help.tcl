@@ -22,6 +22,7 @@
 
 proc aboutbox {} {
   global cvscfg
+  global cvsglb
 
   toplevel .about
   wm title .about "About TkCVS!"
@@ -69,7 +70,7 @@ proc aboutbox {} {
   pack .about.top.msg4 -expand 1 -fill x
 
   frame .about.down
-  button .about.down.ok -text "OK" -command {destroy .about}
+  button .about.down.ok -text "OK" -highlightbackground $cvsglb(bg) -command {destroy .about}
 
   pack .about.down -side bottom -expand 1 -fill x -pady 2
   pack .about.down.ok
@@ -227,6 +228,7 @@ proc purge-all-tags {w start end} {
 
 proc do_help {title helptext} {
   global cvscfg
+  global cvsglb
   global tcl_platform
 
   gen_log:log T "ENTER $title <helptext suppressed>)"
@@ -241,7 +243,7 @@ proc do_help {title helptext} {
     -yscroll "$cvshelpview.scroll set"
   scrollbar $cvshelpview.scroll -relief sunken \
     -command "$cvshelpview.text yview"
-  button $cvshelpview.close -text "Close" \
+  button $cvshelpview.close -text "Close" -highlightbackground $cvsglb(bg) \
     -command "destroy $cvshelpview; exit_cleanup 0"
 
   pack $cvshelpview.close -side bottom

@@ -63,13 +63,13 @@ proc svn_import_run {} {
 
 
   frame .svn_import.down -relief groove -border 2
-  button .svn_import.down.ok -text "OK" \
+  button .svn_import.down.ok -text "OK" -highlightbackground $cvsglb(bg) \
     -command {
       grab release .svn_import
       wm withdraw .svn_import
       svn_do_import $cvsglb(imtop) $cvsglb(imdir)
     }
-  button .svn_import.down.quit -text "Cancel" \
+  button .svn_import.down.quit -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command {
       grab release .svn_import
       wm withdraw .svn_import
