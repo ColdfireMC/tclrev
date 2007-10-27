@@ -11,6 +11,7 @@ proc browse_files {module} {
   global modval
   global checkout_version
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER ($module)"
   static {browser 0}
@@ -66,15 +67,15 @@ proc browse_files {module} {
     workdir_images
   }
 
-  button $filebrowse.view -image Fileview \
+  button $filebrowse.view -image Fileview -highlightbackground $cvsglb(bg) \
     -command "module_fileview $filebrowse $module"
-  button $filebrowse.log -image Log \
+  button $filebrowse.log -image Log -highlightbackground $cvsglb(bg) \
     -command "module_filelog $filebrowse $module 0"
-  button $filebrowse.branches -image Branches \
+  button $filebrowse.branches -image Branches -highlightbackground $cvsglb(bg) \
     -command "module_filelog $filebrowse $module 1"
-  button $filebrowse.tag -image Tags \
+  button $filebrowse.tag -image Tags -highlightbackground $cvsglb(bg) \
     -command "module_tagview $filebrowse $module"
-  button $filebrowse.quit -text "Close" \
+  button $filebrowse.quit -text "Close" -highlightbackground $cvsglb(bg) \
     -padx 0 -pady 0 \
     -command "destroy $filebrowse; exit_cleanup 0"
 

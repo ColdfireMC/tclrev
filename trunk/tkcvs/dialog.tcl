@@ -13,6 +13,7 @@ if {[catch "image type arr_dn"]} {
 # Creates the widgets for the dynamic form dialog
 proc dialog_FormCreate { title form_data } {
   global cvscfg
+  global cvsglb
   global dynamic_dialog
   global dialog_action
 
@@ -77,7 +78,7 @@ proc dialog_FormCreate { title form_data } {
   frame $w.buttons -relief groove -bd 2
   pack $w.buttons -side top -fill x
 
-  button $w.ok -text "OK" \
+  button $w.ok -text "OK" -highlightbackground $cvsglb(bg) \
     -command "
     if {\[dialog_FormComplete $w [list $form_data]\] } {
       destroy $w
@@ -86,14 +87,14 @@ proc dialog_FormCreate { title form_data } {
     }
     "
 
-  button $w.apply -text "Apply" \
+  button $w.apply -text "Apply" -highlightbackground $cvsglb(bg) \
     -command "
     if {\[dialog_FormComplete $w [list $form_data]\] } {
       $dialog_action
     }
     "
 
-  button $w.close -text "Cancel" \
+  button $w.close -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command "
       destroy $w
       exit_cleanup 0
@@ -419,6 +420,7 @@ proc dialog_svn_patch { cvsroot pathA pathB summary } {
 
 proc add_dialog {args} {
   global cvs
+  global cvsglb
   global incvs
   global insvn
 
@@ -446,7 +448,7 @@ proc add_dialog {args} {
   message .add.middle -text $mess -aspect 200
   pack .add.middle -side top -fill x
   frame .add.down
-  button .add.down.add -text "Add"
+  button .add.down.add -text "Add" -highlightbackground $cvsglb(bg)
   if {$incvs} {
     .add.down.add configure -command {
       grab release .add
@@ -464,7 +466,7 @@ proc add_dialog {args} {
     }
   }
 
-  button .add.down.cancel -text "Cancel" \
+  button .add.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command { grab release .add; destroy .add }
   pack .add.down -side bottom -fill x -expand 1
   pack .add.down.add .add.down.cancel -side left \
@@ -479,6 +481,7 @@ proc add_dialog {args} {
 proc file_tag_dialog {branch} {
   global incvs insvn inrcs
   global cvscfg
+  global cvsglb
   global branchflag
 
   gen_log:log T "ENTER"
@@ -537,7 +540,7 @@ proc file_tag_dialog {branch} {
 
   frame .tag.down -relief groove -bd 2
   pack .tag.down -side bottom -fill x -expand 1
-  button .tag.down.tag -text "Tag"
+  button .tag.down.tag -text "Tag" -highlightbackground $cvsglb(bg)
   if {$incvs} {
     .tag.down.tag configure -command {
       cvs_tag $usertagname $forceflag $branchflag $updflag \
@@ -554,7 +557,7 @@ proc file_tag_dialog {branch} {
       destroy .tag
     }
   }
-  button .tag.down.cancel -text "Cancel" \
+  button .tag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command { grab release .tag; destroy .tag }
 
   pack .tag.down.tag .tag.down.cancel -in .tag.down -side left \
@@ -574,6 +577,7 @@ proc file_tag_dialog {branch} {
 
 proc rtag_dialog { cvsroot module b_or_t } {
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER ($cvsroot $module $b_or_t)"
 
@@ -611,13 +615,13 @@ proc rtag_dialog { cvsroot module b_or_t } {
   frame .modtag.down -relief groove -bd 2
   pack .modtag.down -side top -fill x
 
-  button .modtag.down.tag -text "Tag" \
+  button .modtag.down.tag -text "Tag" -highlightbackground $cvsglb(bg) \
     -command "
                cvs_rtag $cvsroot $module $b_or_t \$force \$otag \$ntag; \
                .modtag.down.cancel invoke
              "
 
-  button .modtag.down.cancel -text "Cancel" \
+  button .modtag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command {
                grab release .modtag
                destroy .modtag
@@ -637,6 +641,7 @@ proc rtag_dialog { cvsroot module b_or_t } {
 proc subtract_dialog {args} {
   global incvs
   global insvn
+  global cvsglb
 
   gen_log:log T "ENTER ($args)"
 
@@ -669,7 +674,7 @@ proc subtract_dialog {args} {
   message .subtract.middle -text $mess -aspect 200
   pack .subtract.middle -side top -fill x
   frame .subtract.down
-  button .subtract.down.remove -text "Remove"
+  button .subtract.down.remove -text "Remove" -highlightbackground $cvsglb(bg)
   if {$incvs} {
     .subtract.down.remove configure -command {
       grab release .subtract
@@ -684,7 +689,7 @@ proc subtract_dialog {args} {
     }
   }
   
-  button .subtract.down.cancel -text "Cancel" \
+  button .subtract.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command { grab release .subtract; destroy .subtract }
   pack .subtract.down -side bottom -fill x -expand 1
   pack .subtract.down.remove .subtract.down.cancel -side left \
@@ -698,6 +703,7 @@ proc subtract_dialog {args} {
 
 proc edit_dialog {args} {
   global incvs
+  global cvsglb
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -726,13 +732,13 @@ proc edit_dialog {args} {
   pack .editflag.middle -side top -fill x
 
   frame .editflag.down
-  button .editflag.down.remove -text "Edit" \
+  button .editflag.down.remove -text "Edit" -highlightbackground $cvsglb(bg) \
     -command {
       grab release .editflag
       destroy .editflag
       cvs_edit [workdir_list_files]
     }
-  button .editflag.down.cancel -text "Cancel" \
+  button .editflag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command { grab release .editflag; destroy .editflag }
   pack .editflag.down -side bottom -fill x -expand 1
   pack .editflag.down.remove .editflag.down.cancel -side left \
@@ -746,6 +752,7 @@ proc edit_dialog {args} {
 
 proc unedit_dialog {args} {
   global incvs
+  global cvsglb
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -774,13 +781,13 @@ proc unedit_dialog {args} {
   pack .uneditflag.middle -side top -fill x
 
   frame .uneditflag.down
-  button .uneditflag.down.remove -text "Unedit" \
+  button .uneditflag.down.remove -text "Unedit" -highlightbackground $cvsglb(bg) \
     -command {
       grab release .uneditflag
       destroy .uneditflag
       cvs_unedit [workdir_list_files]
     }
-  button .uneditflag.down.cancel -text "Cancel" \
+  button .uneditflag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command { grab release .uneditflag; destroy .uneditflag }
   pack .uneditflag.down -side bottom -fill x -expand 1
   pack .uneditflag.down.remove .uneditflag.down.cancel -side left \

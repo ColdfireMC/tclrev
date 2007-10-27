@@ -338,24 +338,24 @@ proc svn_commit_dialog {} {
   pack .commit.message -in .commit.top -padx 2 -pady 5
 
 
-  button .commit.ok -text "OK" \
+  button .commit.ok -text "OK" -highlightbackground $cvsglb(bg) \
     -command {
       grab release .commit
       wm withdraw .commit
       set cvsglb(commit_comment) [.commit.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
     }
-  button .commit.apply -text "Apply" \
+  button .commit.apply -text "Apply" -highlightbackground $cvsglb(bg) \
     -command {
       set cvsglb(commit_comment) [.commit.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
     }
-  button .commit.clear -text "ClearAll" \
+  button .commit.clear -text "ClearAll" -highlightbackground $cvsglb(bg) \
     -command {
       set version ""
       .commit.tcomment delete 1.0 end
     }
-  button .commit.quit \
+  button .commit.quit -highlightbackground $cvsglb(bg) \
     -command {
       grab release .commit
       wm withdraw .commit
