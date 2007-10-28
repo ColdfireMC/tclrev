@@ -1320,21 +1320,6 @@ proc are_you_sure {mess args} {
   return 1
 }
 
-proc busy_start {w} {
-
-  foreach widget [winfo children $w] {
-    catch {$widget config -cursor watch}
-  }
-  update idletasks
-}
-
-proc busy_done {w} {
-
-  foreach widget [winfo children $w] {
-    catch {$widget config -cursor ""}
-  }
-}
-
 proc workdir_print_file {args} {
   global cvscfg
 
@@ -1407,12 +1392,6 @@ proc cvsroot_check { dir } {
 
   gen_log:log T "LEAVE ($incvs $insvn $inrcs)"
   return [list $incvs $insvn $inrcs]
-}
-
-proc nop {} {}
-
-proc disabled {} {
-  cvsok "Command disabled." .workdir
 }
 
 proc isCmDirectory { file } {

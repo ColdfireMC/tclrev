@@ -126,6 +126,7 @@ if {! [get_cde_params]} {
   set cvsglb(readonlybg) gray96
   set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
+  set hlbg_rgb [winfo rgb .testent $cvsglb(hlbg)]
   destroy .testent
 
 
@@ -145,19 +146,20 @@ if {! [get_cde_params]} {
   # backgrounds the same which I don't like, so I'm going to use the same
   # trick I use for CDE to give the canvases a little shading.  I don't
   # do this for raw X11 because the user might have set their own options.
-  #set bg [option get .testlbl background background]
-  #puts $bg
-  set bg [lindex [.testlbl cget -background] 0]
-  #puts $bg
-  set cvsglb(bg) $bg
-  if {[string length $bg]} {
-    set rgb_bg [winfo rgb .testlbl $bg]
-    set shadow [format #%02x%02x%02x [expr (9*[lindex $rgb_bg 0])/2560] \
-                                     [expr (9*[lindex $rgb_bg 1])/2560] \
-                                     [expr (9*[lindex $rgb_bg 2])/2560]]
-    set cvsglb(canvbg) $shadow
-  }
+  set cvsglb(bg) [lindex [.testlbl cget -background] 0]
+  set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+  set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
+  set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
+
+  if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 1000} {
+    set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
+  }
+puts "bg $cvsglb(bg)"
+puts "hlbg $cvsglb(hlbg)"
+puts "canvbg $cvsglb(canvbg)"
+
+#puts "hloutline $cvsglb(hloutline)"
    
   # Find out what the default font is for listboxes
   if { ! [info exists cvscfg(listboxfont)] } {

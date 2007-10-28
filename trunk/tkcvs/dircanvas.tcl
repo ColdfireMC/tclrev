@@ -36,17 +36,6 @@ proc DirCanvas:create {w} {
     -highlightthickness 0
   pack $w.yscroll -side right -fill y
 
-  if {[winfo exists .workdir]} {
-    set cvsglb(fg) [lindex [.workdir.top.bmodbrowse configure -foreground] 4]
-    set cvsglb(dfg) [lindex [.workdir.top.bmodbrowse configure -disabledforeground] 4]
-  }
-  set selcolor [option get . selectColor selectColor]
-  if {[string length $selcolor]} {
-    set cvsglb(hlbg) $selcolor
-  } else {
-    set cvsglb(hlbg) "#ffec8b"
-  }
-
   DirCanvas:column $w filecol "file"
   DirCanvas:column $w statcol "status"
   DirCanvas:column $w datecol "date"

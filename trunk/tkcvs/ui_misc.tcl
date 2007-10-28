@@ -1,6 +1,5 @@
 # Bindings to make canvases scroll.  Canvases have no bindings at all
 # by default.
-
 proc scrollbindings {bindtag} {
   # Page keys
   bind $bindtag <ButtonPress-1>    [list focus %W]
@@ -53,3 +52,57 @@ proc bind_show {w {mode "-verbose"}} {
     }
   }
 }
+
+# start and stop busy cursor
+proc busy_start {w} {
+
+  foreach widget [winfo children $w] {
+    catch {$widget config -cursor watch}
+  }
+  update idletasks
+}
+
+proc busy_done {w} {
+
+  foreach widget [winfo children $w] {
+    catch {$widget config -cursor ""}
+  }
+}
+
+# Take a color like $d9d9d9 and darken it
+proc rgb_shadow {color} {
+  set rgb_color [winfo rgb . $color]
+  set shadow [format #%02x%02x%02x [expr (9*[lindex $rgb_color 0])/2560] \
+                                   [expr (9*[lindex $rgb_color 1])/2560] \
+                                   [expr (9*[lindex $rgb_color 2])/2560]]
+  return $shadow
+}
+
+# See if two colors might too close to distinguish, for highlighting
+proc rgb_diff {c1 c2} {
+  set rgb_c1 [winfo rgb . $c1]
+  set rgb_c2 [winfo rgb . $c2]
+
+  set r1 [lindex $rgb_c1 0]
+  set g1 [lindex $rgb_c1 1]
+  set b1 [lindex $rgb_c1 2]
+  set r2 [lindex $rgb_c2 0]
+  set g2 [lindex $rgb_c2 1]
+  set b2 [lindex $rgb_c2 2]
+  #puts "$r1 $g1 $b1"
+  #puts "$r2 $g2 $b2"
+
+  set maxdiff 0
+  set dr [expr {abs($r2 - $r1)}]
+  if {$dr > $maxdiff} {set maxdiff $dr}
+  set dg [expr {abs($g2 - $g1)}]
+  if {$dg > $maxdiff} {set maxdiff $dg}
+  set db [expr {abs($b2 - $b1)}]
+  if {$db > $maxdiff} {set maxdiff $db}
+  #puts "$dr $dg $db"
+  #puts "maxdiff: $maxdiff"
+  return $maxdiff
+}
+
+proc nop {} {}
+
