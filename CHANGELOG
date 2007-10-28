@@ -18,6 +18,8 @@ Release 8.0.5
 
 - Fix for when an e-mail address appears in svn status in https protocol
 
+- Remove white boxes around Aqua pill-style buttons
+
 
 Release 8.0.4   May, 2007
 

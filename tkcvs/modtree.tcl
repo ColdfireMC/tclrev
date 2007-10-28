@@ -30,20 +30,6 @@ proc ModTree:create {w {open_func {}} } {
   $w.tree.list configure -bg $cvsglb(canvbg)
   $w.labl.list configure -bg $cvsglb(canvbg)
 
-  set cvsglb(fg) [lindex [.modbrowse.bottom.buttons.modfuncs.filebrowse configure -foreground] 4]
-  set cvsglb(dfg) \
-      [lindex [.modbrowse.top.bworkdir configure -disabledforeground] 4]
-  set buttonhilite \
-      [lindex [.modbrowse.top.bworkdir configure -highlightbackground] 4]
-  set selcolor [option get . selectColor selectColor]
-
-  if {[string length $selcolor]} {
-    set cvsglb(hlbg) $selcolor
-  }
-  if {$cvsglb(hlbg) == $cvsglb(canvbg)} {
-    set cvsglb(hlbg) $buttonhilite
-  }
-
   scrollbar $w.yscroll -orient vertical -highlightthickness 0 \
       -command "ModTree:scroll_windows $w"
   pack $w.yscroll -side right -fill y
@@ -295,15 +281,16 @@ proc ModTree:buildlayer {w v in} {
     $w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$fn\""
     $w.tree.list bind $w.tree.list.tx$j <2> "ModTree:setselB $w \"$fn\""
     $w.tree.list bind $w.tree.list.tx$j <3> "ModTree:setselB $w \"$fn\""
-    $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w \"$fn\""
-    $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w \"$fn\""
+    $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w $j"
+    $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w $j"
 
     #gen_log:log D "$vx/$c $lbl   j=$j"
     if {[info exists Tree($w:$vx/$c:title)]} {
       set k [$w.labl.list create text [expr {$x - $Tree(vsize) - 22}] $y \
          -text $Tree($w:$vx/$c:title) \
          -fill $cvsglb(fg) \
-         -font $cvscfg(listboxfont) -anchor w]
+         -font $cvscfg(listboxfont) -anchor w \
+         -tag $w.labl.list.tx$j]
     }
     set Tree($w:tag:$j) $vx/$c
     set Tree($w:$vx/$c:tag) $j
@@ -437,22 +424,23 @@ proc ModTree:clearselection {w} {
   }
 }
 
-proc ModTree:flash {widg v} {
-  global Tree
+proc ModTree:flash {w y} {
+  global cvsglb
+  global cvscfg
 
-  set j $Tree($widg:$v:tag)
-  ModTree:setTextHBox $widg $widg.tree.list.tx$j
+  set ft [$w.tree.list itemcget $w.tree.list.tx$y -font]
+  set bf [font actual $ft]
+
+  $w.tree.list itemconfigure $w.tree.list.tx$y -font "$bf -underline 1"
+  $w.labl.list itemconfigure $w.labl.list.tx$y -font "$bf -underline 1"
 }
 
-proc ModTree:unflash {widg v} {
-  global Tree
+proc ModTree:unflash {w y} {
+  global cvsglb
+  global cvscfg
 
-  set j $Tree($widg:$v:tag)
-
-  # Don't unflash if this is one that is selected:
-  if { $Tree($widg:selection) != $v && $Tree($widg:selB) != $v } {
-  	ModTree:clearTextHBox $widg $widg.tree.list.tx$j
-  }
+  $w.tree.list itemconfigure $w.tree.list.tx$y -font $cvscfg(listboxfont)
+  $w.labl.list itemconfigure $w.labl.list.tx$y -font $cvscfg(listboxfont)
 }
 
 proc ModTree:scroll_windows {w args} {
@@ -497,18 +485,29 @@ proc ModTree:clearTextHBox {w id} {
     # clear the tag corresponding to the text label
     catch {$w.tree.list delete HBox$id}
     $w.tree.list itemconfigure $id -fill $cvsglb(fg) 
+    catch {$w.labl.list delete HBox$id}
+    $w.labl.list itemconfigure $id -fill $cvsglb(fg) 
 }
 
 # set a text highligh box (used by set/clearselection)
 proc ModTree:setTextHBox {w id} {
    global cvsglb
-   
-   # get the bounding box for the text id
-   set bbox [$w.tree.list bbox $id]
-   if {[llength $bbox]==4} {
-    # create rectangle with fill, tagged with the same ID as the text, so we can delete it later
-    set i [eval $w.tree.list create rectangle $bbox -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"] 
-    $w.tree.list itemconfigure $id -fill $cvsglb(hlfg)
-    $w.tree.list lower $i
-  } 
+     # get the bounding box for the text id
+  set bbox [$w.tree.list bbox $id]
+  if {[llength $bbox] != 4} {
+    return
+  }
+  set lx [lindex $bbox 0]
+  set uy [lindex $bbox 1]
+  set ly [lindex $bbox 3]
+  set i [eval $w.tree.list create rectangle \
+    $lx $ly [winfo width $w.tree] $uy \
+    -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
+  $w.tree.list itemconfigure $id -fill $cvsglb(hlfg)
+  $w.tree.list lower $i
+  set i [eval $w.labl.list create rectangle \
+    0 $ly [winfo width $w.labl] $uy \
+    -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
+  $w.labl.list itemconfigure $id -fill $cvsglb(hlfg)
+  $w.labl.list lower $i
 }

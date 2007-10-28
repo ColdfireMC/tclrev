@@ -188,13 +188,12 @@ proc svn_add {args} {
 # does svn remove from workdir browser
 proc svn_remove {args} {
   global cvscfg
-  global cmd
 
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
 
-  set cmd [exec::new "svn remove $filelist"]
-  auto_setup_dir $cmd
+  set command [exec::new "svn remove $filelist"]
+  auto_setup_dir $command
 
   gen_log:log T "LEAVE"
 }
@@ -812,7 +811,7 @@ proc svn_resolve {args} {
       }
     }
     gen_log:log D "Marking $file as resolved"
-    set cmd [exec::new "svn resolved $file"]
+    set command [exec::new "svn resolved $file"]
   }
   if {$cvscfg(auto_status)} {
     setup_dir
@@ -830,8 +829,8 @@ proc svn_revert {args} {
     set filelist "-R ."
   }
   gen_log:log D "Reverting $filelist"
-  set cmd [exec::new "svn revert $filelist"]
-  auto_setup_dir $cmd
+  set command [exec::new "svn revert $filelist"]
+  auto_setup_dir $command
 
   gen_log:log T "LEAVE"
 }
@@ -1163,16 +1162,16 @@ proc svn_fileview {revision filename kind} {
   global cvscfg
 
   gen_log:log T "ENTER ($revision $filename $kind)"
-  set cmd "cat"
+  set command "cat"
   if {$kind == "directory"} {
-     set cmd "ls"
+     set command "ls"
   }
   if {$revision == {}} {
-    set command "svn $cmd \"$filename\""
+    set command "svn $command \"$filename\""
     set v [viewer::new "$filename"]
     $v\::do "$command"
   } else {
-    set command "svn $cmd -$revision \"$filename\""
+    set command "svn $command -$revision \"$filename\""
     set v [viewer::new "$filename Revision $revision"]
     $v\::do "$command"
   }

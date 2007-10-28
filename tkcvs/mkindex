@@ -26,7 +26,7 @@ auto_mkindex . \
   modules.tcl \
   picklist.tcl \
   rcs.tcl \
-  scrollbindings.tcl \
+  ui_misc.tcl \
   static.tcl \
   svn-import.tcl \
   svn.tcl \
