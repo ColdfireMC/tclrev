@@ -292,6 +292,13 @@ proc ModTree:buildlayer {w v in} {
          -font $cvscfg(listboxfont) -anchor w \
          -tag $w.labl.list.tx$j]
     }
+    $w.labl.list bind $w.labl.list.tx$j <1> "ModTree:setselection $w \"$fn\""
+    $w.labl.list bind $w.labl.list.tx$j <2> "ModTree:setselB $w \"$fn\""
+    $w.labl.list bind $w.labl.list.tx$j <3> "ModTree:setselB $w \"$fn\""
+    $w.labl.list bind $w.labl.list.tx$j <Enter> "ModTree:flash $w $j"
+    $w.labl.list bind $w.labl.list.tx$j <Leave> "ModTree:unflash $w $j"
+
+
     set Tree($w:tag:$j) $vx/$c
     set Tree($w:$vx/$c:tag) $j
     # Put an open/close image on it if it has children
@@ -371,7 +378,7 @@ proc ModTree:setselection {w v} {
   set oldv $Tree($w:selection)
   if {$oldv != ""} {
     set j $Tree($w:$oldv:tag)
-    ModTree:clearTextHBox $w $w.tree.list.tx$j
+    ModTree:clearTextHBox $w $j
   }
   #foreach a [array names Tree "$w:$v:*"] { puts "$a $Tree($a)" }
 
@@ -379,7 +386,8 @@ proc ModTree:setselection {w v} {
   if {$v != ""} {
     set Tree($w:selection) $v
     set j $Tree($w:$v:tag)
-    ModTree:setTextHBox $w $w.tree.list.tx$j
+    #ModTree:setTextHBox $w $w.tree.list.tx$j
+    ModTree:setTextHBox $w $j
     set modbrowse_module $Tree($w:$v:name)
     set modbrowse_title $Tree($w:$v:title)
   }
@@ -397,14 +405,15 @@ proc ModTree:setselB {w v} {
   set oldv $Tree($w:selB)
   if {$oldv != ""} {
     set j $Tree($w:$oldv:tag)
-    ModTree:clearTextHBox $w $w.tree.list.tx$j
+    ModTree:clearTextHBox $w $j
   }
 
   # Hilight new selection
   if {$v != ""} {
     set Tree($w:selB) $v
     set j $Tree($w:$v:tag)
-    ModTree:setTextHBox $w $w.tree.list.tx$j
+    #ModTree:setTextHBox $w $w.tree.list.tx$j
+    ModTree:setTextHBox $w $j
   }
   set selB_path $v
 }
@@ -483,17 +492,17 @@ proc ModTree:clearTextHBox {w id} {
    global cvsglb
 
     # clear the tag corresponding to the text label
-    catch {$w.tree.list delete HBox$id}
-    $w.tree.list itemconfigure $id -fill $cvsglb(fg) 
-    catch {$w.labl.list delete HBox$id}
-    $w.labl.list itemconfigure $id -fill $cvsglb(fg) 
+    catch {$w.tree.list delete HBox$w.tree.list.tx$id}
+    $w.tree.list itemconfigure $w.tree.list.tx$id -fill $cvsglb(fg) 
+    catch {$w.labl.list delete HBox$w.tree.list.tx$id}
+    $w.labl.list itemconfigure $w.labl.list.tx$id -fill $cvsglb(fg) 
 }
 
 # set a text highligh box (used by set/clearselection)
 proc ModTree:setTextHBox {w id} {
    global cvsglb
      # get the bounding box for the text id
-  set bbox [$w.tree.list bbox $id]
+  set bbox [$w.tree.list bbox $w.tree.list.tx$id]
   if {[llength $bbox] != 4} {
     return
   }
@@ -502,12 +511,12 @@ proc ModTree:setTextHBox {w id} {
   set ly [lindex $bbox 3]
   set i [eval $w.tree.list create rectangle \
     $lx $ly [winfo width $w.tree] $uy \
-    -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
-  $w.tree.list itemconfigure $id -fill $cvsglb(hlfg)
+    -fill $cvsglb(hlbg) -tag HBox$w.tree.list.tx$id -outline \"\"]
+  $w.tree.list itemconfigure $w.tree.list.tx$id -fill $cvsglb(hlfg)
   $w.tree.list lower $i
   set i [eval $w.labl.list create rectangle \
     0 $ly [winfo width $w.labl] $uy \
-    -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
-  $w.labl.list itemconfigure $id -fill $cvsglb(hlfg)
+    -fill $cvsglb(hlbg) -tag HBox$w.tree.list.tx$id -outline \"\"]
+  $w.labl.list itemconfigure $w.labl.list.tx$id -fill $cvsglb(hlfg)
   $w.labl.list lower $i
 }
