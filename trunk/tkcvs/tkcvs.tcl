@@ -64,7 +64,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "8.0.4+"
+set cvscfg(version) "8.1"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -155,11 +155,9 @@ if {! [get_cde_params]} {
   if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 1000} {
     set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
   }
-puts "bg $cvsglb(bg)"
-puts "hlbg $cvsglb(hlbg)"
-puts "canvbg $cvsglb(canvbg)"
-
-#puts "hloutline $cvsglb(hloutline)"
+#puts "bg $cvsglb(bg)"
+#puts "hlbg $cvsglb(hlbg)"
+#puts "canvbg $cvsglb(canvbg)"
    
   # Find out what the default font is for listboxes
   if { ! [info exists cvscfg(listboxfont)] } {

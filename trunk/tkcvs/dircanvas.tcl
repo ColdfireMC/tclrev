@@ -508,62 +508,6 @@ proc DirCanvas:unselectall {w force} {
   gen_log:log T "LEAVE"
 }
 
-proc DirCanvas:areaStart {w x y} {
-  global areaX1 areaY1
-  global areaX2 areaY2
-
-  gen_log:log T "ENTER ($w $x $y)"
-  $w delete area
-  set areaX1 [$w canvasx $x]
-  set areaY1 [$w canvasy $y]
-  set areaX2 $areaX1
-  set areaY2 $areaY1
-}
-
-proc DirCanvas:areaStroke {w x y} {
-  global areaX1 areaY1
-  global areaX2 areaY2
-  global cvsglb
-  global cvscfg
-
-  set x [$w canvasx $x]
-  set y [$w canvasy $y]
-  if {$areaY1 != $y && $areaX1 != $x} {
-    $w delete area
-    $w addtag area withtag \
-      [$w create rect $areaX1 $areaY1 $x $y -outline $cvsglb(hlbg)]
-    set areaX2 $x
-    set areaY2 $y
-  }
-}
-
-proc DirCanvas:areaFind {w} {
-  global areaX1 areaY1
-  global areaX2 areaY2
-  global DirList
-
-  gen_log:log T "ENTER ($w)"
-  gen_log:log D "$areaX1 $areaY1 $areaX2 $areaY2"
-  set items {}
-  foreach i [$w find enclosed $areaX1 $areaY1 $areaX2 $areaY2] {
-    lappend items $i
-  }
-  foreach i [$w find overlapping $areaX1 $areaY1 $areaX2 $areaY2] {
-      lappend items $i
-  }
-  gen_log:log D "Items in area: $items"
-  set parent [winfo parent [winfo parent $w]]
-  foreach i $items {
-    set itags [$w gettags $i]
-    if { [string match .workdir* [lindex $itags 0]]  } {
-      set iy [lindex $itags 1]
-      gen_log:log D "$w tx$iy"
-      DirCanvas:addselection $parent $iy [lindex $itags 2]
-    }
-  }
-  $w delete area
-}
-
 # Internal use only.
 # Draw the files on the canvas
 proc DirCanvas:build {w} {
@@ -842,49 +786,28 @@ proc DirCanvas:build {w} {
     # For columns except filecol, this breaks selecting the text item.  Why??
     #bind $w.datecol.list <1> "DirCanvas:unselectall $w 0"
 
-    # Select by dragging a rectangle in the filelist
-    bind $w.filecol.list <2> "DirCanvas:areaStart $w.filecol.list %x %y"
-    bind $w.filecol.list <B2-Motion> "DirCanvas:areaStroke $w.filecol.list %x %y; \
-                             DirCanvas:drag_windows $w %W %y"
-    bind $w.filecol.list <B2-Motion><ButtonRelease-2> "DirCanvas:unselectall $w 1; \
-                                              DirCanvas:areaFind $w.filecol.list"
-    bind $w.filecol.list <3> "DirCanvas:areaStart $w.filecol.list %x %y"
-    bind $w.filecol.list <Shift-3> "DirCanvas:areaStart $w.filecol.list %x %y"
-    bind $w.filecol.list <B3-Motion> "DirCanvas:areaStroke $w.filecol.list %x %y; \
-                             DirCanvas:drag_windows $w %W %y"
-    bind $w.filecol.list <B3-Motion><ButtonRelease-3> "DirCanvas:unselectall $w 1; \
-                                              DirCanvas:areaFind $w.filecol.list"
     # In the bindings, filenames need any single percents replaced with
     # double to avoid interpretation as an event field
     regsub -all {\%} $f {%%} fn
     regsub -all {\$} $fn {\$} fn
 
-    # The "x" tag is used for area selection.
     # Draw the icon
-     set k [$w.filecol.list create image $x $y -image $DirList($w:$f:icon) \
-       -anchor w -tags [list x $y] ]
-     $w.filecol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-     $w.filecol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-     $w.filecol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-     $w.filecol.list bind $k <Double-1> {workdir_edit_file [workdir_list_files]}
-     $w.filecol.list bind $k <2> "DirCanvas:areaStart $w.filecol.list %x %y; \
-                         DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
-     $w.filecol.list bind $k <3> "DirCanvas:areaStart $w.filecol.list %x %y; \
-                         DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
+    set k [$w.filecol.list create image $x $y -image $DirList($w:$f:icon) \
+      -anchor w -tags [list $y] ]
+    $w.filecol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
+    $w.filecol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+    $w.filecol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
+    $w.filecol.list bind $k <Double-1> {workdir_edit_file [workdir_list_files]}
 
     # Draw the label
-     $w.filecol.list create text $lblx $y  -text $f -font $cvscfg(listboxfont) \
-       -anchor w -tags [list $w.filecol.list.tx$y $y $fn] -fill $lblfg
-     $w.filecol.list bind $w.filecol.list.tx$y <1> "DirCanvas:setselection $w $y \"$fn\""
-     $w.filecol.list bind $w.filecol.list.tx$y <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-     $w.filecol.list bind $w.filecol.list.tx$y <Enter> "DirCanvas:flash $w $y"
-     $w.filecol.list bind $w.filecol.list.tx$y <Leave> "DirCanvas:unflash $w $y"
-     $w.filecol.list bind $w.filecol.list.tx$y <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-     $w.filecol.list bind $w.filecol.list.tx$y <Double-1> {workdir_edit_file [workdir_list_files]}
-     $w.filecol.list bind $w.filecol.list.tx$y <2> "DirCanvas:areaStart $w.filecol.list %x %y; \
-                                  DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
-     $w.filecol.list bind $w.filecol.list.tx$y <3> "DirCanvas:areaStart $w.filecol.list %x %y; \
-                                  DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
+    $w.filecol.list create text $lblx $y  -text $f -font $cvscfg(listboxfont) \
+      -anchor w -tags [list $w.filecol.list.tx$y $y $fn] -fill $lblfg
+    $w.filecol.list bind $w.filecol.list.tx$y <1> "DirCanvas:setselection $w $y \"$fn\""
+    $w.filecol.list bind $w.filecol.list.tx$y <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
+    $w.filecol.list bind $w.filecol.list.tx$y <Enter> "DirCanvas:flash $w $y"
+    $w.filecol.list bind $w.filecol.list.tx$y <Leave> "DirCanvas:unflash $w $y"
+    $w.filecol.list bind $w.filecol.list.tx$y <Control-1> "DirCanvas:addselection $w $y \"$fn\""
+    $w.filecol.list bind $w.filecol.list.tx$y <Double-1> {workdir_edit_file [workdir_list_files]}
 
     set DirList($w:$f:y) $y
     set DirList($w.filecol.list:$y) $f
