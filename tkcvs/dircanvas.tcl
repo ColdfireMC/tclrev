@@ -43,12 +43,8 @@ proc DirCanvas:create {w} {
   set selcolor [option get . selectColor selectColor]
   if {[string length $selcolor]} {
     set cvsglb(hlbg) $selcolor
-  }
-  if {$cvsglb(hlbg) == $cvsglb(canvbg)} {
-    #set cvsglb(hlbg) $buttonhilite
-  }
-  if {! [info exists cvsglb(glb_highlight)]} {
-    set cvsglb(glb_highlight) $cvsglb(hlbg)
+  } else {
+    set cvsglb(hlbg) "#ffec8b"
   }
 
   DirCanvas:column $w filecol "file"
@@ -546,7 +542,7 @@ proc DirCanvas:areaStroke {w x y} {
   if {$areaY1 != $y && $areaX1 != $x} {
     $w delete area
     $w addtag area withtag \
-      [$w create rect $areaX1 $areaY1 $x $y -outline $cvsglb(glb_highlight)]
+      [$w create rect $areaX1 $areaY1 $x $y -outline $cvsglb(hlbg)]
     set areaX2 $x
     set areaY2 $y
   }
