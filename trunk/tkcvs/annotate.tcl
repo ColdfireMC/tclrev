@@ -205,7 +205,7 @@ namespace eval ::annotate {
 
 
       frame $w.bottom
-      button $w.bottom.close -text "Close" -highlightbackgroudn $cvsglb(bg) \
+      button $w.bottom.close -text "Close" -highlightbackground $cvsglb(bg) \
         -command "destroy $w; exit_cleanup 0"
       label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
       checkbutton $w.bottom.linum -text "Show Line Numbers" \
@@ -213,9 +213,9 @@ namespace eval ::annotate {
         -onvalue 1 -offvalue 0
       entry $w.bottom.dayentry -width 3 \
         -textvariable [namespace current]::revspercolor
-      button $w.bottom.redo -text "Redo Colors" -highlightbackgroudn $cvsglb(bg)
+      button $w.bottom.redo -text "Redo Colors" -highlightbackground $cvsglb(bg)
 
-      button $w.bottom.srchbtn -text Search -highlightbackgroudn $cvsglb(bg) \
+      button $w.bottom.srchbtn -text Search -highlightbackground $cvsglb(bg) \
         -command "search_textwidget $w.text"
       entry $w.bottom.entry -width 20 -textvariable cvsglb(searchstr)
       bind $w.bottom.entry <Return> "search_textwidget $w.text"
