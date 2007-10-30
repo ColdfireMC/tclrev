@@ -8,7 +8,8 @@ if ( -f $HOME/tkcvs_$V ) rm -rf $HOME/tkcvs_$V
 mkdir $HOME/tkcvs_$V
 set Target = $HOME/tkcvs_$V/TkCVS.app
 echo "Ditto Target"
-ditto $HOME/Downloads/Wish\ Shell.app $Target
+ditto $HOME/Downloads/Wish\ Shell8.4.9.app $Target
+#ditto $HOME/Downloads/Wish8.4.10.app $Target
 chmod -R +w $Target/*
 
 echo "Installing Icons"
@@ -44,6 +45,7 @@ cd $HOME
 # better be able to handle it
 echo "$Target/Contents/MacOS/Wish Shell -psn_0_7995393"
 "$Target/Contents/MacOS/Wish Shell" -psn_0_7995393
+#$Target/Contents/MacOS/Wish -psn_0_7995393
 
 # To make a disk image, use
 # buildDmg.pl -dmgName tkcvs_$V -volName tkcvs_$V tkcvs_$V/*

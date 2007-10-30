@@ -109,9 +109,9 @@ proc cvs_version {} {
 }
 
 proc wish_version {{parent {.}}} {
-  global tk_version
+  global tk_patchLevel
 
-  set version $tk_version
+  set version $tk_patchLevel
   set whichwish [info nameofexecutable]
 
   set about_string "$whichwish\n\n"
