@@ -1323,7 +1323,6 @@ namespace eval ::logcanvas {
         -command [namespace code {$logcanvas.close invoke}]
       $logcanvas.menubar.file add command -label "Exit" -underline 1 \
         -command { exit_cleanup 1 }
-      set selcolor [option get $logcanvas selectColor selectColor]
       $logcanvas.menubar add cascade -label "View"\
          -menu $logcanvas.menubar.view -underline 0
       menu $logcanvas.menubar.view -tearoff 0
@@ -1331,13 +1330,13 @@ namespace eval ::logcanvas {
         -menu $logcanvas.menubar.view.update
       menu $logcanvas.menubar.view.update
       $logcanvas.menubar.view.update add radiobutton -label "Every Revision" \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -variable [namespace current]::opt(update_drawing) -value 0
       $logcanvas.menubar.view.update add radiobutton -label "Every Branch" \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -variable [namespace current]::opt(update_drawing) -value 1
       $logcanvas.menubar.view.update add radiobutton -label "When Finished" \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -variable [namespace current]::opt(update_drawing) -value 2
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add cascade -label "Tree Layout" \
@@ -1347,19 +1346,19 @@ namespace eval ::logcanvas {
         "Show empty branches" \
         -variable [namespace current]::opt(show_empty_branches) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show intermediate revisions" \
         -variable [namespace current]::opt(show_inter_revs) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show merges" \
         -variable [namespace current]::opt(show_merges) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add cascade -label "Branch Layout" \
         -menu $logcanvas.menubar.view.branch
@@ -1378,12 +1377,12 @@ namespace eval ::logcanvas {
       $logcanvas.menubar.view.branch add checkbutton -label "Show revision" \
         -variable [namespace current]::opt(show_root_rev) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.branch add checkbutton -label "Show label" \
         -variable [namespace current]::opt(show_root_tags) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add cascade -label "Revision Layout" \
         -menu $logcanvas.menubar.view.rev
@@ -1410,27 +1409,27 @@ namespace eval ::logcanvas {
       $logcanvas.menubar.view.rev add checkbutton -label "Show tags" \
         -variable [namespace current]::opt(show_tags) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show revision" \
         -variable [namespace current]::opt(show_box_rev) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show author" \
         -variable [namespace current]::opt(show_box_revwho) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show date" \
         -variable [namespace current]::opt(show_box_revdate) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show time" \
         -variable [namespace current]::opt(show_box_revtime) \
         -onvalue 1 -offvalue 0 \
-        -selectcolor $selcolor \
+        -selectcolor $cvsglb(sel) \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add cascade -label "Size" \
@@ -1439,7 +1438,7 @@ namespace eval ::logcanvas {
       foreach {label factor} $logcfg(scaling_options) {
         $logcanvas.menubar.view.size add radiobutton -label $label \
           -variable [namespace current]::opt(scale) -value $factor \
-          -selectcolor $selcolor \
+          -selectcolor $cvsglb(sel) \
           -command [namespace code { DrawTree }]
       }
       $logcanvas.menubar.view add separator

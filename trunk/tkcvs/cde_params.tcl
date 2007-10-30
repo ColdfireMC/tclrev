@@ -99,6 +99,7 @@ proc get_cde_params { } {
           option add *Menu.activeBackground $menubg userDefault
           option add *Menubutton.activeBackground $menubg userDefault
           set cvsglb(hlbg) $wkspc1
+          set cvsglb(sel) $activetitle
         }
       }
     }

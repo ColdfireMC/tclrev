@@ -414,8 +414,10 @@ proc DirCanvas:setTextHBox {w id} {
     return
   }
   set lx [lindex $bbox 0]
-  set uy [lindex $bbox 1]
+  #set uy [lindex $bbox 1]
   set ly [lindex $bbox 3]
+  set ly [expr {$ly +1}]
+  set uy [expr {$ly -16}]
   set i [eval $w.filecol.list create rectangle \
     $lx $ly [winfo width $w.filecol] $uy \
     -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
@@ -808,6 +810,8 @@ proc DirCanvas:build {w} {
     $w.filecol.list bind $w.filecol.list.tx$y <Leave> "DirCanvas:unflash $w $y"
     $w.filecol.list bind $w.filecol.list.tx$y <Control-1> "DirCanvas:addselection $w $y \"$fn\""
     $w.filecol.list bind $w.filecol.list.tx$y <Double-1> {workdir_edit_file [workdir_list_files]}
+    $w.filecol.list bind $w.filecol.list.tx$y <2> " DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
+    $w.filecol.list bind $w.filecol.list.tx$y <3> " DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
 
     set DirList($w:$f:y) $y
     set DirList($w.filecol.list:$y) $f

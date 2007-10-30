@@ -507,8 +507,10 @@ proc ModTree:setTextHBox {w id} {
     return
   }
   set lx [lindex $bbox 0]
-  set uy [lindex $bbox 1]
+  #set uy [lindex $bbox 1]
   set ly [lindex $bbox 3]
+  set ly [expr {$ly +1}]
+  set uy [expr {$ly -16}]
   set i [eval $w.tree.list create rectangle \
     $lx $ly [winfo width $w.tree] $uy \
     -fill $cvsglb(hlbg) -tag HBox$w.tree.list.tx$id -outline \"\"]
