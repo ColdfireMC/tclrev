@@ -152,13 +152,18 @@ if {! [get_cde_params]} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
 
-  checkbutton .testchk -text "Check"
-  set selcolor [.testchk cget -selectcolor]
-  destroy .testchk
-  if {[string length $selcolor]} {
-    set cvsglb(sel) $selcolor
+  if {$tk_version > 8.4} {
+    # Lame checkmarks, and selectcolor tends to be white
+    set cvsglb(sel) $cvsglb(fg)
   } else {
-    set cvsglb(sel) "#ffec8b"
+    checkbutton .testchk -text "Check"
+    set selcolor [.testchk cget -selectcolor]
+    destroy .testchk
+    if {[string length $selcolor]} {
+      set cvsglb(sel) $selcolor
+    } else {
+      set cvsglb(sel) "#ffec8b"
+    }
   }
   #puts "bg $cvsglb(bg)"
   #puts "sel $cvsglb(sel)"
