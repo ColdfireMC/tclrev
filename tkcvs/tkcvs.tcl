@@ -152,12 +152,29 @@ if {! [get_cde_params]} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
 
+  checkbutton .testchk -text "Check"
+  set selcolor [.testchk cget -selectcolor]
+  destroy .testchk
+  if {[string length $selcolor]} {
+    set cvsglb(sel) $selcolor
+  } else {
+    set cvsglb(sel) "#ffec8b"
+  }
+  #puts "bg $cvsglb(bg)"
+  #puts "sel $cvsglb(sel)"
+  #puts "canvbg $cvsglb(canvbg)"
+  #puts "hlbg $cvsglb(hlbg)"
+  if {[is_gray $cvsglb(hlbg)]} {
+    # What do we do now?
+    #set cvsglb(hlbg) $cvsglb(sel)
+    set cvsglb(hlbg) "#ffec8b"
+    #puts "Changed hlbg because it's gray"
+  }
   if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 1000} {
     set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
+    #puts "Changed hlbg because it's nearly the same as the canvas"
   }
-#puts "bg $cvsglb(bg)"
-#puts "hlbg $cvsglb(hlbg)"
-#puts "canvbg $cvsglb(canvbg)"
+  #puts "hlbg $cvsglb(hlbg)"
    
   # Find out what the default font is for listboxes
   if { ! [info exists cvscfg(listboxfont)] } {

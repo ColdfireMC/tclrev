@@ -392,6 +392,7 @@ proc workdir_images {} {
 
 proc workdir_menus {} {
   global cvscfg
+  global cvsglb
   global cvsmenu
   global usermenu
   global execmenu
@@ -526,20 +527,19 @@ proc workdir_menus {} {
   .workdir.menubar.reports add command -label "Log" -underline 0
   .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
 
-  set selcolor [option get .workdir selectColor selectColor]
   .workdir.menubar.options add checkbutton -label "Show hidden files" \
      -variable cvscfg(allfiles) -onvalue true -offvalue false \
-     -selectcolor $selcolor -command setup_dir
+     -selectcolor $cvsglb(sel) -command setup_dir
   .workdir.menubar.options add checkbutton -label "Automatic directory status" \
      -variable cvscfg(auto_status) -onvalue true -offvalue false \
-     -selectcolor $selcolor
+     -selectcolor $cvsglb(sel)
   .workdir.menubar.options add checkbutton -label "Confirmation Dialogs" \
      -variable cvscfg(confirm_prompt) -onvalue true -offvalue false \
-     -selectcolor $selcolor
+     -selectcolor $cvsglb(sel)
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
-     -selectcolor $selcolor \
+     -selectcolor $cvsglb(sel) \
      -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
                   DirCanvas:map_column .workdir.main editcol
                 } else {
@@ -548,7 +548,7 @@ proc workdir_menus {} {
               }
   .workdir.menubar.options add checkbutton -label "Status Column" \
      -variable cvscfg(showstatcol) -onvalue true -offvalue false \
-     -selectcolor $selcolor \
+     -selectcolor $cvsglb(sel) \
      -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
                   DirCanvas:map_column .workdir.main statcol
                 } else {
@@ -557,7 +557,7 @@ proc workdir_menus {} {
               }
   .workdir.menubar.options add checkbutton -label "Date Column" \
      -variable cvscfg(showdatecol) -onvalue true -offvalue false \
-     -selectcolor $selcolor \
+     -selectcolor $cvsglb(sel) \
      -command { if {$cvscfg(showdatecol)} {
                   DirCanvas:map_column .workdir.main datecol
                 } else {
@@ -567,10 +567,10 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Report->Check Shows Unknown Files" \
      -variable cvscfg(status_filter) -onvalue false -offvalue true \
-     -selectcolor $selcolor
+     -selectcolor $cvsglb(sel)
   .workdir.menubar.options add checkbutton -label "Report->Check/Status are Recursive" \
      -variable cvscfg(recurse) -onvalue true -offvalue false \
-     -selectcolor $selcolor
+     -selectcolor $cvsglb(sel)
   .workdir.menubar.options add cascade -label "CVS Status Detail" \
      -menu .workdir.menubar.options.report_detail
   .workdir.menubar.options add cascade -label "CVS Log Detail" \
@@ -578,7 +578,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
-     -selectcolor $selcolor -command log_toggle
+     -selectcolor $cvsglb(sel) -command log_toggle
   .workdir.menubar.options add cascade -label "Trace Level" \
      -menu .workdir.menubar.options.loglevel
   .workdir.menubar.options add separator
@@ -588,35 +588,35 @@ proc workdir_menus {} {
   menu .workdir.menubar.options.loglevel
   .workdir.menubar.options.loglevel add checkbutton -label "CVS commands (C)" \
      -variable logclass(C) -onvalue "C" -offvalue "" \
-     -selectcolor $selcolor -command gen_log:changeclass
+     -selectcolor $cvsglb(sel) -command gen_log:changeclass
   .workdir.menubar.options.loglevel add checkbutton -label "CVS stderr (E)" \
      -variable logclass(E) -onvalue "E" -offvalue "" \
-     -selectcolor $selcolor -command gen_log:changeclass
+     -selectcolor $cvsglb(sel) -command gen_log:changeclass
   .workdir.menubar.options.loglevel add checkbutton -label "File creation/deletion (F)"\
      -variable logclass(F) -onvalue "F" -offvalue "" \
-     -selectcolor $selcolor -command gen_log:changeclass
+     -selectcolor $cvsglb(sel) -command gen_log:changeclass
   .workdir.menubar.options.loglevel add checkbutton -label "Function entry/exit (T)" \
      -variable logclass(T) -onvalue "T" -offvalue "" \
-     -selectcolor $selcolor -command gen_log:changeclass
+     -selectcolor $cvsglb(sel) -command gen_log:changeclass
   .workdir.menubar.options.loglevel add checkbutton -label "Debugging (D)" \
      -variable logclass(D) -onvalue "D" -offvalue "" \
-     -selectcolor $selcolor -command gen_log:changeclass
+     -selectcolor $cvsglb(sel) -command gen_log:changeclass
 
   menu .workdir.menubar.options.report_detail
   .workdir.menubar.options.report_detail add radiobutton -label "Verbose" \
-     -variable cvscfg(rdetail) -value "verbose" -selectcolor $selcolor
+     -variable cvscfg(rdetail) -value "verbose" -selectcolor $cvsglb(sel)
   .workdir.menubar.options.report_detail add radiobutton -label "Summary" \
-     -variable cvscfg(rdetail) -value "summary" -selectcolor $selcolor
+     -variable cvscfg(rdetail) -value "summary" -selectcolor $cvsglb(sel)
   .workdir.menubar.options.report_detail add radiobutton -label "Terse" \
-     -variable cvscfg(rdetail) -value "terse" -selectcolor $selcolor
+     -variable cvscfg(rdetail) -value "terse" -selectcolor $cvsglb(sel)
 
   menu .workdir.menubar.options.logfile_detail
   .workdir.menubar.options.logfile_detail add radiobutton -label "Summary" \
-     -variable cvscfg(ldetail) -value "summary" -selectcolor $selcolor
+     -variable cvscfg(ldetail) -value "summary" -selectcolor $cvsglb(sel)
   .workdir.menubar.options.logfile_detail add radiobutton -label "Latest" \
-     -variable cvscfg(ldetail) -value "latest" -selectcolor $selcolor
+     -variable cvscfg(ldetail) -value "latest" -selectcolor $cvsglb(sel)
   .workdir.menubar.options.logfile_detail add radiobutton -label "Verbose" \
-     -variable cvscfg(ldetail) -value "verbose" -selectcolor $selcolor
+     -variable cvscfg(ldetail) -value "verbose" -selectcolor $cvsglb(sel)
 
   .workdir.menubar.goto add command -label "Go Home" \
      -command {change_dir $cvscfg(home)}
@@ -827,10 +827,10 @@ proc delete_bookmark_dialog { } {
    }
    frame $wname.buttons
    pack $wname.buttons -side top -fill x
-   button $wname.delete -text "Delete" -highlightbackground cvsglb(bg) \
+   button $wname.delete -text "Delete" -highlightbackground $cvsglb(bg) \
      -command "delete_bookmark $wname"
         
-   button $wname.close -text "Done" -highlightbackground cvsglb(bg) \
+   button $wname.close -text "Done" -highlightbackground $cvsglb(bg) \
      -command "
        grab release $wname
        destroy $wname

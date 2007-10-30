@@ -104,5 +104,35 @@ proc rgb_diff {c1 c2} {
   return $maxdiff
 }
 
+proc is_gray {color} {
+  set rgb_color [winfo rgb . $color]
+  set r [lindex $rgb_color 0]
+  set g [lindex $rgb_color 1]
+  set b [lindex $rgb_color 2]
+
+  set isgray 0
+  if {$r == $g && $r == $b} {
+    set isgray 1
+  }
+  return $isgray
+}
+
+proc static {args} {
+    global staticvars
+    set procName [lindex [info level -1] 0]
+    foreach varPair $args {
+        set varName [lindex $varPair 0]
+        if {[llength $varPair] != 1} {
+            set varValue [lrange $varPair 1 end]
+        } else {
+            set varValue {}
+        }
+        if {! [info exists staticvars($procName:$varName)]} {
+            set staticvars($procName:$varName) $varValue
+        }
+        uplevel 1 "upvar #0 staticvars($procName:$varName) $varName"
+    }
+}
+
 proc nop {} {}
 

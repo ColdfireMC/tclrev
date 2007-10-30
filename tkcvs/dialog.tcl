@@ -515,8 +515,10 @@ proc file_tag_dialog {branch} {
      -variable branchflag -onvalue "branch" -offvalue "tag" \
      -command { 
         if {$branchflag == "tag"} {
-           .tag.mid.upd config -state disabled; set updflag "no" }
-        else {.tag.mid.upd config -state normal }
+           .tag.mid.upd config -state disabled; set updflag "no"
+        } else {
+           .tag.mid.upd config -state normal
+        }
       }
   checkbutton .tag.top.force -text "Move existing (-F)" \
      -variable forceflag -onvalue "yes" -offvalue "no"
