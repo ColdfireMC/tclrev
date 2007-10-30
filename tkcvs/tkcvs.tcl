@@ -165,12 +165,12 @@ if {! [get_cde_params]} {
   #puts "canvbg $cvsglb(canvbg)"
   #puts "hlbg $cvsglb(hlbg)"
   if {[is_gray $cvsglb(hlbg)]} {
-    # What do we do now?
+    # Which is better?
     #set cvsglb(hlbg) $cvsglb(sel)
     set cvsglb(hlbg) "#ffec8b"
     #puts "Changed hlbg because it's gray"
   }
-  if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 1000} {
+  if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 12000} {
     set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
     #puts "Changed hlbg because it's nearly the same as the canvas"
   }

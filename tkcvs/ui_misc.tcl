@@ -89,8 +89,8 @@ proc rgb_diff {c1 c2} {
   set r2 [lindex $rgb_c2 0]
   set g2 [lindex $rgb_c2 1]
   set b2 [lindex $rgb_c2 2]
-  #puts "$r1 $g1 $b1"
-  #puts "$r2 $g2 $b2"
+  puts "$r1 $g1 $b1"
+  puts "$r2 $g2 $b2"
 
   set maxdiff 0
   set dr [expr {abs($r2 - $r1)}]
@@ -99,7 +99,6 @@ proc rgb_diff {c1 c2} {
   if {$dg > $maxdiff} {set maxdiff $dg}
   set db [expr {abs($b2 - $b1)}]
   if {$db > $maxdiff} {set maxdiff $db}
-  #puts "$dr $dg $db"
   #puts "maxdiff: $maxdiff"
   return $maxdiff
 }
