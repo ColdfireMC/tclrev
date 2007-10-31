@@ -320,20 +320,16 @@ proc DirCanvas:deltree {w} {
 }
 
 proc DirCanvas:flash {w y} {
-  global cvsglb
+  global cvscfg
 
-  set ft [$w.filecol.list itemcget $w.filecol.list.tx$y -font]
-  set bf [font actual $ft]
-
-  $w.filecol.list itemconfigure $w.filecol.list.tx$y -font "$bf -underline 1"
+  $w.filecol.list itemconfigure $w.filecol.list.tx$y -font $cvscfg(flashfont)
   foreach column [lrange [$w.pw panes] 1 end] {
     set i [$column.list find withtag $w.filecol.list.tx$y]
-    $column.list itemconfigure $i -font "$bf -underline 1"
+    $column.list itemconfigure $i -font $cvscfg(flashfont)
   }
 }
 
 proc DirCanvas:unflash {w y} {
-  global cvsglb
   global cvscfg
 
   $w.filecol.list itemconfigure $w.filecol.list.tx$y -font $cvscfg(listboxfont)

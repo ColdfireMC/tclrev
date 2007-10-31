@@ -434,18 +434,13 @@ proc ModTree:clearselection {w} {
 }
 
 proc ModTree:flash {w y} {
-  global cvsglb
   global cvscfg
 
-  set ft [$w.tree.list itemcget $w.tree.list.tx$y -font]
-  set bf [font actual $ft]
-
-  $w.tree.list itemconfigure $w.tree.list.tx$y -font "$bf -underline 1"
-  $w.labl.list itemconfigure $w.labl.list.tx$y -font "$bf -underline 1"
+  $w.tree.list itemconfigure $w.tree.list.tx$y -font $cvscfg(flashfont)
+  $w.labl.list itemconfigure $w.labl.list.tx$y -font $cvscfg(flashfont)
 }
 
 proc ModTree:unflash {w y} {
-  global cvsglb
   global cvscfg
 
   $w.tree.list itemconfigure $w.tree.list.tx$y -font $cvscfg(listboxfont)
