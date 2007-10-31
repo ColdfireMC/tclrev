@@ -127,6 +127,7 @@ if {! [get_cde_params]} {
   set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
   set hlbg_rgb [winfo rgb .testent $cvsglb(hlbg)]
+  set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
   destroy .testent
 
 
@@ -177,16 +178,10 @@ if {! [get_cde_params]} {
   }
   if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 12000} {
     set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
-    #puts "Changed hlbg because it's nearly the same as the canvas"
+    #puts "Changed hlbg because it's nearly the same as the canvas ($rgb_diff < 12000)"
   }
   #puts "hlbg $cvsglb(hlbg)"
    
-  # Find out what the default font is for listboxes
-  if { ! [info exists cvscfg(listboxfont)] } {
-    entry .testent
-    set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
-    destroy .testent
-  }
   scrollbar .scrl
   destroy .scrl
 
@@ -200,16 +195,33 @@ if {! [get_cde_params]} {
   option add *Menu.font $menufont userDefault
   option add *Scrollbar.troughColor $cvsglb(canvbg) userDefault
   option add *Canvas.Background $cvsglb(canvbg) userDefault
+} else {
+  set lbf [font actual $cvscfg(listboxfont)]
+  set ffam [lindex $lbf 1]
+  set fsiz [lindex $lbf 3]
+  set cvscfg(listboxfont) [list $ffam $fsiz]
 }
 
-#puts $cvscfg(listboxfont)
-#puts "[font actual $cvscfg(listboxfont)]"
-set cvscfg(flashfont) [list [lindex $cvscfg(listboxfont) 0] [lindex $cvscfg(listboxfont) 1] underline]
+#puts "listbox font: $cvscfg(listboxfont)"
+set cvscfg(flashfont) $cvscfg(listboxfont)
+set fsiz [lindex $cvscfg(listboxfont) 1]
+set lbf [font actual $cvscfg(listboxfont)]
+#puts "actual listboxfont: $lbf"
+set ffam [lindex $lbf 1]
+if {$fsiz == ""} {
+  # Windows tk8.5
+  set fsiz [lindex $lbf 3]
+}
+
+set cvscfg(flashfont) [list $ffam $fsiz underline]
+#puts "\nflashfont: $cvscfg(flashfont)"
+#puts "actual flashfont: [font actual $cvscfg(flashfont)]"
 # Prefer underline, but it isn't working at all in tk8.5 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
-  set cvscfg(flashfont) [list [lindex $cvscfg(listboxfont) 0] [lindex $cvscfg(listboxfont) 1] bold]
-  puts "Underline font not working.  Using bold instead."
+  puts "Underline font not working.  Try $ffam $fsiz bold"
+  set cvscfg(flashfont) [list [lindex $lbf 1] [lindex $lbf 3] bold]
 }
+#puts "final flashfont: $cvscfg(flashfont)"
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
 option add *ToolTip.foreground  "black" userDefault
