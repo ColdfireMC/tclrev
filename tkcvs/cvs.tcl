@@ -952,7 +952,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
       append commandline " \"$file\""
     }
   }
-  append filemsg "If you have made local changes, they will"
+  append filemsg "\nIf you have made local changes, they will"
   append filemsg " be merged into the new local copy.\n"
   set mess "$filemsg $mess $kmsg"
   append mess "\n\nAre you sure?"
