@@ -170,10 +170,10 @@ if {! [get_cde_params]} {
   #puts "canvbg $cvsglb(canvbg)"
   #puts "hlbg $cvsglb(hlbg)"
   if {[is_gray $cvsglb(hlbg)]} {
-    # Which is better?
+    # Which is better? I like the yellow
     #set cvsglb(hlbg) $cvsglb(sel)
     set cvsglb(hlbg) "#ffec8b"
-    #puts "Changed hlbg because it's gray"
+    #puts "Changed hlbg so it won't be gray"
   }
   if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 12000} {
     set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
@@ -200,6 +200,15 @@ if {! [get_cde_params]} {
   option add *Menu.font $menufont userDefault
   option add *Scrollbar.troughColor $cvsglb(canvbg) userDefault
   option add *Canvas.Background $cvsglb(canvbg) userDefault
+}
+
+#puts $cvscfg(listboxfont)
+#puts "[font actual $cvscfg(listboxfont)]"
+set cvscfg(flashfont) [list [lindex $cvscfg(listboxfont) 0] [lindex $cvscfg(listboxfont) 1] underline]
+# Prefer underline, but it isn't working at all in tk8.5 on linux
+if {! [font actual $cvscfg(flashfont) -underline]} {
+  set cvscfg(flashfont) [list [lindex $cvscfg(listboxfont) 0] [lindex $cvscfg(listboxfont) 1] bold]
+  puts "Underline font not working.  Using bold instead."
 }
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
