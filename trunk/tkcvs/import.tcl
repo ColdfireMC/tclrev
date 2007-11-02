@@ -151,7 +151,7 @@ proc do_import {} {
   set versions [split $cvsglb(newvers) ".,/ -"]
   set baseline "baseline-[join $versions {_}]"
 
-  set commandline "$cvs -d $cvscfg(cvsroot) import -m \"Imported using TkCVS\""
+  set commandline "$cvs -d \"$cvscfg(cvsroot)\" import -m \"Imported using TkCVS\""
   # Let it default to 1.1.1 or you will have big problems later from cvs.
   #if {$cvsglb(newvers) != ""} {
     #append commandline " -b 1.1.1"

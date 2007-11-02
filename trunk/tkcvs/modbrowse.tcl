@@ -391,7 +391,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
 
       set cvsglb(root) $cvscfg(cvsroot)
       set cmd(cvs_co) \
-          [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
+          [exec::new "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"]
       .modbrowse.top.lroot configure -text "CVSROOT"
       .modbrowse.top.lmcode configure -text "Module"
       ModTree:create .modbrowse.treeframe
@@ -426,7 +426,7 @@ proc modbrowse_run { {CVSorSVN {}} } {
 
         #set cvsglb(root) $cvscfg(cvsroot)
         set cmd(cvs_co) \
-            [exec::new "$cvs -d $cvscfg(cvsroot) checkout -p CVSROOT/modules"]
+            [exec::new "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"]
         .modbrowse.top.lroot configure -text "CVSROOT"
         .modbrowse.top.lmcode configure -text "Module"
         ModTree:create .modbrowse.treeframe
