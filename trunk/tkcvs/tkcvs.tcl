@@ -153,27 +153,19 @@ if {! [get_cde_params]} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
 
-  #if {$tk_version > 8.4} {
-    # Lame checkmarks, and selectcolor tends to be white
-    #set cvsglb(sel) $cvsglb(fg)
-  #} else {
-    #checkbutton .testchk -text "Check"
-    #set selcolor [.testchk cget -selectcolor]
-    #destroy .testchk
-    #if {[string length $selcolor]} {
-      #set cvsglb(sel) $selcolor
-    #} else {
-      #set cvsglb(sel) "#ffec8b"
-    #}
-  #}
   #puts "bg $cvsglb(bg)"
-  #puts "sel $cvsglb(sel)"
   #puts "canvbg $cvsglb(canvbg)"
   #puts "hlbg $cvsglb(hlbg)"
   if {[is_gray $cvsglb(hlbg)]} {
     # Which is better? I like the yellow
     #set cvsglb(hlbg) $cvsglb(sel)
-    set cvsglb(hlbg) "#ffec8b"
+    set sel [option get . selectColor Background]
+    if {$sel != ""} {
+      #puts "option selectColor: $sel"
+      set  cvsglb(hlbg) $sel
+    } else {
+      set cvsglb(hlbg) "#ffec8b"
+    }
     #puts "Changed hlbg so it won't be gray"
   }
   if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 12000} {
