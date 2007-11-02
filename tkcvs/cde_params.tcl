@@ -91,7 +91,9 @@ proc get_cde_params { } {
           close $fh
 
           option add *Entry.highlightColor $activetitle userDefault
-          option add *selectColor $activetitle userDefault
+          #option add *selectColor $activetitle userDefault
+          # Don't do userDefault or it doesn't take effect properly
+          option add *selectColor $activetitle
           option add *Text.highlightColor $wkspc4 userDefault
           option add *Dialog.Background $menubg userDefault
           option add *Menu.Background $menubg userDefault
@@ -99,7 +101,6 @@ proc get_cde_params { } {
           option add *Menu.activeBackground $menubg userDefault
           option add *Menubutton.activeBackground $menubg userDefault
           set cvsglb(hlbg) $wkspc1
-          set cvsglb(sel) $activetitle
         }
       }
     }
