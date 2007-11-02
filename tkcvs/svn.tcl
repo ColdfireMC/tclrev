@@ -7,17 +7,24 @@ proc read_svn_dir {dirname} {
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
- # svn info gets the URL
-  set cmd(info) [exec::new "svn info"]
-  set info_lines [$cmd(info)\::output]
-  foreach infoline [split $info_lines "\n"] {
+  # svn info gets the URL
+  # Have to do eval exec because we need the error output
+  set command "svn info"
+  set ret [catch {eval "exec $command"} output]
+  if {$ret} {
+    cvsfail $output
+    return
+  }
+  foreach infoline [split $output "\n"] {
     if {[string match "URL*" $infoline]} {
-      #gen_log:log D "$infoline"
+      gen_log:log D "$infoline"
       set cvscfg(url) [lrange $infoline 1 end]
     }
   }
-  $cmd(info)\::destroy
-  catch {unset cmd(info)}
+
+  if {! [info exists cvscfg(url)]} {
+    set cvscfg(url) ""
+  }
   if {$cvscfg(url) == ""} {
     cvsfail "Can't get the SVN URL"
     return
