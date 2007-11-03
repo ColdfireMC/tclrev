@@ -4,17 +4,20 @@ Release 8.1
   you OK when you're ready to commit the merges.
 
 - Use panedwindow for the Workdir Browser. It has advantages and disadvantages,
-  but it will have more advantages in tk8.5.  Change the highlighting so it
-  goes across all columns, and enable selection from all columns
+  but it will have more advantages when we can migrate to tk8.5.  Change the
+  highlighting so it goes across all columns, and enable selection from all
+  columns.
 
 - Add a menu item to do "svn resolved"
 
-- Add options to use -l and not use -P in cvs update-with-options.
+- Fix [ 1824733 ] CVS menu in SVN work area for changed file
 
 - Fix invocation of tkdiff when one SVN revision is selected in the branch
   browser, diffing it against the current file like the cvs behavior
 
-- Improve visibility of search in annotation text.
+- Add options to use -l and not use -P in cvs update-with-options.
+
+- Improve visibility of searched item in annotation text.
 
 - Fix for when an e-mail address appears in svn status in https protocol
 
