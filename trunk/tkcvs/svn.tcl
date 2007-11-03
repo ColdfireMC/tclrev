@@ -10,6 +10,7 @@ proc read_svn_dir {dirname} {
   # svn info gets the URL
   # Have to do eval exec because we need the error output
   set command "svn info"
+  gen_log:log C "$command"
   set ret [catch {eval "exec $command"} output]
   if {$ret} {
     cvsfail $output

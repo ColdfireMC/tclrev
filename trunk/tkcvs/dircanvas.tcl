@@ -693,7 +693,7 @@ proc DirCanvas:build {w} {
       }
      "<directory:RCS>" {
        set DirList($w:$f:icon) rcsdir
-       set DirList($w:$f:popup) rcsdir_pop
+       set DirList($w:$f:popup) folder_pop
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
@@ -739,7 +739,14 @@ proc DirCanvas:build {w} {
       }
       "Locally Modified" {
        set DirList($w:$f:icon) stat_mod
-       set DirList($w:$f:popup) stat_mod_pop
+       switch -- $rtype {
+          "CVS" {
+             set DirList($w:$f:popup) stat_mod_pop
+          }
+          "SVN" {
+             set DirList($w:$f:popup) stat_svnmod_pop
+          }
+       }
       }
       "Locally Added" {
        set DirList($w:$f:icon) stat_plus
@@ -1144,16 +1151,16 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_mod_pop add command -label "Diff" \
     -command { comparediff [workdir_list_files] }
-  $w.stat_mod_pop add command -label "Commit" \
+  $w.stat_mod_pop add command -label "CVS Commit" \
     -command { cvs_commit_dialog }
-  $w.stat_mod_pop add command -label "Revert" \
+  $w.stat_mod_pop add command -label "CVS Revert" \
     -command { cvs_revert [workdir_list_files] }
 
   # For CVS files that have been added or removed but not commited
   menu $w.stat_plus_pop -tearoff 0
   $w.stat_plus_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
-  $w.stat_plus_pop add command -label "Commit" \
+  $w.stat_plus_pop add command -label "CVS Commit" \
     -command { cvs_commit_dialog }
 
   # For CVS files with conflicts
@@ -1179,7 +1186,7 @@ proc DirCanvas:makepopup {w} {
     -command { rcs_lock unlock [workdir_list_files] }
   $w.rcs_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
-  $w.rcs_pop add command -label "Revert" \
+  $w.rcs_pop add command -label "RCS Revert" \
     -command { rcs_revert [workdir_list_files] }
 
   # For SVN files
@@ -1192,10 +1199,19 @@ proc DirCanvas:makepopup {w} {
     -command { svn_branches [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Annotate/Blame" \
     -command { svn_annotate "" [workdir_list_files] }
-  $w.stat_svnok_pop add command -label "Revert" \
-    -command { svn_revert [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Remove" \
     -command { subtract_dialog [workdir_list_files] }
+
+  # For SVN files that are modified
+  menu $w.stat_svnmod_pop -tearoff 0
+  $w.stat_svnmod_pop add command -label "Edit" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.stat_svnmod_pop add command -label "Diff" \
+    -command { comparediff [workdir_list_files] }
+  $w.stat_svnmod_pop add command -label "SVN Commit" \
+    -command { svn_commit_dialog }
+  $w.stat_svnmod_pop add command -label "SVN Revert" \
+    -command { svn_revert [workdir_list_files] }
 
   # For SVN directories
   menu $w.svnfolder_pop -tearoff 0
@@ -1214,11 +1230,6 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Log" \
     -command { svn_log [workdir_list_files] }
-
-  # For RCS directories
-  menu $w.rcsdir_pop -tearoff 0
-  $w.rcsdir_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
 
   gen_log:log T "LEAVE"
 }
