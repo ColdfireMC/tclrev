@@ -1757,6 +1757,7 @@ proc read_cvs_dir {dirname} {
   global module_dir
   global cvscfg
   global cvsglb
+  global cvs
   global current_tagname
 
   gen_log:log T "ENTER ($dirname)"
@@ -1789,14 +1790,27 @@ proc read_cvs_dir {dirname} {
       }
     } else {
       cvsfail "Repository file not found in $dirname" .workdir
+      return 0
     }
   } else {
     cvsfail "$dirname is not a directory" .workdir
+    return 0
   }
   set cvsglb(root) $cvscfg(cvsroot)
+  # This confirms whether we can really use cvs but do we
+  # want to waste time doing it?
   #gen_log:log D "cvsglb(root) $cvsglb(root)"
   #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-  gen_log:log T "LEAVE"
+  #set command "$cvs version"
+  #gen_log:log C "$command"
+  #set ret [catch {eval "exec $command"} output]
+  #if {$ret} {
+    #cvsfail $output
+    #return 0
+  #}
+
+  gen_log:log T "LEAVE (1)"
+  return 1
 }
 
 proc parse_cvsmodules {modules_file} {
@@ -2125,6 +2139,7 @@ namespace eval ::cvs_branchlog {
                   set localfile [string range $logline 14 end]
                 #}
               } elseif {$logline == "symbolic names:"} {
+                # FIXME: old RCS can have a tag on this line
                 set logstate {T}
               }
             }

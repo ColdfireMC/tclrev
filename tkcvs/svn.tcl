@@ -14,7 +14,7 @@ proc read_svn_dir {dirname} {
   set ret [catch {eval "exec $command"} output]
   if {$ret} {
     cvsfail $output
-    return
+    return 0
   }
   foreach infoline [split $output "\n"] {
     if {[string match "URL*" $infoline]} {
@@ -28,7 +28,7 @@ proc read_svn_dir {dirname} {
   }
   if {$cvscfg(url) == ""} {
     cvsfail "Can't get the SVN URL"
-    return
+    return 0
   }
 
   set root ""
@@ -85,11 +85,11 @@ proc read_svn_dir {dirname} {
     set cvscfg(svnroot) $cvscfg(url)
     gen_log:log D "svnroot: $cvscfg(svnroot)"
     set cvsglb(relpath) ""
-    gen_log:log T "LEAVE (1)"
-    return 1
+    gen_log:log T "LEAVE (-1)"
+    return -1
   }
   gen_log:log T "LEAVE (0)"
-  return 0
+  return 1
 }
 
 # Get stuff for main workdir browser
@@ -1367,7 +1367,7 @@ namespace eval ::svn_branchlog {
         } else {
           set path "$cvscfg(svnroot)/trunk/$relpath/$safe_filename"
         }
-        if {[read_svn_dir .] == 1} {
+        if {[read_svn_dir .] == -1} {
           set path "$cvscfg(svnroot)/$safe_filename"
           if {! [info exists cvscfg(svnconform_seen)]} {
             set msg "Your repository does not seem to be arranged in trunk, branch, and root directories.  The Branch Browser can't detect branches and tags."

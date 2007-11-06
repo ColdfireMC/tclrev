@@ -1110,12 +1110,17 @@ proc setup_dir { } {
     close $fileId
   } else {
     if {$insvn} {
-      set cmd [exec::new "svn propget svn:ignore"]
-      set contents [split [$cmd\::output] "\n"]
-      foreach line $contents {
-        append cvscfg(ignore_file_filter) " $line"
+      # Have to do eval exec because we need the error output
+      set command "svn propget svn:ignore"
+      gen_log:log C "$command"
+      set ret [catch {eval "exec $command"} output]
+      if {$ret} {
+        cvsfail $output
+        return
       }
-      $cmd\::destroy
+      foreach infoline [split $output "\n"] {
+        append cvscfg(ignore_file_filter) " $infoline"
+      }
     }
   }
 
@@ -1349,11 +1354,9 @@ proc cvsroot_check { dir } {
   foreach {incvs insvn inrcs} {0 0 0} {break}
 
   if {[file isfile [file join $dir CVS Root]]} {
-    set incvs 1
-    read_cvs_dir [file join $dir CVS]
+    set incvs [ read_cvs_dir [file join $dir CVS] ]
   } elseif {[file isfile [file join $dir .svn entries]]} {
-    set insvn 1
-    read_svn_dir $dir
+    set insvn [ read_svn_dir $dir ]
   } else {
     set rcsdir [file join $dir RCS]
     if {[file exists $rcsdir]} {
