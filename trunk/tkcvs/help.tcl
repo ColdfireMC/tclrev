@@ -102,7 +102,8 @@ proc cvs_version {} {
   $v\::log $output
   if {$ret != 0} {
     $v\::log "\nIf you see a usage message here, you have"
-    $v\::log " an old version of RCS.  It should still work.\n"
+    $v\::log " a very old version of RCS.\nSome things still work,"
+    $v\::log " but some won't.\n"
   }
 
   gen_log:log T "LEAVE"
