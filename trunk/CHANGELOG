@@ -1,4 +1,4 @@
-Release 8.1
+Release 8.1   November, 2007
 
 - Rework the merge functionality.  There's only one dialog for tagging, which
   you OK when you're ready to commit the merges.
