@@ -859,9 +859,12 @@ proc svn_tag {tagname b_or_t update args} {
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
 
+  if {$b_or_t == "tag"} {set pathelem "tags"}
+  if {$b_or_t == "branch"} {set pathelem "branches"}
+
   set comment "${b_or_t}_copy_by_TkSVN"
   set v [viewer::new "SVN Copy $tagname"]
-  set to_url "$cvscfg(svnroot)/$b_or_t/$tagname/$cvsglb(relpath)"
+  set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
   if { $filelist == {} } {
     set command "svn copy -m\"$comment\" $cvscfg(url) $to_url"
     $v\::log "$command"
@@ -871,7 +874,7 @@ proc svn_tag {tagname b_or_t update args} {
       if {$f == "."} {
         set command "svn copy -m\"comment\" $cvscfg(url) $to_url"
       } else {
-        svn_pathforcopy $tagname $b_or_t $v
+        svn_pathforcopy $tagname $pathelem $v
         set from_url [safe_url $cvscfg(url)/$f]
         set command "svn copy -m\"$comment\" $from_url $to_url"
       }

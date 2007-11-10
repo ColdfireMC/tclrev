@@ -484,7 +484,7 @@ proc file_tag_dialog {branch} {
   global cvsglb
   global branchflag
 
-  gen_log:log T "ENTER"
+  gen_log:log T "ENTER ($branch)"
 
   # FIXME: This is too messy and should be split into two dialogs,
   # one for cvs and one for svn

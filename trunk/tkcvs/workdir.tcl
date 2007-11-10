@@ -165,9 +165,9 @@ proc workdir_setup {} {
      -command { cvs_merge_conflict [workdir_list_files] }
 
   button .workdir.bottom.buttons.cvsfuncs.btag -image Tag -highlightbackground $cvsglb(bg) \
-     -command { file_tag_dialog "no" }
+     -command { file_tag_dialog "tag" }
   button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag -highlightbackground $cvsglb(bg) \
-     -command { file_tag_dialog "yes" }
+     -command { file_tag_dialog "branch" }
   button .workdir.bottom.buttons.cvsfuncs.badd_files -image Add -highlightbackground $cvsglb(bg) \
      -command { add_dialog [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bremove -image Remove -highlightbackground $cvsglb(bg) \
@@ -482,7 +482,7 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add command -label "Unset Edit Flag (Unedit)" -underline 11 \
      -command { cvs_unedit [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Tag Files" -underline 0 \
-     -command { file_tag_dialog "no" }
+     -command { file_tag_dialog "tag" }
   .workdir.menubar.cvs add command -label "Browse the Log Diagram" \
      -command { cvs_branches [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Resolve Conflicts" \
