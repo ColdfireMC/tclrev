@@ -140,7 +140,7 @@ proc cvs_workdir_status {} {
         # The date field is not supplied to remote clients.
         if {$date == "" } {
          if {! ([string match "New *" $date ] || [string match "Result *" $date])} {
-           catch {set date [clock format [clock scan [file mtime $filename]] -format $cvscfg(dateformat)]}
+           catch {set date [clock format [file mtime $filename] -format $cvscfg(dateformat)]}
            gen_log:log E "No date supplied by remote CVS server. Using \[file mtime $filename\]"
          }
         } else {
