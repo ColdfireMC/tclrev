@@ -1470,34 +1470,38 @@ proc cvs_gettaglist {filename parent} {
   return "$keepers"
 }
 
-proc cvs_release {delflag directory} {
+proc cvs_release {delflag args} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($directory)"
-  if {! [file isdirectory $directory]} {
-    cvsfail "$directory is not a directory" .workdir
-    return
-  }
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
 
-  set commandline "$cvs -n -q update $directory"
-  gen_log:log C "$commandline"
-  set ret [catch {eval "exec $commandline"} view_this]
-  if {$view_this != ""} {
-    view_output::new "CVS Check" $view_this
-    set mess "$directory is not up-to-date."
-    append mess "\nRelease anyway?"
-    if {[cvsconfirm $mess .workdir] != "ok"} {
+  foreach directory $filelist {
+    if {! [file isdirectory $directory]} {
+      cvsfail "$directory is not a directory" .workdir
       return
     }
+  
+    set commandline "$cvs -n -q update \"$directory\""
+    gen_log:log C "$commandline"
+    set ret [catch {eval "exec $commandline"} view_this]
+    if {$view_this != ""} {
+      view_output::new "CVS Check" $view_this
+      set mess "\"$directory\" is not up-to-date."
+      append mess "\nRelease anyway?"
+      if {[cvsconfirm $mess .workdir] != "ok"} {
+        return
+      }
+    }
+    set commandline "$cvs -Q release $delflag \"$directory\""
+    set ret [catch {eval "exec $commandline"} view_this]
+    gen_log:log C "$commandline"
+    if {$ret != 0} {
+      view_output::new "CVS Release" $view_this
+    }
   }
-  set commandline "$cvs -Q release $delflag $directory"
-  set ret [catch {eval "exec $commandline"} view_this]
-  gen_log:log C "$commandline"
-  if {$ret != 0} {
-    view_output::new "CVS Release" $view_this
-  }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
