@@ -1178,7 +1178,7 @@ namespace eval ::logcanvas {
             }
           }
           # If there's no trunk, find the beginning of a branch
-          if {! [info exists trunkrev]} {
+          if {! [info exists trunkrev] || $trunkrev == ""} {
             set min 999999
             foreach a [array names revbtags] {
               if {$a == "" } {continue}
@@ -1195,7 +1195,7 @@ namespace eval ::logcanvas {
           }
 
           # Start drawing, beginning with the trunk or the lowest branch
-          if {[info exists trunkrev]} {
+          if {[info exists trunkrev] && $trunkrev != ""} {
             gen_log:log D "Drawing trunkrev $trunkrev"
             foreach {lx y2 lbw rh lly} [DrawBranch 0 0 {} $trunkrev] {
               lappend bxys $lx $lbw $rh $lly
