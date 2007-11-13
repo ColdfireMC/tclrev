@@ -154,6 +154,17 @@ if {! [regexp -- {-} $entryfont]} {
 #debug-info "textfont $textfont"
 #debug-info "entryfont $entryfont"
 
+set fs [lindex $textfont 1]
+if {$fs == ""} {
+  # This happens on Windows in tk8.5
+  # You get {TkDefaultFont} instead of {fixed 12} or whatever
+  # Then when you add "bold" to it you have a bad spec
+  set fa [font actual $textfont]
+  puts " actual font: $fa"
+  set fm [lindex $fa 1]
+  set fs [lindex $fa 3]
+  set textfont [list $fm $fs]
+}
 set font [list $textfont]
 set bold [list [concat $textfont bold]]
 #debug-info "font: $font"
