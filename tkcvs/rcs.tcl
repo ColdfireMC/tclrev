@@ -157,7 +157,7 @@ proc rcs_workdir_status {} {
       continue
     }
     if {[string match "head:*" $rlogline]} {
-      regsub {head: } $rlogline "" revnum
+      regsub {head:\s+} $rlogline "" revnum
       set Filelist($filename:wrev) "$revnum"
       set Filelist($filename:stickytag) "$revnum on trunk"
       #gen_log:log D "  Rev \"$revnum\""
