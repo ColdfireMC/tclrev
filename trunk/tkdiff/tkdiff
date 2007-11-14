@@ -867,7 +867,7 @@ proc get-file-rev {f index {r ""}} {
         debug-info "  Setting lbl $finfo(lbl,$index)"
         die-unless "exec $cmd -p $pvcsopt \"$f\"" "\"$finfo(pth,$index)\""
         filterCRCRLF $finfo(pth,$index)
-    } elseif {[info exists ::env(P4CLIENT)]} {
+    } elseif {[info exists ::env(P4CLIENT)] || [info exists ::env(P4CONFIG)]} {
         set cmd "p4"
         if {$::tcl_platform(platform) == "windows"} {
             append cmd ".exe"
