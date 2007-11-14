@@ -42,7 +42,7 @@ wm withdraw .
 
 # set a couple o' globals that we might need sooner than later
 set g(name) "TkDiff"
-set g(version) "4.1.3"
+set g(version) "4.1.4"
 set g(started) 0
 
 # FIXME - move to preferences
@@ -1038,6 +1038,9 @@ proc commandline {} {
             }
         "^-o.*" {
                 set g(mergefile) [string range $arg 2 end]
+            }
+        "^-u$"  {
+                # Ignore flag from "svn diff --diff-cmd=tkdiff"
             }
         "^-psn" {
                 # Ignore the Carbon Process Serial Number
@@ -2206,7 +2209,7 @@ proc build-menubar {} {
         do-edit
     } -underline 10
     $editMenu add separator
-    $editMenu add command -label "Preferences..." -underline 3 \
+    $editMenu add command -label "Preferences..." -underline 0 \
       -command customize
 
     set "g(tooltip,Copy)" "Copy the currently selected text to the clipboard"
