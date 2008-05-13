@@ -1621,11 +1621,12 @@ namespace eval ::svn_branchlog {
         set i 0
         set l [llength $lines]
         while {$i < $l} {
+	  if { $i > 0 } { incr i -1 }
+	  set last [lindex $lines $i]
+	  incr i 1
           set line [lindex $lines $i]
           gen_log:log D "$i of $l:  $line"
-          if [regexp {^--*$} $line] {
-            # Next line is new revision
-            incr i
+          if { [ regexp {^[-]+$} $last ] && [ regexp {^r[0-9]+ \| .*line[s]?$} $line] } {
             if {[expr {$l - $i}] <= 1} {break}
             set line [lindex $lines $i]
             set splitline [split $line "|"]
