@@ -511,6 +511,26 @@ Operations such as "View" and "Annotate" operate only on the primary version sel
 
 Operations such as "Diff" and "Merge Changes to Current" require two versions to be selected.
 
+<h2>Searching the Diagram</h2>
+
+You can search the canvas for tags, revisions, authors, and dates.
+The following special characters are used in the search pattern:
+  *      Matches any sequence of characters in string, including a null string.
+  
+  ?      Matches any single character in string.
+  
+  [chars] Matches any character in the set given by chars. If a sequence of the
+  form x-y appears in chars, then any character between x and y, inclusive, will
+  match.
+  
+  \x      Matches the single character x. This provides a way of avoiding the
+  special interpretation of the characters *?[]\ in pattern.
+  
+  If you only enter "FOO" (without the \") in the entry box, it searches the exact
+  string "foo". If you want to search all strings starting with "foo", you have
+  to put "foo*". For all strings containing "foo", you must put "*foo*".
+
+
 <h2>Log Browser Buttons</h2>
 
 The log browser contains the following buttons:

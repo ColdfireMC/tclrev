@@ -60,6 +60,12 @@ namespace eval ::logcanvas {
       variable revnum_current
       set sel_rev(A) {}
       set sel_rev(B) {}
+      variable search_lastpattern ""
+      variable search_elements [list]
+      variable search_index 0
+      variable search_lastfill ""
+      variable search_lastcase 0
+      variable search_nocase
       variable logcanvas ".logcanvas$my_idx"
 
       gen_log:log T "ENTER [namespace current]"
@@ -1302,6 +1308,123 @@ namespace eval ::logcanvas {
         save_options
       }
 
+      # Search functionality for log viewer that searches for strings in the
+      # log windows. It will create a new button and an entry box below the logs. You
+      # can enter a glob-style search pattern in the entry field and click the search
+      # button. With every click (or pressing enter), the log viewer jumps from one
+      # occurrence of the pattern to the next, highlighting it in red.
+      # 
+      # The following special characters are used in the search pattern:
+      # 
+      # *      Matches any sequence of characters in string, including a null string.
+      # 
+      # ?      Matches any single character in string.
+      # 
+      # [chars] Matches any character in the set given by chars. If a sequence of the
+      # form x-y appears in chars, then any character between x and y, inclusive, will
+      # match.
+      # 
+      # \x      Matches the single character x. This provides a way of avoiding the
+      # special interpretation of the characters *?[]\ in pattern.
+      # 
+      # If you only enter "FOO" (without the ") in the entry box, it searches the exact
+      # string "FOO". If you want to search all strings starting with "FOO", you have
+      # to put "FOO*". For all strings containing "FOO", you must put "*FOO*".
+      proc Search {} {
+        variable logcanvas
+        variable font_bold
+        variable search_elements
+        variable search_index
+        variable search_lastfill
+        variable search_lastpattern
+        variable search_lastcase
+        variable search_nocase
+
+        gen_log:log T "ENTER"
+        # Restore last fill color
+        if {[string length $search_lastfill] != 0} {
+          $logcanvas.canvas itemconfigure [lindex $search_elements $search_index] \
+          -fill $search_lastfill
+        }
+        # Read search pattern from entry box
+        set pattern [string trim [$logcanvas.down.search.e get]]
+        gen_log:log D "pattern: $pattern"
+        # Check if search pattern or nocase flag have been changed since the
+        # last call
+        if {([string equal $pattern $search_lastpattern] == 0) \
+          ||($search_lastcase != $search_nocase)} {
+          # Rebuild matching element list
+          set search_lastpattern $pattern
+          set search_lastcase $search_nocase
+          set search_elements [list]
+          # Ignore empty patterns
+          if {[string length $pattern] != 0} {
+            # Loop over all elements in canvas that have text elements
+            foreach element [$logcanvas.canvas find withtag all] {
+              if {[catch {$logcanvas.canvas itemcget $element -text} text] == 0} {
+                # Check if text element matches search pattern
+gen_log:log D " $text"
+                if {[string is true $search_nocase]} {
+                  if {[string match -nocase $pattern $text]} {
+                    # Add element to list of matching elements
+                    lappend search_elements $element
+                  }
+                } else {
+                  if {[string match $pattern $text]} {
+                    # Add element to list of matching elements
+                    lappend search_elements $element
+gen_log:log D " $pattern MATCHED $text"
+                  }
+                }
+              }
+            }
+          }
+          # Reset highlight index
+          set search_index 0
+          # Pattern has not been changed since last call and there have been
+          # matching elements found in the last call
+        } elseif {[llength $search_elements] != 0} {
+          # Select next matching element (restart if last one has been passed)
+          incr search_index
+          if {$search_index >= [llength $search_elements]} {
+            set search_index 0
+            puts -nonewline "\a"
+            flush stdout
+          }
+        }
+        # Check if there are matching elements
+        set length [llength $search_elements]
+        if {$length > 0} {
+          $logcanvas.down.search.l configure -text "[expr {$search_index + 1}] / $length"
+          # Scroll to next matching element
+          set element [lindex $search_elements $search_index]
+          set scrollregion [$logcanvas.canvas cget -scrollregion]
+          set coords [$logcanvas.canvas bbox $element]
+          set sx1 [lindex $scrollregion 0]
+          set sy1 [lindex $scrollregion 1]
+          set sx2 [lindex $scrollregion 2]
+          set sy2 [lindex $scrollregion 3]
+          set ix1 [lindex $coords 0]
+          set iy1 [lindex $coords 1]
+          set ix2 [lindex $coords 2]
+          set iy2 [lindex $coords 3]
+          set xview [$logcanvas.canvas xview]
+          set yview [$logcanvas.canvas yview]
+          set vx1 [lindex $xview 0]
+          set vx2 [lindex $xview 1]
+          set vy1 [lindex $yview 0]
+          set vy2 [lindex $yview 1]
+          set x [expr {(double($ix1 - $sx1) / double($sx2 - $sx1)) -(($vx2 - $vx1) / 2)}]
+          set y [expr {(double($iy1 - $sy1) / double($sy2 - $sy1)) -(($vy2 - $vy1) / 2)}]
+          $logcanvas.canvas xview moveto $x
+          $logcanvas.canvas yview moveto $y
+          set search_lastfill [$logcanvas.canvas itemcget $element -fill]
+          $logcanvas.canvas itemconfigure $element -fill red
+        } else {
+          $logcanvas.down.search.l configure -text "Not found"
+        }
+      }
+
       # Collect the user options from the global set
       set opt(update_drawing) $logcfg(update_drawing)
       set opt(scale) $logcfg(scale)
@@ -1472,6 +1595,7 @@ namespace eval ::logcanvas {
            -command [namespace code\
            "$logcanvas.up.log${fm}_rlogfm.rcomment yview"]
       }
+
       grid columnconf $logcanvas.up 5 -weight 1
       grid $logcanvas.up.lfname -column 0 -row 0 -sticky nw
       grid $logcanvas.up.rfname -column 1 -row 0 -columnspan 5 -sticky ew
@@ -1503,6 +1627,20 @@ namespace eval ::logcanvas {
       # the window is resized smaller
       frame $logcanvas.down -relief groove -border 2
       pack $logcanvas.down -side bottom -fill x
+
+      frame $logcanvas.down.search -relief sunk -bd 2
+      button $logcanvas.down.search.b -text "Search" -command [namespace code {Search}]
+      entry $logcanvas.down.search.e
+      bind $logcanvas.down.search.e <Return> [namespace code {Search}]
+      label $logcanvas.down.search.l -anchor e -width 10 -text ""
+      checkbutton $logcanvas.down.search.c -anchor e -text "Ignore case" \
+        -variable [namespace current]::search_nocase
+      pack $logcanvas.down.search -side top -fill x
+      pack $logcanvas.down.search.b -side left
+      pack $logcanvas.down.search.e -side left
+      pack $logcanvas.down.search.c -side left
+      pack $logcanvas.down.search.l -side left
+
       # The canvas for the big picture
       canvas $logcanvas.canvas -relief sunken -border 2 \
         -height 300 \
