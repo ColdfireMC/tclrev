@@ -1164,10 +1164,10 @@ proc subtractdir_dialog {args} {
   gen_log:log T "LEAVE"
 }
 
-proc file_input_and_do {title cmd} {
+proc file_input_and_do {title command} {
   global filename
 
-  gen_log:log T "ENTER ($title $cmd)"
+  gen_log:log T "ENTER ($title $command)"
 
   toplevel .file_input_and_do
   grab set .file_input_and_do
@@ -1188,7 +1188,7 @@ proc file_input_and_do {title cmd} {
   button .file_input_and_do.ok -text "Ok" \
     -command "
       .file_input_and_do.close invoke
-      $cmd \$filename
+      $command \$filename
     "
   button .file_input_and_do.close -text "Cancel" \
     -command {

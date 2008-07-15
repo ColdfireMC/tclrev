@@ -293,8 +293,8 @@ directory of $modbrowse_module or one above it" .merge
   set mktemp_dir $mktemp.dir
   set v [viewer::new "Vendor Merge"]
   $v\::log "CVS Checkout of temp sandbox for $merge(3rd_party)\n"
-  set cmd "$cvs checkout -d $mktemp_dir -r$merge(from) $merge(3rd_party)"
-  $v\::do "$cmd"
+  set co_cmd "$cvs checkout -d $mktemp_dir -r$merge(from) $merge(3rd_party)"
+  $v\::do "$co_cmd"
   $v\::wait
   update
     
@@ -316,13 +316,13 @@ directory of $modbrowse_module or one above it" .merge
   file copy -force $sav_cvs CVS
 
   $v\::log "\nCVS Merge of $merge(3rd_party) into $modbrowse_module\n"
-  set cmd "$cvs checkout -d [pwd] -j$merge(from) -j$merge(to) $merge(3rd_party)"
-  $v\::do "$cmd"
+  set co_cmd "$cvs checkout -d [pwd] -j$merge(from) -j$merge(to) $merge(3rd_party)"
+  $v\::do "$co_cmd"
   $v\::wait
 
   $v\::log "\nCVS rdiff from $merge(from) to $merge(to) for $merge(3rd_party)\n"
-  set cmd "$cvs rdiff -s -r$merge(from) -r$merge(to) $merge(3rd_party)"
-  $v\::do "$cmd"
+  set co_cmd "$cvs rdiff -s -r$merge(from) -r$merge(to) $merge(3rd_party)"
+  $v\::do "$co_cmd"
   $v\::wait
   update
 

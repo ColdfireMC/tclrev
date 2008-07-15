@@ -187,8 +187,8 @@ proc svn_add {args} {
   if {$filelist == ""} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
-  set cmd [exec::new "svn add $filelist"]
-  auto_setup_dir $cmd
+  set addcmd [exec::new "svn add $filelist"]
+  auto_setup_dir $addcmd
 
   gen_log:log T "LEAVE"
 }

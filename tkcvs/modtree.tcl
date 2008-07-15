@@ -453,13 +453,13 @@ proc ModTree:scroll_windows {w args} {
 
   set yget [$w.yscroll get]
   set way [lindex $args 2]
-  set cmd [lindex $args 1]
+  set comd [lindex $args 1]
   set first [lindex $yget 0]
   set last [lindex $yget 1]
-  #gen_log:log D "$cmd $way: $first  $last"
+  #gen_log:log D "$comd $way: $first  $last"
   # If you dont do this, the scrollbar fills the whole trough when
   # you page past the top or bottom
-  case $cmd {
+  case $comd {
     {units pages} {
       if {$way < 0} {
         if {$first == 0} {

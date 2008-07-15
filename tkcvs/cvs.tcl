@@ -21,7 +21,7 @@ proc cvs_incvs {} {
 #
 #  returns: the current wd (ERROR) or the sandbox directory (OK)
 #
-proc cvs_sandbox_runcmd {cmd output_var} {
+proc cvs_sandbox_runcmd {command output_var} {
   global cvscfg
   global cwd
 
@@ -31,7 +31,7 @@ proc cvs_sandbox_runcmd {cmd output_var} {
   # needs to be seen by the server.  It can't cd to an absolute path.
   # In addition it's fussy about where you are when you do a checkout -d.
   # Best avoid that altogether.
-  gen_log:log T "ENTER ($cmd $output_var)"
+  gen_log:log T "ENTER ($command $output_var)"
   set pid [pid]
   
   if {! [file isdirectory $cvscfg(tmpdir)]} {
@@ -47,8 +47,8 @@ proc cvs_sandbox_runcmd {cmd output_var} {
   cd cvstmpdir.$pid
   gen_log:log F "CD [pwd]"
 
-  gen_log:log C "$cmd"
-  set ret [catch {eval "exec $cmd"} view_this]
+  gen_log:log C "$command"
+  set ret [catch {eval "exec $command"} view_this]
   gen_log:log T "RETURN $cvscfg(tmpdir)/cvstmpdir.$pid"
   return $cvscfg(tmpdir)/cvstmpdir.$pid
 }
@@ -272,8 +272,8 @@ proc cvs_remove {args} {
     return
   }
 
-  set cmd [exec::new "$cvs remove $filelist"]
-  auto_setup_dir $cmd
+  set cmd(cvscmd) [exec::new "$cvs remove $filelist"]
+  auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
 }
@@ -446,8 +446,8 @@ proc cvs_add {binflag args} {
   if {$filelist == ""} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
-  set cmd [exec::new "$cvs add $binflag $filelist"]
-  auto_setup_dir $cmd
+  set cmd(cvscmd) [exec::new "$cvs add $binflag $filelist"]
+  auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
 }
@@ -1678,10 +1678,8 @@ proc cvs_ascii { args } {
 
   gen_log:log D "Changing sticky flag"
   gen_log:log D "$cvs admin -kkv $filelist"
-  set cmd [exec::new "$cvs admin -kkv $filelist"]
-  # gen_log:log D "Updating file list"
-  # set cmd [exec::new "$cvs update $filelist"]
-  auto_setup_dir $cmd
+  set cmd(cvscmd) [exec::new "$cvs admin -kkv $filelist"]
+  auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
 }
@@ -1702,10 +1700,8 @@ proc cvs_binary { args } {
 
   gen_log:log D "Changing sticky flag"
   gen_log:log D "$cvs admin -kb $filelist"
-  set cmd [exec::new "$cvs admin -kb $filelist"]
-  # gen_log:log D "Updating file list"
-  # set cmd [exec::new "$cvs update $filelist"]
-  auto_setup_dir $cmd
+  set cmd(cvscmd) [exec::new "$cvs admin -kb $filelist"]
+  auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
 }
@@ -1742,12 +1738,12 @@ proc cvs_revert {args} {
   if {$major < 11} {
     gen_log:log F "DELETE $filelist"
     file delete $filelist
-    set cmd [exec::new "$cvs update $filelist"]
+    set cmd(cvscmd) [exec::new "$cvs update $filelist"]
   } else {
-    set cmd [exec::new "$cvs update -C $filelist"]
+    set cmd(cvscmd) [exec::new "$cvs update -C $filelist"]
   }
   
-  auto_setup_dir $cmd
+  auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
 }
@@ -1877,8 +1873,8 @@ proc cvs_lock {do files} {
     lock { set commandline "cvs admin -l $files"}
     unlock { set commandline "cvs admin -u $files"}
   }
-  set cmd [::exec::new "$commandline"]
-  auto_setup_dir $cmd
+  set lock_cmd [::exec::new "$commandline"]
+  auto_setup_dir $lock_cmd
 }
 
 # Sends directory "." to the directory-merge tool

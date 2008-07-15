@@ -868,14 +868,14 @@ proc change_dir {new_dir} {
   gen_log:log T "LEAVE"
 }
 
-proc auto_setup_dir {cmd} {
+proc auto_setup_dir {command} {
   global cvscfg
 
   if {$cvscfg(auto_status)} {
-    $cmd\::wait
+    $command\::wait
     setup_dir
   } else {
-    after 0 "$cmd\::wait; $cmd\::destroy"
+    after 0 "$command\::wait; $command\::destroy"
   }
 }
 

@@ -53,10 +53,10 @@ proc rcs_lock {do files} {
     lock { set commandline "rcs -l $files"}
     unlock { set commandline "rcs -u $files"}
   }
-  set cmd [::exec::new "$commandline"]
+  set rcscmd [::exec::new "$commandline"]
   
   if {$cvscfg(auto_status)} {
-    $cmd\::wait
+    $rcscmd\::wait
     setup_dir
   }
 }
@@ -269,10 +269,10 @@ proc rcs_revert {args} {
   gen_log:log D "Reverting $filelist"
   gen_log:log F "DELETE $filelist"
   file delete $filelist
-  set cmd [exec::new "co $filelist"]
+  set rcscmd [exec::new "co $filelist"]
         
   if {$cvscfg(auto_status)} {
-    $cmd\::wait
+    $rcscmd\::wait
     setup_dir 
   }     
         

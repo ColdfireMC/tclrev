@@ -44,10 +44,10 @@ proc bind_show {w {mode "-verbose"}} {
       puts "\t\t$spec"
       if {$mode == "-verbose"} {
         #bind $tag
-        set cmd [bind $tag $spec]
-        set cmd [string trim $cmd "\n"]
-        regsub -all "\n" $cmd "\n\t\t\t" cmd
-        puts "\t\t\t$cmd"
+        set comd [bind $tag $spec]
+        set comd [string trim $comd "\n"]
+        regsub -all "\n" $comd "\n\t\t\t" comd
+        puts "\t\t\t$comd"
       }
     }
   }
