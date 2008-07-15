@@ -1629,7 +1629,7 @@ gen_log:log D " $pattern MATCHED $text"
       pack $logcanvas.down -side bottom -fill x
 
       frame $logcanvas.down.search -relief sunk -bd 2
-      button $logcanvas.down.search.b -text "Search" -command [namespace code {Search}]
+      button $logcanvas.down.search.b -text "Find a Revision" -command [namespace code {Search}]
       entry $logcanvas.down.search.e
       bind $logcanvas.down.search.e <Return> [namespace code {Search}]
       label $logcanvas.down.search.l -anchor e -width 10 -text ""
