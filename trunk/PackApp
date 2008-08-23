@@ -2,13 +2,14 @@
 
 # This makes a MacOS X package starting with stand-alone Wish.app.
 
-set V = 8.1
+set V = 8_1
+set DV = 4_1_4
 
 if ( -f $HOME/tkcvs_$V ) rm -rf $HOME/tkcvs_$V
 mkdir $HOME/tkcvs_$V
 set Target = $HOME/tkcvs_$V/TkCVS.app
 echo "Ditto Target"
-ditto $HOME/Downloads/Wish\ Shell8.4.9.app $Target
+ditto $HOME/Downloads/Wish\ Shell.app $Target
 #ditto $HOME/Downloads/Wish8.4.10.app $Target
 chmod -R +w $Target/*
 
@@ -36,17 +37,29 @@ rm $Target/Contents/Resources/Scripts/lib/tkcvs/tkcvs.tcl
 cp tkcvs/bitmaps/*.{gif,xbm} $Target/Contents/Resources/Scripts/lib/tkcvs/bitmaps
 
 cp COPYING FAQ INSTALL $HOME/tkcvs_$V
-#cp CHANGELOG $HOME/tkcvs_$V/Changelog-tkcvs
 cp CHANGELOG $HOME/tkcvs_$V
 
-echo "See if it works"
+# Make sure TkDiff is ready
+cp -r $HOME/tkdiff-$DV-macos/TkDiff.app $HOME/tkcvs_$V
+
 cd $HOME
+
+echo "Creating DMG...  This uses sudo, which prompts for a password."
+if ( -f "tkcvs_$V.dmg" ) rm -f "tkcvs_$V.dmg"
+sudo bin/buildDMG.pl -debug -dmgName tkcvs_$V -volName TkCVS_$V tkcvs_$V/*
+
+echo "Compressing DMG."
+if ( -f "tkcvs_$V.dmg.gz" ) rm -f "tkcvs_$V.dmg.gz"
+gzip tkcvs_$V.dmg
+
+echo "Created:"
+ls -al tkcvs_$V.dmg.gz
+
 # This is the way it will be invoked on a double-click, so it had
 # better be able to handle it
+echo "See if it works"
 echo "$Target/Contents/MacOS/Wish Shell -psn_0_7995393"
 "$Target/Contents/MacOS/Wish Shell" -psn_0_7995393
 #$Target/Contents/MacOS/Wish -psn_0_7995393
 
-# To make a disk image, use
-# buildDmg.pl -dmgName tkcvs_$V -volName tkcvs_$V tkcvs_$V/*
  
