@@ -977,6 +977,11 @@ proc cvs_merge {parent from since frombranch args} {
   global cvsglb
 
   gen_log:log T "ENTER (\"$from\" \"$since\" \"$frombranch\" \"$args\")"
+  gen_log:log D "mergetrunkname $cvscfg(mergetrunkname)"
+  set realfrom "$frombranch"
+  if {$frombranch eq $cvscfg(mergetrunkname)} {
+    set realfrom "HEAD"
+  }
 
   set filelist [join $args]
 
@@ -998,9 +1003,9 @@ proc cvs_merge {parent from since frombranch args} {
 
   # Do the update here, and defer the tagging until later
   if {$since == {}} {
-    set commandline "$cvs update -d -j$from $filelist"
+    set commandline "$cvs update -d -j$realfrom $filelist"
   } else {
-    set commandline "$cvs update -d -j$since -j$from $filelist"
+    set commandline "$cvs update -d -j$since -j$realfrom $filelist"
   }
   set v [viewer::new "CVS Join"]
   $v\::do "$commandline" 1 status_colortags
