@@ -859,7 +859,7 @@ proc svn_tag {tagname b_or_t update args} {
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
 
-  if {$b_or_t == "tag"} {set pathelem "tags"}
+  if {$b_or_t == "tag" || $b_or_t == "tags"} {set pathelem "tags"}
   if {$b_or_t == "branch"} {set pathelem "branches"}
 
   set comment "${b_or_t}_copy_by_TkSVN"
