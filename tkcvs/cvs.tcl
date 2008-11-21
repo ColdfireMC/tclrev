@@ -1034,6 +1034,10 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   foreach f $args {
     append filelist "\"$f\" "
   }
+  set realfrom "$frombranch"
+  if {$frombranch eq $cvscfg(mergetrunkname)} {
+    set realfrom "HEAD"
+  }
 
   # It's muy importante to make sure everything is OK at this point
   set commandline "$cvs -n -q update $filelist"
@@ -1057,7 +1061,7 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   # Tag if desired
   if {$cvscfg(auto_tag) && $totag != ""} {
     # First, the "from" file that's not in this branch (needs -r)
-    set commandline "$cvs tag -F -r$from $totag $filelist"
+    set commandline "$cvs tag -F -r$realfrom $totag $filelist"
     $v\::log "$commandline\n"
     $v\::do "$commandline" 1
     $v\::wait
