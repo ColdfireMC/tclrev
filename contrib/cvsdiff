@@ -23,7 +23,7 @@ if [ -d .svn ]
 then 
     CVS="svn cat"
 fi
-if [ "$CVS" == "" ]
+if [ "$CVS" = "" ]
 then
     echo "No CVS or .svn directory. Exiting."
     exit 1
