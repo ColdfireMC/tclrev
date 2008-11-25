@@ -432,14 +432,6 @@ proc patch_colortags {exec line} {
   return [list $tag $line]
 }
 
-proc parse_version {exec line} {
-  if {[string match "Concurrent*" $line]} {
-    set version [lindex [split $line] 4]
-    return [list tagged $version]
-  }
-  return [list {} {}]
-}
-
 proc hilight_rcslog {exec line} {
   set tag default
   if {[string match "=============*" $line]} {

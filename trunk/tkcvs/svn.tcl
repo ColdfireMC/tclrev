@@ -1,3 +1,37 @@
+proc svn_version {} {
+  global cvsglb
+
+  gen_log:log T "ENTER"
+
+  if {$cvsglb(svn_mergeinfo_works) == ""} {
+    set commandline "svn log -g"
+    set ret [catch {eval "exec $commandline"} output]
+    if {$ret == 0} {
+      set cvsglb(svn_mergeinfo_works) 1
+    } else {
+      set cvsglb(svn_mergeinfo_works) 0
+    }
+  }
+
+  set commandline "svn --version"
+  gen_log:log C "$commandline"
+  set ret [catch {eval "exec $commandline"} output]
+  if {$ret} {
+    cvsfail $output
+    return
+  }
+  foreach infoline [split $output "\n"] {
+    if {[string match "svn,*" $infoline]} {
+      set lr [split $infoline]
+      set version [lindex $lr 2]
+      gen_log:log D "version $version"
+    }
+  }
+  set cvsglb(svn_version) $version
+
+  gen_log:log T "LEAVE"
+}
+
 # Find SVN URL
 proc read_svn_dir {dirname} {
   global cvscfg
@@ -7,6 +41,9 @@ proc read_svn_dir {dirname} {
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
+  if {$cvsglb(svn_version) == ""} {
+    svn_version
+  }
   # svn info gets the URL
   # Have to do eval exec because we need the error output
   set command "svn info"
@@ -32,7 +69,7 @@ proc read_svn_dir {dirname} {
   }
 
   set root ""
-  foreach s {trunk branches tags} {
+  foreach s [list $cvscfg(svn_trunkdir) $cvscfg(svn_branchdir) $cvscfg(svn_tagdir)] {
     if {[regexp "/$s/" $cvscfg(url)] || [regexp "/$s" $cvscfg(url)]} {
       set spl [split $cvscfg(url) "/"]
       set root ""
@@ -43,22 +80,23 @@ proc read_svn_dir {dirname} {
         set word [lindex $spl $j]
         switch -- $state {
           P {
-            switch -- $word {
-              "trunk" {
-                set type $word
+            if {$word eq $cvscfg(svn_trunkdir)} {
+                gen_log:log D "Matched $word for trunk"
+                set type "trunk"
                 set current_tagname $word
                 set state E
-              } 
-              "branches" {
-                set type $word
+            } elseif { $word eq $cvscfg(svn_branchdir)} {
+                gen_log:log D "Matched $word for branches"
+                set type "branches"
                 set state W
-              }
-              "tags" {
-                set type $word
+            } elseif { $word eq $cvscfg(svn_tagdir)} {
+                gen_log:log D "Matched $word for tags"
+                set type "tags"
                 set state W
-              }
-              default { append root "$word/" }
-             }
+            } else {
+                append root "$word/"
+                #gen_log:log D "No match for $word"
+            }
           }
           W {
             set current_tagname $word
@@ -284,10 +322,10 @@ proc svn_opt_update {} {
        set command "svn update"
      }
     "Trunk" {
-       set command "svn switch $cvscfg(svnroot)/trunk"
+       set command "svn switch $cvscfg(svnroot)/$cvscfg(svn_trunkdir)"
      }
     "Branch" {
-       set command "svn switch $cvscfg(svnroot)/branches/$cvsglb(branchname)"
+       set command "svn switch $cvscfg(svnroot)/$cvscfg(svn_branchdir)/$cvsglb(branchname)"
      }
     "Revision" {
        # Let them get away with saying r3 instead of 3
@@ -717,11 +755,23 @@ proc parse_svnmodules {tf svnroot} {
 # called from workdir Reports menu
 proc svn_log {args} {
   global cvscfg
+  global cvsglb
+
   gen_log:log T "ENTER ($args)"
 
+  set svncommand "svn log "
+  # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
+  # as well as the client, so we can't go by version number.  we
+  # just have to see if it works.
+  # Do we want to do -g for all detail levels?  Probably not for summary.
+  if {$cvsglb(svn_mergeinfo_works)} {
+    if {$cvscfg(ldetail) ne "summary"} {
+      append svncommand "-g "
+    }
+  }
   set filelist [join $args]
   foreach file $filelist {
-    set command "svn log "
+    set command $svncommand
     if {$cvscfg(ldetail) == "latest"} {
       append command "-r COMMITTED "
     }
@@ -859,8 +909,8 @@ proc svn_tag {tagname b_or_t update args} {
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
 
-  if {$b_or_t == "tag" || $b_or_t == "tags"} {set pathelem "tags"}
-  if {$b_or_t == "branch"} {set pathelem "branches"}
+  if {$b_or_t == "tag" || $b_or_t == "tags"} {set pathelem "$cvscfg(svn_tagdir)"}
+  if {$b_or_t == "branch"} {set pathelem "$cvscfg(svn_branchdir)"}
 
   set comment "${b_or_t}_copy_by_TkSVN"
   set v [viewer::new "SVN Copy $tagname"]
@@ -914,13 +964,13 @@ proc svn_rcopy {from_path b_or_t newtag} {
   incr idx ;# advance past /
   set from_path_remainder [string range $from_path $idx end]
   set pathelements [file split $from_path_remainder]
-  if {$from_path_remainder == "trunk"} {
+  if {$from_path_remainder == "$cvscfg(svn_trunkdir)"} {
     set need_list 1
   } elseif {[llength $pathelements] == 2} {
     set from_type [lindex $pathelements 0]
     switch -- $from_type {
-      "tags" -
-      "branches" {
+      "$cvscfg(svn_tagdir)" -
+      "$cvscfg(svn_branchdir)" {
         set need_list 1
       }
     }
@@ -1082,9 +1132,9 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   # Tag if desired (no means not a branch
   if {$cvscfg(auto_tag) && $fromtag != ""} {
     if {$frombranch == "trunk"} {
-      set from_path "$cvscfg(svnroot)/trunk/$cvsglb(relpath)"
+      set from_path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$cvsglb(relpath)"
     } else {
-      set from_path "$cvscfg(svnroot)/branches/$frombranch/$cvsglb(relpath)"
+      set from_path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$frombranch/$cvsglb(relpath)"
     }
     # tag the current (mergedto) branch
     svn_tag $fromtag tags false $args ;# opens its own viewer
@@ -1157,10 +1207,20 @@ proc svn_filecat {root path title} {
 
 # SVN log.  Called from module browser
 proc svn_filelog {root path title} {
+  global cvsglb
+
   gen_log:log T "ENTER ($root $path $title)"
 
+  set command "svn log "
+  # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
+  # as well as the client, so we can't go by version number.  we
+  # just have to see if it works.
+  if {$cvsglb(svn_mergeinfo_works)} {
+    append command "-g "
+  }
+
   set url [safe_url $root/$path]
-  set command "svn log \"$url\""
+  append command "\"$url\""
   set wintitle "SVN Log"
 
   set v [viewer::new "$wintitle $url"]
@@ -1366,9 +1426,9 @@ namespace eval ::svn_branchlog {
         gen_log:log D "revnum_current $revnum_current"
 
         if { $relpath == {} } {
-          set path "$cvscfg(svnroot)/trunk/$safe_filename"
+          set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$safe_filename"
         } else {
-          set path "$cvscfg(svnroot)/trunk/$relpath/$safe_filename"
+          set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$relpath/$safe_filename"
         }
         if {[read_svn_dir .] == -1} {
           set path "$cvscfg(svnroot)/$safe_filename"
@@ -1427,7 +1487,7 @@ namespace eval ::svn_branchlog {
         set revpath($rr) $path
 
         # Branches
-        set command "svn list $cvscfg(svnroot)/branches"
+        set command "svn list $cvscfg(svnroot)/$cvscfg(svn_branchdir)"
         set cmd_log [exec::new $command {} 0 {} 1]
         set branches [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1452,9 +1512,9 @@ namespace eval ::svn_branchlog {
           # Can't use file join or it will mess up the URL
           gen_log:log D "BRANCHES: RELPATH \"$relpath\""
           if { $relpath == {} } {
-            set path "$cvscfg(svnroot)/branches/$branch/$safe_filename"
+            set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$safe_filename"
           } else {
-            set path "$cvscfg(svnroot)/branches/$branch/$relpath/$safe_filename"
+            set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
           }
           set command "svn log --stop-on-copy $path"
           set cmd_log [exec::new $command {} 0 {} 1]
@@ -1526,7 +1586,7 @@ namespace eval ::svn_branchlog {
         }
         # Tags
         if {$show_tags} {
-          set command "svn list $cvscfg(svnroot)/tags"
+          set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
           set cmd_log [exec::new $command {} 0 {} 1]
           set tags [$cmd_log\::output]
           $cmd_log\::destroy
@@ -1560,9 +1620,9 @@ namespace eval ::svn_branchlog {
             # Can't use file join or it will mess up the URL
             gen_log:log D "TAGS: RELPATH \"$relpath\""
             if { $relpath == {} } {
-              set path "$cvscfg(svnroot)/tags/$tag/$safe_filename"
+              set path "$cvscfg(svnroot)/$cvscfg(svn_tagdir)/$tag/$safe_filename"
             } else {
-              set path "$cvscfg(svnroot)/tags/$tag/$relpath/$safe_filename"
+              set path "$cvscfg(svnroot)/$cvscfg(svn_tagdir)/$tag/$relpath/$safe_filename"
             }
             set command "svn log --stop-on-copy $path"
             set cmd_log [exec::new $command {} 0 {} 1]

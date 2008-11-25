@@ -105,6 +105,10 @@ if {[file exists $optfile]} {
 # Set some defaults
 set cvsglb(sort_pref) { filecol -decreasing }
 set cvsglb(commit_comment) ""
+set cvsglb(cvs_type) ""
+set cvsglb(cvs_version) ""
+set cvsglb(svn_version) ""
+set cvsglb(svn_mergeinfo_works) ""
 
 if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
   cvserror "cvscfg(terminal) is required if cvscfg(use_cvseditor) is set"

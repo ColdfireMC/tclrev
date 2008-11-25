@@ -1,3 +1,16 @@
+Release 8.1.1 November, 2008
+
+- The branch diagram can be searched to find a version, date, tag, or author
+
+- If you have a structure of trunk, branches, and tags but with different
+  names, you can tell TkCVS about it by setting variables in tkcvs_def.tcl:
+  set cvscfg(svn_trunkdir) 
+  set cvscfg(svn_branchdir)
+  set cvscfg(svn_tagdir)
+
+- Fix a bash-ism in contrib/cvsdiff
+
+
 Release 8.1   November, 2007
 
 - Rework the merge functionality.  There's only one dialog for tagging, which

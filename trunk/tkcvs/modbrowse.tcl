@@ -499,12 +499,12 @@ proc modbrowse_run { {CVSorSVN {}} } {
     # contents, so we get the "# tags" and "# branches" labels
     set newlist ""
     foreach item [array names modval] {
-      if {! ($item == "branches" || $item == "tags")} {
+      if {! ($item == $cvscfg(svn_branchdir) || $item == $cvscfg(svn_tagdir))} {
         lappend newlist $item
       }
     }
     set newlist [lsort $newlist]
-    set newlist [concat {"branches"} {"tags"} $newlist]
+    set newlist [concat {$cvscfg(svn_branchdir} {$cvscfg(svn_tagdir)} $newlist]
   } else {
     modbrowse_tree [lsort [array names modval]] "/"
   }

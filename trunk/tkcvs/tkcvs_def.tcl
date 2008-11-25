@@ -99,6 +99,10 @@ set cvscfg(mergetoformat) "mergeto_BRANCH_%d%b%y"
 set cvscfg(mergefromformat) "mergefrom_BRANCH_%d%b%y"
 set cvscfg(mergetrunkname) "trunk"
 
+set cvscfg(svn_trunkdir) "trunk"
+set cvscfg(svn_branchdir) "branches"
+set cvscfg(svn_tagdir) "tags"
+
 # --------------------
 # Revision tree log display configuration.
 
