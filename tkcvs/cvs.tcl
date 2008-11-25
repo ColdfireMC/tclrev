@@ -804,6 +804,7 @@ proc cvs_tag {tagname force b_or_t update args} {
 #
   global cvs
   global cvscfg
+  global cvsglb
   global incvs
 
   gen_log:log T "ENTER ($tagname $force $b_or_t $update $args)"
@@ -832,7 +833,6 @@ proc cvs_tag {tagname force b_or_t update args} {
   if {$b_or_t == "branch" && $force == "yes"} {
     set too_new 0
     # As of 1.11.2, -F won't move branch tags without the -B option
-    set cvsglb(cvs_version) [cvs_version_number]
     set versionsplit [split $cvsglb(cvs_version) {.}]
     set major [lindex $versionsplit 1]
     set minor [lindex $versionsplit 2]
@@ -1353,22 +1353,41 @@ proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outf
   return
 }
 
-proc cvs_version_number {} {
+proc cvs_version {} {
 #
 # This finds the current CVS version number.
 #
   global cvs
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER"
+  set cvsglb(cvs_type) "CVS"
+  set cvsglb(cvs_version) ""
+
   set commandline "$cvs -v"
-  set e [exec::new "$commandline" {} 0 parse_version]
-  set number [$e\::output]
-  regsub -all {\s*} $number {} number
+  gen_log:log C "$commandline"
+  set ret [catch {eval "exec $commandline"} output]
+  if {$ret} {
+    cvsfail $output
+    return
+  }
+  foreach infoline [split $output "\n"] {
+    if {[string match "Concurrent*" $infoline]} {
+      set lr [split $infoline]
+      set species [lindex $lr 3]
+      regsub -all {[()]} $species {} species
+      set version [lindex $lr 4]
+      gen_log:log D "species $species   version $version"
+    }
+  }
+  gen_log:log D "Split: $species $version"
+  regsub -all {\s*} $version {} version
+  gen_log:log D "De-whitespaced: $species $version"
+  set cvsglb(cvs_type) $species
+  set cvsglb(cvs_version) $version
   
-  $e\::destroy
-  gen_log:log T "LEAVE ($number)"
-  return $number
+  gen_log:log T "LEAVE"
 }
 
 proc cvs_merge_conflict {args} {
@@ -1720,6 +1739,7 @@ proc cvs_binary { args } {
 proc cvs_revert {args} {
   global incvs
   global cvscfg
+  global cvsglb
   global cvs
 
   gen_log:log T "ENTER ($args)"
@@ -1741,7 +1761,6 @@ proc cvs_revert {args} {
 
   gen_log:log D "Reverting $filelist"
   # update -C option appeared in 1.11
-  set cvsglb(cvs_version) [cvs_version_number]
   set versionsplit [split $cvsglb(cvs_version) {.}]
   set major [lindex $versionsplit 1]
   if {$major < 11} {
@@ -1768,6 +1787,9 @@ proc read_cvs_dir {dirname} {
   global current_tagname
 
   gen_log:log T "ENTER ($dirname)"
+  if {$cvsglb(cvs_version) == ""} {
+    cvs_version
+  }
   set current_tagname "trunk"
   if {[file isdirectory $dirname]} {
     if {[file isfile [file join $dirname Repository]]} {

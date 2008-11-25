@@ -170,7 +170,6 @@ namespace eval ::annotate {
       } elseif {$local == "cvs_r"} {
         # First see if we can do this
         # rannotate appeared in 1.11.1
-        set cvsglb(cvs_version) [cvs_version_number]
         set versionsplit [split $cvsglb(cvs_version) {.}]
         set major [lindex $versionsplit 1]
         set minor [lindex $versionsplit 2]
