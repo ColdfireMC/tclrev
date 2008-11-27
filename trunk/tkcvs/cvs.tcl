@@ -120,15 +120,11 @@ proc cvs_workdir_status {} {
         # Should be able to do these regsubs in one expression
         regsub {File: } [lindex $line 0] "" filename
         regsub {\s*$} $filename "" filename
-        #if {[string match "no file *" $filename]} {
-          #regsub {^no file } $filename "" filename
-        #}
         regsub {Status: } [lindex $line 1] "" status
         set Filelist($filename:status) $status
         # Don't set editors to null because we'll use its presence
         # or absence to see if we need to re-read the repository when
         # we ask to map the editors column
-        #set Filelist($filename:editors) ""
       } elseif {[string match "*Working revision:*" $logline]} {
         regsub -all {\t+} $logline "\t" logline
         set line [split [string trim $logline] "\t"]
@@ -1362,7 +1358,6 @@ proc cvs_version {} {
   global cvsglb
 
   gen_log:log T "ENTER"
-  set cvsglb(cvs_type) "CVS"
   set cvsglb(cvs_version) ""
 
   set commandline "$cvs -v"
@@ -1826,17 +1821,6 @@ proc read_cvs_dir {dirname} {
     return 0
   }
   set cvsglb(root) $cvscfg(cvsroot)
-  # This confirms whether we can really use cvs but do we
-  # want to waste time doing it?
-  #gen_log:log D "cvsglb(root) $cvsglb(root)"
-  #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-  #set command "$cvs version"
-  #gen_log:log C "$command"
-  #set ret [catch {eval "exec $command"} output]
-  #if {$ret} {
-    #cvsfail $output
-    #return 0
-  #}
 
   gen_log:log T "LEAVE (1)"
   return 1
@@ -2015,6 +1999,7 @@ namespace eval ::cvs_branchlog {
       variable revlines
       variable revstate
       variable revcomment
+      variable revmergefrom
       variable tags
       variable revbranches
       variable branchrevs
@@ -2074,6 +2059,7 @@ namespace eval ::cvs_branchlog {
         variable revlines
         variable revstate
         variable revcomment
+        variable revmergefrom
         variable revtags
         variable revbtags
         variable revbranches
@@ -2088,6 +2074,7 @@ namespace eval ::cvs_branchlog {
         catch { unset revlines }
         catch { unset revstate }
         catch { unset revcomment }
+        catch { unset revmergefrom }
         catch { unset revtags }
         catch { unset revbtags }
         catch { unset revbranches }
@@ -2129,6 +2116,7 @@ namespace eval ::cvs_branchlog {
         variable revlines
         variable revstate
         variable revcomment
+        variable revmergefrom
         variable revtags
         variable revbtags
         variable revbranches
@@ -2254,34 +2242,33 @@ namespace eval ::cvs_branchlog {
             }
             {D} {
               # Look for a date line.  This also has the name of the author.
-              set parts [split $logline]
-	      if {[lindex $parts 4] == "author:"} {
-                foreach [list \
-                    revwho($rnum) revdate($rnum) revtime($rnum) \
-                    revlines($rnum) revstate($rnum) \
-                  ] \
-                  [list \
-                    [string trimright [lindex $parts 5] {;}] \
-                    [lindex $parts 1] \
-                    [string trimright [lindex $parts 2] {;}] \
-                    [lrange $parts 11 end] \
-                    [string trimright [lindex $parts 8] {;}] \
-                  ] \
-                  { break }
-	      } else {
-                foreach [list \
-                    revwho($rnum) revdate($rnum) revtime($rnum) \
-                    revlines($rnum) revstate($rnum) \
-                  ] \
-                  [list \
-                    [string trimright [lindex $parts 6] {;}] \
-                    [lindex $parts 1] \
-                    [string trimright [lindex $parts 2] {;}] \
-                    [lrange $parts 11 end] \
-                    [string trimright [lindex $parts 8] {;}] \
-                  ] \
-                  { break }
-	      }
+              set parts [split $logline ";"]
+              foreach p $parts {
+                set eqn [split $p ":"];
+                set eqname [string trim [lindex $eqn 0]]
+                set eqval  [string trim [join [lrange $eqn 1 end] ":"]]
+                switch -exact -- $eqname {
+                  {date} {
+                    set revdate($rnum) [lindex $eqval 0]
+                    set revtime($rnum) [lindex $eqval 1]
+                    gen_log:log D "date $revdate($rnum)"
+                    gen_log:log D "time $revtime($rnum)"
+                  }
+                  {author} {
+                    set revwho($rnum) $eqval
+                  }
+                  {lines} {
+                    set revlines($rnum) $eqval
+                  }
+                  {state} {
+                    set revstate($rnum) $eqval
+                  }
+                  {mergepoint} {
+                    set revmergefrom($rnum) $eqval
+                    gen_log:log D "mergefrom $revmergefrom($rnum)"
+                  }
+                }
+              }
               set logstate {L}
             }
             {L} {
@@ -2315,7 +2302,6 @@ namespace eval ::cvs_branchlog {
       proc cvs_sort_it_all_out {} {
         global cvscfg
         global module_dir
-        #global current_tagname
         variable filename
         variable sys
         variable lc
@@ -2326,6 +2312,7 @@ namespace eval ::cvs_branchlog {
         variable revlines
         variable revstate
         variable revcomment
+        variable revmergefrom
         variable revtags
         variable revbtags
         variable revbranches
@@ -2398,14 +2385,12 @@ namespace eval ::cvs_branchlog {
                   # there is no log and no revisions to show.
                   # FIXME: what if this is a resurrection?
                   lappend branchrevs(trunk) {current}
-                  #set revbranches(current) {}
                 } elseif {[info exists rootbranch($tag)] && \
                     $rootbranch($tag) == $rnum} {
                   # The sticky tag specifies a branch and the branch's
                   # root is the same as the source revision. Place the
                   # you-are-here box at the start of the branch.
                   lappend branchrevs($revbranch($tag)) {current}
-                  #set revbranches(current) {}
                 } else {
                   if {[catch {info exists $branchrevs($root)}] == 0} {
                     if {$rnum == [lindex $branchrevs($root) 0]} {
@@ -2414,7 +2399,6 @@ namespace eval ::cvs_branchlog {
                       # branch.
                       set branchrevs($root) [linsert $branchrevs($root) 0\
                         {current}]
-                      #set revbranches(current) {}
                     } else {
                       # Otherwise we will place it as a branch off the
                       # revision.

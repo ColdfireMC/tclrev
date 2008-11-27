@@ -1,5 +1,8 @@
 Release 8.1.1 November, 2008
 
+- Merge arrows are drawn in the Branch Browser for merges tracked by CVSNT's
+  mergepoint feature.
+
 - The branch diagram can be searched to find a version, date, tag, or author
 
 - If you have a structure of trunk, branches, and tags but with different
