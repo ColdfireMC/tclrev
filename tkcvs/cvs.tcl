@@ -667,6 +667,27 @@ proc cvs_log {args} {
   gen_log:log T "LEAVE"
 }
 
+# called from the branch browser
+proc cvs_log_rev {rev file} {
+  global cvs
+
+  gen_log:log T "ENTER ($rev $file)"
+
+  set title "CVS log"
+  set commandline "$cvs log -N"
+  if {$rev ne ""} {
+    append commandline " -r$rev"
+    append title " -r$rev"
+  }
+  append commandline " $file"
+  append title " $file"
+
+  set logcmd [viewer::new "$title"]
+  $logcmd\::do "$commandline" 0 hilight_rcslog
+
+  gen_log:log T "LEAVE"
+}
+
 proc cvs_annotate {revision args} {
 #
 # This looks at a log from the repository.

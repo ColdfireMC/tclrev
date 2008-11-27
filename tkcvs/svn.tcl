@@ -786,6 +786,29 @@ proc svn_log {args} {
   gen_log:log T "LEAVE"
 }
 
+# called from branch browser
+proc svn_log_rev {filepath} {
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER ($filepath)"
+
+  set svncommand "svn log "
+  # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
+  # as well as the client, so we can't go by version number.  we
+  # just have to see if it works.
+  if {$cvsglb(svn_mergeinfo_works)} {
+    append svncommand "-g "
+  }
+  if {[regexp {/} $filepath]} {
+    append svncommand "--stop-on-copy "
+  }
+  append svncommand "\"$filepath\""
+  set logcmd [viewer::new "SVN log $filepath"]
+  $logcmd\::do "$svncommand"
+  gen_log:log T "LEAVE"
+}
+
 proc svn_merge_conflict {args} {
   global cvscfg
 

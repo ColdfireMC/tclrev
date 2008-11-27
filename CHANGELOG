@@ -5,6 +5,8 @@ Release 8.1.1 November, 2008
 
 - The branch diagram can be searched to find a version, date, tag, or author
 
+- Log browser always produces a verbose log of revisions on the selected branch.
+
 - If you have a structure of trunk, branches, and tags but with different
   names, you can tell TkCVS about it by setting variables in tkcvs_def.tcl:
   set cvscfg(svn_trunkdir) 
