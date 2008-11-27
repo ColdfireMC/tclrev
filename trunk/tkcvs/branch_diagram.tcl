@@ -1255,9 +1255,11 @@ namespace eval ::logcanvas {
               foreach to $totags {
                  if {[string equal $to $match($from)]} {
                     gen_log:log D "  $to on $mrev($to)"
-                    if {! [info exists revmergefrom($from)]} {
+                    if {! [info exists revmergefrom($mrev($from))]} {
                       set revmergefrom($mrev($from)) $mrev($to)
                       gen_log:log D "Set revmergefrom($mrev($from)) = $mrev($to)"
+                    } else {
+                      gen_log:log D "revmergefrom($mrev($from)) exists. Not changing"
                     }
                  }
               }
