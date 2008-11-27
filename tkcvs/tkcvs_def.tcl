@@ -114,7 +114,7 @@ set logcfg(font_size) -12
 # spcy = y spacing between revisions
 # yfudge = max extra y space used to fit branch in rather than moving right
 # boff = vertical offset for branch placement
-set logcfg(spcx) 1
+set logcfg(spcx) 3
 set logcfg(spcy) 1
 set logcfg(yfudge) 12
 set logcfg(boff) 1

@@ -1384,6 +1384,7 @@ namespace eval ::svn_branchlog {
         variable revname
         variable revtags
         variable revbtags
+        variable revmergefrom
         variable branchrevs
         variable allrevs
         variable revbranches
@@ -1400,6 +1401,7 @@ namespace eval ::svn_branchlog {
         catch { unset revcomment }
         catch { unset revtags }
         catch { unset revbtags }
+        catch { unset revmergefrom }
         catch { unset branchrevs }
         catch { unset revbranches }
         catch { unset revkind }
@@ -1416,14 +1418,19 @@ namespace eval ::svn_branchlog {
         $ln\::ConfigureButtons $filename
 
         # Find out where to put the working revision icon (if anywhere)
-        set command "svn log -q --stop-on-copy \"$filename\""
-        set cmd_log [exec::new $command]
-        set log_output [$cmd_log\::output]
-        $cmd_log\::destroy
-        set loglines [split $log_output "\n"]
-        set svnstat [lindex $loglines 1]
-        set revnum_current [lindex $svnstat 0]
-        gen_log:log D "revnum_current $revnum_current"
+        set revnum_current [set $ln\::revnum_current]
+        set revnum_current r$revnum_current
+        #set command "svn info \"$filename\""
+        #set cmd_log [exec::new $command]
+        #set log_output [$cmd_log\::output]
+        #$cmd_log\::destroy
+        #set loglines [split $log_output "\n"]
+        #foreach line $loglines {
+          #if {[string match {Revision:*} $line]} {
+            #set revnum_current [lindex $line 1]
+            #set revnum_current r$revnum_current
+          #}
+        #}
 
         if { $relpath == {} } {
           set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$safe_filename"
@@ -1433,7 +1440,7 @@ namespace eval ::svn_branchlog {
         if {[read_svn_dir .] == -1} {
           set path "$cvscfg(svnroot)/$safe_filename"
           if {! [info exists cvscfg(svnconform_seen)]} {
-            set msg "Your repository does not seem to be arranged in trunk, branch, and root directories.  The Branch Browser can't detect branches and tags."
+            set msg "Your repository does not seem to be arranged in $cvscfg(svn_trunkdir), $cvscfg(svn_branchdir), and $cvscfg(svn_tagdir) directories.  The Branch Browser can't detect branches and tags."
             cvsok "$msg" $lc
             set cvscfg(svnconform_seen) 1
           }
@@ -1449,6 +1456,7 @@ namespace eval ::svn_branchlog {
         $cmd_log\::destroy
         if {$log_output == ""} {
           # Maybe the file isn't on the trunk anymore but it once was.
+          # We'll have to use a range from r1 that case, to find it
           set j [string trimleft $revnum_current "r"]
           set range "${j}:1"
           set command "svn log -r $range $path"
@@ -1479,7 +1487,6 @@ namespace eval ::svn_branchlog {
           set revkind($r) "revision"
           set revpath($r) $path
         }
-        #set branchrevs($rr) [lrange $branchrevs(trunk) 0 end-1]
         set branchrevs($rr) $branchrevs(trunk)
         set revkind($rr) "root"
         set revname($rr) "trunk"
@@ -1495,19 +1502,8 @@ namespace eval ::svn_branchlog {
         # There can be files such as "README" here that aren't branches
         set branches [grep_filter {/$} $branches]
 
-        if {[info exists cvscfg(svn_branch_filter)] && \
-            [info exists cvscfg(svn_branch_max_count)]} {
-          # Only include branches that match regexp svn_branch_filter.
-          # And on top of that, keep only the top svn_branch_max_count.
-          set branches [grep_filter $cvscfg(svn_branch_filter) $branches]
-          set branches [lrange [lsort -decreasing $branches] \
-                      0 [expr {$cvscfg(svn_branch_max_count) - 1}]]
-        }
-
         foreach branch $branches {
           gen_log:log D "$branch"
-          # There can be files such as "README" here that aren't branches
-          #if {![string match {*/} $branch]} {continue}
           set branch [string trimright $branch "/"]
           # Can't use file join or it will mess up the URL
           gen_log:log D "BRANCHES: RELPATH \"$relpath\""
@@ -1547,7 +1543,6 @@ namespace eval ::svn_branchlog {
             set revkind($r) "revision"
             set revpath($r) $path
           }
-          #set branchrevs($rb) [lrange $branchrevs($branch) 0 end-1]
           set branchrevs($rb) $branchrevs($branch)
           set revkind($rb) "branch"
           set revname($rb) $branch
@@ -1674,6 +1669,7 @@ namespace eval ::svn_branchlog {
         variable revdate
         variable revtime
         variable revcomment
+        variable revmergefrom
         variable branchrevs
 
         gen_log:log T "ENTER (<...> $r)"

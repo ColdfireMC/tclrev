@@ -178,11 +178,11 @@ namespace eval ::logcanvas {
             $logcanvas.log configure \
                 -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text] 
-                    if {$rev =="" || [file isdirectory $filename]} {
+                    #if {$rev == ""} {
                       svn_log $filename
-                    } else {
-                      svn_log $revpath($rev) $filename
-                    }
+                    #} else {
+                      #svn_log $revpath($rev) $filename
+                    #}
                  }]
             if {$kind == "directory"} {
               $logcanvas.diff configure -state disabled
@@ -684,13 +684,15 @@ namespace eval ::logcanvas {
         variable match
         variable fromtags
         variable totags
-        variable xy
+        variable xyw
         variable boxwidth
         variable fromprefix
         variable toprefix
+        variable mrev
         upvar branch branch
 
         gen_log:log T "ENTER ($x $y $box_width $height $revision)"
+        set xyw($revision) [list $x [expr {$y - ($box_height / 4)}] $box_width ]
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -698,22 +700,16 @@ namespace eval ::logcanvas {
         foreach tag $tlist($revision) {
           gen_log:log D "$revision: tag $tag"
           if {[string match "${fromprefix}_*" $tag]} {
+            set mrev($tag) $revision
             lappend fromtags $tag
             regsub {.*_(.*$)} $tag {\1} tagend
             gen_log:log D "  $tag is a FROM TAG"
             gen_log:log D "  will need a TO TAG ${toprefix}_${revbtag}_$tagend"
             set match($tag) ${toprefix}_${revbtag}_$tagend
-            set boxwidth($tag) $box_width
-            set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
           }
           if {[string match "${toprefix}_*" $tag]} {
+            set mrev($tag) $revision
             lappend totags $tag
-            regsub {.*_(.*$)} $tag {\1} tagend
-            gen_log:log D "  $tag is a TO TAG"
-            gen_log:log D "  will need a FROM TAG ${toprefix}_${revbtag}_$tagend"
-            set match($tag) ${toprefix}_${revbtag}_$tagend
-            set boxwidth($tag) $box_width
-            set xy($tag) [list $x [expr {$y - ($box_height / 4)}]]
           }
           if {$opt(show_tags)} {
             set my_font $font_norm
@@ -1034,7 +1030,7 @@ namespace eval ::logcanvas {
         variable totags {}
         variable toprefix
         variable fromprefix
-        variable xy
+        variable xyw
         variable boxwidth
         variable view_xoff
         variable view_yoff
@@ -1057,7 +1053,9 @@ namespace eval ::logcanvas {
         variable revpath
         variable revkind
         variable revbranches
+        variable revmergefrom
         variable branchrevs
+        variable mrev
         variable match
 
         gen_log:log T "ENTER ($now)"
@@ -1097,6 +1095,10 @@ namespace eval ::logcanvas {
         catch { unset revbranches }
         foreach a [array names $scope\::revbranches] {
           set revbranches($a) [set $scope\::revbranches($a)]
+        }
+        catch { unset revmergefrom }
+        foreach a [array names $scope\::revmergefrom] {
+          set revmergefrom($a) [set $scope\::revmergefrom($a)]
         }
         catch { unset revkind }
         foreach a [array names $scope\::revkind] {
@@ -1243,43 +1245,65 @@ namespace eval ::logcanvas {
           gen_log:log D "fromtags: $fromtags"
           gen_log:log D "totags: $totags"
           if {$opt(show_merges)} {
+            # Draw merge arrows derived from tags
             foreach from $fromtags {
-              gen_log:log D " $from"
-              set xfrom [lindex $xy($from) 0]
-              set yfrom [lindex $xy($from) 1]
+              gen_log:log D "  $from on $mrev($from)"
               if {! [info exists match($from)]} {
                 gen_log:log D "  No match for $match($from)"
                 continue
               }
-              gen_log:log D "  need a matching tag $match($from)"
               foreach to $totags {
-                 gen_log:log D "    comparing $match($from) to $to"
                  if {[string equal $to $match($from)]} {
-                    gen_log:log D "  to $to at $xy($to)"
-                    set xto [lindex $xy($to) 0]
-                    set yto [lindex $xy($to) 1]
-                    set xmid $xto
-                    set ymid $yto
-                    if {$xto > $xfrom} {
-                      set xfrom [expr {$xfrom + $boxwidth($from)}]
-                      set yfrom [expr {$yfrom - ($box_height / 2)}]
-                      set yto [expr {$yto - ($box_height / 2)}]
-                      set xmid [expr {$xfrom + (($xto - $xfrom) / 2)}]
-                      set ymid [expr {$yto - $box_height}]
-                    } elseif {$xfrom > $xto} {
-                      set xto [expr {$xto + $boxwidth($to)}]
-                      set xmid [expr {$xto + (($xfrom - $xto) / 2)}]
-                      set ymid [expr {$yto + ($box_height / 2)}]
+                    gen_log:log D "  $to on $mrev($to)"
+                    if {! [info exists revmergefrom($from)]} {
+                      set revmergefrom($mrev($from)) $mrev($to)
+                      gen_log:log D "Set revmergefrom($mrev($from)) = $mrev($to)"
                     }
-                    if {$xto == $xfrom} {
-                      set xmid [expr {$xto - ($boxwidth($from) / 2)}]
-                      set ymid [expr {$yfrom - (($yfrom - $yto) / 2)}]
-                    }
-                    $logcanvas.canvas create line \
-                      $xfrom $yfrom $xmid $ymid $xto $yto \
-                      -arrow first -smooth 1
                  }
               }
+            }
+            # Draw merge arrows derived from cvsnt mergepoint or svn 1.5 mergeinfo
+            foreach to [array names revmergefrom] {
+              gen_log:log D "revmergefrom($to) $revmergefrom($to)"
+              set from $revmergefrom($to)
+              gen_log:log D " from $from to $to"
+              if [info exists xyw($from)] {
+                gen_log:log D " xyw($from) $xyw($from)"
+              } else {
+                gen_log:log D " xyw($from) doesn't exist"
+                continue
+              }
+              if [info exists xyw($to)] {
+                gen_log:log D " xyw($to) $xyw($to)"
+              } else {
+                gen_log:log D " xyw($to) doesn't exist"
+                continue
+              }
+              set xto [lindex $xyw($from) 0]
+              set yto [lindex $xyw($from) 1]
+              set bwto [lindex $xyw($from) 2]
+              set xfrom [lindex $xyw($to) 0]
+              set yfrom [lindex $xyw($to) 1]
+              set bwfrom [lindex $xyw($to) 2]
+              set xmid $xto
+              set ymid $yto
+              if {$xto > $xfrom} {
+                set xfrom [expr {$xfrom + $bwfrom}]
+                set yfrom [expr {$yfrom - ($box_height / 2)}]
+                set yto [expr {$yto - ($box_height / 2)}]
+                set xmid [expr {$xfrom + (($xto - $xfrom) / 2)}]
+                set ymid [expr {$yto - $box_height}]
+              } elseif {$xfrom > $xto} {
+                set xto [expr {$xto + $bwto}]
+                set xmid [expr {$xto + (($xfrom - $xto) / 2)}]
+                set ymid [expr {$yto + ($box_height / 2)}]
+              } elseif {$xto == $xfrom} {
+                set xmid [expr {$xto - ($bwfrom) / 2)}]
+                set ymid [expr {$yfrom - (($yfrom - $yto) / 2)}]
+              }
+              $logcanvas.canvas create line \
+                  $xfrom $yfrom $xmid $ymid $xto $yto \
+                  -arrow first -smooth 1
             }
           }
           # Reselect the previously selected revisions
