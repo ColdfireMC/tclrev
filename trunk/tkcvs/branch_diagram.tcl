@@ -178,11 +178,11 @@ namespace eval ::logcanvas {
             $logcanvas.log configure \
                 -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text] 
-                    #if {$rev == ""} {
-                      svn_log $filename
-                    #} else {
-                      #svn_log $revpath($rev) $filename
-                    #}
+                    if {$rev == ""} {
+                      svn_log_rev $filename
+                    } else {
+                      svn_log_rev $revpath($rev)
+                    }
                  }]
             if {$kind == "directory"} {
               $logcanvas.diff configure -state disabled
@@ -287,7 +287,13 @@ namespace eval ::logcanvas {
              # We have a checked-out local file
              $logcanvas.log configure \
                   -command [namespace code {
-                    cvs_log $filename
+                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    if {$rev == ""} {
+                      cvs_log_rev "" $filename
+                    } else {
+                      regsub {\.\d+$} $rev {} baserev
+                      cvs_log_rev $baserev $filename
+                    }
                   }]
              $logcanvas.view configure \
                -command [namespace code {
