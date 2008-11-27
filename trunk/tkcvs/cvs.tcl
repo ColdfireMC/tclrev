@@ -1782,7 +1782,7 @@ proc read_cvs_dir {dirname} {
   global current_tagname
 
   gen_log:log T "ENTER ($dirname)"
-  if {$cvsglb(cvs_version) == ""} {
+  if {! [info exists cvsglb(cvs_version)]} {
     cvs_version
   }
   set current_tagname "trunk"
