@@ -3,15 +3,7 @@ proc svn_version {} {
 
   gen_log:log T "ENTER"
 
-  if {$cvsglb(svn_mergeinfo_works) == ""} {
-    set commandline "svn log -g"
-    set ret [catch {eval "exec $commandline"} output]
-    if {$ret == 0} {
-      set cvsglb(svn_mergeinfo_works) 1
-    } else {
-      set cvsglb(svn_mergeinfo_works) 0
-    }
-  }
+  set cvsglb(svn_version) ""
 
   set commandline "svn --version"
   gen_log:log C "$commandline"
@@ -28,6 +20,14 @@ proc svn_version {} {
     }
   }
   set cvsglb(svn_version) $version
+
+  set commandline "svn log -g"
+  set ret [catch {eval "exec $commandline"} output]
+  if {$ret == 0} {
+    set cvsglb(svn_mergeinfo_works) 1
+  } else {
+    set cvsglb(svn_mergeinfo_works) 0
+  }
 
   gen_log:log T "LEAVE"
 }
@@ -1079,7 +1079,7 @@ proc svn_merge {parent frompath since currentpath frombranch args} {
   }
 
   # Do the update here, and defer the tagging until later
-  set commandline "svn merge \"$currentpath\" \"$frompath\""
+  set commandline "svn merge --accept postpone \"$currentpath\" \"$frompath\""
   set v [viewer::new "SVN Merge"]
   $v\::do "$commandline" 1 status_colortags
   $v\::wait
