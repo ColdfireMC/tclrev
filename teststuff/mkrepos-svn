@@ -1,0 +1,192 @@
+#!/bin/sh
+
+# Normal repository structure
+TRUNKWORD="trunk"
+BRANCHWORD="branches"
+TAGWORD="tags"
+# Abnormal repository structure
+#TRUNKWORD="elephants"
+#BRANCHWORD="dogs"
+#TAGWORD="ducklings"
+# Corresponds to .tkcvs settings
+# set cvscfg(svn_trunkdir) "elephants"
+# set cvscfg(svn_branchdir) "dogs"
+# set cvscfg(svn_tagdir) "ducklings"
+
+# Some stuff to randomly put in revised textfiles, simulating an edit
+WORDLIST="barcode braid greynetic maze mountain pacman triangle vidwhacker wander"
+
+# Create the repository
+WD=`pwd`
+SVNROOT=$HOME/svn_test_repos/svn_test
+
+# Clean up old stuff
+if [ -d $SVNROOT ]; then
+  rm -rf $SVNROOT
+fi
+rm -rf svn_test_*
+
+echo "MAKING REPOSITORY $SVNROOT"
+mkdir -p $SVNROOT
+svnadmin create $SVNROOT
+echo "CREATED $SVNROOT"
+
+echo "MAKING FILETREE"
+# Make some files to put in the repository
+mkdir -p svn_test/$TRUNKWORD svn_test/$BRANCHWORD svn_test/$TAGWORD
+cd svn_test/$TRUNKWORD
+$WD/mktest
+cd $WD
+
+echo "IMPORTING FILETREE"
+# Import it
+svn import svn_test file:///$SVNROOT -m "Imported"
+if [ $? != 0 ]; then
+  echo "Import failed"
+  exit 1
+fi
+echo "IMPORT FINISHED"
+# clean up import directory
+rm -rf svn_test*
+
+echo "CHECKING OUT TRUNK"
+# Check out the trunk
+svn co file:///$SVNROOT/$TRUNKWORD svn_test_$TRUNKWORD
+
+echo "First revision on trunk"
+# Make a modification on trunk
+cd svn_test_$TRUNKWORD
+$WD/modtest
+# Random
+R=`echo $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
+echo $R > FT
+svn add FT
+svn commit -m "First revision on trunk"
+cd $WD
+
+# Branch
+echo "MAKING BRANCH A"
+svn copy file:///$SVNROOT/$TRUNKWORD \
+   file:///$SVNROOT/$BRANCHWORD/BranchA -m "First Branch"
+echo "CHECKING OUT BRANCH"
+svn co file:///$SVNROOT/$BRANCHWORD/BranchA svn_test_branchA
+cd svn_test_branchA
+# Random
+R=`echo $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
+echo $R > FA
+svn add FA
+svn commit -m "Add file F3 on BranchA"
+cd $WD
+
+# Make modifications on branch and trunk
+echo "Second revision on trunk"
+cd svn_test_$TRUNKWORD
+$WD/modtest
+svn commit -m "Second revision on trunk"
+
+echo "First revision on Branch A"
+cd $WD/svn_test_branchA
+$WD/modtest
+svn commit -m "First revision on Branch A"
+cd $WD
+
+# Make another modification on each
+echo "Third revision on trunk"
+cd svn_test_$TRUNKWORD
+$WD/modtest
+svn commit -m "Third revision on trunk"
+
+echo "Second revision on Branch A"
+cd $WD/svn_test_branchA
+$WD/modtest
+svn commit -m "Second revision on Branch A"
+cd $WD
+
+# Branch off of the branch
+echo "MAKING BRANCH AA"
+svn copy file:///$SVNROOT/$BRANCHWORD/BranchA \
+   file:///$SVNROOT/$BRANCHWORD/BranchAA -m "Branch from a Branch"
+echo "CHECKING OUT BRANCH AA"
+svn co file:///$SVNROOT/$BRANCHWORD/BranchAA svn_test_branchAA
+
+# Make a change on that branch
+cd svn_test_branchAA
+$WD/modtest
+# Random
+R=`echo $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
+echo $R > FAA
+svn add FAA
+svn delete FT
+svn commit -m "Changes on Branch AA"
+cd $WD
+
+# Branch
+echo "MAKING BRANCH B"
+svn copy file:///$SVNROOT/$TRUNKWORD \
+   file:///$SVNROOT/$BRANCHWORD/BranchB -m "Second Branch"
+echo "CHECKING OUT BRANCH B"
+svn co file:///$SVNROOT/$BRANCHWORD/BranchB svn_test_branchB
+cd svn_test_branchB
+$WD/modtest
+# Random
+R=`echo $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
+echo $R > FB
+svn add FB
+svn commit -m "Add file FB on BranchB"
+cd $WD
+
+#### Stop here if you don't want the merges ####
+#exit
+
+cd $WD/svn_test_$TRUNKWORD
+
+echo "MERGING A -> trunk for file File1"
+TOPT=`svn info file://$HOME/svn_test_repos/svn_test/$TRUNKWORD/File1 | \
+  gawk '/^Last Changed Rev:/ {print $4}'`
+TOPA=`svn info file://$HOME/svn_test_repos/svn_test/$BRANCHWORD/BranchA/File1 | \
+  gawk '/^Last Changed Rev:/ {print $4}'`
+echo "$TOPA -> $TOPT"
+svn merge --accept postpone \
+  file://$HOME/svn_test_repos/svn_test/$TRUNKWORD/File1@$TOPT \
+  file://$HOME/svn_test_repos/svn_test/$BRANCHWORD/BranchA/File1@$TOPA
+# Resolve conflicts
+sed -n '/^[a-z]/p' File1 > tmp; mv -f tmp File1
+svn resolved File1
+svn commit -m "Merged from BranchA to trunk ($TOPA -> $TOPT)" File1
+
+
+cd $WD/svn_test_branchB
+echo "MERGING trunk -> BranchB for file File1"
+TOPT=`svn info file://$HOME/svn_test_repos/svn_test/$TRUNKWORD/File1 | \
+  gawk '/^Last Changed Rev:/ {print $4}'`
+TOPB=`svn info file://$HOME/svn_test_repos/svn_test/$BRANCHWORD/BranchB/File1 | \
+  gawk '/^Last Changed Rev:/ {print $4}'`
+echo "$TOPT -> $TOPB"
+svn merge --accept postpone \
+  file://$HOME/svn_test_repos/svn_test/$BRANCHWORD/BranchB/File1@$TOPB \
+  file://$HOME/svn_test_repos/svn_test/$TRUNKWORD/File1@$TOPT
+# Resolve conflicts
+sed -n '/^[a-z]/p' File1 > tmp; mv -f tmp File1
+svn resolved File1
+svn commit -m "Merged from trunk to BranchB ($TOPT -> $TOPB)" File1
+
+# Make tags for tag-based merge arrow
+echo "Making tag mergeto_BranchA_20Nov08"
+svn mkdir -m"new tag" \
+  file://$HOME/svn_test_repos/svn_test/$TAGWORD/mergeto_BranchA_20Nov08
+svn copy -m"tag_copy_by_TkSVN" \
+  file://$HOME/svn_test_repos/svn_test/$BRANCHWORD/BranchAA/File1 \
+  file://$HOME/svn_test_repos/svn_test/$TAGWORD/mergeto_BranchA_20Nov08
+
+echo "Making tag mergefrom_BranchAA_20Nov08"
+svn mkdir -m"new tag" \
+  file://$HOME/svn_test_repos/svn_test/$TAGWORD/mergefrom_BranchAA_20Nov08
+svn copy -m"tag_copy_by_TkSVN" \
+  file://$HOME/svn_test_repos/svn_test/$BRANCHWORD/BranchA/File1 \
+  file://$HOME/svn_test_repos/svn_test/$TAGWORD/mergefrom_BranchAA_20Nov08
+cd $WD
+
+echo "FINSHED TAGGING"
+# See if we really made any mergeinfo
+svn propget svn:mergeinfo file://$HOME/svn_test_repos/svn_test --recursive
+

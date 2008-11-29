@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ -d $HOME/cvs_test_repos ]; then
+  if [ ! -z $SystemDrive ]; then
+    echo "Must be a PC"
+    chmod -R u+w $HOME/cvs_test_repos
+  fi
+  rm -rf $HOME/cvs_tst_repos
+fi
+if [ -d $HOME/svn_test_repos ]; then
+  chmod -R o+w $HOME/svn_test_repos
+  rm -rf $HOME/svn_tst_repos
+fi
+
+rm -rf cvs_test_*
+rm -rf svn_test_*
+

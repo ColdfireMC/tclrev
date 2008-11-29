@@ -420,6 +420,12 @@ proc modbrowse_run { {CVSorSVN {}} } {
       } else {
         gen_log:log D "default"
         set cvscfg(cvsroot) $cvsglb(root)
+        if {$cvsglb(root) eq ""} {
+          ModTree:create .modbrowse.treeframe
+          pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+          busy_done .modbrowse
+          return
+        }
         #gen_log:log D "cvsglb(root) $cvsglb(root)"
         #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
         #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
@@ -466,6 +472,8 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
     .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
     .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
+    .modbrowse.modmenu entryconfigure "CVS" -state disabled
+    .modbrowse.modmenu entryconfigure "SVN" -state normal
   } else {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
@@ -488,6 +496,8 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
     .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
     .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
+    .modbrowse.modmenu entryconfigure "CVS" -state normal
+    .modbrowse.modmenu entryconfigure "SVN" -state disabled
   }
   if {$insvn || $incvs || $inrcs} {
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled

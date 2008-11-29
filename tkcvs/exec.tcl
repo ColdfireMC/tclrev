@@ -156,7 +156,7 @@ namespace eval ::exec {
           }
           $v_w.text yview end
         }
-        gen_log:log D "STDOUT:  $line"
+        gen_log:log F "STDOUT:  $line"
       }
 
       proc err_handler {} {
