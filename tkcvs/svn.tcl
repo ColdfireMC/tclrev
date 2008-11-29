@@ -28,10 +28,11 @@ proc svn_version {} {
   set ret [catch {eval "exec $commandline"} output]
   if {$ret == 0} {
     set cvsglb(svn_mergeinfo_works) 1
+    gen_log:log D "svn mergeinfo works"
   } else {
     set cvsglb(svn_mergeinfo_works) 0
+    gen_log:log D "svn mergeinfo doesn't work"
   }
-
   gen_log:log T "LEAVE"
 }
 
@@ -1709,8 +1710,9 @@ namespace eval ::svn_branchlog {
             set revpath($rb) $path
   
             # Now do log -q to find the previous rev, which is down
-            # the list
-            set command "svn log -q $path"
+            # the list.  For tags, it's only one down, so we can limit
+            # the log to 2.  It only speeds it up a little though.
+            set command "svn log -q -l 2 $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
