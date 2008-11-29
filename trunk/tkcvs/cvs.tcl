@@ -110,6 +110,7 @@ proc cvs_workdir_status {} {
     # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
     # into an array.
 
+    set datestatus_seen 0
     $cmd(cvs_status)\::destroy
     catch {unset cmd(cvs_status)}
     foreach logline $status_lines {
@@ -137,7 +138,11 @@ proc cvs_workdir_status {} {
         if {$date == "" } {
          if {! ([string match "New *" $date ] || [string match "Result *" $date])} {
            catch {set date [clock format [file mtime $filename] -format $cvscfg(dateformat)]}
-           gen_log:log E "No date supplied by remote CVS server. Using \[file mtime $filename\]"
+           if {! $datestatus_seen} {
+             # We only need to see this message once per directory
+             set datestatus_seen 1
+             gen_log:log E "No date supplied by remote CVS server. Using \[file mtime\]"
+           }
          }
         } else {
           # CVS outputs time strings tcl can't handle, such as
