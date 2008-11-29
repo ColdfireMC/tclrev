@@ -1,19 +1,24 @@
-Release 8.1.1 November, 2008
+Release 8.2 November, 2008
 
-- Merge arrows are drawn in the Branch Browser for merges tracked by CVSNT's
-  mergepoint feature.
+- Merge arrows are drawn in the Branch Browser for merges tracked by
+  Subversion 1.5's mergeinfo property and CVSNT's mergepoint feature.
 
 - The branch diagram can be searched to find a version, date, tag, or author
 
-- Log browser always produces a verbose log of revisions on the selected branch.
+- Log browser always produces a verbose log of revisions on the selected branch
+  instead of obeying the Directory Browser's "Log Detail" setting
 
-- If you have a structure of trunk, branches, and tags but with different
-  names, you can tell TkCVS about it by setting variables in tkcvs_def.tcl:
-  set cvscfg(svn_trunkdir) 
-  set cvscfg(svn_branchdir)
-  set cvscfg(svn_tagdir)
+- If your SVN repository has a structure similar to trunk, branches, and tags
+  but with different names, you can tell TkCVS about it by setting variables in
+  tkcvs_def.tcl:
+    set cvscfg(svn_trunkdir) "elephants"
+    set cvscfg(svn_branchdir) "dogs"
+    set cvscfg(svn_tagdir) "ducklings"
 
 - Fix a bash-ism in contrib/cvsdiff
+
+- Changed the trace levels so that "F" lets you get the CVS/SVN stdout without
+  the whole debug output
 
 
 Release 8.1   November, 2007

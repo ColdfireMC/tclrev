@@ -516,19 +516,10 @@ Operations such as "Diff" and "Merge Changes to Current" require two versions to
 You can search the canvas for tags, revisions, authors, and dates.
 The following special characters are used in the search pattern:
   *      Matches any sequence of characters in string, including a null string.
-  
   ?      Matches any single character in string.
-  
-  [chars] Matches any character in the set given by chars. If a sequence of the
-  form x-y appears in chars, then any character between x and y, inclusive, will
-  match.
-  
-  \x      Matches the single character x. This provides a way of avoiding the
-  special interpretation of the characters *?[]\ in pattern.
-  
-  If you only enter "FOO" (without the \") in the entry box, it searches the exact
-  string "foo". If you want to search all strings starting with "foo", you have
-  to put "foo*". For all strings containing "foo", you must put "*foo*".
+  [chars] Matches any character in the set given by chars. If a sequence of the form x-y appears in chars, then any character between x and y, inclusive, will match.
+  \x      Matches the single character x. This provides a way of avoiding the special interpretation of the characters *?[]\ in pattern.
+If you only enter "FOO" (without the \") in the entry box, it searches the exact string "foo". If you want to search all strings starting with "foo", you have to put "foo*". For all strings containing "foo", you must put "*foo*".
 
 
 <h2>Log Browser Buttons</h2>
@@ -766,8 +757,17 @@ The following variables are supported by TkCVS:
 <h3>cvscfg(startwindow)</h3>
 Which window you want to see on startup. (workdir or module)
 
+<h2>CVS</h2>
 <h3>cvscfg(cvsroot)</h3>
 If set, it overrides the CVSROOT environment variable.
+
+<h2>Subversion</h2>
+If your SVN repository has a structure similar to trunk, branches, and tags but with different names, you can tell TkCVS about it by setting variables in tkcvs_def.tcl:
+    set cvscfg(svn_trunkdir) "elephants"
+    set cvscfg(svn_branchdir) "dogs"
+    set cvscfg(svn_tagdir) "ducklings"
+The branch browser depends on the convention of having a trunk, branches, and tags structure to draw the diagram.  These variables may give you a little more flexibility.
+
 
 <h2>GUI</h2>
 

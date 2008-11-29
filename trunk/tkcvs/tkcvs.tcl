@@ -64,7 +64,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "8.1.1"
+set cvscfg(version) "8.2"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -212,7 +212,7 @@ set cvscfg(flashfont) [list $ffam $fsiz underline]
 #puts "actual flashfont: [font actual $cvscfg(flashfont)]"
 # Prefer underline, but it isn't working at all in tk8.5 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
-  puts "Underline font not working.  Try $ffam $fsiz bold"
+  puts "Underline font not working.  Trying $ffam $fsiz bold"
   set cvscfg(flashfont) [list [lindex $lbf 1] $fsiz bold]
   #set cvscfg(flashfont) [list [lindex $lbf 1] [lindex $lbf 3] bold]
 }
@@ -305,7 +305,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
 # If CVSROOT envvar is set, use it
 if { ! [info exists cvscfg(cvsroot)] } {
   if { ! [info exists env(CVSROOT)] } {
-    puts "warning: your \$CVSROOT environment variable is not set."
+    #puts "warning: your \$CVSROOT environment variable is not set."
     set cvscfg(cvsroot) ""
   } else {
     set cvscfg(cvsroot) $env(CVSROOT)
@@ -328,6 +328,8 @@ set cvsglb(root) $cvscfg(cvsroot)
 if {$cvscfg(svnroot) != ""} {
   set cvsglb(root) $cvscfg(svnroot)
 }
+# Thought better of saving this
+catch unset cvscfg(svnconform_seen)
 
 if {![info exists cvscfg(ignore_file_filter)]} {
   set cvscfg(ignore_file_filter) ""
@@ -339,13 +341,6 @@ set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
 #foreach c [lsort [array names cvscfg]] {
   #gen_log:log D "cvscfg($c) $cvscfg($c)"
 #}
-
-set const(boxx) 80
-set const(xfactor) 14
-set const(boxy) 30
-set const(spacex) 60
-set const(spacey) 16
-set const(textheight) 12
 
 # Load the images that are used in more than one module
 image create photo Log \

@@ -99,6 +99,9 @@ set cvscfg(mergetoformat) "mergeto_BRANCH_%d%b%y"
 set cvscfg(mergefromformat) "mergefrom_BRANCH_%d%b%y"
 set cvscfg(mergetrunkname) "trunk"
 
+# The branch browser depends on the convention of having a trunk, branches, and
+# tags structure to draw the diagram.  These variables may give you a little
+# more flexibility.
 set cvscfg(svn_trunkdir) "trunk"
 set cvscfg(svn_branchdir) "branches"
 set cvscfg(svn_tagdir) "tags"
@@ -280,7 +283,7 @@ set cvscfg(rdetail)            "summary"
 # i.e., ls *
 set cvscfg(file_filter)        ""
 set cvscfg(ignore_file_filter) "*.a *.o *~"
-set cvscfg(clean_these)        "*.bak *~ *tmp #* *%"
+set cvscfg(clean_these)        "*.bak *~ .#* *tmp #* *%"
 
 # set the default for automatic statusing of a CVS controlled
 # directory.  Automatic updates are done when a directory is

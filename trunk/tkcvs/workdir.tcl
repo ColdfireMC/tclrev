@@ -564,9 +564,9 @@ proc workdir_menus {} {
      -variable cvscfg(status_filter) -onvalue false -offvalue true
   .workdir.menubar.options add checkbutton -label "Report->Check/Status are Recursive" \
      -variable cvscfg(recurse) -onvalue true -offvalue false
-  .workdir.menubar.options add cascade -label "CVS Status Detail" \
+  .workdir.menubar.options add cascade -label "Status Detail" \
      -menu .workdir.menubar.options.report_detail
-  .workdir.menubar.options add cascade -label "CVS Log Detail" \
+  .workdir.menubar.options add cascade -label "Log Detail" \
      -menu .workdir.menubar.options.logfile_detail
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Tracing On/Off" \
@@ -579,13 +579,13 @@ proc workdir_menus {} {
      -command save_options
 
   menu .workdir.menubar.options.loglevel
-  .workdir.menubar.options.loglevel add checkbutton -label "CVS commands (C)" \
+  .workdir.menubar.options.loglevel add checkbutton -label "commands (C)" \
      -variable logclass(C) -onvalue "C" -offvalue "" \
      -command gen_log:changeclass
-  .workdir.menubar.options.loglevel add checkbutton -label "CVS stderr (E)" \
+  .workdir.menubar.options.loglevel add checkbutton -label "stderr (E)" \
      -variable logclass(E) -onvalue "E" -offvalue "" \
      -command gen_log:changeclass
-  .workdir.menubar.options.loglevel add checkbutton -label "File creation/deletion (F)"\
+  .workdir.menubar.options.loglevel add checkbutton -label "stdout and file creation/deletion (F)"\
      -variable logclass(F) -onvalue "F" -offvalue "" \
      -command gen_log:changeclass
   .workdir.menubar.options.loglevel add checkbutton -label "Function entry/exit (T)" \
@@ -882,7 +882,7 @@ proc auto_setup_dir {command} {
 proc setup_dir { } {
   #
   # Call this when entering a directory.  It puts all of the file names
-  # in the listbox, and reads the CVS or directory.
+  # in the listbox, and reads the directory.
   #
   global cwd
   global module_dir
@@ -1533,8 +1533,7 @@ proc save_options { } {
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
                  showstatcol showdatecol showeditcol auto_tag \
-                 status_filter recurse logging blame_linenums \
-                 svnconform_seen}
+                 status_filter recurse logging blame_linenums}
   set STRGopts { file_filter ignore_file_filter clean_these \
                  printer rdetail ldetail log_classes lastdir \
                  workgeom modgeom loggeom tracgeom editor editorargs}

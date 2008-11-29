@@ -697,7 +697,7 @@ namespace eval ::logcanvas {
         variable mrev
         upvar branch branch
 
-        gen_log:log T "ENTER ($x $y $box_width $height $revision)"
+        #gen_log:log T "ENTER ($x $y $box_width $height $revision)"
         set xyw($revision) [list $x [expr {$y - ($box_height / 4)}] $box_width ]
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
@@ -777,7 +777,7 @@ namespace eval ::logcanvas {
         variable revbranches
 
         #gen_log:log T "ENTER ($x $y $root_rev $branch)"
-        gen_log:log D "Drawing branch \"$branch\" rooted at \"$root_rev\""
+        gen_log:log D "Drawing branch \"$branch\" rooted at \"$root_rev\" at ($x $y)"
         # What revisions to show on this branch?
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
         if {$branchrevs($branch) == {}} {
@@ -846,9 +846,9 @@ namespace eval ::logcanvas {
             set bbox [$logcanvas.canvas bbox ol_x]
           $logcanvas.canvas dtag ol_x
           if {$bbox == {}} {
-          break
-        }
-        gen_log:log D "horizontal overlap with $bbox"
+            break
+          }
+          gen_log:log D "horizontal overlap with $bbox"
           # Move branch to rightmost point of overlapped objects plus some space
           # N.B. +1 because exactly equal counts as an overlap
           set x [expr {[lindex $bbox 2] + $curr(spcx) + 1}]
@@ -1306,7 +1306,7 @@ namespace eval ::logcanvas {
                 set xmid [expr {$xto + (($xfrom - $xto) / 2)}]
                 set ymid [expr {$yto + ($box_height / 2)}]
               } elseif {$xto == $xfrom} {
-                set xmid [expr {$xto - ($bwfrom) / 2)}]
+                set xmid [expr {$xto - ($bwfrom / 2)}]
                 set ymid [expr {$yfrom - (($yfrom - $yto) / 2)}]
               }
               $logcanvas.canvas create line \

@@ -1,4 +1,4 @@
-.TH TkCVS 1 Release 8.1.1
+.TH TkCVS 1 Release 8.2
 .SH NAME
 TkCVS - a Tk/Tcl Graphical Interface to CVS and Subversion
 .SH SYNOPSIS
@@ -232,21 +232,11 @@ The following special characters are used in the search pattern:
 .LP
   ?      Matches any single character in string.
 .LP
-  [chars] Matches any character in the set given by chars. If a sequence of the
+  [chars] Matches any character in the set given by chars. If a sequence of the form x-y appears in chars, then any character between x and y, inclusive, will match.
 .LP
-  form x-y appears in chars, then any character between x and y, inclusive, will
+  \x      Matches the single character x. This provides a way of avoiding the special interpretation of the characters *?[]\ in pattern.
 .LP
-  match.
-.LP
-  \x      Matches the single character x. This provides a way of avoiding the
-.LP
-  special interpretation of the characters *?[]\ in pattern.
-.LP
-  If you only enter "FOO" (without the \") in the entry box, it searches the exact
-.LP
-  string "foo". If you want to search all strings starting with "foo", you have
-.LP
-  to put "foo*". For all strings containing "foo", you must put "*foo*".
+If you only enter "FOO" (without the \") in the entry box, it searches the exact string "foo". If you want to search all strings starting with "foo", you have to put "foo*". For all strings containing "foo", you must put "*foo*".
 .SS Log Browser Buttons
 .LP
 The log browser contains the following buttons:
@@ -446,9 +436,16 @@ The following variables are supported by TkCVS:
 .TP
 .B cvscfg(startwindow)
 Which window you want to see on startup. (workdir or module)
+.SS CVS
 .TP
 .B cvscfg(cvsroot)
 If set, it overrides the CVSROOT environment variable.
+.SS Subversion
+If your SVN repository has a structure similar to trunk, branches, and tags but with different names, you can tell TkCVS about it by setting variables in tkcvs_def.tcl:
+    set cvscfg(svn_trunkdir) "elephants"
+    set cvscfg(svn_branchdir) "dogs"
+    set cvscfg(svn_tagdir) "ducklings"
+The branch browser depends on the convention of having a trunk, branches, and tags structure to draw the diagram.  These variables may give you a little more flexibility.
 .SS GUI
 .LP
 Most colors and fonts can be customized by using the options database. For example, you can add lines like these to your .tkcvs file:

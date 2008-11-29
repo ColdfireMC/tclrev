@@ -3,23 +3,26 @@ proc svn_version {} {
 
   gen_log:log T "ENTER"
 
-  set cvsglb(svn_version) ""
+  # We don't need the version.  We just need to know if mergeinfo is
+  # going to work in this server/client combination.  But let's not forget
+  # how to get the version.
 
-  set commandline "svn --version"
-  gen_log:log C "$commandline"
-  set ret [catch {eval "exec $commandline"} output]
-  if {$ret} {
-    cvsfail $output
-    return
-  }
-  foreach infoline [split $output "\n"] {
-    if {[string match "svn,*" $infoline]} {
-      set lr [split $infoline]
-      set version [lindex $lr 2]
-      gen_log:log D "version $version"
-    }
-  }
-  set cvsglb(svn_version) $version
+  #set cvsglb(svn_version) ""
+  #set commandline "svn --version"
+  #gen_log:log C "$commandline"
+  #set ret [catch {eval "exec $commandline"} output]
+  #if {$ret} {
+  #  cvsfail $output
+  #  return
+  #}
+  #foreach infoline [split $output "\n"] {
+  #  if {[string match "svn,*" $infoline]} {
+  #    set lr [split $infoline]
+  #    set version [lindex $lr 2]
+  #    gen_log:log D "version $version"
+  #  }
+  #}
+  #set cvsglb(svn_version) $version
 
   set commandline "svn log -g"
   set ret [catch {eval "exec $commandline"} output]
@@ -41,9 +44,9 @@ proc read_svn_dir {dirname} {
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
-  if {$cvsglb(svn_version) == ""} {
-    svn_version
-  }
+  # Whether mergeinfo works depends on the server as well as the local svn program,
+  # so it may work for us in one repository but not another
+  svn_version
   # svn info gets the URL
   # Have to do eval exec because we need the error output
   set command "svn info"
@@ -55,8 +58,8 @@ proc read_svn_dir {dirname} {
   }
   foreach infoline [split $output "\n"] {
     if {[string match "URL*" $infoline]} {
-      gen_log:log D "$infoline"
       set cvscfg(url) [lrange $infoline 1 end]
+      gen_log:log D "$cvscfg(url)"
     }
   }
 
@@ -109,6 +112,7 @@ proc read_svn_dir {dirname} {
         }
       }
       set cvscfg(svnroot) [string trimright $root "/"]
+      set cvsglb(root) $cvscfg(svnroot)
       gen_log:log D "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) [join $relp {/}]
@@ -118,14 +122,19 @@ proc read_svn_dir {dirname} {
     }
   }
   if {$root == ""} {
-    gen_log:log D "Nonconforming repository"
+    gen_log:log F "Nonconforming repository"
+    puts "No conforming $cvscfg(svn_trunkdir)/$cvscfg(svn_branchdir)/$cvscfg(svn_tagdir) structure detected in the repository"
+    puts " I won't be able to detect any branches or tags."
     gen_log:log D "SVN URL: $cvscfg(url)"
     set cvscfg(svnroot) $cvscfg(url)
+    set cvsglb(root) $cvscfg(svnroot)
     gen_log:log D "svnroot: $cvscfg(svnroot)"
     set cvsglb(relpath) ""
+    set cvsglb(svnconform) 0
     gen_log:log T "LEAVE (-1)"
     return -1
   }
+  set cvsglb(svnconform) 1
   gen_log:log T "LEAVE (0)"
   return 1
 }
@@ -839,8 +848,8 @@ proc svn_merge_conflict {args} {
       cvsfail "$file does not appear to have a conflict." .workdir
       continue
     }
-  # FIXME: we don't want to tie up the whole UI with tkdiff, but
-  # if we don't wait, we have no way to know if we can mark resolved
+    # FIXME: we don't want to tie up the whole UI with tkdiff, but
+    # if we don't wait, we have no way to know if we can mark resolved
     # Invoke tkdiff with the proper option for a conflict file
     # and have it write to the original file
     set command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
@@ -1443,50 +1452,43 @@ namespace eval ::svn_branchlog {
         # Find out where to put the working revision icon (if anywhere)
         set revnum_current [set $ln\::revnum_current]
         set revnum_current r$revnum_current
-        #set command "svn info \"$filename\""
-        #set cmd_log [exec::new $command]
-        #set log_output [$cmd_log\::output]
-        #$cmd_log\::destroy
-        #set loglines [split $log_output "\n"]
-        #foreach line $loglines {
-          #if {[string match {Revision:*} $line]} {
-            #set revnum_current [lindex $line 1]
-            #set revnum_current r$revnum_current
-          #}
-        #}
 
         if { $relpath == {} } {
           set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$safe_filename"
         } else {
           set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$relpath/$safe_filename"
         }
-        if {[read_svn_dir .] == -1} {
+        if {! $cvsglb(svnconform)} {
           set path "$cvscfg(svnroot)/$safe_filename"
-          if {! [info exists cvscfg(svnconform_seen)]} {
-            set msg "Your repository does not seem to be arranged in $cvscfg(svn_trunkdir), $cvscfg(svn_branchdir), and $cvscfg(svn_tagdir) directories.  The Branch Browser can't detect branches and tags."
-            cvsok "$msg" $lc
-            set cvscfg(svnconform_seen) 1
+        }
+        # We need to go to the repository to find the highest revision.  Doing
+        # info on local files may not have it.  Let's start with what we've got
+        # though in case it fails.
+        set highest_revision [string trimleft $revnum_current "r"]
+        set command "svn info $path"
+        gen_log:log C "$command"
+        set ret [catch {eval "exec $command"} output]
+        if {$ret} {
+          cvsfail $output
+        }
+        foreach infoline [split $output "\n"] {
+          if {[string match "Revision*" $infoline]} {
+            set highest_revision [lrange $infoline 1 end]
+            gen_log:log D "$highest_revision"
           }
         }
+
         # The trunk
         set branchrevs(trunk) {}
-        # if the file was added on a branch, this will error out.
-        # Come to think of it, there's nothing especially privileged
-        # about the trunk except that one branch must not stop-on-copy
-        set command "svn log $path"
+        # There's nothing especially privileged about the trunk except that one
+        # branch must not stop-on-copy.  Maybe the file was added on a branch,
+        # or maybe it isn't on the trunk anymore but it once was.  We'll have
+        # to use a range from r1 that case, to find it
+        set range "${highest_revision}:1"
+        set command "svn log -r $range $path"
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
-        if {$log_output == ""} {
-          # Maybe the file isn't on the trunk anymore but it once was.
-          # We'll have to use a range from r1 that case, to find it
-          set j [string trimleft $revnum_current "r"]
-          set range "${j}:1"
-          set command "svn log -r $range $path"
-          set cmd_log [exec::new $command {} 0 {} 1]
-          set log_output [$cmd_log\::output]
-          $cmd_log\::destroy
-        }
         set trunk_lines [split $log_output "\n"]
         set rr [parse_svnlog $trunk_lines trunk]
         # See if the current revision is on the trunk
@@ -1495,6 +1497,28 @@ namespace eval ::svn_branchlog {
         set tip [lindex $brevs 0]
         set revpath($tip) $path
         set revkind($tip) "revision"
+        foreach r $branchrevs(trunk) {
+          if {$cvsglb(svn_mergeinfo_works)} {
+            set propcmd "svn propget svn:mergeinfo -$r $path"
+            set cmd_prop [exec::new $propcmd {} 0 {} 1]
+            set prop_output [$cmd_prop\::output]
+            $cmd_prop\::destroy
+            # It will probably be empty the majority of the time
+            # so don't waste time on empty output
+            if {$prop_output eq ""} {continue}
+            set splits [split $prop_output "\n"]
+            # FIXME: what if more than one merge comes into the same rev?
+            foreach line $splits {
+              if {$line eq ""} {continue}
+              set spl [split $line ":"]
+              set fromrevs [lindex $spl 1]
+              gen_log:log D "  to $r  fromrevs $fromrevs"
+              regsub {^.*-} $fromrevs {} lastfromrev 
+              set revmergefrom($r) "r$lastfromrev"
+              gen_log:log D "  revmergefrom($r) $revmergefrom($r)"
+            }
+          }
+        }
         set brevs [lreplace $brevs 0 0]
         if {$tip == $revnum_current} {
           # If current is at end of trunk do this.
@@ -1517,11 +1541,11 @@ namespace eval ::svn_branchlog {
         set revpath($rr) $path
 
         # Branches
+        # Get a list of the branches from the repository
         set command "svn list $cvscfg(svnroot)/$cvscfg(svn_branchdir)"
         set cmd_log [exec::new $command {} 0 {} 1]
         set branches [$cmd_log\::output]
         $cmd_log\::destroy
-
         # There can be files such as "README" here that aren't branches
         set branches [grep_filter {/$} $branches]
 
@@ -1535,6 +1559,7 @@ namespace eval ::svn_branchlog {
           } else {
             set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
           }
+          # Do stop-on-copy to find the base of the branch
           set command "svn log --stop-on-copy $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
@@ -1544,13 +1569,35 @@ namespace eval ::svn_branchlog {
           }
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
-          #puts "parse_svnlog returned base revision $rb for $branch"
           # See if the current revision is on this branch
           set curr 0
           set brevs $branchrevs($branch)
           set tip [lindex $brevs 0]
           set revpath($tip) $path
           set revkind($tip) "revision"
+          foreach r $branchrevs($branch) {
+            if {$cvsglb(svn_mergeinfo_works)} {
+              set propcmd "svn propget svn:mergeinfo -$r $path"
+              # proc new {command {viewer {}} {show_stderr {1}} {filter {}} {errok {0}} }
+              set cmd_prop [exec::new $propcmd {} 0 {} 1]
+              set prop_output [$cmd_prop\::output]
+              $cmd_prop\::destroy
+              # It will probably be empty the majority of the time
+              # so don't waste time on empty output
+              if {$prop_output eq ""} {continue}
+              set splits [split $prop_output "\n"]
+              # FIXME: what if more than one merge comes into the same rev?
+              foreach line $splits {
+                if {$line eq ""} {continue}
+                set spl [split $line ":"]
+                set fromrevs [lindex $spl 1]
+                gen_log:log D "  to $r  fromrevs $fromrevs"
+                regsub {^.*-} $fromrevs {} lastfromrev 
+                set revmergefrom($r) "r$lastfromrev"
+                gen_log:log D "  revmergefrom($r) $revmergefrom($r)"
+              }
+            }
+          }
           set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
@@ -1583,18 +1630,16 @@ namespace eval ::svn_branchlog {
           set loglines [split $log_output "\n"]
           parse_q $loglines $branch
 
-          # If current is HEAD of branch, move the branchpoint
-          # back one, before You are Here
+          # If current is HEAD of branch, the count is one too high because of the
+          # You Are Here box, so the branchpoint would be too low
           set idx [llength $branchrevs($branch)]
           if {$curr} {
-            #puts "Currently at Top: decrementing branchpoint"
-            gen_log:log E "Currently at Top: decrementing branchpoint"
+            gen_log:log E "Currently at Top"
             incr idx -1
           }
           set bp [lindex $allrevs($branch) $idx]
           if {$bp == ""} {
-            #puts "Allrevs same as branchrevs: decrementing branchpoint"
-            gen_log:log E "Allrevs same as branchrevs: decrementing branchpoint"
+            gen_log:log E "allrevs same as branchrevs: decrementing branchpoint"
             set bp [lindex $branchrevs($branch) end]
             set bpn [string trimleft $bp "r"]
             incr bpn -1
@@ -1603,6 +1648,7 @@ namespace eval ::svn_branchlog {
           lappend revbranches($bp) $rb
         }
         # Tags
+        # Get a list of the tags from the repository
         if {$show_tags} {
           set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
           set cmd_log [exec::new $command {} 0 {} 1]
@@ -1642,11 +1688,12 @@ namespace eval ::svn_branchlog {
             } else {
               set path "$cvscfg(svnroot)/$cvscfg(svn_tagdir)/$tag/$relpath/$safe_filename"
             }
+            # Do log with stop-on-copy to find the actual revision that was tagged.
+            # The tag itself created a rev which may be much higher.
             set command "svn log --stop-on-copy $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
-            #update idletasks
             if {$log_output == ""} {
               continue
             }
@@ -1661,6 +1708,8 @@ namespace eval ::svn_branchlog {
             set revname($rb) "$tag"
             set revpath($rb) $path
   
+            # Now do log -q to find the previous rev, which is down
+            # the list
             set command "svn log -q $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
@@ -1673,6 +1722,7 @@ namespace eval ::svn_branchlog {
             parse_q $loglines $tag
             set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
             lappend revtags($bp) $tag
+            gen_log:log D "   revtags($bp) $revtags($bp)"
             update idletasks
           }
         }
@@ -1687,12 +1737,12 @@ namespace eval ::svn_branchlog {
         return
       }
 
+      # Parses a --stop-on-copy log, getting information for each revision
       proc parse_svnlog {lines r} {
         variable revwho
         variable revdate
         variable revtime
         variable revcomment
-        variable revmergefrom
         variable branchrevs
 
         gen_log:log T "ENTER (<...> $r)"
@@ -1738,6 +1788,7 @@ namespace eval ::svn_branchlog {
         return $revnum
       }
 
+      # Parses a summary (-q) log to find what revisions are on it
       proc parse_q {lines r} {
         variable allrevs
 
@@ -1769,6 +1820,7 @@ namespace eval ::svn_branchlog {
         variable revbtags
         variable branchrevs
         variable revbranches
+        variable revmergefrom
         variable logstate
         variable revnum
         variable rootbranch
@@ -1800,6 +1852,10 @@ namespace eval ::svn_branchlog {
         gen_log:log D ""
            foreach a [lsort -dictionary [array names revtags]] {
            gen_log:log D "revtags($a) $revtags($a)"
+        }
+        gen_log:log D ""
+           foreach a [lsort -dictionary [array names revmergefrom]] {
+           gen_log:log D "revmergefrom($a) $revmergefrom($a)"
         }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
