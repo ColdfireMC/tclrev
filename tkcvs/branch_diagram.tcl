@@ -1808,6 +1808,8 @@ gen_log:log D " $pattern MATCHED $text"
         [namespace code "Unselect B"]
 
       focus $logcanvas.canvas
+      # FIXME: Why isn't there a bbox when we get here?
+      # Then the yview moveto doesn't work, although it does in tkinter
       $logcanvas.canvas xview moveto 0
       $logcanvas.canvas yview moveto 0
 

@@ -1363,6 +1363,8 @@ namespace eval ::svn_branchlog {
       variable revbranches
       variable branchrevs
       variable logstate
+      variable show_tags
+      variable show_merges
 
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
@@ -1425,6 +1427,7 @@ namespace eval ::svn_branchlog {
         variable relpath
         variable filename
         variable show_tags
+        variable show_merges
 
         gen_log:log T "ENTER"
         catch { $lc.canvas delete all }
@@ -1449,6 +1452,9 @@ namespace eval ::svn_branchlog {
         set safe_filename [safe_url $filename]
         set path "$cvscfg(url)/$safe_filename"
         $ln\::ConfigureButtons $filename
+
+        set show_merges [set $ln\::opt(show_merges)]
+        set show_tags [set $ln\::opt(show_tags)]
 
         # Find out where to put the working revision icon (if anywhere)
         set revnum_current [set $ln\::revnum_current]
@@ -1499,7 +1505,7 @@ namespace eval ::svn_branchlog {
         set revpath($tip) $path
         set revkind($tip) "revision"
         foreach r $branchrevs(trunk) {
-          if {$cvsglb(svn_mergeinfo_works)} {
+          if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
             set propcmd "svn propget svn:mergeinfo -$r $path"
             set cmd_prop [exec::new $propcmd {} 0 {} 1]
             set prop_output [$cmd_prop\::output]
@@ -1577,7 +1583,7 @@ namespace eval ::svn_branchlog {
           set revpath($tip) $path
           set revkind($tip) "revision"
           foreach r $branchrevs($branch) {
-            if {$cvsglb(svn_mergeinfo_works)} {
+            if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
               set propcmd "svn propget svn:mergeinfo -$r $path"
               # proc new {command {viewer {}} {show_stderr {1}} {filter {}} {errok {0}} }
               set cmd_prop [exec::new $propcmd {} 0 {} 1]
