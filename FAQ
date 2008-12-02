@@ -198,9 +198,9 @@ A. It depends on how you start the Wish application.  If you double-click on
    My favorite way of running tkcvs on the Mac is simply to install the
    platform-independent tkcvs in /sw/bin or someplace like that, and invoke it
    from the command line.  With the full Mac version of Wish installed, there
-   will be a /usr/bin/wish that invokes the Wish.app.  (Install the Batteries
-   Included version and then do "cat `which wish8.4`" to see how that works.)
-   Invoking a Wish app such as TkCVS in this way preserves your environment.
+   will be a /usr/bin/wish that invokes the Wish.app.  (Install Wish and do
+   "cat `which wish`" to see how that works.) Invoking a Wish app such as TkCVS
+   in this way preserves your environment.
 
    Then too, you can just start X11 and use the X11 version of Tk.  In fact,
    your .tcshrc might detect whether it's being sourced in an X11 environment
