@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# This makes tkcvs.exe for Windows.  It will run perfectly well on
+# Linux - in fact I couldn't get it to run on Windows.
+# Have tclkit for Linux and sdx (platform-independent) in your PATH.
+# Have tclkit.exe for Windows somewhere (specify by $Tclkit variable).
+
+# the diff.exe file is added later in the InstallJammer setup.
+
+#Tclkit=$HOME/tclkits/Windows/tclkit-win32.upx.exe
+Tclkit=$HOME/tclkits/Unix/tclkit-linux-x86
+
+rm -f tkcvs.exe
+rm -f tkcvs.kit
+rm -rf tkcvs.vfs
+
+echo "Making tkcvs.tcl into a starkit"
+cp tkcvs/tkcvs.tcl .
+# Make a .kit
+sdx qwrap tkcvs.tcl
+
+# Open it into a directory tree
+echo "Unwrapping the kit"
+sdx unwrap tkcvs.kit
+rm -f tkcvs.kit
+
+mkdir tkcvs.vfs/lib/tkcvs
+cp tkcvs/*.tcl tkcvs.vfs/lib/tkcvs
+cp tkcvs/tclIndex tkcvs.vfs/lib/tkcvs
+cp -r tkcvs/bitmaps tkcvs.vfs/lib/tkcvs
+rm tkcvs.vfs/lib/tkcvs/tkcvs.tcl
+#echo "Copying icons into the kit"
+#cp Delta.ico tkcvs.vfs/tclkit.ico
+
+# To test:
+#tclkit tkcvs.vfs/main.tcl
+
+exit
+
+# This makes a plain starkit
+#echo "Re-wrapping the starkit"
+#sdx wrap tkcvs.kit
+
+echo "Converting the kit into a runtime"
+sdx wrap tkcvs.kit -runtime $Tclkit
+
+#mv tkcvs.kit tkcvs.exe
+
