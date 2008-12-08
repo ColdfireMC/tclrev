@@ -1,3 +1,4 @@
+
 #!/bin/sh
 #-*-tcl-*-
 # the next line restarts using wish \
@@ -13,6 +14,10 @@ exec wish "$0" -- ${1+"$@"}
 
 # If we can't get this far (maybe because X display connection refused)
 # quit now.  If we get further, the error message is very misleading.
+if {[info exists starkit::topdir]} {
+  package require Tk
+}
+
 if {! [info exists tk_version] } {
    puts "Initialization failed"
    exit 1
@@ -23,41 +28,46 @@ if {$tk_version < 8.4} {
   exit 1
 }
 
-if {[info exists TclRoot]} {
-   # Perhaps we are being sourced recursively.
-   # That would be bad.
-   return
+if {[info exists starkit::topdir]} {
+  set TclRoot [file join $starkit::topdir lib]
+  set ScriptBin $starkit::topdir
+} else {
+  if {[info exists TclRoot]} {
+     # Perhaps we are being sourced recursively.
+     # That would be bad.
+     return
+  }
+  set Script [info script]
+  set ScriptTail [file tail $Script]
+  #puts "Tail $ScriptTail"
+  if {[file type $Script] == "link"} {
+    #puts "$Script is a link"
+    set ScriptBin [file join [file dirname $Script] [file readlink $Script]]
+  } else {
+    set ScriptBin $Script
+  }
+  #puts "  ScriptBin $ScriptBin"
+  set TclRoot [file join [file dirname $ScriptBin]]
+  #puts "TclRoot $TclRoot"
+  if {$TclRoot == "."} {
+    set TclRoot [pwd]
+  }
+  #puts "TclRoot $TclRoot"
+  set TclRoot [file join [file dirname $TclRoot] "lib"]
+  #puts "TclRoot $TclRoot"
+  
+  # allow runtime replacement
+  if {[info exists env(TCLROOT)]} {
+   set TclRoot $env(TCLROOT)
+  }
+  #puts "TclRoot $TclRoot"
 }
 
-set Script [info script]
-set ScriptTail [file tail $Script]
-#puts "Tail $ScriptTail"
-if {[file type $Script] == "link"} {
-  #puts "$Script is a link"
-  set ScriptBin [file join [file dirname $Script] [file readlink $Script]]
-} else {
-  set ScriptBin $Script
-}
-#puts "  ScriptBin $ScriptBin"
 set TclExe [info nameofexecutable]
 if {$tcl_platform(platform) == "windows"} {
   set TclExe [file attributes $TclExe -shortname]
 }
 
-set TclRoot [file join [file dirname $ScriptBin]]
-#puts "TclRoot $TclRoot"
-if {$TclRoot == "."} {
-  set TclRoot [pwd]
-}
-#puts "TclRoot $TclRoot"
-set TclRoot [file join [file dirname $TclRoot] "lib"]
-#puts "TclRoot $TclRoot"
-
-# allow runtime replacement
-if {[info exists env(TCLROOT)]} {
-   set TclRoot $env(TCLROOT)
-}
-#puts "TclRoot $TclRoot"
 
 set TCDIR [file join $TclRoot tkcvs]
 set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
