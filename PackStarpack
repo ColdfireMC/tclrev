@@ -7,8 +7,9 @@
 
 # the diff.exe file is added later in the InstallJammer setup.
 
-#Tclkit=$HOME/tclkits/Windows/tclkit-win32.upx.exe
-Tclkit=$HOME/tclkits/Unix/tclkit-linux-x86
+#Tclkit=$HOME/tclkits/Unix/tclkit-linux-x86
+Tclkit=$HOME/tclkits/Windows/tclkit-win32.upx.exe
+#Tclkit=$HOME/tclkits/MacOSX/tclkit-darwin-univ-aqua
 
 rm -f tkcvs.exe
 rm -f tkcvs.kit
@@ -29,20 +30,21 @@ cp tkcvs/*.tcl tkcvs.vfs/lib/tkcvs
 cp tkcvs/tclIndex tkcvs.vfs/lib/tkcvs
 cp -r tkcvs/bitmaps tkcvs.vfs/lib/tkcvs
 rm tkcvs.vfs/lib/tkcvs/tkcvs.tcl
-#echo "Copying icons into the kit"
-#cp Delta.ico tkcvs.vfs/tclkit.ico
+echo "Copying icons into the kit" cp tkcvs.exe /mnt/tadg/dorothyr/
+cp tkcvs/bitmaps/Ticklefish.ico tkcvs.vfs/tclkit.ico
 
 # To test:
 #tclkit tkcvs.vfs/main.tcl
 
-exit
-
-# This makes a plain starkit
+# This would make a plain starkit
 #echo "Re-wrapping the starkit"
 #sdx wrap tkcvs.kit
 
 echo "Converting the kit into a runtime"
 sdx wrap tkcvs.kit -runtime $Tclkit
 
-#mv tkcvs.kit tkcvs.exe
+rm tkcvs.tcl
+#mv tkcvs.kit tkcvs.linux
+mv tkcvs.kit tkcvs.exe
+#mv tkcvs.kit tkcvs.macosx
 
