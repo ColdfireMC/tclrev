@@ -89,9 +89,9 @@ proc browse_files {module} {
 
   set_tooltips $filebrowse.view \
     {"View the selected file"}
-  set_tooltips $filebrowse.branches \
-    {"See the revision log of the selected file"}
   set_tooltips $filebrowse.log \
+    {"See the revision log of the selected file"}
+  set_tooltips $filebrowse.branches \
     {"See the branch diagram of the selected file"}
   set_tooltips $filebrowse.tag \
     {"List the tags of the selected file"}
