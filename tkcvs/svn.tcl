@@ -1718,7 +1718,7 @@ namespace eval ::svn_branchlog {
             # Now do log -q to find the previous rev, which is down
             # the list.  For tags, it's only one down, so we can limit
             # the log to 2.  It only speeds it up a little though.
-            set command "svn log -q -l 2 $path"
+            set command "svn log -q --limit 2 $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
