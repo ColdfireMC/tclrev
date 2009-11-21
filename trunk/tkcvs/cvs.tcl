@@ -1123,7 +1123,7 @@ proc cvs_status {args} {
   set filelist [join $args]
   # if recurse option is true or there are no selected files, recurse
   set flags ""
-  if {$cvscfg(recurse)} {
+  if {! $cvscfg(recurse)} {
     set flags "-l"
   }
   # if there are selected files, use verbose output
