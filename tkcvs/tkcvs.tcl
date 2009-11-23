@@ -222,7 +222,7 @@ set cvscfg(flashfont) [list $ffam $fsiz underline]
 #puts "actual flashfont: [font actual $cvscfg(flashfont)]"
 # Prefer underline, but it isn't working at all in tk8.5 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
-  puts "Underline font not working.  Trying $ffam $fsiz bold"
+  #puts "Underline font not working.  Trying $ffam $fsiz bold"
   set cvscfg(flashfont) [list [lindex $lbf 1] $fsiz bold]
   #set cvscfg(flashfont) [list [lindex $lbf 1] [lindex $lbf 3] bold]
 }
