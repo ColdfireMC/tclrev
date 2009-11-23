@@ -1476,7 +1476,8 @@ namespace eval ::svn_branchlog {
         gen_log:log C "$command"
         set ret [catch {eval "exec $command"} output]
         if {$ret} {
-          cvsfail $output
+          gen_log:log D "This file $path must not be in the trunk"
+          ## cvsfail $output
         }
         foreach infoline [split $output "\n"] {
           if {[string match "Revision*" $infoline]} {
@@ -1546,7 +1547,11 @@ namespace eval ::svn_branchlog {
         set revname($rr) "trunk"
         set revbtags($rr) "trunk"
         set revpath($rr) $path
-
+ 
+        # if root is not empty added it to the branchlist
+        if { $rr ne "" } {
+          lappend branchlist $rr
+        }
         # Branches
         # Get a list of the branches from the repository
         set command "svn list $cvscfg(svnroot)/$cvscfg(svn_branchdir)"
@@ -1622,6 +1627,9 @@ namespace eval ::svn_branchlog {
           }
           set branchrevs($rb) $branchrevs($branch)
           set revkind($rb) "branch"
+          # build a list of all branches so we can make sure each branch is on
+          # a revbranch list so there will be a full set of branches on diagram
+          lappend branchlist $rb
           set revname($rb) $branch
           lappend revbtags($rb) $branch
           set revpath($rb) $path
@@ -1735,6 +1743,77 @@ namespace eval ::svn_branchlog {
           }
         }
 
+        # sort the list in rev number order
+        set brlist [lsort -dictionary $branchlist]
+        gen_log:log D "init branches $brlist"
+        # rebuild the list
+        set branchlist {}
+        foreach br $brlist {
+          lappend branchlist $br
+          # add to the list any revs that are in the branch revs
+          # that also have revbranches
+          if {[info exists branchrevs($br)]} {
+            foreach r $branchrevs($br) {
+              if {[info exists revbranches($r)] } {
+                lappend branchlist $r
+              }
+            }
+          }
+        }
+        set branchlist [lsort -dictionary $branchlist]
+        gen_log:log D "branches $branchlist"
+
+        # add any branches that are not on a revbranches list to the one closest
+        # in numeric value
+
+        # counter of branches in the list
+        set brn 0
+        # get the length of the list so we can tell when we are done
+        set brlistlen [llength $branchlist]
+        while {$brn<$brlistlen} {
+          # get the branch name
+          set br [lindex $branchlist $brn]
+          gen_log:log D "  branch $brn is $br"
+          # look at all the branches up to branch $br
+          set subbrn 0
+          set subbrwithrevs r0
+          set subbrwithrevsnum 0
+          set foundinrevbr 0
+          while {$subbrn<$brn} {
+            set subbr [lindex $branchlist $subbrn]
+            # check each revbranch for this branch
+            if {[info exists revbranches($subbr)]} {
+              # remember the highest number rev with revbranches
+              set subbrnum [string trimleft $subbr "r"]
+              if { $subbrwithrevsnum < $subbrnum }  {
+                set subbrwithrevs  $subbr
+                set subbrwithrevsnum  $subbrnum
+              }
+              foreach r $revbranches($subbr) {
+                if {$r==$br} {
+                  # we found it in a revbranches
+                  incr foundinrevbr
+                  break
+                }
+              }
+            }
+            if {$foundinrevbr>0} {
+              gen_log:log D "   found $br in revbranch of $subbr"
+              break
+            }
+            incr subbrn
+          } 
+          if {$foundinrevbr<=0 && $subbrwithrevsnum!=0} {
+            # we only want to attach a branch & not a rev that a branch is attached
+            if { $revkind($br) eq "branch" } {
+              gen_log:log D "   put $br in revbranches of $subbrwithrevs"
+              lappend revbranches($subbrwithrevs) $br
+            } else {
+              gen_log:log D "   branch $br not attached because not a real branch"
+            }
+          }
+          incr brn
+        }
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
@@ -1850,7 +1929,9 @@ namespace eval ::svn_branchlog {
            gen_log:log D "branchrevs($a) $branchrevs($a)"
         }
         gen_log:log D ""
-           foreach a [lsort -dictionary [array names revbranches]] {
+        foreach a [lsort -dictionary [array names revbranches]] {
+           # sort the rev branches to they will be displayed in increasing order
+           set revbranches($a) [lsort -dictionary $revbranches($a)]
            gen_log:log D "revbranches($a) $revbranches($a)"
         }
         gen_log:log D ""
