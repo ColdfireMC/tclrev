@@ -2054,7 +2054,7 @@ namespace eval ::cvs_branchlog {
           }
         }
         RCS {
-          set command "rlog $filename"
+          set command "rlog \"$filename\""
           set newlc [logcanvas::new $filename "RCS,loc" [namespace current]]
           set ln [lindex $newlc 0]
           set lc [lindex $newlc 1]
