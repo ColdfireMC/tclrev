@@ -1,0 +1,48 @@
+#!/bin/sh
+
+WORDLIST="barcode braid greynetic maze mountain pacman triangle vidwhacker wander"
+
+# Create the repository
+WD=`pwd`
+RCSHOME=$HOME/rcs_test_repos
+
+# Clean up old stuff
+if [ -d $RCSHOME ]; then
+  rm -rf $RCSHOME
+fi
+rm -rf rcs_test_*
+
+echo "MAKING REPOSITORY"
+mkdir $RCSHOME
+
+echo "MAKING FILETREE"
+# Make some files to put in the repository
+mkdir rcs_test_trunk
+cd rcs_test_trunk
+$WD/mktest
+
+echo "MAKING RCS DIRECTORIES"
+mkdir $RCSHOME/RCS
+ln -s $RCSHOME/RCS RCS
+mkdir -p $RCSHOME/Dir1/RCS
+ln -s $RCSHOME/Dir1/RCS  Dir1/RCS
+mkdir -p "$RCSHOME/Dir 2/RCS"
+ln -s "$RCSHOME/Dir 2/RCS"  "Dir 2/RCS"
+
+echo "CHECKING IN INITIAL VERSIONS"
+description="A small text file"
+#ci File? << EOF
+#$description
+#EOF
+ci -t-"$description" -m"Initial checkin" File?
+ci -t-"$description" -m"Initial checkin" Dir1/F*
+ci -t-"$description" -m"Initial checkin" "Dir 2"/F*
+
+echo "CHECKING OUT"
+co -l RCS/*
+cd Dir1
+co -l RCS/*
+cd ../"Dir 2"
+co -l RCS/*
+
+cd $WD
