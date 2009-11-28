@@ -837,7 +837,7 @@ proc cvs_tag {tagname force b_or_t update args} {
   }
 
   if {$tagname == ""} {
-    cvsfail "You must enter a tag name!" .workdir
+    cvsfail "Please enter a tag name!" .workdir
     return 1
   }
 
@@ -1566,22 +1566,30 @@ proc cvs_rtag { cvsroot mcode b_or_t force oldtag newtag } {
   global cvscfg
   
   gen_log:log T "ENTER ($cvsroot $mcode $b_or_t $force $oldtag $newtag)"
-  if {$newtag == ""} {
-    cvsfail "You must enter a tag name!" .modbrowse
-    return 1
-  }
 
   set command "$cvs -d \"$cvsroot\" rtag"
-  if {$b_or_t == "branch"} {
-    append command " -b"
-  } 
-  if {$force == "yes"} {
-    append command " -F" 
-  }   
-  if {$oldtag != ""} {
-    append command " -r \"$oldtag\""
+  if {$force == "remove"} {
+    if {$oldtag == ""} {
+      cvsfail "Please enter an Old tag name!" .modbrowse
+      return 1
+    }
+    append command " -d \"$oldtag\" \"$mcode\""
+  } else {
+    if {$newtag == ""} {
+      cvsfail "Please enter a New tag name!" .modbrowse
+      return 1
+    }
+    if {$b_or_t == "branch"} {
+      append command " -b"
+    }
+    if {$force == "yes"} {
+      append command " -F"
+    }
+    if {$oldtag != ""} {
+      append command " -r \"$oldtag\""
+    }
+    append command " \"$newtag\" \"$mcode\""
   }
-  append command " \"$newtag\" \"$mcode\""
 
   set v [::viewer::new "CVS Rtag"]
   $v\::do "$command"

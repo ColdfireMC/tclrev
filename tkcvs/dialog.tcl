@@ -623,13 +623,19 @@ proc rtag_dialog { cvsroot module b_or_t } {
                .modtag.down.cancel invoke
              "
 
+  button .modtag.down.delete -text "Remove" -highlightbackground $cvsglb(bg) \
+    -command "
+               cvs_rtag $cvsroot $module tag remove \$otag \$ntag; \
+               .modtag.down.cancel invoke
+             "
+
   button .modtag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
     -command {
                grab release .modtag
                destroy .modtag
              }
 
-  pack .modtag.down.tag .modtag.down.cancel -in .modtag.down -side left \
+  pack .modtag.down.tag .modtag.down.delete .modtag.down.cancel -in .modtag.down -side left \
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   bind .modtag.top.nentry <Return> \
