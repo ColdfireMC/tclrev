@@ -312,6 +312,13 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
   }
 }
 
+if {[info exists lcfile]} {
+  set d [file dirname $lcfile]
+  set f [file tail $lcfile]
+  set lcfile $f
+  cd $d
+}
+
 # If CVSROOT envvar is set, use it
 if { ! [info exists cvscfg(cvsroot)] } {
   if { ! [info exists env(CVSROOT)] } {
