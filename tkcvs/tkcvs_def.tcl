@@ -93,8 +93,8 @@ set cvscfg(dateformat) "%Y/%m/%d %H:%M"
 # example "mergeto_BRANCH_%d%b%y".  The date format must be the same
 # for both.
 # CVS rule: a tag must not contain the characters `$,.:;@'
-#set cvscfg(mergetoformat) "t_BRANCH_%d%b%y"
-#set cvscfg(mergefromformat) "f_BRANCH_%d%b%y"
+#set cvscfg(mergetoformat) "t_BRANCH_%d%b%y_%H-%M"
+#set cvscfg(mergefromformat) "f_BRANCH_%d%b%y_%H-%M"
 set cvscfg(mergetoformat) "mergeto_BRANCH_%d%b%y"
 set cvscfg(mergefromformat) "mergefrom_BRANCH_%d%b%y"
 set cvscfg(mergetrunkname) "trunk"
