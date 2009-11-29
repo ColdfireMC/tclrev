@@ -132,16 +132,18 @@ if {! [get_cde_params]} {
   destroy .native
   # Hilight colors.  Get the colorful ones.
   entry .testent
-  #set cvsglb(textfg) [lindex [.testent configure -foreground] 4]
   set cvsglb(textbg) white
   set cvsglb(textfg) black
   set cvsglb(readonlybg) gray96
   set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
   set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
+  if {$cvsglb(hlfg) eq {} } {
+    # This happens on the Mac
+    set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
+  }
   set hlbg_rgb [winfo rgb .testent $cvsglb(hlbg)]
   set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
   destroy .testent
-
 
   # Find out what the default gui font is
   label .testlbl -text "LABEL"
