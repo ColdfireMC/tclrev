@@ -160,7 +160,7 @@ proc DirCanvas:map_column {w column} {
 
   gen_log:log T "ENTER ($w $column)"
   set mapped_columns [$w.pw panes]
-  gen_log:log D "mapped columns: $mapped_columns"
+  #gen_log:log D "mapped columns: $mapped_columns"
 
   if {[lsearch -exact $mapped_columns "$w.statcol"] > -1} {
     set leftcol "$w.statcol"
@@ -196,7 +196,7 @@ proc DirCanvas:map_column {w column} {
   for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
     set coords [$w.pw sash coord $i]
     $w.pw sash place $i [expr {($i+1) * $newwid}] [lindex $coords 1]
-    gen_log:log D "$column: moving sash $i from  $coords to [expr {($i+1) * $newwid}] [lindex $coords 1]"
+    #gen_log:log D "$column: moving sash $i from  $coords to [expr {($i+1) * $newwid}] [lindex $coords 1]"
   }
   update idletasks
 
@@ -208,7 +208,7 @@ proc DirCanvas:unmap_column {w column} {
 
   $w.pw forget $w.$column
   set winwid [winfo width $w]
-gen_log:log D "WIDTH $winwid"
+  #gen_log:log D "WIDTH $winwid"
   set mapped_columns [$w.pw panes]
   set num_columns [llength $mapped_columns]
   gen_log:log D "mapped_columns: $mapped_columns"
