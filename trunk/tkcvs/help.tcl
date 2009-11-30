@@ -76,7 +76,7 @@ proc aboutbox {} {
   pack .about.down.ok
 }
 
-proc cvs_version {} {
+proc help_cvs_version {} {
 #
 # This shows CVS banner.
 #
@@ -969,7 +969,7 @@ proc menu_std_help { w } {
   $w.help add command -label "About TkCVS" -underline 0 \
      -command aboutbox
   $w.help add command -label "About CVS SVN RCS" -underline 6 \
-     -command cvs_version
+     -command help_cvs_version
   $w.help add command -label "About Wish" -underline 6 \
      -command "wish_version [winfo parent $w]"
   $w.help add separator
