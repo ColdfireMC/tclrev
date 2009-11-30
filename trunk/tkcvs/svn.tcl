@@ -152,7 +152,7 @@ proc svn_workdir_status {} {
     $cmd(svn_status)\::destroy
     catch {unset cmd(svn_status)}
   }
-  # The first five columns in the output are each one character wide
+  # The first eight columns in the output are each one character wide
   foreach logline $status_lines {
     if {[string match "Status*" $logline]} {continue}
     if {[string length $logline] < 1} {continue}
@@ -160,36 +160,42 @@ proc svn_workdir_status {} {
     set crev ""
     set wrev ""
     set status ""
+    # Svn 1.6 added a space at the beginning of the status line.
+    # Thanks bunches guys, I heart you too.
+    regsub {^\s} $logline {} logline
     
     set varcols [string range $logline 8 end]
     if {[llength $varcols] > 1} {
       #012345678
-      # M           965       938 kfogel       wc/bar.c
-      #       *     965       922 sussman      wc/foo.c
-      #A  +         965       687 joe          wc/qax.c
+      # M 965 938 karl fogel wc/bar of foo.c
+      # * 965 922 sussman wc/foo.c
+      # A +         965       687 joe          wc/qax.c
       #             965       687 joe          wc/zig.c
       set wrev [lindex $varcols 0]
       set crev [lindex $varcols 1]
-      set nb [string first "/emailAddress=" [lrange $varcols 3 end] ]
-      if {$nb == "-1"} {
-        set cauthor [lindex $varcols 2]
-        set filename [lrange $varcols 3 end]
-      } else {
-        set cauthor [lrange $varcols 2 3]
-        set filename [lrange $varcols 4 end]
+      # It is possible for author names and file names to have spaces.
+      # Need to try different splits of 2 to end to get the right split
+      # of author and file
+      set fileindex [llength $varcols]
+      while {$fileindex > 2} {
+        if {[file exists [lrange $varcols $fileindex end]]} {break}
+        set fileindex [expr {$fileindex - 1}]
       }
+      set cauthor [lrange $varcols 2 [expr $fileindex - 1]]
+      set filename [lrange $varcols $fileindex end]
     } else {
       #?                                       newfile
       set filename [lrange $logline 1 end]
     }
-    set modstat [string range $logline 0 7]
-    set m1 [string index $modstat 0]
+    set modstat [string range $logline 0 8]
+    #set m1 [string index $modstat 0]
+    regsub -all {\s} $modstat {} m1
     set displaymod ""
     if [file isdirectory $filename] {
       set displaymod "<dir> "
     }
     switch -exact -- $m1 {
-      " " { append displaymod "Up-to-date" }
+      "" { append displaymod "Up-to-date" }
       M { append displaymod "Locally Modified" }
       A { append displaymod "Locally Added" }
       D { append displaymod "Locally Removed" }
@@ -213,6 +219,12 @@ proc svn_workdir_status {} {
     }
     set Filelist($filename:option) ""
     set Filelist($filename:editors) "$cauthor"
+    #gen_log:log D " \
+       \"$Filelist($filename:status)\" \
+       \"$wrev (committed:$crev)\" \
+       \"$Filelist($filename:editors)\" \
+       \"$filename\" \
+       "
   }
   gen_log:log T "LEAVE"
 }
