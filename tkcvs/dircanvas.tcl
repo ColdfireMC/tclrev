@@ -266,12 +266,32 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) folder.gif]
   image create photo dir_ok \
     -format gif -file [file join $cvscfg(bitmapdir) dir_ok.gif]
+  image create photo dir_ood \
+    -format gif -file [file join $cvscfg(bitmapdir) dir_ood.gif]
   image create photo dir_ques \
     -format gif -file [file join $cvscfg(bitmapdir) dir_ques.gif]
   image create photo dir_plus \
     -format gif -file [file join $cvscfg(bitmapdir) dir_plus.gif]
   image create photo dir_minus \
     -format gif -file [file join $cvscfg(bitmapdir) dir_minus.gif]
+  image create photo link \
+    -format gif -file [file join $cvscfg(bitmapdir) link.gif]
+  image create photo link_ok \
+    -format gif -file [file join $cvscfg(bitmapdir) link_ok.gif]
+  image create photo link_okml \
+    -format gif -file [file join $cvscfg(bitmapdir) link_okml.gif]
+  image create photo link_okol \
+    -format gif -file [file join $cvscfg(bitmapdir) link_okol.gif]
+  image create photo link_mod \
+    -format gif -file [file join $cvscfg(bitmapdir) link_mod.gif]
+  image create photo link_modml \
+    -format gif -file [file join $cvscfg(bitmapdir) link_modml.gif]
+  image create photo link_modol \
+    -format gif -file [file join $cvscfg(bitmapdir) link_modol.gif]
+  image create photo link_ques \
+    -format gif -file [file join $cvscfg(bitmapdir) link_ques.gif]
+  image create photo link_plus \
+    -format gif -file [file join $cvscfg(bitmapdir) link_plus.gif]
 
   image create photo stat_ques \
     -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
@@ -285,10 +305,18 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) stat_ok.gif]
   image create photo stat_ood \
     -format gif -file [file join $cvscfg(bitmapdir) stat_ood.gif]
+  image create photo stat_okml \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_okml.gif]
+  image create photo stat_okol \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_okol.gif]
   image create photo stat_merge \
     -format gif -file [file join $cvscfg(bitmapdir) stat_merge.gif]
   image create photo stat_mod \
     -format gif -file [file join $cvscfg(bitmapdir) stat_mod.gif]
+  image create photo stat_modml \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_modml.gif]
+  image create photo stat_modol \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_modol.gif]
   image create photo stat_plus \
     -format gif -file [file join $cvscfg(bitmapdir) stat_plus.gif]
   image create photo stat_minus \
@@ -665,6 +693,42 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:icon) dir_minus
        set DirList($w:$f:popup) svnfolder_pop
      }
+     "<link> " {
+	 set DirList($w:$f:icon) link
+	 set DirList($w:$f:popup) paper_pop
+     }
+     "<link> Not managed by SVN" {
+	 set DirList($w:$f:icon) link_ques
+	 set DirList($w:$f:popup) paper_pop
+     }
+     "<link> Up-to-date" {
+	 set DirList($w:$f:icon) link_ok
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "<link> Up-to-date/Locked" {
+	 set DirList($w:$f:icon) link_okol
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "<link> Up-to-date/HaveLock" {
+	 set DirList($w:$f:icon) link_okml
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "<link> Locally Modified" {
+	 set DirList($w:$f:icon) link_mod
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "<link> Locally Modified/Locked" {
+	 set DirList($w:$f:icon) link_modol
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "<link> Locally Modified/HaveLock" {
+	 set DirList($w:$f:icon) link_modml
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "<link> Locally Added" {
+	 set DirList($w:$f:icon) link_plus
+	 set DirList($w:$f:popup) stat_svnok_pop
+     }
      "<directory>" {
        set DirList($w:$f:icon) folder
        switch -- $rtype {
@@ -712,9 +776,24 @@ proc DirCanvas:build {w} {
           }
         }
       }
+     "Up-to-date/HaveLock" {
+       set DirList($w:$f:icon) stat_okml
+       set DirList($w:$f:popup) stat_svnok_pop
+     }
+     "Up-to-date/Locked" {
+       set DirList($w:$f:icon) stat_okol
+       set DirList($w:$f:popup) stat_svnok_pop
+     }
      "Missing*" {
         set DirList($w:$f:icon) stat_ex
-        set DirList($w:$f:popup) needsupdate_pop
+       switch -- $rtype {
+          "CVS" {
+            set DirList($w:$f:popup) needsupdate_pop
+          }
+          "SVN" {
+            set DirList($w:$f:popup) stat_svnood_pop
+          }
+        }
       }
      "Needs Checkout" {
        # Prepending ./ to the filename prevents tilde expansion
@@ -729,9 +808,27 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:icon) stat_ood
        set DirList($w:$f:popup) needsupdate_pop
       }
+      "<dir> Out-of-date" {
+       set DirList($w:$f:icon) dir_ood
+       switch -- $rtype {
+          "CVS" {
+            set DirList($w:$f:popup) needsupdate_pop
+          }
+          "SVN" {
+            set DirList($w:$f:popup) stat_svnood_pop
+          }
+        }
+      }
       "Out-of-date" {
        set DirList($w:$f:icon) stat_ood
-       set DirList($w:$f:popup) needsupdate_pop
+       switch -- $rtype {
+          "CVS" {
+            set DirList($w:$f:popup) needsupdate_pop
+          }
+          "SVN" {
+            set DirList($w:$f:popup) stat_svnood_pop
+          }
+        }
       }
       "Needs Merge" {
        set DirList($w:$f:icon) stat_merge
@@ -748,16 +845,38 @@ proc DirCanvas:build {w} {
           }
        }
       }
-      "Locally Added" {
+      "Locally Modified/HaveLock" {
+       set DirList($w:$f:icon) stat_modml
+       set DirList($w:$f:popup) stat_mod_pop
+      }
+      "Locally Modified/Locked" {
+       set DirList($w:$f:icon) stat_modol
+       set DirList($w:$f:popup) stat_mod_pop
+      }
+       "Locally Added" {
        set DirList($w:$f:icon) stat_plus
-       set DirList($w:$f:popup) stat_plus_pop
-       if {[string match "*-kb*" $DirList($w:$f:option)]} {
-         set DirList($w:$f:icon) stat_plus_kb
-       }
+       switch -- $rtype {
+          "CVS" {
+             set DirList($w:$f:popup) stat_plus_pop
+             if {[string match "*-kb*" $DirList($w:$f:option)]} {
+               set DirList($w:$f:icon) stat_plus_kb
+             }
+          }
+          "SVN" {
+             set DirList($w:$f:popup) stat_svnplus_pop
+          }
+        }
       }
       "Locally Removed" {
        set DirList($w:$f:icon) stat_minus
-       set DirList($w:$f:popup) stat_plus_pop
+       switch -- $rtype {
+          "CVS" {
+             set DirList($w:$f:popup) stat_plus_pop
+          }
+          "SVN" {
+             set DirList($w:$f:popup) stat_svnplus_pop
+          }
+       }
       }
       "*onflict*" {
        set DirList($w:$f:icon) stat_conf
@@ -1195,12 +1314,30 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Log" \
     -command { svn_log [workdir_list_files] }
+  $w.stat_svnok_pop add command -label "SVN Info" \
+    -command { svn_info [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
     -command { svn_branches [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Annotate/Blame" \
     -command { svn_annotate "" [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Remove" \
     -command { subtract_dialog [workdir_list_files] }
+
+  # For SVN files that are out of date
+  menu $w.stat_svnood_pop -tearoff 0
+  $w.stat_svnood_pop add command -label "Edit" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.stat_svnood_pop add command -label "SVN Update" \
+    -command { svn_update [workdir_list_files] }
+
+  # For SVN file added/deleted
+  menu $w.stat_svnplus_pop -tearoff 0
+  $w.stat_svnplus_pop add command -label "Edit" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.stat_svnplus_pop add command -label "SVN Commit" \
+    -command { svn_commit_dialog }
+  $w.stat_svnplus_pop add command -label "SVN Revert" \
+    -command { svn_revert [workdir_list_files] }
 
   # For SVN files that are modified
   menu $w.stat_svnmod_pop -tearoff 0
@@ -1219,6 +1356,8 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.svnfolder_pop add command -label "SVN Log" \
     -command { svn_log [workdir_list_files] }
+  $w.svnfolder_pop add command -label "SVN Info" \
+    -command { svn_info [workdir_list_files] }
   $w.svnfolder_pop add command -label "Browse the Log Diagram" \
     -command { svn_branches [workdir_list_files] }
   $w.svnfolder_pop add command -label "SVN Remove" \
@@ -1230,6 +1369,8 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Log" \
     -command { svn_log [workdir_list_files] }
+  $w.svndir_pop add command -label "SVN Info" \
+    -command { svn_info [workdir_list_files] }
 
   gen_log:log T "LEAVE"
 }

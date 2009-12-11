@@ -377,7 +377,7 @@ proc cvs_unedit {args} {
   foreach file [join $args] {
     # Unedit may hang asking for confirmation if file is not up-to-date
     regsub -all {\$} $file {\$} file
-    set commandline "cvs -n update \"$file\""
+    set commandline "$cvs -n update \"$file\""
     gen_log:log C "$commandline"
     catch {eval "exec $commandline"} view_this
     # Its OK if its locally added
@@ -1919,8 +1919,8 @@ proc cvs_lock {do files} {
     return
   }
   switch -- $do {
-    lock { set commandline "cvs admin -l $files"}
-    unlock { set commandline "cvs admin -u $files"}
+    lock { set commandline "$cvs admin -l $files"}
+    unlock { set commandline "$cvs admin -u $files"}
   }
   set lock_cmd [::exec::new "$commandline"]
   auto_setup_dir $lock_cmd
