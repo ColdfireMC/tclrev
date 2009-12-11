@@ -140,75 +140,113 @@ proc read_svn_dir {dirname} {
   return 1
 }
 
+proc svn_lock {do files} {
+  global cvscfg
+
+  if {$files == {}} {
+    cvsfail "Please select one or more files!" .workdir
+    return
+  }
+  switch -- $do {
+    lock { set commandline "svn lock $files"}
+    unlock { set commandline "svn unlock $files"}
+  }
+  set cmd [::exec::new "$commandline"]
+
+  if {$cvscfg(auto_status)} {
+    $cmd\::wait
+    setup_dir
+  }
+}
+
 # Get stuff for main workdir browser
 proc svn_workdir_status {} {
   global cmd
   global Filelist
 
   gen_log:log T "ENTER"
-  set cmd(svn_status) [exec::new "svn status -uvN"]
-  set status_lines [split [$cmd(svn_status)\::output] "\n"]
+  set cmd(svn_status) [exec::new "svn status -uvN --xml"]
+  set xmloutput [$cmd(svn_status)\::output]
+  set entrylist [regexp -all -inline {<entry.*?</entry>} $xmloutput]
+
   if [info exists cmd(svn_status)] {
     $cmd(svn_status)\::destroy
     catch {unset cmd(svn_status)}
   }
-  # The first eight columns in the output are each one character wide
-  foreach logline $status_lines {
-    if {[string match "Status*" $logline]} {continue}
-    if {[string length $logline] < 1} {continue}
+  # do very simple xml parsing
+  foreach entry $entrylist {
+    set filename ""
     set cauthor ""
-    set crev ""
+    set lockstatus ""
     set wrev ""
-    set status ""
-    # Svn 1.6 added a space at the beginning of the status line.
-    # Thanks bunches guys, I heart you too.
-    regsub {^\s} $logline {} logline
-    
-    set varcols [string range $logline 8 end]
-    if {[llength $varcols] > 1} {
-      #012345678
-      # M 965 938 karl fogel wc/bar of foo.c
-      # * 965 922 sussman wc/foo.c
-      # A +         965       687 joe          wc/qax.c
-      #             965       687 joe          wc/zig.c
-      set wrev [lindex $varcols 0]
-      set crev [lindex $varcols 1]
-      # It is possible for author names and file names to have spaces.
-      # Need to try different splits of 2 to end to get the right split
-      # of author and file
-      set fileindex [llength $varcols]
-      while {$fileindex > 2} {
-        if {[file exists [lrange $varcols $fileindex end]]} {break}
-        set fileindex [expr {$fileindex - 1}]
+    set crev ""
+
+    regexp  {<entry\s+path=\"([^\"]*?)\"\s*>} $entry tmp filename
+    regexp  {<wc\-status.*</wc\-status>} $entry wcstatusent
+    if { [ regexp  {<repos\-status.*</repos\-status>} $entry repstatusent ] } {
+      regexp  {<repos\-status\s+([^>]*)>} $repstatusent tmp repstatusheader
+      regexp  {item=\"(\w+)\"} $repstatusheader tmp repstatus
+      if { [ regexp  {<lock>.*</lock>} $repstatusent replock ] } {
+        set lockstatus "locked"
       }
-      set cauthor [lrange $varcols 2 [expr $fileindex - 1]]
-      set filename [lrange $varcols $fileindex end]
     } else {
-      #?                                       newfile
-      set filename [lrange $logline 1 end]
+      set repstatus ""
     }
-    set modstat [string range $logline 0 8]
-    #set m1 [string index $modstat 0]
-    regsub -all {\s} $modstat {} m1
+    regexp  {<author>(.*)</author>} $wcstatusent tmp cauthor
+    regexp  {<commit\s+revision=\"(\d+)\"} $wcstatusent tmp crev
+    regexp  {<wc\-status\s+([^>]*)>} $wcstatusent tmp wcstatusheader
+    regexp  {item=\"(\w+)\"} $wcstatusheader tmp wcstatus
+    regexp  {revision=\"(\w+)\"} $wcstatusheader tmp wrev
+    if { [ regexp  {<lock>.*</lock>} $wcstatusent wclock ] } {
+      set lockstatus "havelock"
+    }
+
+    # wcstatus="added|normal|deleted|unversioned|modified|none
+    # repstatus="modified|none"
+    set status ""
+
     set displaymod ""
+    if { [file exists $filename] && [file type $filename] == "link" } {
+        set displaymod "<link> "
+    }
     if [file isdirectory $filename] {
       set displaymod "<dir> "
     }
-    switch -exact -- $m1 {
-      "" { append displaymod "Up-to-date" }
-      M { append displaymod "Locally Modified" }
-      A { append displaymod "Locally Added" }
-      D { append displaymod "Locally Removed" }
-      ? { append displaymod "Not managed by SVN" }
-      C { append displaymod "Conflict" }
+
+    set mayhavelock false
+    switch -exact -- $wcstatus {
+      "normal" {
+        if { $repstatus == "modified"} {
+          append displaymod "Out-of-date"
+        } else {
+          append displaymod "Up-to-date"
+          set mayhavelock true
+        }
+      }
+      "modified" {
+        if  { $repstatus == "modified"} {
+          append displaymod "Needs Merge"
+        } else {
+          append displaymod "Locally Modified"
+           set mayhavelock true
+        }
+      }
+      "added" { append displaymod "Locally Added" }
+      "deleted" { append displaymod "Locally Removed" }
+      "unversioned" { append displaymod "Not managed by SVN" }
+      "conflicted" { append displaymod "Conflict" }
       L { append displaymod "Locked" }
       S { append displaymod "Switched to Branch" }
-      ! { append displaymod "Missing or Incomplete" }
+      "none" { append displaymod "Missing/Needs Update" }
       ~ { append displaymod "Dir/File Mismatch" }
     }
-
-    if {[string index $modstat 7] == "*"} {
-       set displaymod "Out-of-date"
+    #in some cases there might be locks: check now
+    if { $mayhavelock } {
+        switch -exact -- $lockstatus {
+            "" { }
+            "havelock" { append displaymod "/HaveLock" }
+            "locked" { append displaymod "/Locked" }
+        }
     }
     set Filelist($filename:wrev) $wrev
     set Filelist($filename:status) $displaymod
@@ -241,7 +279,7 @@ proc svn_add {args} {
     set mess "This will add these files:\n\n"
     foreach file $filelist {
       append mess "   $file\n"
-    }  
+    }
   }
 
   if {$filelist == ""} {
@@ -427,7 +465,7 @@ proc svn_commit_dialog {} {
       grab release .commit
       wm withdraw .commit
     }
- 
+
   .commit.lcomment configure -text "Your log message" \
     -anchor w
   .commit.ok configure -text "OK"
@@ -550,7 +588,7 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
 # If both are null the top two revisions of the file are diffed.
 #
   global cvscfg
- 
+
   gen_log:log T "ENTER ($pathA $pathB $revA $dateA $revB $dateB $outmode $outfile)"
   global cvs
 
@@ -831,6 +869,24 @@ proc svn_log_rev {filepath} {
   gen_log:log T "LEAVE"
 }
 
+proc svn_info {args} {
+  global cvscfg
+  gen_log:log T "ENTER ($args)"
+
+  set filelist [join $args]
+  set urllist ""
+  foreach file $filelist {
+      append urllist $cvscfg(url)/$file
+      append urllist " "
+  }
+  set command "svn info "
+  append command $urllist
+
+  set logcmd [viewer::new "SVN Info ($cvscfg(ldetail))"]
+  $logcmd\::do "$command"
+  gen_log:log T "LEAVE"
+}
+
 proc svn_merge_conflict {args} {
   global cvscfg
 
@@ -856,8 +912,8 @@ proc svn_merge_conflict {args} {
     }
     gen_log:log F "CLOSE $file"
     close $f
-   
-    if { $match != 1 } { 
+
+    if { $match != 1 } {
       cvsfail "$file does not appear to have a conflict." .workdir
       continue
     }
@@ -879,7 +935,7 @@ proc svn_merge_conflict {args} {
       cvsfail "$view_this" .workdir
     }
   }
-  
+
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -946,7 +1002,7 @@ proc svn_tag {tagname b_or_t update args} {
   global cvsglb
 
   gen_log:log T "ENTER ($tagname $b_or_t $update $args)"
-  
+
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
@@ -1205,7 +1261,7 @@ proc svn_checkout {dir url path rev target cmd} {
   gen_log:log T "ENTER ($dir $url $path $rev $target $cmd)"
 
   foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
-  if {$insvn} { 
+  if {$insvn} {
     set mess "This is already a SVN controlled directory.  Are you\
               sure that you want to export into this directory?"
     if {[cvsconfirm $mess .modbrowse] != "ok"} {
@@ -1216,7 +1272,7 @@ proc svn_checkout {dir url path rev target cmd} {
   set command "svn $cmd"
   if {$rev != {} } {
     # Let them get away with saying r3 instead of 3
-    set rev [string trimleft $rev {r}] 
+    set rev [string trimleft $rev {r}]
     append command " -r$rev"
   }
   set path [safe_url $path]
@@ -1298,7 +1354,7 @@ proc svn_fileview {revision filename kind} {
 proc svn_directory_merge {} {
   global cvscfg
   global cvsglb
-  
+
   gen_log:log T "ENTER"
 
   gen_log:log D "Relative Path: $cvsglb(relpath)"
@@ -1311,7 +1367,7 @@ proc svn_directory_merge {} {
 proc svn_branches {files} {
   global cvscfg
   global cvsglb
-  
+
   gen_log:log T "ENTER ($files)"
   set filelist [join $files]
 
@@ -1533,7 +1589,7 @@ namespace eval ::svn_branchlog {
               set spl [split $line ":"]
               set fromrevs [lindex $spl 1]
               gen_log:log D "  to $r  fromrevs $fromrevs"
-              regsub {^.*-} $fromrevs {} lastfromrev 
+              regsub {^.*-} $fromrevs {} lastfromrev
               set revmergefrom($r) "r$lastfromrev"
               gen_log:log D "  revmergefrom($r) $revmergefrom($r)"
             }
@@ -1559,7 +1615,7 @@ namespace eval ::svn_branchlog {
         set revname($rr) "trunk"
         set revbtags($rr) "trunk"
         set revpath($rr) $path
- 
+
         # if root is not empty added it to the branchlist
         if { $rr ne "" } {
           lappend branchlist $rr
@@ -1616,7 +1672,7 @@ namespace eval ::svn_branchlog {
                 set spl [split $line ":"]
                 set fromrevs [lindex $spl 1]
                 gen_log:log D "  to $r  fromrevs $fromrevs"
-                regsub {^.*-} $fromrevs {} lastfromrev 
+                regsub {^.*-} $fromrevs {} lastfromrev
                 set revmergefrom($r) "r$lastfromrev"
                 gen_log:log D "  revmergefrom($r) $revmergefrom($r)"
               }
@@ -1734,7 +1790,7 @@ namespace eval ::svn_branchlog {
             set revkind($rb) "tag"
             set revname($rb) "$tag"
             set revpath($rb) $path
-  
+
             # Now do log -q to find the previous rev, which is down
             # the list.  For tags, it's only one down, so we can limit
             # the log to 2.  It only speeds it up a little though.
@@ -1814,7 +1870,7 @@ namespace eval ::svn_branchlog {
               break
             }
             incr subbrn
-          } 
+          }
           if {$foundinrevbr<=0 && $subbrwithrevsnum!=0} {
             # we only want to attach a branch & not a rev that a branch is attached
             if { $revkind($br) eq "branch" } {
@@ -1870,7 +1926,7 @@ namespace eval ::svn_branchlog {
             gen_log:log D "revdate($revnum) $revdate($revnum)"
             gen_log:log D "revtime($revnum) $revtime($revnum)"
             gen_log:log D "notelen $notelen"
-            
+
             incr i 2
             set revcomment($revnum) ""
             set c 0
@@ -1924,7 +1980,7 @@ namespace eval ::svn_branchlog {
         variable revnum
         variable rootbranch
         variable revbranch
-  
+
         gen_log:log T "ENTER"
 
         # Sort the revision and branch lists and remove duplicates

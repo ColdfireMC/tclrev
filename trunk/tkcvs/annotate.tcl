@@ -157,7 +157,7 @@ namespace eval ::annotate {
         set now $revision
         set commandline "svn blame $revision \"$file\""
       } elseif {$local == "cvs"} {
-        set info_cmd [exec::new "cvs status \"$file\""]
+        set info_cmd [exec::new "$cvs status \"$file\""]
         set info_lines [split [$info_cmd\::output] "\n"]
         foreach infoline $info_lines {
           if {[string match "*Working revision:*" $infoline]} {
@@ -195,7 +195,7 @@ namespace eval ::annotate {
       # Initialize searching
       search_textwidget_init
 
-      # Make the window 
+      # Make the window
       toplevel $w
       text $w.text -setgrid yes -exportselection 1 \
         -relief sunken -border 2 -height 40 -width 122 \

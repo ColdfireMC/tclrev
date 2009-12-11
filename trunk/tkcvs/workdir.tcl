@@ -526,6 +526,7 @@ proc workdir_menus {} {
   .workdir.menubar.reports add command -label "Status" -underline 0
   .workdir.menubar.reports add command -label "Log" -underline 0
   .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
+  .workdir.menubar.reports add command -label "Info" -underline 0
 
   .workdir.menubar.options add checkbutton -label "Show hidden files" \
      -variable cvscfg(allfiles) -onvalue true -offvalue false \
@@ -929,6 +930,7 @@ proc setup_dir { } {
   .workdir.menubar.reports entryconfigure 1 -state disabled
   .workdir.menubar.reports entryconfigure 2 -state disabled
   .workdir.menubar.reports entryconfigure 3 -state disabled
+  .workdir.menubar.reports entryconfigure 4 -state disabled
   # Start with the revision-control buttons disabled and the
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
@@ -977,6 +979,7 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 2 -state normal \
        -command { rcs_log [workdir_list_files] }
     .workdir.menubar.reports entryconfigure 3 -state disabled
+    .workdir.menubar.reports entryconfigure 4 -state disabled
   } elseif {$insvn} {
     # Top
     .workdir.top.bmodbrowse configure -image Modules_svn \
@@ -1011,6 +1014,10 @@ proc setup_dir { } {
       -command { svn_revert [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
+    .workdir.bottom.buttons.oddfuncs.block configure -state normal \
+      -command { svn_lock lock [workdir_list_files] }
+    .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
+      -command { svn_lock unlock [workdir_list_files] }
     # Menus
     .workdir.menubar entryconfigure "CVS" -state disabled
     .workdir.menubar entryconfigure "SVN" -state normal
@@ -1028,6 +1035,9 @@ proc setup_dir { } {
     # Annotate/Blame (svn blame)
     .workdir.menubar.reports entryconfigure 3 -state normal \
        -command { svn_annotate BASE [workdir_list_files] }
+    # Info (svn info)
+    .workdir.menubar.reports entryconfigure 4 -state normal \
+       -command { svn_info [workdir_list_files] }
   } elseif {$incvs} {
     # Top
     .workdir.top.bmodbrowse configure -image Modules_cvs \
@@ -1092,6 +1102,7 @@ proc setup_dir { } {
     # Annotate/Blame (cvs annotate)
     .workdir.menubar.reports entryconfigure 3 -state normal \
        -command { cvs_annotate $current_tagname [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure 4 -state disabled
   }
 
   DirCanvas:create .workdir.main
