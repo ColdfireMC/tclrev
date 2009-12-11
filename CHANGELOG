@@ -1,5 +1,13 @@
 Release 8.2.1
 
+- lock/unlock processing for SVN (Matthias Verwerk)
+
+- some additional SVN-specific right-click popups (Matthias Verwerk)
+
+- symlink processing (Matthias Verwerk)
+
+- svn output parsing change (xml-regexp-based) (Matthias Verwerk)
+
 - Subversion Branch diagram can find branchpoint for a file that wasn't revised
   at that point
 
@@ -10,9 +18,9 @@ Release 8.2.1
 
 - Fix mixed-up tooltips in the File Browser opened from the Module Browser.
 
-- Change tkcvs.tcl so it can be made into a starkit more easily
-
 - Fix Reports->Status recursive/local switch on cvscfg(recurse)
+
+- Change tkcvs.tcl so it can be made into a starkit more easily
 
 
 Release 8.2 November, 2008
