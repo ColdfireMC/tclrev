@@ -271,34 +271,34 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
   set val [lindex $argv [expr {$i+1}]]
   switch -regexp -- $arg {
-    {--*d.*} {
+    {^--*d.*} {
       # -ddir: Starting directory
       set dir $val; incr i
       cd $val
     }
-    {--*r.*} {
+    {^--*r.*} {
       # -root: CVS root
       set cvscfg(cvsroot) $val; incr i
     }
-    {--*w.*} {
+    {^--*w.*} {
       # workdir|module|merge: window to start with. workdir is default.
       set cvscfg(startwindow) $val; incr i
     }
-    {--*l.*} {
+    {^--*l.*} {
       # -log <filename>: Browse the log of specified file
       set cvscfg(startwindow) log
       set lcfile $val; incr i
     }
-    {--*[ab].*} {
+    {^--*[ab].*} {
       # annotate|blame: Browse colorcoded history of specified file
       set cvscfg(startwindow) blame
       set lcfile $val; incr i
     }
-    -psn_* {
+    {^-psn_.*} {
       # Ignore the Carbon Process Serial Number
       incr i
     }
-    {--*h.*} {
+    {^--*h.*} {
       puts $usage
       exit 0
     }
