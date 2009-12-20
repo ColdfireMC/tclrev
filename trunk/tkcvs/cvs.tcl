@@ -2253,26 +2253,32 @@ namespace eval ::cvs_branchlog {
               }
             }
             {V} {
-              # Look for a revision number line
-              set rnum [lindex [split $logline] 1]
-              set parts [split $rnum {.}]
-              set revkind($rnum) "revision"
-              if {[llength $parts] == 2} {
-                # A trunk revision but not necessarily 1.x because CVS allows
-                # the first part of the revision number to be changed. We have
-                # to assume that people always increase it if they change it
-                # at all.
-                lappend branchrevs(trunk) $rnum
+              if {! [string match "revision *" $logline] } {
+                # Did they put just the right number of dashes in the comment
+                # to fool us?
+                set logstate {S}
               } else {
-                lappend branchrevs([join [lrange $parts 0 end-1] {.}]) $rnum
+                # Look for a revision number line
+                set rnum [lindex [split $logline] 1]
+                set parts [split $rnum {.}]
+                set revkind($rnum) "revision"
+                if {[llength $parts] == 2} {
+                  # A trunk revision but not necessarily 1.x because CVS allows
+                  # the first part of the revision number to be changed. We have
+                  # to assume that people always increase it if they change it
+                  # at all.
+                  lappend branchrevs(trunk) $rnum
+                } else {
+                  lappend branchrevs([join [lrange $parts 0 end-1] {.}]) $rnum
+                }
+                # Branches for this revision may have already been created
+                # during tag parsing
+                foreach "revwho($rnum) revdate($rnum) revtime($rnum)
+                  revlines($rnum) revstate($rnum) revcomment($rnum)" \
+                  {{} {} {} {} {} {}} \
+                  { break }
+                set logstate {D}
               }
-              # Branches for this revision may have already been created
-              # during tag parsing
-              foreach "revwho($rnum) revdate($rnum) revtime($rnum)
-                revlines($rnum) revstate($rnum) revcomment($rnum)" \
-                {{} {} {} {} {} {}} \
-                { break }
-              set logstate {D}
             }
             {D} {
               # Look for a date line.  This also has the name of the author.
