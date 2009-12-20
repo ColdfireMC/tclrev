@@ -11,6 +11,9 @@ Release 8.2.1
 - Subversion Branch diagram can find branchpoint for a file that wasn't revised
   at that point
 
+- CVS log parser no longer fooled by a log comment containing a dashed line
+  of exactly the same length as the log's normal delimiter
+
 - tksvn2bcompare.pl added to contrib directory.  It enables the use of
   "bcompare" in place of tkdiff.
 
