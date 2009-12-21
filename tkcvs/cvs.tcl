@@ -2240,9 +2240,6 @@ namespace eval ::cvs_branchlog {
               } else {
                 if {$logline == "description:"} {
                   set logstate {S}
-                } elseif {$logline == "----------------------------"} {
-                  # Oops, missed something.
-                  set logstate {V}
                 }
               }
             }
@@ -2256,7 +2253,7 @@ namespace eval ::cvs_branchlog {
               if {! [string match "revision *" $logline] } {
                 # Did they put just the right number of dashes in the comment
                 # to fool us?
-                set logstate {S}
+                set logstate {L}
               } else {
                 # Look for a revision number line
                 set rnum [lindex [split $logline] 1]
