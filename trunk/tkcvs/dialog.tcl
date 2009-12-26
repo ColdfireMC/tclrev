@@ -1491,7 +1491,7 @@ proc commit_history {comment} {
   if [winfo exists .ci_history] {
     .ci_history.text insert end "$comment"
     .ci_history.text insert end "\n"
-    .ci_history.text insert end "======================================================================"
+    .ci_history.text insert end "================================================================================\n"
   }
 }
 
@@ -1533,7 +1533,7 @@ proc history_browser {} {
     foreach ch [array names cvsglb commit_comment,*] {
       .ci_history.text insert end $cvsglb($ch)
       .ci_history.text insert end "\n"
-      .ci_history.text insert end "================================================================================"
+      .ci_history.text insert end "================================================================================\n"
     }
   }
 
