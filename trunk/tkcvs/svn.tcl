@@ -420,7 +420,7 @@ proc svn_commit_dialog {} {
   }
 
   toplevel .commit
-  grab set .commit
+  #grab set .commit
 
   frame .commit.top -border 8
   frame .commit.down -relief groove -border 2
@@ -429,8 +429,10 @@ proc svn_commit_dialog {} {
   pack .commit.down -side bottom -fill x
   frame .commit.comment
   pack .commit.comment -side top -fill both -expand 1
-  label .commit.lcomment
-  text .commit.tcomment -relief sunken -width 70 -height 10 \
+  label .commit.comment.lcomment -text "Your log message" -anchor w
+  button .commit.comment.history -text "Log Message\nHistory" \
+    -command history_browser
+  text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
     -bg $cvsglb(textbg) -exportselection 1 \
     -wrap word -border 2 -setgrid yes
 
@@ -442,44 +444,43 @@ proc svn_commit_dialog {} {
 
   pack .commit.message -in .commit.top -padx 2 -pady 5
 
-
   button .commit.ok -text "OK" -highlightbackground $cvsglb(bg) \
     -command {
-      grab release .commit
+      #grab release .commit
       wm withdraw .commit
-      set cvsglb(commit_comment) [.commit.tcomment get 1.0 end]
+      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
     }
   button .commit.apply -text "Apply" -highlightbackground $cvsglb(bg) \
     -command {
-      set cvsglb(commit_comment) [.commit.tcomment get 1.0 end]
+      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
     }
   button .commit.clear -text "ClearAll" -highlightbackground $cvsglb(bg) \
     -command {
       set version ""
-      .commit.tcomment delete 1.0 end
+      .commit.comment.tcomment delete 1.0 end
     }
   button .commit.quit -highlightbackground $cvsglb(bg) \
     -command {
-      grab release .commit
+      #grab release .commit
       wm withdraw .commit
     }
 
-  .commit.lcomment configure -text "Your log message" \
-    -anchor w
   .commit.ok configure -text "OK"
   .commit.quit configure -text "Close"
-  pack .commit.lcomment -in .commit.comment \
-    -side left -fill x -pady 3
-  pack .commit.tcomment -in .commit.comment \
-    -side left -fill both -expand 1 -pady 3
+
+  grid columnconf .commit.comment 1 -weight 1
+  grid rowconf .commit.comment 1 -weight 1
+  grid .commit.comment.lcomment -column 0 -row 0
+  grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2
+  grid .commit.comment.history  -column 0 -row 1
 
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
     -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   # Fill in the most recent commit message
-  .commit.tcomment insert end $cvsglb(commit_comment)
+  .commit.comment.tcomment insert end $cvsglb(commit_comment)
 
   wm title .commit "Commit Changes"
   wm minsize .commit 1 1

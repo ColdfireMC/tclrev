@@ -1469,3 +1469,74 @@ proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
   }
 }
 
+# Keep a log of commit log messages.  We want to do this whether the
+# history has ever been examined by the user or not
+proc commit_history {comment} {
+  global cvsglb
+
+  set comment [string trimright $comment]
+  set c 0
+  foreach ch [array names cvsglb commit_comment,*] {
+    if {$comment eq $cvsglb($ch)} {
+      # We already have this one.  We don't have to
+      # do anything else.
+      gen_log:log D "Comment is a duplicate"
+      return
+    }
+    incr c
+  }
+  # We don't have this one yet
+  set cvsglb(commit_comment,$c) $comment
+  gen_log:log D "New comment $c"
+  if [winfo exists .ci_history] {
+    .ci_history.text insert end "$comment"
+    .ci_history.text insert end "\n"
+    .ci_history.text insert end "======================================================================"
+  }
+}
+
+# See the previous log messages
+proc history_browser {} {
+  global cvsglb
+
+  gen_log:log T "ENTER history_browser"
+
+  if {! [winfo exists .ci_history]} {
+    toplevel .ci_history
+    wm protocol .ci_history WM_DELETE_WINDOW { wm withdraw .ci_history }
+    wm title .ci_history "Commit Log History"
+
+    text .ci_history.text -setgrid yes -relief sunken -border 2 \
+      -exportselection 1 -yscroll ".ci_history.scroll set"
+    scrollbar .ci_history.scroll -relief sunken \
+      -command ".ci_history.text yview"
+    frame .ci_history.bottom
+    search_textwidget_init
+    button .ci_history.bottom.srchbtn -text Search \
+      -highlightbackground $cvsglb(bg) \
+      -command "search_textwidget .ci_history.text"
+    entry .ci_history.bottom.entry -width 20 -textvariable cvsglb(searchstr)
+    bind .ci_history.bottom.entry <Return> \
+        "search_textwidget .ci_history.text"
+    button .ci_history.bottom.close -text "Close" \
+       -highlightbackground $cvsglb(bg) \
+       -command { wm withdraw .ci_history }
+
+    pack .ci_history.bottom -side bottom -fill x
+    pack .ci_history.scroll -side right -fill y
+    pack .ci_history.text -fill both -expand 1
+    pack .ci_history.bottom.srchbtn -side left
+    pack .ci_history.bottom.entry -side left
+    pack .ci_history.bottom.close -side right
+
+    # If this is the first time we've built the window, add the history we have so far
+    foreach ch [array names cvsglb commit_comment,*] {
+      .ci_history.text insert end $cvsglb($ch)
+      .ci_history.text insert end "\n"
+      .ci_history.text insert end "================================================================================"
+    }
+  }
+
+  wm deiconify .ci_history
+  gen_log:log T "LEAVE"
+}
