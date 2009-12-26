@@ -1,5 +1,8 @@
 Release 8.2.1
 
+- history of commit log messages is kept and can be browsed and copy-
+  pasted
+
 - lock/unlock processing for SVN (Matthias Verwerk)
 
 - some additional SVN-specific right-click popups (Matthias Verwerk)
@@ -8,8 +11,8 @@ Release 8.2.1
 
 - svn output parsing change (xml-regexp-based) (Matthias Verwerk)
 
-- Subversion Branch diagram can find branchpoint for a file that wasn't revised
-  at that point
+- Subversion Branch diagram can find branchpoint for a file that wasn't
+  revised at that point
 
 - CVS log parser no longer fooled by a log comment containing a dashed line
   of exactly the same length as the log's normal delimiter
