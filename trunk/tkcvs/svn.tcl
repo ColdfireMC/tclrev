@@ -450,11 +450,13 @@ proc svn_commit_dialog {} {
       wm withdraw .commit
       set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+      commit_history $cvsglb(commit_comment)
     }
   button .commit.apply -text "Apply" -highlightbackground $cvsglb(bg) \
     -command {
       set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+      commit_history $cvsglb(commit_comment)
     }
   button .commit.clear -text "ClearAll" -highlightbackground $cvsglb(bg) \
     -command {
