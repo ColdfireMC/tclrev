@@ -1504,7 +1504,7 @@ proc history_browser {} {
   if {! [winfo exists .ci_history]} {
     toplevel .ci_history
     wm protocol .ci_history WM_DELETE_WINDOW { wm withdraw .ci_history }
-    wm title .ci_history "Commit Log History"
+    wm title .ci_history "Commit Log History for Session"
 
     text .ci_history.text -setgrid yes -relief sunken -border 2 \
       -exportselection 1 -yscroll ".ci_history.scroll set"
