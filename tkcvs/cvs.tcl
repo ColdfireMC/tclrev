@@ -1648,7 +1648,7 @@ proc cvs_commit_dialog {} {
   frame .commit.comment
   pack .commit.comment -side top -fill both -expand 1
   label .commit.comment.lcomment -text "Your log message" -anchor w
-  button .commit.comment.history -text "Log Message\nHistory" \
+  button .commit.comment.history -text "Log History" \
     -command history_browser
   text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
     -bg $cvsglb(textbg) -exportselection 1 \

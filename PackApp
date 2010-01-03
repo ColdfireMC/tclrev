@@ -5,13 +5,17 @@
 set V = 8_2_1
 set DV = 4_1_4
 
-#set WISH_SH = "Wish"
-set WISH_SH = "Wish Shell"
+set TkV = 8.4.19
+#set TkV = 8.5.8
+#set TkV = 8.6b1
+set WISH_SH = "Wish$TkV"
 set WISH_APP = "$HOME/Downloads/$WISH_SH.app"
 
-if ( -f $HOME/tkcvs_$V ) rm -rf $HOME/tkcvs_$V
-mkdir $HOME/tkcvs_$V
-set Target = $HOME/tkcvs_$V/TkCVS.app
+set TKCVS_Target = tkcvs_${V}_$TkV
+
+if ( -f $HOME/$TKCVS_Target ) rm -rf $HOME/$TKCVS_Target
+mkdir $HOME/$TKCVS_Target
+set Target = $HOME/$TKCVS_Target/TkCVS.app
 echo "Ditto Target"
 ditto $WISH_APP $Target
 chmod -R +w $Target/*
@@ -39,11 +43,11 @@ cp tkcvs/tclIndex $Target/Contents/Resources/Scripts/lib/tkcvs
 rm $Target/Contents/Resources/Scripts/lib/tkcvs/tkcvs.tcl
 cp tkcvs/bitmaps/*.{gif,xbm} $Target/Contents/Resources/Scripts/lib/tkcvs/bitmaps
 
-cp COPYING FAQ INSTALL $HOME/tkcvs_$V
-cp CHANGELOG $HOME/tkcvs_$V
+cp COPYING FAQ INSTALL $HOME/$TKCVS_Target
+cp CHANGELOG $HOME/$TKCVS_Target
 
 # Make sure TkDiff is ready
-cp -r $HOME/tkdiff-$DV-macos/TkDiff.app $HOME/tkcvs_$V
+cp -r $HOME/tkdiff-$DV-macos/TkDiff.app $HOME/$TKCVS_Target
 
 cd $HOME
 
@@ -61,6 +65,6 @@ ls -al tkcvs_$V.dmg.gz
 # This is the way it will be invoked on a double-click, so it had
 # better be able to handle it
 echo "See if it works"
-echo "$Target/Contents/MacOS/$WISH_SH -psn_0_7995393"
-"$Target/Contents/MacOS/$WISH_SH" -psn_0_7995393
+echo "$Target/Contents/MacOS/Wish -psn_0_7995393"
+"$Target/Contents/MacOS/Wish" -psn_0_7995393
  
