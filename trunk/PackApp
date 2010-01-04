@@ -5,6 +5,7 @@
 set V = 8_2_1
 set DV = 4_1_4
 
+#set TkV = 8.4.8
 set TkV = 8.4.19
 #set TkV = 8.5.8
 #set TkV = 8.6b1
@@ -51,9 +52,11 @@ cp -r $HOME/tkdiff-$DV-macos/TkDiff.app $HOME/$TKCVS_Target
 
 cd $HOME
 
-echo "Creating DMG...  This uses sudo, which prompts for a password."
+echo "Creating DMG"
 if ( -f "tkcvs_$V.dmg" ) rm -f "tkcvs_$V.dmg"
-sudo bin/buildDMG.pl -debug -dmgName tkcvs_$V -volName TkCVS_$V tkcvs_$V/*
+echo "hdiutil create -fs HFS+ -volname TkCVS_$V -srcfolder tkcvs_${V}_$TkV tkcvs_$V.dmg"
+hdiutil create -fs "HFS+" -volname TkCVS_$V -srcfolder tkcvs_${V}_$TkV tkcvs_$V.dmg
+if ($status != 0) exit
 
 echo "Compressing DMG."
 if ( -f "tkcvs_$V.dmg.gz" ) rm -f "tkcvs_$V.dmg.gz"
