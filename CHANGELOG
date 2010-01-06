@@ -1,30 +1,33 @@
 Release 8.2.1 January, 2010
 
-- history of commit log messages is kept and can be browsed and copy-
-  pasted
+- History of commit log messages is kept, so you can copy-and-paste previous
+  messages that you've used during the current session.
 
-- lock/unlock processing for SVN (Matthias Verwerk)
+- Locking and unlocking for SVN, and some additional SVN-specific right-click
+  popups (Matthias Vorwerk)
 
-- some additional SVN-specific right-click popups (Matthias Verwerk)
+- Icons for symbolic links in a SVN directory (Matthias Vorwerk)
 
-- symlink processing (Matthias Verwerk)
-
-- svn output parsing change (xml-regexp-based) (Matthias Verwerk)
+- SVN output parsing change (xml-regexp-based) (Matthias Vorwerk)
 
 - Subversion Branch diagram can find branchpoint for a file that wasn't
-  revised at that point
+  revised at that point (Steve Schwarm)
 
-- CVS log parser no longer fooled by a log comment containing a dashed line
-  of exactly the same length as the log's normal delimiter
+- CVS branch browser no longer fooled by a log comment containing a dashed line
+  of exactly the same length as the log's normal delimiter, although you may
+  not see the rest of the comment
 
 - tksvn2bcompare.pl added to contrib directory.  It enables the use of
-  "bcompare" in place of tkdiff.
+  "bcompare" in place of tkdiff.  (Adam McLaurin)
 
 - Add a note to the FAQ about running the X11 version of TkCVS on the Mac.
 
 - Fix mixed-up tooltips in the File Browser opened from the Module Browser.
 
 - Fix Reports->Status recursive/local switch on cvscfg(recurse)
+
+- Button in the CVS "Update with Options" dialog to make it easier to update
+  a sticky-tagged file to the current directory tag (Jacques Klein)
 
 - Change tkcvs.tcl so it can be made into a starkit more easily
 

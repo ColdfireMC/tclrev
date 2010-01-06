@@ -857,17 +857,20 @@ proc cvs_update_options {} {
   radiobutton .update.options.whichrev.keep \
     -text "Keep same branch or trunk" \
     -variable cvsglb(tagmode_selection) -value "Keep" -anchor w \
-    -command {.update.options.whichrev.getrev.lblentry.tname configure -state disabled}
+    -command {.update.options.whichrev.getrev.lblentry.tname configure -state disabled
+              .update.options.whichrev.getrev.lblentry.dirtag configure -state disabled}
   # update to the head revision
   radiobutton .update.options.whichrev.trunk \
     -text "Update local files to be on main trunk (-A)" \
     -variable cvsglb(tagmode_selection) -value "Trunk" -anchor w \
-    -command {.update.options.whichrev.getrev.lblentry.tname configure -state disabled}
+    -command {.update.options.whichrev.getrev.lblentry.tname configure -state disabled
+              .update.options.whichrev.getrev.lblentry.dirtag configure -state disabled}
   # update to different branch/tag or not
   radiobutton .update.options.whichrev.tag \
     -text "Update (-r) local files to be on tag/branch" \
     -variable cvsglb(tagmode_selection) -value "Getrev" -anchor w \
-    -command {.update.options.whichrev.getrev.lblentry.tname configure -state normal}
+    -command {.update.options.whichrev.getrev.lblentry.tname configure -state normal
+              .update.options.whichrev.getrev.lblentry.dirtag configure -state normal}
 
   message .update.options.whichrev.explainkeep -font $cvscfg(listboxfont) \
     -justify left -width 400 \
@@ -892,6 +895,10 @@ you may want to commit any local changes to that branch first."
   label .update.options.whichrev.getrev.lblentry.tlbl -text "Tag Name" -anchor w
   entry .update.options.whichrev.getrev.lblentry.tname -relief sunken \
     -textvariable cvsglb(updatename)
+  button .update.options.whichrev.getrev.lblentry.dirtag -text "Dir Tag" \
+    -command {
+    set cvsglb(updatename) $current_tagname
+    }
   message .update.options.whichrev.getrev.explaintag -font $cvscfg(listboxfont) \
     -justify left -width 400 \
     -text "Advice:  Update local files to main trunk (head) first.
@@ -901,6 +908,7 @@ Note:  The tag will be 'sticky' for the directory and for each file."
   pack .update.options.whichrev.getrev.lblentry -side top -expand 1 -fill x
   pack .update.options.whichrev.getrev.lblentry.tlbl -side left
   pack .update.options.whichrev.getrev.lblentry.tname -side left -fill x -padx 2 -pady 4
+  pack .update.options.whichrev.getrev.lblentry.dirtag -side left -fill x -padx 2 -pady 4
   pack .update.options.whichrev.getrev.explaintag \
     -side top -fill x -pady 1 -ipady 0
 
@@ -964,6 +972,7 @@ Note:  The tag will be 'sticky' for the directory and for each file."
   # State of top radiobuttons (keep same, main, or tag)
   if {$cvsglb(tagmode_selection) != "Getrev"} {
     .update.options.whichrev.getrev.lblentry.tname configure -state disabled
+    .update.options.whichrev.getrev.lblentry.dirtag configure -state disabled
   }
   # state of -l radiobuttons
   if {$cvsglb(update_recurse) != "recurse"} {
