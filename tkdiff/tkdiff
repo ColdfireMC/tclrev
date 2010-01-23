@@ -147,7 +147,7 @@ if {$fs == ""} {
   # You get {TkDefaultFont} instead of {fixed 12} or whatever
   # Then when you add "bold" to it you have a bad spec
   set fa [font actual $textfont]
-  puts " actual font: $fa"
+  #puts " actual font: $fa"
   set fm [lindex $fa 1]
   set fs [lindex $fa 3]
   set textfont [list $fm $fs]
