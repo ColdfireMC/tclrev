@@ -3,6 +3,9 @@ Release 8.2.1 January, 2010
 - History of commit log messages is kept, so you can copy-and-paste previous
   messages that you've used during the current session.
 
+- When a directory is refreshed in the Working Directory Browser, the scroll
+  position is restored.
+
 - Locking and unlocking for SVN, and some additional SVN-specific right-click
   popups (Matthias Vorwerk)
 
