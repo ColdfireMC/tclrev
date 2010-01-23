@@ -1072,6 +1072,26 @@ proc DirCanvas:buildwhenidle {w} {
   }
 }
 
+# For restoring the scroll positions after re-scanning the directory
+proc DirCanvas:yview_windows {w yview} {
+  global cvscfg
+
+  gen_log:log T "ENTER YVIEW $yview"
+  eval $w.filecol.list yview moveto $yview
+  if {[winfo exists  $w.datecol.list]} {
+    eval $w.datecol.list yview moveto $yview
+  }
+  if {[winfo exists $w.revcol.list]} {
+    eval $w.wrevcol.list yview moveto $yview
+  }
+  if {[winfo exists $w.statcol.list]} {
+    eval $w.statcol.list yview moveto $yview
+  }
+  if {[winfo exists $w.editcol.list]} {
+    eval $w.editcol.list yview moveto $yview
+  }
+}
+
 proc DirCanvas:scroll_windows {w args} {
   global cvscfg
   global cvsglb

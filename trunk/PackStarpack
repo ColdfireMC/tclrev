@@ -19,10 +19,18 @@ echo "Making tkcvs.tcl into a starkit"
 cp tkcvs/tkcvs.tcl .
 # Make a .kit
 sdx qwrap tkcvs.tcl
+if [ $? -gt 0 ]; then
+  echo "sdx qwrap failed"
+  exit 1
+fi
 
 # Open it into a directory tree
 echo "Unwrapping the kit"
 sdx unwrap tkcvs.kit
+if [ $? -gt 0 ]; then
+  echo "sdx unwrap failed"
+  exit 1
+fi
 rm -f tkcvs.kit
 
 mkdir tkcvs.vfs/lib/tkcvs

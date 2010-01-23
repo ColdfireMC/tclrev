@@ -150,7 +150,7 @@ proc workdir_setup {} {
      -command { file_input_and_do "New Directory" workdir_newdir}
 
   button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh -highlightbackground $cvsglb(bg) \
-     -command { change_dir [pwd] }
+     -command { setup_dir }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
 
   button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches -highlightbackground $cvsglb(bg) \
@@ -316,7 +316,8 @@ proc workdir_setup {} {
     wm deiconify .workdir
   }
 
-  change_dir "[pwd]"
+  #change_dir "[pwd]"
+  setup_dir
   gen_log:log T "LEAVE"
 }
 
@@ -695,7 +696,6 @@ proc workdir_newdir {file} {
   if {$cvscfg(auto_status)} {
     setup_dir
   }
-
   gen_log:log T "LEAVE"
 }
 
@@ -864,6 +864,9 @@ proc change_dir {new_dir} {
     return
   }
   set cwd $new_dir
+  # Deleting the tree discards the saved scroll position
+  # so we start with yview 0 in a new directory
+  DirCanvas:deltree .workdir.main
   setup_dir
 
   gen_log:log T "LEAVE"
@@ -896,12 +899,17 @@ proc setup_dir { } {
 
   gen_log:log T "ENTER"
 
+  set savyview 0
   if { ! [winfo exists .workdir.main] } {
     workdir_setup
     return
   } else {
+    if {[winfo exists .workdir.main.filecol.list]} {
+      set savyview [lindex [.workdir.main.filecol.list yview] 0]
+    }
     DirCanvas:deltree .workdir.main
   }
+  gen_log:log D "YVIEW $savyview"
 
   if {![file isdirectory $cwd]} {
     gen_log:log D "$cwd is not a directory"
@@ -1137,6 +1145,9 @@ proc setup_dir { } {
 
   set filelist [ getFiles ]
   directory_list $filelist
+  # Update, otherwise it won't be mapped before we restore the scroll position
+  update
+  DirCanvas:yview_windows .workdir.main $savyview
 
   gen_log:log T "LEAVE"
 }
