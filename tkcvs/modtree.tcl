@@ -40,8 +40,6 @@ proc ModTree:create {w {open_func {}} } {
     bind $w.$canv.list <Prior> "ModTree:scroll_windows $w scroll -1 pages"
     bind $w.$canv.list <Down>  "ModTree:scroll_windows $w scroll  1 units"
     bind $w.$canv.list <Up>    "ModTree:scroll_windows $w scroll -1 units"
-    bind $w.$canv.list <B2-Motion> "ModTree:drag_windows $w %W %y"
-    bind $w.$canv.list <B3-Motion> "ModTree:drag_windows $w %W %y"
     bind $w.$canv.list <MouseWheel> \
       "ModTree:scroll_windows $w scroll \[expr {-(%D/120)*4}\] units"
     bind $w.$canv.list <ButtonPress-4> \
