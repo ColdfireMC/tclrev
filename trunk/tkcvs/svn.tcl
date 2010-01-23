@@ -689,8 +689,10 @@ proc svn_jit_listdir { tf into } {
     if [string match {*/} $logline] {
       set item [lrange $logline 5 end]
       set item [string trimright $item "/"]
-      lappend dirs "$item"
-      set info($item) [lrange $logline 0 4]
+      if {$item ne "."} {
+        lappend dirs "$item"
+        set info($item) [lrange $logline 0 4]
+      }
     } else {
       set item [lrange $logline 6 end]
       lappend fils "$item"
@@ -797,7 +799,9 @@ proc parse_svnmodules {tf svnroot} {
     gen_log:log D "$logline"
     if [string match {*/} $logline] {
       set item [lrange $logline 5 end]
+        if {$item ne "./"} {
       lappend dirs [string trimright $item "/"]
+      }
     } else {
       set item [lrange $logline 6 end]
       lappend fils $item
