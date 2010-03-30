@@ -211,13 +211,10 @@ if {! [get_cde_params]} {
 set cvscfg(flashfont) $cvscfg(listboxfont)
 set fsiz [lindex $cvscfg(listboxfont) 1]
 set lbf [font actual $cvscfg(listboxfont)]
+#puts "listboxfont: $cvscfg(listboxfont)"
 #puts "actual listboxfont: $lbf"
 set ffam [lindex $lbf 1]
-#set fsiz [lindex $lbf 3]
-if {$fsiz == ""} {
-  # This happens on Windows in tk8.5
-  set fsiz [lindex $lbf 3]
-}
+set fsiz [lindex $lbf 3]
 
 set cvscfg(flashfont) [list $ffam $fsiz underline]
 #puts "\nflashfont: $cvscfg(flashfont)"
@@ -225,8 +222,7 @@ set cvscfg(flashfont) [list $ffam $fsiz underline]
 # Prefer underline, but it isn't working at all in tk8.5 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
   #puts "Underline font not working.  Trying $ffam $fsiz bold"
-  set cvscfg(flashfont) [list [lindex $lbf 1] $fsiz bold]
-  #set cvscfg(flashfont) [list [lindex $lbf 1] [lindex $lbf 3] bold]
+  set cvscfg(flashfont) [list $ffam -$fsiz bold]
 }
 #puts "final flashfont: $cvscfg(flashfont)"
 
