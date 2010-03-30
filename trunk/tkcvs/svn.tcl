@@ -24,7 +24,7 @@ proc svn_version {} {
   #}
   #set cvsglb(svn_version) $version
 
-  set commandline "svn log -g"
+  set commandline "svn log -g -l 1"
   set ret [catch {eval "exec $commandline"} output]
   if {$ret == 0} {
     set cvsglb(svn_mergeinfo_works) 1
