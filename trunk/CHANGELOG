@@ -1,3 +1,10 @@
+Release 8.2.2 2010
+
+- Improve performance in large Subversion directories
+
+- Fix CDE font problem
+
+
 Release 8.2.1 January, 2010
 
 - History of commit log messages is kept, so you can copy-and-paste previous
