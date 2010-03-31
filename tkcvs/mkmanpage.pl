@@ -2,7 +2,7 @@
 
 open(HELP, "help.tcl") || die("Can't open helpl.tcl");
   
-print ".TH TkCVS 1 Release 8.2.1\n";
+print ".TH TkCVS 1 Release 8.2.2\n";
 print ".SH NAME\n";
 print "TkCVS \- a Tk/Tcl Graphical Interface to CVS and Subversion\n";
 print ".SH SYNOPSIS\n";
