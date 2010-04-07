@@ -1220,13 +1220,9 @@ proc directory_list { filenames } {
     set Filelist($i:wrev) ""
     set Filelist($i:stickytag) ""
     set Filelist($i:option) ""
-    if {[string match "<direc*" $Filelist($i:status)]} {
-      set Filelist($i:date) ""
-    } else {
-      # Prepending ./ to the filename prevents tilde expansion
-      catch {set Filelist($i:date) \
-         [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
-    }
+    # Prepending ./ to the filename prevents tilde expansion
+    catch {set Filelist($i:date) \
+       [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
   }
 
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs"

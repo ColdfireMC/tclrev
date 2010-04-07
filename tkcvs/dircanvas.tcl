@@ -63,7 +63,7 @@ proc DirCanvas:create {w} {
   set col [lindex $cvsglb(sort_pref) 0]
   set sense [lindex $cvsglb(sort_pref) 1]
   gen_log:log D "$incvs  $col"
-  if { (! ($incvs || $inrcs))  && ( $col == "editcol" || $col == "wrevcol") } {
+  if { (! ($incvs || $inrcs || $insvn))  && ( $col == "editcol" || $col == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set col "filecol"
     set sense "-decreasing"
@@ -576,7 +576,7 @@ proc DirCanvas:build {w} {
 
   set sortcol [lindex $cvsglb(sort_pref) 0]
   set sortsense [lindex $cvsglb(sort_pref) 1]
-  if { (!($incvs || $inrcs))  && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
+  if { (!($incvs || $inrcs || $insvn))  && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set sortcol "filecol"
     set sortsense "-decreasing"
