@@ -4,6 +4,8 @@ Release 8.2.2 2010
 
 - Fix CDE font problem
 
+- Show date of directories, too.  Fix sort-by-revision in SVN directory.
+
 
 Release 8.2.1 January, 2010
 
