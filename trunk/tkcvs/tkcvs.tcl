@@ -209,12 +209,13 @@ if {! [get_cde_params]} {
 }
 
 set cvscfg(flashfont) $cvscfg(listboxfont)
-set fsiz [lindex $cvscfg(listboxfont) 1]
+#set fsiz [lindex $cvscfg(listboxfont) 1]
 set lbf [font actual $cvscfg(listboxfont)]
 #puts "listboxfont: $cvscfg(listboxfont)"
 #puts "actual listboxfont: $lbf"
 set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
+regsub -- {-} $fsiz {} fsiz
 
 set cvscfg(flashfont) [list $ffam $fsiz underline]
 #puts "\nflashfont: $cvscfg(flashfont)"
