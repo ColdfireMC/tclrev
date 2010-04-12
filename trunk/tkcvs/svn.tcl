@@ -1580,28 +1580,6 @@ namespace eval ::svn_branchlog {
         set tip [lindex $brevs 0]
         set revpath($tip) $path
         set revkind($tip) "revision"
-        foreach r $branchrevs(trunk) {
-          if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
-            set propcmd "svn propget svn:mergeinfo -$r $path"
-            set cmd_prop [exec::new $propcmd {} 0 {} 1]
-            set prop_output [$cmd_prop\::output]
-            $cmd_prop\::destroy
-            # It will probably be empty the majority of the time
-            # so don't waste time on empty output
-            if {$prop_output eq ""} {continue}
-            set splits [split $prop_output "\n"]
-            # FIXME: what if more than one merge comes into the same rev?
-            foreach line $splits {
-              if {$line eq ""} {continue}
-              set spl [split $line ":"]
-              set fromrevs [lindex $spl 1]
-              gen_log:log D "  to $r  fromrevs $fromrevs"
-              regsub {^.*-} $fromrevs {} lastfromrev
-              set revmergefrom($r) "r$lastfromrev"
-              gen_log:log D "  revmergefrom($r) $revmergefrom($r)"
-            }
-          }
-        }
         set brevs [lreplace $brevs 0 0]
         if {$tip == $revnum_current} {
           # If current is at end of trunk do this.
@@ -1662,29 +1640,6 @@ namespace eval ::svn_branchlog {
           set tip [lindex $brevs 0]
           set revpath($tip) $path
           set revkind($tip) "revision"
-          foreach r $branchrevs($branch) {
-            if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
-              set propcmd "svn propget svn:mergeinfo -$r $path"
-              # proc new {command {viewer {}} {show_stderr {1}} {filter {}} {errok {0}} }
-              set cmd_prop [exec::new $propcmd {} 0 {} 1]
-              set prop_output [$cmd_prop\::output]
-              $cmd_prop\::destroy
-              # It will probably be empty the majority of the time
-              # so don't waste time on empty output
-              if {$prop_output eq ""} {continue}
-              set splits [split $prop_output "\n"]
-              # FIXME: what if more than one merge comes into the same rev?
-              foreach line $splits {
-                if {$line eq ""} {continue}
-                set spl [split $line ":"]
-                set fromrevs [lindex $spl 1]
-                gen_log:log D "  to $r  fromrevs $fromrevs"
-                regsub {^.*-} $fromrevs {} lastfromrev
-                set revmergefrom($r) "r$lastfromrev"
-                gen_log:log D "  revmergefrom($r) $revmergefrom($r)"
-              }
-            }
-          }
           set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
@@ -1815,6 +1770,82 @@ namespace eval ::svn_branchlog {
             lappend revtags($bp) $tag
             gen_log:log D "   revtags($bp) $revtags($bp)"
             update idletasks
+          }
+        }
+
+        # This is better than it used to be but there are still more propgets than there
+        # could be, I think.  We could match all the properties from one query instead of
+        # just the one we're looking for
+        if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
+          gen_log:log D "Finding all mergeprops"
+          set bdirs {}
+          lappend bdirs $cvscfg(svn_trunkdir)
+          foreach b $branches {
+            set b [string trimright $b "/"]
+            lappend bdirs $cvscfg(svn_branchdir)/$b
+          }
+          gen_log:log D $bdirs
+          set mergeprops {}
+          foreach b $bdirs {
+            gen_log:log D "$b"
+            set cmd "svn propget svn:mergeinfo -r HEAD $cvscfg(svnroot)/$b/$relpath/$safe_filename"
+            set cmd_prop [exec::new $cmd {} 0 {} 1]
+            set propget_out [string trim [$cmd_prop\::output] "\n"]
+            $cmd_prop\::destroy
+            foreach mp $propget_out {
+              if {[lsearch -exact $mergeprops $mp] < 0} {
+                lappend mergeprops $mp
+              }
+            }
+          }
+          gen_log:log D "All merge properties: $mergeprops"
+          #puts "All merge properties: $mergeprops\n"
+          #puts "$bdirs"
+          # Figure out where each property first appeared
+          foreach mp $mergeprops {
+            gen_log:log D "----------------"
+            #puts "looking for $mp"
+            gen_log:log D "looking for $mp"
+            set found($mp) 0
+            foreach b $bdirs {
+            #puts "looking for $mp in $b"
+              set bt [file tail $b]
+              # We don't need to look for merges from BranchB in BranchB do we?
+              #puts "Searching /$b for $mp"
+              if {[string match "/$b*" $mp]} {
+                #puts " don't need to look in $b for $mp"
+                continue
+              }
+              foreach br [lsort -dictionary $branchrevs($bt)] {
+                regsub {^r} $br {} br
+                if {$br eq "current" || $br == 1} continue
+                set cmd "svn propget svn:mergeinfo -r $br $cvscfg(svnroot)/$b/$relpath/$safe_filename"
+                set cmd_prop [exec::new $cmd {} 0 {} 1]
+                set propget_out [string trim [$cmd_prop\::output] "\n"]
+                $cmd_prop\::destroy
+                if {$propget_out != ""} {
+                  #puts " $propget_out found in $br"
+                  foreach mr $propget_out {
+                    if {$mr eq $mp} {
+                       gen_log:log D "  $mp found on rev $br of $b"
+                       #puts " == $mp found"
+                       set found($mp) 1
+                       set spl [split $mp ":"]
+                       set fromrevs [lindex $spl 1]
+                       gen_log:log D "  to r$br  fromrevs $fromrevs"
+                       regsub {^.*-} $fromrevs {} lastfromrev
+                       # I don't understand something like /trunk/File1:3-10 when those revs aren't
+                       # on the trunk
+                       if {[lsearch -exact $branchrevs($bt) "r$lastfromrev"] > -1} continue
+                       set revmergefrom(r$br) "r$lastfromrev"
+                       gen_log:log D "  revmergefrom(r$br) $revmergefrom(r$br)"
+                    }
+                  }
+                }
+                if {$found($mp)} break
+              }
+              if {$found($mp)} break
+            }
           }
         }
 
