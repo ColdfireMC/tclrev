@@ -1,5 +1,10 @@
 Release 8.2.2 2010
 
+- Make the propget svn:mergeinfo branch diagram behave more like our merge
+  tags, i.e. show only the first merge point instead of all revisions
+  containing the merge.  This should improve performance relative to version
+  8.2, too.
+
 - Improve performance in large Subversion directories
 
 - Fix CDE font problem
