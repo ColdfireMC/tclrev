@@ -2127,6 +2127,7 @@ namespace eval ::cvs_branchlog {
         set cmd_log [::exec::new $command {} 0 [namespace current]::parse_cvslog]
         # wait for it to finish so our arrays are all populated
         $cmd_log\::wait
+        $cmd_log\::destroy
 
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
