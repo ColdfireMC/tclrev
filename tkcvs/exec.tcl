@@ -217,9 +217,10 @@ namespace eval ::exec {
       }
 
       proc destroy {} {
-        #gen_log:log T "ENTER"
-        catch {namespace delete [namespace current]}
-        #gen_log:log T "LEAVE"
+         if [catch {namespace delete [namespace current]} err] {
+           puts "deleting [namespace current]"
+           puts "$err"
+         }
       }
 
       proc wait {} {
@@ -346,8 +347,14 @@ namespace eval ::viewer {
 
       proc destroy {} {
         variable v_e
-        catch {namespace inscope $v_e destroy}
-        catch {namespace delete [namespace current]}
+       if [catch {namespace inscope $v_e destroy} err] {
+          puts "deleteing $v_e"
+          puts $err
+        }
+        if [catch {namespace delete [namespace current]} err] {
+          puts "deleting [namespace current]"
+          puts $err
+        }
       }
 
       # Call this proc to write arbitrary text to the viewer
