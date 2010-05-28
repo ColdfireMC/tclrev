@@ -492,6 +492,13 @@ namespace eval ::view_output {
         }
       }
 
+      proc destroy {} {
+         if [catch {namespace delete [namespace current]} err] {
+           puts "deleting [namespace current]"
+           puts "$err"
+         }
+      }
+
     }
   }
 }
