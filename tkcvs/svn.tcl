@@ -355,7 +355,8 @@ proc svn_update {args} {
   }
   append mess "\n\nAre you sure?"
 
-  set command "svn update --accept postpone"
+  #set command "svn update --accept postpone"
+  set command "svn update"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
     foreach file $filelist {
