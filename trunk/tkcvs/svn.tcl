@@ -1188,7 +1188,8 @@ proc svn_merge {parent frompath since currentpath frombranch args} {
   }
 
   # Do the update here, and defer the tagging until later
-  set commandline "svn merge --accept postpone \"$currentpath\" \"$frompath\""
+  #set commandline "svn merge --accept postpone \"$currentpath\" \"$frompath\""
+  set commandline "svn merge \"$currentpath\" \"$frompath\""
   set v [viewer::new "SVN Merge"]
   $v\::do "$commandline" 1 status_colortags
   $v\::wait
