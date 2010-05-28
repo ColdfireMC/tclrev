@@ -1720,8 +1720,10 @@ gen_log:log D " $pattern MATCHED $text"
         -command [namespace code {
                  global cvscfg
                  variable logcanvas
+                 variable my_idx
                  set cvscfg(loggeom) [wm geometry $logcanvas]
                  destroy $logcanvas
+                 namespace delete ::cvs_branchlog::$my_idx
                  namespace delete [namespace current]
                  exit_cleanup 0
                }]
