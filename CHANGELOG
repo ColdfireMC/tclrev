@@ -1,4 +1,4 @@
-Release 8.2.2 2010
+Release 8.2.2 May, 2010
 
 - Make the propget svn:mergeinfo branch diagram behave more like our merge
   tags, i.e. show only the first merge point instead of all revisions
