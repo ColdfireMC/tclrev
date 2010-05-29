@@ -114,7 +114,7 @@ proc gen_log:save { } {
   }
 
   if {[catch {set fo [open $savfile w]}]} {
-    catchputs "Cannot open $savfile for writing"
+    puts "Cannot open $savfile for writing"
     return
   }
   puts $fo [.trace.text get 1.0 end]
