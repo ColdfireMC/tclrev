@@ -2,7 +2,7 @@
 
 # This makes a MacOS X package starting with stand-alone Wish.app.
 
-set V = 8_2_1
+set V = 8_2.2
 set DV = 4_1_4
 
 #set TkV = 8.4.8
