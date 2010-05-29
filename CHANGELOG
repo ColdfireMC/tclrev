@@ -11,6 +11,11 @@ Release 8.2.2 2010
 
 - Show date of directories, too.  Fix sort-by-revision in SVN directory.
 
+- Roll back svn update --accept postpone because it doesn't work with older
+  clients
+
+- Clean up finished namespaces for some exec viewers
+
 
 Release 8.2.1 January, 2010
 
