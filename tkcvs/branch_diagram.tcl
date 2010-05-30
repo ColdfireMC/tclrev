@@ -1723,7 +1723,8 @@ gen_log:log D " $pattern MATCHED $text"
                  variable my_idx
                  set cvscfg(loggeom) [wm geometry $logcanvas]
                  destroy $logcanvas
-                 namespace delete ::cvs_branchlog::$my_idx
+                 catch {namespace delete ::cvs_branchlog::$my_idx}
+                 catch {namespace delete ::svn_branchlog::$my_idx}
                  namespace delete [namespace current]
                  exit_cleanup 0
                }]
