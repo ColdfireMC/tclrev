@@ -1503,12 +1503,24 @@ proc cvs_gettaglist {filename parent} {
     return $keepers
   }
   set view_lines [split $view_this "\n"]
+  set c 0
+  set l [llength $view_lines]
   foreach line $view_lines {
-    if {[string index $line 0] == "\t" } {
-      set line [string trimleft $line]
-      gen_log:log D "$line"
-      append keepers "$line\n"
+    if {[string match "symbolic names:" $line]} {
+      gen_log:log D "line $c $line"
+      for {set b [expr {$c + 1}]} {$b <= $l} {incr b} {
+        set nextline [lindex $view_lines $b]
+        if {[string index $nextline 0] == "\t" } {
+          set nextline [string trimleft $nextline]
+          gen_log:log D "$nextline"
+          append keepers "$nextline\n"
+        } else {
+          gen_log:log D "$nextline - quitting"
+          break
+        }
+      }
     }
+    incr c
   }
   if {$keepers == ""} {
     set keepers "No Tags"
