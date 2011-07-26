@@ -40,25 +40,25 @@ proc browse_files {module} {
   incr browser
   set filebrowse ".filebrowse$browser"
   toplevel $filebrowse
-  frame $filebrowse.up   -relief groove -border 2
-  frame $filebrowse.up.left
-  frame $filebrowse.up.right
-  frame $filebrowse.down -relief groove -border 2
+  frame $filebrowse.top   ;#-relief raised -border 2
+  frame $filebrowse.buttons ;#-relief raised -border 2
+  frame $filebrowse.srch ;#-relief raised -border 2
 
-  pack $filebrowse.up -side top -fill x
-  pack $filebrowse.up.left -side left -fill both
-  pack $filebrowse.up.right -side left -fill both -expand 1
-  pack $filebrowse.down -side bottom -fill x
+  pack $filebrowse.top -side top -fill x
+  pack $filebrowse.buttons -side bottom -fill x
+  pack $filebrowse.srch -side bottom -fill x
 
-  label $filebrowse.lver1 -text "Version / Tag " -anchor w
-  # label $filebrowse.lver2 -anchor w -text "Version / Tag 2 (diff)"
+  label $filebrowse.top.verlbl -text "Version / Tag " -anchor w
+  entry $filebrowse.top.verent -relief sunken -textvariable checkout_version
+  button $filebrowse.srch.srchbtn -text Search -highlightbackground $cvsglb(bg) \
+    -command "search_listbox $filebrowse.list"
+  entry $filebrowse.srch.srchent -width 20 -textvariable cvsglb(searchstr)
+  bind $filebrowse.srch.srchent <Return> "search_listbox $filebrowse.list"
 
-  entry $filebrowse.tver1 -relief sunken -textvariable checkout_version
-
-  pack $filebrowse.lver1 \
-    -in $filebrowse.up.left -side top -fill x
-  pack $filebrowse.tver1 \
-    -in $filebrowse.up.right -side top -fill x
+  pack $filebrowse.top.verlbl -side left
+  pack $filebrowse.top.verent -side right -fill x -expand y
+  pack $filebrowse.srch.srchbtn -side left
+  pack $filebrowse.srch.srchent -side right -fill x -expand y
 
   #
   # Create buttons
@@ -83,9 +83,9 @@ proc browse_files {module} {
        $filebrowse.log \
        $filebrowse.branches \
        $filebrowse.tag \
-    -in $filebrowse.down -side left -ipadx 1 -ipady 1 -fill x -expand 1
+    -in $filebrowse.buttons -side left -ipadx 1 -ipady 1 -fill x -expand 1
   pack $filebrowse.quit \
-    -in $filebrowse.down -side left -ipadx 0 -ipady 0 -fill both -expand 1
+    -in $filebrowse.buttons -side left -ipadx 0 -ipady 0 -fill both -expand 1
 
   set_tooltips $filebrowse.view \
     {"View the selected file"}
@@ -124,6 +124,8 @@ proc browse_files {module} {
     regsub "^$module/" $file "" file
     $filebrowse.list insert end $file
   }
+
+  search_listbox_init
   gen_log:log T "LEAVE"
 }
 
@@ -181,7 +183,7 @@ proc module_fileview {toplevelname module} {
   foreach item [$listname curselection] {
     set v [$listname get $item]
     set f [filepath $module $v]
-    cvs_fileview_checkout [$toplevelname.tver1 get] "$f"
+    cvs_fileview_checkout [$toplevelname.top.verent get] "$f"
   }
   gen_log:log T "LEAVE"
 }

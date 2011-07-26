@@ -640,3 +640,50 @@ proc search_textwidget { wtx } {
   set cvsglb(last_searchstr) $cvsglb(searchstr)
 }
 
+proc search_listbox_init {} {
+# Initialize the globals for searches
+  global cvsglb
+
+  if {! [info exists cvsglb(searchstr)] } {
+    set cvsglb(searchstr) ""
+    set cvsglb(last_searchstr) ""
+  }
+  set cvsglb(lsearchidx) 0
+}
+
+proc search_listbox { lbx } {
+# Search a listbox
+  global cvsglb
+
+  gen_log:log T "ENTER ($lbx)"
+
+  gen_log:log D "search string = \"$cvsglb(searchstr)\""
+  gen_log:log D "search index = \"$cvsglb(lsearchidx)\""
+
+  set ndx [$lbx index end]
+  if {$cvsglb(searchstr) != $cvsglb(last_searchstr)} {
+    set cvsglb(lsearchidx) 0
+    for {set i 0} {$i < $ndx} {incr i} {
+      $lbx itemconfigure $i -background $cvsglb(bg)
+    }
+  }
+  if {$cvsglb(lsearchidx) > $ndx} {
+    gen_log:log D "No more matches"
+    return
+  }
+  for {set i $cvsglb(lsearchidx)} {$i < $ndx} {incr i} {
+    set str [$lbx get $i]
+    if {[string match "*$cvsglb(searchstr)*" $str]} {
+      gen_log:log D "MATCH $str $cvsglb(searchstr)"
+      set cvsglb(lsearchidx) $i
+      $lbx itemconfigure $i -background $cvsglb(hlbg)
+      $lbx see $i
+      break
+    } else {
+      $lbx itemconfigure $i -background $cvsglb(bg)
+    }
+  }
+  set cvsglb(last_searchstr) $cvsglb(searchstr)
+  incr cvsglb(lsearchidx)
+}
+
