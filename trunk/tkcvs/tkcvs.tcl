@@ -230,7 +230,7 @@ if {! [font actual $cvscfg(flashfont) -underline]} {
   puts "Underline font not working.  Trying $ffam $fsiz bold"
   set cvscfg(flashfont) [list $ffam -$fsiz bold]
 }
-puts "final flashfont: $cvscfg(flashfont)"
+#puts "final flashfont: $cvscfg(flashfont)"
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
 option add *ToolTip.foreground  "black" userDefault
