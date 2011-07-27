@@ -217,16 +217,20 @@ set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
 regsub -- {-} $fsiz {} fsiz
 
-set cvscfg(flashfont) [list $ffam -$fsiz underline]
+if {$tk_version < 8.5} {
+  set cvscfg(flashfont) [list $ffam $fsiz underline]
+} else {
+  set cvscfg(flashfont) [list $ffam -$fsiz underline]
+}
 #puts "\nflashfont: $cvscfg(flashfont)"
 #puts "actual flashfont: [font actual $cvscfg(flashfont)]"
 #puts "try underline: [font actual $cvscfg(flashfont) -underline]"
-# Prefer underline, but it isn't working at all in tk8.5 on linux
+# Prefer underline, but it isn't working at all in tk8.5.0 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
   puts "Underline font not working.  Trying $ffam $fsiz bold"
   set cvscfg(flashfont) [list $ffam -$fsiz bold]
 }
-#puts "final flashfont: $cvscfg(flashfont)"
+puts "final flashfont: $cvscfg(flashfont)"
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
 option add *ToolTip.foreground  "black" userDefault
