@@ -1260,6 +1260,10 @@ proc DirCanvas:makepopup {w} {
     -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Remove" \
     -command { subtract_dialog [workdir_list_files] }
+  $w.stat_cvsok_pop add command -label "Set Edit Flag" \
+     -command { cvs_edit [workdir_list_files] }
+  $w.stat_cvsok_pop add command -label "Unset Edit Flag" \
+     -command { cvs_unedit [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Set Binary Flag" \
      -command { cvs_binary [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Unset Binary Flag" \
