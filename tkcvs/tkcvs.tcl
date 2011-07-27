@@ -217,12 +217,13 @@ set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
 regsub -- {-} $fsiz {} fsiz
 
-set cvscfg(flashfont) [list $ffam $fsiz underline]
+set cvscfg(flashfont) [list $ffam -$fsiz underline]
 #puts "\nflashfont: $cvscfg(flashfont)"
 #puts "actual flashfont: [font actual $cvscfg(flashfont)]"
+#puts "try underline: [font actual $cvscfg(flashfont) -underline]"
 # Prefer underline, but it isn't working at all in tk8.5 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
-  #puts "Underline font not working.  Trying $ffam $fsiz bold"
+  puts "Underline font not working.  Trying $ffam $fsiz bold"
   set cvscfg(flashfont) [list $ffam -$fsiz bold]
 }
 #puts "final flashfont: $cvscfg(flashfont)"
