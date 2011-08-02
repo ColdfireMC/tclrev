@@ -227,7 +227,8 @@ if {$tk_version < 8.5} {
 #puts "try underline: [font actual $cvscfg(flashfont) -underline]"
 # Prefer underline, but it isn't working at all in tk8.5.0 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
-  puts "Underline font not working.  Trying $ffam $fsiz bold"
+  puts "Underline font not working.  Trying $ffam -$fsiz bold"
+  puts " (known problem in Tk 8.5.0 on Linux)"
   set cvscfg(flashfont) [list $ffam -$fsiz bold]
 }
 #puts "final flashfont: $cvscfg(flashfont)"
