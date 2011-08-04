@@ -220,7 +220,11 @@ regsub -- {-} $fsiz {} fsiz
 if {$tk_version < 8.5} {
   set cvscfg(flashfont) [list $ffam $fsiz underline]
 } else {
+  if {$tcl_platform(platform) eq "unix"} {
+    # Put the help menu back on the right
+    tk::classic::restore menu
   set cvscfg(flashfont) [list $ffam -$fsiz underline]
+  }
 }
 #puts "\nflashfont: $cvscfg(flashfont)"
 #puts "actual flashfont: [font actual $cvscfg(flashfont)]"
