@@ -217,13 +217,13 @@ set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
 regsub -- {-} $fsiz {} fsiz
 
-if {$tk_version < 8.5} {
-  set cvscfg(flashfont) [list $ffam $fsiz underline]
-} else {
-  if {$tcl_platform(platform) eq "unix"} {
+if {[tk windowingsystem] eq "x11"} {
+  if {$tk_version < 8.5} {
+    set cvscfg(flashfont) [list $ffam $fsiz underline]
+  } else {
+    set cvscfg(flashfont) [list $ffam -$fsiz underline]
     # Put the help menu back on the right
     tk::classic::restore menu
-  set cvscfg(flashfont) [list $ffam -$fsiz underline]
   }
 }
 #puts "\nflashfont: $cvscfg(flashfont)"
@@ -458,3 +458,5 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 } else {
   workdir_setup
 }
+
+
