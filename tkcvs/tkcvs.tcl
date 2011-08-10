@@ -167,24 +167,15 @@ if {! [get_cde_params]} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
 
-  #puts "bg $cvsglb(bg)"
-  #puts "canvbg $cvsglb(canvbg)"
-  #puts "hlbg $cvsglb(hlbg)"
-  if {[is_gray $cvsglb(hlbg)]} {
-    # Which is better? I like the yellow
-    #set cvsglb(hlbg) $cvsglb(sel)
-    set sel [option get . selectColor Background]
-    if {$sel != ""} {
-      #puts "option selectColor: $sel"
-      set  cvsglb(hlbg) $sel
-    } else {
-      set cvsglb(hlbg) "#ffec8b"
-    }
-    #puts "Changed hlbg so it won't be gray"
+  set sel [option get . selectColor Background]
+  if {$sel != ""} {
+    #puts "option selectColor: $sel"
+    set  cvsglb(hlbg) $sel
   }
-  if {[rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)] < 12000} {
-    set cvsglb(hlbg) [rgb_shadow  $cvsglb(hlbg)]
-    #puts "Changed hlbg because it's nearly the same as the canvas ($rgb_diff < 12000)"
+  set rgbdiff [rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)]
+  if {$rgbdiff < 12000} {
+    set cvsglb(hlbg) [rgb_shadow $cvsglb(hlbg)]
+    #puts "Changed hlbg because it's nearly the same as the canvas ($rgbdiff < 12000)"
   }
   #puts "hlbg $cvsglb(hlbg)"
    
@@ -211,9 +202,9 @@ if {! [get_cde_params]} {
 set cvscfg(flashfont) $cvscfg(listboxfont)
 set fsiz [lindex $cvscfg(listboxfont) 1]
 set lbf [font actual $cvscfg(listboxfont)]
-puts "$tcl_platform(os) $tk_patchLevel   [winfo server .]"
-puts "listboxfont: $cvscfg(listboxfont)"
-puts "actual listboxfont: $lbf"
+#puts "$tcl_platform(os) $tk_patchLevel   [winfo server .]"
+#puts "listboxfont: $cvscfg(listboxfont)"
+#puts "actual listboxfont: $lbf"
 set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
 regsub -- {-} $fsiz {} fsiz
@@ -234,8 +225,8 @@ if {[tk windowingsystem] eq "x11"} {
 }
 
 set cvscfg(flashfont) [list $ffam $fsiz underline]
-puts "requested flashfont: $cvscfg(flashfont)"
-puts "actual flashfont: [font actual $cvscfg(flashfont)]"
+#puts "requested flashfont: $cvscfg(flashfont)"
+#puts "actual flashfont: [font actual $cvscfg(flashfont)]"
 #puts "try underline: [font actual $cvscfg(flashfont) -underline]"
 # Prefer underline, but it isn't working at all in tk8.5.0 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
@@ -243,7 +234,7 @@ if {! [font actual $cvscfg(flashfont) -underline]} {
   puts " (known problem in Tk 8.5.0 on Linux)"
   set cvscfg(flashfont) [list $ffam $fsiz bold]
 }
-puts "final flashfont: $cvscfg(flashfont)"
+#puts "final flashfont: $cvscfg(flashfont)"
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
 option add *ToolTip.foreground  "black" userDefault
