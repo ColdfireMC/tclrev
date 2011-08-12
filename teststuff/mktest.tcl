@@ -1,207 +1,234 @@
 #!/bin/sh
-# the next line restarts using wish \
+# the next line restarts using tclsh \
 exec tclsh "$0" -- ${1+"$@"}
 
-proc cleanup_old {} {
+
+proc cleanup_old {root} {
   global env
 
-  #set oldfiles [glob -nocomplain -- Dir* File*]
-  #if {$oldfiles ne ""} {
-  #  puts "Deleting [llength $oldfiles] files -- $oldfiles"
-  #  eval file delete -force $oldfiles
-  #}
-
-  if {[ file isdirectory $env(CVSROOT) ]} {
-    if {[ info exists env(SystemDrive) ]} {
-      puts "Must be a PC"
-      file attributes -permissions u+w $env(CVSROOT)
-    }
-    file delete -force $env(CVSROOT)
+  if {[ file isdirectory $root ]} {
+    file delete -force $root
   }
   set oldirs [glob -nocomplain -- cvs_test*]
   foreach od $oldirs {
     puts "Deleting $od"
-    file delete -force-force  $od
+    file delete -force $od
   }
+  puts "==============================="
 }
 
-proc mkfiles {} {
-  set wordlist {barcode braid greynetic maze mountain pacman triangle vidwhacker wander}
+proc repository {Root topdir} {
+  global env
+  global WD
+
+  puts "==============================="
+  puts "MAKING REPOSITORY $env(CVSROOT)"
+
+  # Create the repository
+  file mkdir $Root
+  set ret [catch {eval "exec cvs -d $env(CVSROOT) init"} out]
+  if {$ret} {
+    puts $out
+    puts "COULD NOT CREATE REPOSITORY $env(CVSROOT)"
+    exit 1
+  }
+  puts "CREATED $env(CVSROOT)"
+
+  puts "==============================="
+  puts "IMPORTING FILETREE"
+  cd $topdir
+  # Import it
+  set ret [catch {eval "exec cvs -d $env(CVSROOT) import -m \"Imported\" $topdir BEGIN baseline-1_1_1"} out]
+  puts $out
+  puts "IMPORT FINISHED"
+  cd $WD
+}
+
+proc checkout_branch {proj tag} {
+  global env
+
+  puts "==============================="
+  puts "CHECKING OUT $tag"
+  # Check out 
+  if {$tag eq "trunk"} {
+    set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_$tag $proj"} out]
+  } else {
+    set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_$tag -r $tag $proj"} out]
+  }
+  puts $out
+  puts "CHECKOUT FINISHED"
+}
+
+proc newbranch {proj oldtag newtag} {
+  global env
+
+  set ret [catch {eval "exec cvs -d $env(CVSROOT) rtag -r $oldtag -b $newtag $proj"} out]
+  puts $out
+  puts "CHECKING OUT BRANCH"
+  set ret [catch {eval exec "cvs -d $env(CVSROOT) co -r $newtag -d ${proj}_$newtag cvs_test"} out]
+}
+
+proc writefile {filename wn} {
+  set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
+  set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
+
+  set ind [expr {int(rand()*[llength $wordlist($wn)])}]
+  set word [lindex $wordlist($wn) $ind]
+  puts " append \"$word\" to $filename"
+  set fp [open "$filename" a]
+  puts $fp $word
+  close $fp
+}
+
+proc addfile {filename branch} {
+  global env
+
+  puts "Add $filename on $branch"
+  set ret [catch {eval "exec cvs add $filename"} out]
+  puts $out
+}
+
+proc delfile {filename branch} {
+  global env
+
+  puts "Delete $filename on $branch"
+  file delete $filename
+  set ret [catch {eval "exec cvs delete $filename"} out]
+  puts $out
+}
+
+proc commit {comment} {
+  set ret [catch {eval "exec cvs commit -m \"$comment\""} out]
+  puts $out
+}
+
+proc mkfiles {topdir} {
+  global WD
+
+  puts "MAKING FILETREE"
+  # Make some files to put in the repository
+  file mkdir "$topdir"
+  cd $topdir
+
+  # Make some files each containing a random word
   foreach n {1 2 3} {
-    # Make some files each containing a random word
-    set ind [expr {int(rand()*[llength $wordlist])}]
-    set word [lindex $wordlist $ind]
-    set fp [open "File$n" w]
-    puts $fp $word
-    close $fp
+    writefile "File$n.txt" 1
   }
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
-    foreach n {1 2} {
-      set subf [file join $D "F$n"]
-      set ind [expr {int(rand()*[llength $wordlist])}]
-      set word [lindex $wordlist $ind]
-      set fp [open $subf w]
-      puts $fp $word
-      close $fp
+    foreach n {1 2 " 3"} {
+      set subf [file join $D "F$n.txt"]
+      writefile $subf 1
     }
-    set subf [file join $D "F 4"]
-    set fp [open $subf w]
-    puts $fp $word
-    close $fp
   }
+  cd $WD
 }
+
+proc modfiles {} {
+  global env
+
+  set tmpfile "list.tmp"
+
+  file delete -force $tmpfile
+  if {[ info exists env(SystemDrive) ]} {
+    puts "Must be a PC"
+    set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
+  } else {
+    set ret [catch {eval "exec find . -name 'F*.txt' -o -name CVS -prune -a -type f > $tmpfile"} out]
+  }
+  if {$ret} {
+    puts "Find failed"
+    puts $out
+    exit 1
+  }
+  set fl [open $tmpfile r]
+  while { [gets $fl item] >= 0} {
+    writefile $item 2
+  }
+  close $fl
+  file delete -force $tmpfile
+}
+
+##############################################
 
 set WD [pwd]
-set env(CVSROOT) [file join $WD "CVS_REPOSITORY"]
+set Root [file join $WD "CVS_REPOSITORY"]
+set env(CVSROOT) ":local:$Root"
 
-cleanup_old
+cleanup_old $Root
 
-puts "MAKING FILETREE"
-# Make some files to put in the repository
-file mkdir "cvs_test"
-cd cvs_test
-mkfiles
-cd $WD
+mkfiles "cvs_test"
+repository $Root "cvs_test"
+checkout_branch "cvs_test" "trunk"
 
-# Create the repository
-puts "MAKING REPOSITORY $env(CVSROOT)"
-file mkdir $env(CVSROOT)
-set ret [catch {eval "exec cvs -d $env(CVSROOT) init"} out]
-if {$ret} {
-  puts "COULD NOT CREATE REPOSITORY $env(CVSROOT)"
-  puts $out
-  exit 1
-}
-puts "CREATED $env(CVSROOT)"
-
-puts "IMPORTING FILETREE"
-cd cvs_test
-# Import it
-set ret [catch {eval "exec cvs -d $env(CVSROOT) import -m \"Imported\" cvs_test BEGIN baseline-1_1_1"} out]
-if {$ret} {
-  puts "Import failed"
-  puts $out
-  exit 1
-}
-puts "IMPORT FINISHED"
-cd $WD
-# clean up import directory
-file delete -force cvs_test
-
-puts "CHECKING OUT TRUNK"
-# Check out the trunk
-set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_trunk cvs_test"} out]
-if {$ret} {
-  puts "Checout failed"
-  puts $out
-  exit 1
-}
-puts "CHECKOUT FINISHED"
-
-exit
-
-
+puts "==============================="
 puts "First revision on trunk"
-# Make a modification on trunk
 cd cvs_test_trunk
-$WD/modtest
-# Random
-R=`puts $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
-puts $R > FT
-cvs add FT
-cvs commit -m "First revision on trunk"
+modfiles
+writefile Ftrunk.txt 2
+addfile Ftrunk.txt trunk
+commit "First revision on trunk"
 cd $WD
 
-# Branch
+puts "==============================="
 puts "MAKING BRANCH A"
-cvs -d $env(CVSROOT) rtag -b BranchA cvs_test
-puts "CHECKING OUT BRANCH"
-cvs -d $env(CVSROOT) co -r BranchA -d cvs_test_branchA cvs_test
+newbranch cvs_test HEAD branchA
 cd cvs_test_branchA
-# Random
-R=`puts $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
-puts $R > FA
-cvs add FA
-cvs commit -m "Add file F3 on BranchA"
+writefile FbranchA.txt 2
+addfile FbranchA.txt branchA
+commit "Add file FbranchA.txt on branchA"
 cd $WD
 
-# Make modifications on branch and trunk
+puts "==============================="
 puts "Second revision on trunk"
 cd cvs_test_trunk
-$WD/modtest
-cvs commit -m "Second revision on trunk"
-
-puts "First revision on Branch A"
-cd $WD/cvs_test_branchA
-$WD/modtest
-cvs commit -m "First revision on Branch A"
+modfiles
+commit "Second revision on trunk"
 cd $WD
 
+puts "==============================="
+puts "First revision on Branch A"
+cd $WD/cvs_test_branchA
+modfiles
+commit "First revision on branchA"
+cd $WD
+
+puts "==============================="
 # Make another modification on each
 puts "Third revision on trunk"
 cd cvs_test_trunk
-$WD/modtest
-cvs commit -m "Third revision on trunk"
+modfiles
+commit "Third revision on trunk"
+cd $WD
 
+puts "==============================="
 puts "Second revision on Branch A"
 cd $WD/cvs_test_branchA
-$WD/modtest
-cvs commit -m "Second revision on Branch A"
+modfiles
+commit "Second revision on branchA"
 cd $WD
 
 # Branch off of the branch
+puts "==============================="
 puts "MAKING BRANCH AA"
-cvs -d $env(CVSROOT) rtag -r BranchA -b BranchAA cvs_test
-puts "CHECKING OUT BRANCH AA"
-cvs -d $env(CVSROOT) co -r BranchAA -d cvs_test_branchAA cvs_test
-
-# Make a change on that branch
+newbranch cvs_test branchA branchAA
 cd cvs_test_branchAA
-$WD/modtest
-# Random
-R=`puts $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
-puts $R > FAA
-cvs add FAA
-rm FT; cvs delete FT
-cvs commit -m "Changes on Branch AA"
+modfiles
+writefile FbranchAA.txt 2
+addfile FbranchAA.txt branchAA
+delfile Ftrunk.txt branchAA
+commit "Changes on Branch AA"
 cd $WD
 
-# Branch
+# Branch B
+puts "==============================="
 puts "MAKING BRANCH B"
-cvs rtag -b BranchB cvs_test
-puts "CHECKING OUT BRANCH B"
-cvs -d $env(CVSROOT) co -r BranchB -d cvs_test_branchB cvs_test
+newbranch cvs_test HEAD branchB
 cd cvs_test_branchB
-$WD/modtest
-# Random
-R=`puts $WORDLIST | gawk '{print $((systime()%NF)+1)}'`
-puts $R > FB
-cvs add FB
-cvs commit -m "Add file FB on BranchB"
-cd $WD
-
-#### Stop here if you don't want the merges ####
-exit 
-
-cd $WD/cvs_test_trunk
-puts "MERGING A -> trunk for file File1"
-cvs update -j BranchA File1
-# Resolve conflicts
-sed -n '/^[a-z]/p' File1 > tmp; mv -f tmp File1
-cvs ci -m "Merged to trunk from BranchA" File1
-
-cd $WD/cvs_test_branchB
-puts "Merging trunk -> BranchB for file File1"
-cvs update -j HEAD File1
-# Resolve conflicts
-sed -n '/^[a-z]/p' File1 > tmp; mv -f tmp File1
-cvs ci -m "Merged from trunk to BranchB" File1
-
-# Make tags for tag-based merge arrow
-cd $WD/cvs_test_trunk
-cvs tag -r 1.2.2.2.2.1 mergeto_BranchA_20Nov08 File1
-cvs tag -r 1.2.2.2 mergefrom_BranchAA_20Nov08 File1
+modfiles
+writefile FbranchB.txt 1
+addfile FbranchB.txt branchB
+commit "Add file FB on BranchB"
 cd $WD
 
