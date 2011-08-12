@@ -8,7 +8,12 @@
 
 set auto_index(::annotate::new) [list source [file join $dir annotate.tcl]]
 set auto_index(::logcanvas::new) [list source [file join $dir branch_diagram.tcl]]
-set auto_index(get_cde_params) [list source [file join $dir cde_params.tcl]]
+set auto_index(cde_open_resourcefile) [list source [file join $dir style_params.tcl]]
+set auto_index(get_cde_params) [list source [file join $dir style_params.tcl]]
+set auto_index(get_gtk_params) [list source [file join $dir style_params.tcl]]
+set auto_index(set_fallback_params) [list source [file join $dir style_params.tcl]]
+set auto_index(shades) [list source [file join $dir style_params.tcl]]
+set auto_index(rgb_diff) [list source [file join $dir style_params.tcl]]
 set auto_index(cvs_notincvs) [list source [file join $dir cvs.tcl]]
 set auto_index(cvs_incvs) [list source [file join $dir cvs.tcl]]
 set auto_index(cvs_sandbox_runcmd) [list source [file join $dir cvs.tcl]]
