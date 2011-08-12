@@ -174,7 +174,7 @@ cd $WD
 puts "==============================="
 puts "MAKING BRANCH A"
 newbranch cvs_test HEAD branchA
-cd cvs_test_branchA
+cd $WD/cvs_test_branchA
 writefile FbranchA.txt 2
 addfile FbranchA.txt branchA
 commit "Add file FbranchA.txt on branchA"
@@ -182,7 +182,7 @@ cd $WD
 
 puts "==============================="
 puts "Second revision on trunk"
-cd cvs_test_trunk
+cd $WD/cvs_test_trunk
 modfiles
 commit "Second revision on trunk"
 cd $WD
@@ -197,7 +197,7 @@ cd $WD
 puts "==============================="
 # Make another modification on each
 puts "Third revision on trunk"
-cd cvs_test_trunk
+cd $WD/cvs_test_trunk
 modfiles
 commit "Third revision on trunk"
 cd $WD
@@ -213,7 +213,7 @@ cd $WD
 puts "==============================="
 puts "MAKING BRANCH AA"
 newbranch cvs_test branchA branchAA
-cd cvs_test_branchAA
+cd $WD/cvs_test_branchAA
 modfiles
 writefile FbranchAA.txt 2
 addfile FbranchAA.txt branchAA
@@ -225,7 +225,7 @@ cd $WD
 puts "==============================="
 puts "MAKING BRANCH B"
 newbranch cvs_test HEAD branchB
-cd cvs_test_branchB
+cd $WD/cvs_test_branchB
 modfiles
 writefile FbranchB.txt 1
 addfile FbranchB.txt branchB
