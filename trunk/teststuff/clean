@@ -1,17 +1,16 @@
 #!/bin/sh
+# the next line restarts using tclsh \
+exec tclsh "$0" -- ${1+"$@"}
 
-if [ -d $HOME/cvs_test_repos ]; then
-  if [ ! -z $SystemDrive ]; then
-    echo "Must be a PC"
-    chmod -R u+w $HOME/cvs_test_repos
-  fi
-  rm -rf $HOME/cvs_tst_repos
-fi
-if [ -d $HOME/svn_test_repos ]; then
-  chmod -R o+w $HOME/svn_test_repos
-  rm -rf $HOME/svn_tst_repos
-fi
+set WD [pwd]
+set Root [file join $WD "CVS_REPOSITORY"]
 
-rm -rf cvs_test_*
-rm -rf svn_test_*
+if {[ file isdirectory $Root ]} {
+  file delete -force $Root
+}
+set oldirs [glob -nocomplain -- cvs_test*]
+foreach od $oldirs {
+  puts "Deleting $od"
+  file delete -force $od
+}
 
