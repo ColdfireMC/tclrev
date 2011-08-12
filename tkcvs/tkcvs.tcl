@@ -122,30 +122,38 @@ if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
   cvserror "cvscfg(terminal) is required if cvscfg(use_cvseditor) is set"
 }
 
-if {! [get_cde_params]} {
-  # Fonts.
-  # First, see what the native menu font is.
-  # This makes it look "normal" on Windows.
-  . configure -menu .native
-  menu .native
-  set menufont [lindex [.native configure -font] 4]
-  destroy .native
-  # Hilight colors.  Get the colorful ones.
-  entry .testent
-  set cvsglb(textbg) white
-  set cvsglb(textfg) black
-  set cvsglb(readonlybg) gray96
-  set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
-  set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
-  if {$cvsglb(hlfg) eq {} } {
-    # This happens on the Mac
-    set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
-  }
-  set hlbg_rgb [winfo rgb .testent $cvsglb(hlbg)]
-  set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
-  destroy .testent
+# First, see what the native menu font is.
+# This makes it look "normal" on Windows.
+. configure -menu .native
+menu .native
+set menufont [lindex [.native configure -font] 4]
+destroy .native
 
-  # Find out what the default gui font is
+# Hilight colors.  Get the colorful ones.
+entry .testent
+set cvsglb(textbg) white
+set cvsglb(textfg) black
+set cvsglb(readonlybg) gray96
+set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
+set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
+if {$cvsglb(hlfg) eq {} } {
+  # This happens on the Mac
+  set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
+}
+#set hlbg_rgb [winfo rgb .testent $cvsglb(hlbg)]
+set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
+destroy .testent
+
+
+set WSYS [tk windowingsystem]
+#puts "Windowing sytem is $WSYS"
+set theme_system "unknown"
+
+if {$WSYS eq "x11"} {
+  # If X11, see if we can sense our environment somehow
+  if {[info exists ::env(DTUSERSESSION)]} {
+    if [get_cde_params] {
+      set theme_system "CDE" # Find out what the default gui font is
   label .testlbl -text "LABEL"
   if { [info exists cvscfg(guifont)] } {
     # If you set a guifont, I'm going to assume you want to use it for
@@ -167,38 +175,49 @@ if {! [get_cde_params]} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
 
-  set sel [option get . selectColor Background]
-  if {$sel != ""} {
-    #puts "option selectColor: $sel"
-    set  cvsglb(hlbg) $sel
+    }
+  } elseif {[info exists env(GTK_RC_FILES)]} {
+    if [get_gtk_params]  {
+      set theme_system "GTK"
+    }
   }
-  set rgbdiff [rgb_diff $cvsglb(hlbg) $cvsglb(canvbg)]
-  if {$rgbdiff < 12000} {
-    set cvsglb(hlbg) [rgb_shadow $cvsglb(hlbg)]
-    #puts "Changed hlbg because it's nearly the same as the canvas ($rgbdiff < 12000)"
+  if {$theme_system == "unknown"} {
+    set_fallback_params
   }
-  #puts "hlbg $cvsglb(hlbg)"
-   
-  scrollbar .scrl
-  destroy .scrl
+  if {$theme_system == "CDE"} {
+    option add *Menu.font TkHeadingFont
+    option add *Label.font MySmallerBold
+    set cvscfg(guifont) MySmallerBold
+  } else {
+    option add *Menu.font $cvscfg(guifont)
+    option add *Label.font $cvscfg(guifont)
+  }
 
-  if { ! [info exists cvscfg(dialogfont)] } {
-    set cvscfg(dialogfont) $cvscfg(guifont)
-  }
-
-  option add *Entry.background $cvsglb(textbg)
-  option add *Label.font $cvscfg(guifont) userDefault
-  option add *Button.font $cvscfg(guifont) userDefault
-  option add *Menu.font $menufont userDefault
-  option add *Scrollbar.troughColor $cvsglb(canvbg) userDefault
-  option add *Canvas.Background $cvsglb(canvbg) userDefault
+  #puts " Theme system: $theme_system"
 } else {
-  set lbf [font actual $cvscfg(listboxfont)]
-  set ffam [lindex $lbf 1]
-  set fsiz [lindex $lbf 3]
-  set cvscfg(listboxfont) [list $ffam $fsiz]
+  #set_fallback_params
+  # Find out what the default gui font is
+  label .testlbl -text "LABEL"
+  if { [info exists cvscfg(guifont)] } {
+    # If you set a guifont, I'm going to assume you want to use it for
+    # the menus too.
+    set menufont $cvscfg(guifont)
+  } else {
+    # Find out what the tk default is
+    set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+  }
+
+  set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
+  set cvsglb(bg) [lindex [.testlbl cget -background] 0]
+  set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+  set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
+  set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
+  destroy .testlbl
+  set cvscfg(dialogfont) TkCaptionFont
 }
 
+
+# Fonts for the canvas "listboxes"
 set cvscfg(flashfont) $cvscfg(listboxfont)
 set fsiz [lindex $cvscfg(listboxfont) 1]
 set lbf [font actual $cvscfg(listboxfont)]
