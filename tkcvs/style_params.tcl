@@ -1,0 +1,400 @@
+proc cde_open_resourcefile { file } {
+  set ans ""
+  set ret [catch {open $file r} ans]
+  if {$ret == 0} {
+    #puts "LEAVE cde_open_resourcefile ($ans)"
+    return $ans
+  } else {
+    #puts "LEAVE cde_open_resourcefile ($ans)"
+    #puts "Error: $ans"
+    return ""
+  }
+}
+
+proc get_cde_params { } {
+  global cvsglb
+  global cvscfg
+
+  #puts " CDE: Getting X11 options"
+  # Set defaults for all the necessary things
+  set bg [option get . background background]
+  set fg [option get . foreground foreground]
+  set guifont [option get . buttonFontList buttonFontList]
+  set txtfont [option get . FontSet FontSet]
+  set listfont [option get . textFontList textFontList]
+  # Use these defaults
+  set textbg $bg
+  set textfg $fg
+  #set textbg white
+  #set textfg black
+
+  # If any of these aren't set, I don't think we're in CDE after all
+  if {![string length $fg]} {return 0}
+  if {![string length $bg]} {return 0}
+  if {![string length $guifont]} {return 0}
+  if {![string length $txtfont]} {return 0}
+
+  set guifont [string trimright $guifont ":"]
+  set txtfont [string trimright $txtfont ":"]
+  set listfont [string trimright $txtfont ":"]
+  regsub {medium} $txtfont "bold" dlgfont
+
+  #puts " Background $bg"
+  #puts " Foreground $fg"
+  #puts " UI Font $guifont"
+  #puts " User Font $txtfont"
+  #puts " Text Font $listfont"
+  #puts " Dialog Font $dlgfont"
+
+  set cvscfg(guifont) $guifont
+  #set cvscfg(guifont) $dlgfont
+  #set cvscfg(listboxfont) $listfont
+  set cvscfg(dialogfont) $dlgfont
+
+  # If we can find the user's dt.resources file, we can find out the
+  # palette and background/foreground colors
+  #puts "TRYING TO READ dt.resources"
+  set fh ""
+  set palette ""
+  set cur_rsrc ~/.dt/sessions/current/dt.resources
+  set hom_rsrc ~/.dt/sessions/home/dt.resources
+  if {[file readable $cur_rsrc] && [file readable $hom_rsrc]} {
+    #puts " Both $cur_rsrc and $hom_rsrc exist."
+    # Both exist.  Use whichever is newer
+    if {[file mtime $cur_rsrc] > [file mtime $hom_rsrc]} {
+      #puts "  $cur_rsrc is newer"
+      set fh [cde_open_resourcefile $cur_rsrc]
+      if {$fh == ""} {
+        set fh [cde_open_resourcefile $hom_rsrc]
+      }
+    } else {
+      #puts "  $hom_rsrc is newer"
+      set fh [cde_open_resourcefile $hom_rsrc]
+      if {$fh == ""} {
+        set fh [cde_open_resourcefile $cur_rsrc]
+      }
+    }
+  } elseif {[file readable $cur_rsrc]} {
+    # Otherwise try current first
+    set fh [cde_open_resourcefile $cur_rsrc]
+    if {$fh == ""} {
+      set fh [cde_open_resourcefile $hom_rsrc]
+    }
+  } elseif {[file readable $hom_rsrc]} {
+    set fh [cde_open_resourcefile $hom_rsrc]
+  }
+  if {[string length $fh]} {
+    set palf ""
+    while {[gets $fh ln] != -1} {
+      regexp "^\\*background:\[ \t]*(.*)\$" $ln nil textbg
+      regexp "^\\*foreground:\[ \t]*(.*)\$" $ln nil textbg
+      regexp "^\\*0\\*ColorPalette:\[ \t]*(.*)\$" $ln nil palette
+      regexp "^Window.Color.Background:\[ \t]*(.*)\$" $ln nil textbg
+      regexp "^Window.Color.Foreground:\[ \t]*(.*)\$" $ln nil textfg
+    }
+    catch {close $fh}
+    #
+    # If the *0*ColorPalette setting was found above, try to find the
+    # indicated file in ~/.dt, $DTHOME, or /usr/dt.
+    #
+    if {[string length $palette]} {
+      foreach dtdir {/usr/dt /etc/dt ~/.dt} {
+        # This uses the last palette that we find
+        if {[file readable $dtdir/palettes/$palette]} {
+          set palf $dtdir/palettes/$palette
+        }
+      }
+      # puts "Using palette $palf"
+      if {[string length $palf]} {
+        if {![catch {open $palf r} fh]} {
+          #puts " Reading palette $palf"
+          gets $fh activetitle
+          gets $fh inactivetitle
+          gets $fh wkspc1
+          gets $fh textbg
+          gets $fh guibg   ;#(*.background) - default for tk under cde
+          gets $fh menubg
+          gets $fh wkspc4
+          gets $fh iconbg  ;#control panel bg too
+          close $fh
+
+          set hlbg $activetitle
+        }
+      }
+    }
+  } else {
+    puts stderr "Neither ~/.dt/sessions/current/dt.resources nor"
+    puts stderr "        ~/.dt/sessions/home/dt.resources was readable"
+    puts stderr "   Falling back to plain X"
+    return 0
+  }
+
+  set hlfg $fg
+  if {! [info exists hlbg]} {
+    set hlbg $bg
+  }
+
+  shades $bg
+
+  set cvsglb(bg) $bg
+  set cvsglb(fg) $fg
+  set cvsglb(readonlybg) $cvsglb(shadow)
+  set cvsglb(textbg) $textbg
+  set cvsglb(textfg) $textfg
+  set cvsglb(hlbg) $hlbg
+  set cvsglb(hlfg) $hlfg
+
+  #foreach key [array names cvsglb] {
+    #puts " $key\t$cvsglb($key)"
+  #}
+  #puts ""
+
+  option add *Button.activeBackground $bg
+  option add *Button.activeForeground $fg
+  option add *Canvas.Background $cvsglb(shadow)
+  option add *Canvas.Foreground black
+  option add *Dialog.Background $menubg
+  option add *Entry.Background $textbg
+  option add *Entry.Foreground $textfg
+  #option add *Entry.Background white
+  #option add *Entry.Foreground black
+  #option add *Entry.HighlightThickness 1
+  option add *Entry.highlightBackground $bg
+  option add *Entry.highlightColor $activetitle
+  #option add *HighlightThickness 0
+  option add *Listbox.background $textbg
+  option add *Listbox.selectBackground $hlbg
+  option add *Listbox.selectForeground $hlfg
+  option add *Menu.Background $menubg
+  option add *Menu.activeBackground $menubg
+  option add *Menu.activeForeground $fg
+  option add *Menu.borderWidth 1
+  option add *Menubutton.Background $menubg
+  option add *Menubutton.activeBackground $menubg
+  option add *Menubutton.activeForeground $fg
+  option add *Scrollbar.activeBackground $bg
+  option add *Scrollbar.troughColor $cvsglb(shadow)
+  option add *Text.Background $textbg
+  option add *Text.Foreground $textfg
+  #option add *Text.HighlightThickness 2
+  option add *Text.highlightBackground $bg
+  option add *Text.highlightColor $wkspc4
+  option add *selectColor $activetitle
+
+  return 1
+}
+
+proc get_gtk_params { } {
+  global env
+  global cvsglb
+  global cvscfg
+
+  #puts " GTK: Getting X11 options"
+
+  set pipe [open "|xrdb -q" r]
+  while {[gets $pipe ln] > -1} {
+    switch -glob -- $ln {
+      {\*Toplevel.background:*} {
+        #puts $ln
+        set bg [lindex $ln 1]
+      }
+      {\*Toplevel.foreground:*} {
+        #puts $ln
+        set fg [lindex $ln 1]
+      }
+      {\*Text.background:*} {
+        #puts $ln
+        set textbg [lindex $ln 1]
+      }
+      {\*Text.foreground:*} {
+        #puts $ln
+        set textfg [lindex $ln 1]
+      }
+      {\*Text.selectBackground:*} {
+        #puts $ln
+        set hlbg [lindex $ln 1]
+      }
+      {\*Text.selectForeground:*} {
+        #puts $ln
+        set hlfg [lindex $ln 1]
+      }
+    }
+  }
+  close $pipe
+
+  if {! [info exists bg] || ! [info exists fg]} {
+    #puts " Falling back to plain X"
+    return 0
+  }
+
+  shades $bg
+
+  set cvsglb(bg) $bg
+  set cvsglb(fg) $fg
+  set cvsglb(readonlybg) $cvsglb(shadow)
+  set cvsglb(textbg) $textbg
+  set cvsglb(textfg) $textfg
+  set cvsglb(hlbg) $hlbg
+  set cvsglb(hlfg) $hlfg
+
+  set cvscfg(guifont) TkHeadingFont
+  #set cvscfg(listboxfont) TkFixedFont
+  set cvscfg(dialogfont) TkCaptionFont
+
+  #foreach key [array names cvsglb] {
+    #puts " $key\t$cvsglb($key)"
+  #}
+  #puts ""
+
+  # These are already set, but maybe I like mine better
+  option add *Canvas.Background $cvsglb(shadow)
+  option add *Canvas.Foreground black
+  option add *Entry.Background $textbg
+  option add *Entry.Foreground $textfg
+  option add *Entry.selectBackground $hlbg
+  option add *Entry.selectForeground $hlfg
+  option add *Listbox.background $textbg
+  option add *Listbox.selectBackground $hlbg
+  option add *Listbox.selectForeground $hlfg
+  option add *Text.Background $textbg
+  option add *Text.Foreground $textfg
+  option add *Text.selectBackground $hlbg
+  option add *Text.selectForeground $hlfg
+  option add *selectColor $hlbg
+  #option add *Menu.activeBackground $bg
+  option add *Menu.activeForeground $fg
+  option add *Menubutton.Background $bg
+  #option add *Menubutton.activeBackground $bg
+  option add *Menubutton.activeForeground $fg
+
+  return 1
+}
+
+proc set_fallback_params {} {
+  global cvsglb
+  global cvscfg
+
+  #set bg "#bebebe"
+  set bg "#d3d3d3"
+  set fg "#000000"
+  set hlbg "#4a6984"
+  set hlfg "#ffffff"
+  set textbg "#ffffff"
+  set textfg "#000000"
+
+  shades $bg
+
+  set cvsglb(bg) $bg
+  set cvsglb(fg) $fg
+  set cvsglb(readonlybg) $cvsglb(shadow)
+  set cvsglb(textbg) $textbg
+  set cvsglb(textfg) $textfg
+  set cvsglb(hlbg) $hlbg
+  set cvsglb(hlfg) $hlfg
+  set cvsglb(light) "#ececec"
+
+  font configure TkHeadingFont -size 9
+  set cvscfg(guifont) TkHeadingFont
+  #set cvscfg(guifont) TkCaptionFont
+  #set cvscfg(listboxfont) TkFixedFont
+  set cvscfg(dialogfont) TkCaptionFont
+
+  #foreach key [array names cvsglb] {
+    #puts " $key\t$cvsglb($key)"
+  #}
+  #puts ""
+
+  option add *Background $bg
+  option add *Canvas.Background $cvsglb(shadow)
+  option add *Canvas.Foreground black
+  option add *Entry.Background $textbg
+  option add *Entry.Foreground $textfg
+  option add *Entry.selectBackground $hlbg
+  option add *Entry.selectForeground $hlfg
+  option add *Listbox.background $textbg
+  option add *Listbox.selectBackground $hlbg
+  option add *Listbox.selectForeground $hlfg
+  option add *Text.Background $textbg
+  option add *Text.Foreground $textfg
+  option add *Text.selectBackground $hlbg
+  option add *Text.selectForeground $hlfg
+  option add *selectColor $hlbg
+  option add *Menu.Background $bg
+  #option add *Menu.activeBackground $bg
+  option add *Menu.activeForeground $fg
+  option add *Menubutton.Background $bg
+  #option add *Menubutton.activeBackground $bg
+  option add *Menubutton.activeForeground $fg
+}
+
+proc shades {bg} {
+  global cvsglb
+
+  set rgb_bg [winfo rgb . $bg]
+  set bg0 [expr [lindex $rgb_bg 0] / 256 ]
+  set bg1 [expr [lindex $rgb_bg 1] / 256 ]
+  set bg2 [expr [lindex $rgb_bg 2] / 256 ]
+
+  set factor .9
+  set shadow [format #%02x%02x%02x [expr int($factor * $bg0)] \
+                                   [expr int($factor * $bg1)] \
+                                   [expr int($factor * $bg2)]]
+
+  set factor .3
+  set darkest [format #%02x%02x%02x [expr int($factor * $bg0)] \
+                                    [expr int($factor * $bg1)] \
+                                    [expr int($factor * $bg2)]]
+
+  set inv0 [expr 255 - $bg0]
+  set inv1 [expr 255 - $bg1]
+  set inv2 [expr 255 - $bg2]
+
+  set factor .2
+  set add0 [expr int($factor*$inv0)]
+  set add1 [expr int($factor*$inv1)]
+  set add2 [expr int($factor*$inv2)]
+
+  set light [format #%02x%02x%02x [expr {$bg0 + $add0}] \
+                                  [expr {$bg1 + $add1}] \
+                                  [expr {$bg2 + $add2}]]
+
+  set factor .5
+  set add0 [expr int($factor*$inv0)]
+  set add1 [expr int($factor*$inv1)]
+  set add2 [expr int($factor*$inv2)]
+
+  set lighter [format #%02x%02x%02x [expr {$bg0 + $add0}] \
+                                  [expr {$bg1 + $add1}] \
+                                  [expr {$bg2 + $add2}]]
+
+  set cvsglb(shadow) $shadow
+  set cvsglb(canvbg) $shadow
+  set cvsglb(darkest) $darkest
+  set cvsglb(light) $light
+  set cvsglb(lighter) $lighter
+}
+
+proc rgb_diff {c1 c2} {
+  set rgb_c1 [winfo rgb . $c1]
+  set rgb_c2 [winfo rgb . $c2]
+
+  set r1 [lindex $rgb_c1 0]
+  set g1 [lindex $rgb_c1 1]
+  set b1 [lindex $rgb_c1 2]
+  set r2 [lindex $rgb_c2 0]
+  set g2 [lindex $rgb_c2 1]
+  set b2 [lindex $rgb_c2 2]
+  #puts "$r1 $g1 $b1"
+  #puts "$r2 $g2 $b2"
+
+  set maxdiff 0
+  set dr [expr {abs($r2 - $r1)}]
+  if {$dr > $maxdiff} {set maxdiff $dr}
+  set dg [expr {abs($g2 - $g1)}]
+  if {$dg > $maxdiff} {set maxdiff $dg}
+  set db [expr {abs($b2 - $b1)}]
+  if {$db > $maxdiff} {set maxdiff $db}
+  #puts "maxdiff: $maxdiff"
+  return $maxdiff
+}
+
