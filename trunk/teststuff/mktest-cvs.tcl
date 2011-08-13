@@ -27,7 +27,9 @@ proc repository {Root topdir} {
 
   # Create the repository
   file mkdir $Root
-  set ret [catch {eval "exec cvs -d $env(CVSROOT) init"} out]
+  set exec_cmd "cvs -d $env(CVSROOT) init"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   if {$ret} {
     puts $out
     puts "COULD NOT CREATE REPOSITORY $env(CVSROOT)"
@@ -39,7 +41,9 @@ proc repository {Root topdir} {
   puts "IMPORTING FILETREE"
   cd $topdir
   # Import it
-  set ret [catch {eval "exec cvs -d $env(CVSROOT) import -m \"Imported\" $topdir BEGIN baseline-1_1_1"} out]
+  set exec_cmd "cvs -d $env(CVSROOT) import -m \"Imported\" $topdir BEGIN baseline-1_1_1"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   puts "IMPORT FINISHED"
   cd $WD
@@ -52,10 +56,12 @@ proc checkout_branch {proj tag} {
   puts "CHECKING OUT $tag"
   # Check out 
   if {$tag eq "trunk"} {
-    set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_$tag $proj"} out]
+    set exec_cmd "cvs -d $env(CVSROOT) co -d cvs_test_$tag $proj"
   } else {
-    set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_$tag -r $tag $proj"} out]
+    set exec_cmd "cvs -d $env(CVSROOT) co -d cvs_test_$tag -r $tag $proj"
   }
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   puts "CHECKOUT FINISHED"
 }
@@ -63,10 +69,15 @@ proc checkout_branch {proj tag} {
 proc newbranch {proj oldtag newtag} {
   global env
 
-  set ret [catch {eval "exec cvs -d $env(CVSROOT) rtag -r $oldtag -b $newtag $proj"} out]
+  set exec_cmd "cvs -d $env(CVSROOT) rtag -r $oldtag -b $newtag $proj"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
+
   puts "CHECKING OUT BRANCH"
-  set ret [catch {eval exec "cvs -d $env(CVSROOT) co -r $newtag -d ${proj}_$newtag cvs_test"} out]
+  set exec_cmd "cvs -d $env(CVSROOT) co -r $newtag -d ${proj}_$newtag cvs_test"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
 }
 
 proc writefile {filename wn} {
@@ -85,7 +96,9 @@ proc addfile {filename branch} {
   global env
 
   puts "Add $filename on $branch"
-  set ret [catch {eval "exec cvs add $filename"} out]
+  set exec_cmd "cvs add $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
@@ -94,12 +107,16 @@ proc delfile {filename branch} {
 
   puts "Delete $filename on $branch"
   file delete $filename
-  set ret [catch {eval "exec cvs delete $filename"} out]
+  set exec_cmd "cvs delete $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
 proc commit {comment} {
-  set ret [catch {eval "exec cvs commit -m \"$comment\""} out]
+  set exec_cmd "cvs commit -m \"$comment\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
@@ -154,7 +171,7 @@ proc modfiles {} {
 ##############################################
 
 set WD [pwd]
-set Root [file join $WD "CVS_REPOSITORY"]
+set Root [file join $env(HOME) "CVS_REPOSITORY"]
 set env(CVSROOT) ":local:$Root"
 
 cleanup_old $Root
