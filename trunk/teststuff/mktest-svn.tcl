@@ -10,7 +10,7 @@ proc cleanup_old {root} {
     puts "Deleting $root"
     file delete -force $root
   }
-  set oldirs [glob -nocomplain -- cvs_test*]
+  set oldirs [glob -nocomplain -- svn_test*]
   foreach od $oldirs {
     puts "Deleting $od"
     file delete -force $od
@@ -19,54 +19,53 @@ proc cleanup_old {root} {
 }
 
 proc repository {Root topdir} {
-  global env
-  global WD
+  global taghead
 
   puts "==============================="
-  puts "MAKING REPOSITORY $env(CVSROOT)"
+  puts "MAKING REPOSITORY $Root"
 
   # Create the repository
   file mkdir $Root
-  set ret [catch {eval "exec cvs -d $env(CVSROOT) init"} out]
+  set ret [catch {eval "exec svnadmin create $Root"} out]
   if {$ret} {
     puts $out
-    puts "COULD NOT CREATE REPOSITORY $env(CVSROOT)"
+    puts "COULD NOT CREATE REPOSITORY $Root"
     exit 1
   }
-  puts "CREATED $env(CVSROOT)"
+  puts "CREATED $Root"
 
+  file mkdir [file join $topdir $taghead(trunk)]
+  file mkdir [file join $topdir $taghead(branch)]
+  file mkdir [file join $topdir $taghead(tag)]
   puts "==============================="
   puts "IMPORTING FILETREE"
-  cd $topdir
-  # Import it
-  set ret [catch {eval "exec cvs -d $env(CVSROOT) import -m \"Imported\" $topdir BEGIN baseline-1_1_1"} out]
+  set ret [catch {eval "exec svn import $topdir file:///$Root -m \"Imported\""} out]
   puts $out
   puts "IMPORT FINISHED"
-  cd $WD
 }
 
-proc checkout_branch {proj tag} {
-  global env
+proc checkout_branch {Root tag} {
+  global taghead
 
   puts "==============================="
   puts "CHECKING OUT $tag"
   # Check out 
-  if {$tag eq "trunk"} {
-    set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_$tag $proj"} out]
+  if {$tag eq $taghead(trunk)} {
+    set ret [catch {eval "exec svn co file:///$Root/$taghead(trunk) svn_test_$tag"} out]
   } else {
-    set ret [catch {eval "exec cvs -d $env(CVSROOT) co -d cvs_test_$tag -r $tag $proj"} out]
+    set ret [catch {eval "exec svn co file:///$Root/$taghead(branch)/$tag svn_test_$tag"} out]
   }
   puts $out
   puts "CHECKOUT FINISHED"
 }
 
-proc newbranch {proj oldtag newtag} {
-  global env
+proc newbranch {Root oldtag newtag} {
+  global taghead
 
-  set ret [catch {eval "exec cvs -d $env(CVSROOT) rtag -r $oldtag -b $newtag $proj"} out]
+  set ret [catch {eval "exec svn copy file:///$Root/$oldtag file:///$Root/$taghead(branch)/$newtag  -m \"Branch $newtag\""} out]
   puts $out
   puts "CHECKING OUT BRANCH"
-  set ret [catch {eval exec "cvs -d $env(CVSROOT) co -r $newtag -d ${proj}_$newtag cvs_test"} out]
+  set ret [catch {eval exec "svn co file:///$Root/$taghead(branch)/$newtag"} out]
 }
 
 proc writefile {filename wn} {
@@ -85,7 +84,7 @@ proc addfile {filename branch} {
   global env
 
   puts "Add $filename on $branch"
-  set ret [catch {eval "exec cvs add $filename"} out]
+  set ret [catch {eval "exec svn add $filename"} out]
   puts $out
 }
 
@@ -99,17 +98,20 @@ proc delfile {filename branch} {
 }
 
 proc commit {comment} {
-  set ret [catch {eval "exec cvs commit -m \"$comment\""} out]
+  set ret [catch {eval "exec svn commit -m \"$comment\""} out]
   puts $out
 }
 
 proc mkfiles {topdir} {
   global WD
+  global taghead
 
   puts "MAKING FILETREE"
   # Make some files to put in the repository
-  file mkdir "$topdir"
-  cd $topdir
+  set trunkhead [file join $topdir $taghead(trunk)]
+  file mkdir $trunkhead
+
+  cd $trunkhead
 
   # Make some files each containing a random word
   foreach n {1 2 3} {
@@ -154,58 +156,65 @@ proc modfiles {} {
 ##############################################
 
 set WD [pwd]
-set Root [file join $WD "CVS_REPOSITORY"]
-set env(CVSROOT) ":local:$Root"
+set SVNROOT [file join $WD "SVN_REPOSITORY"]
+set taghead(trunk) "trunk"
+set taghead(branch) "branches"
+set taghead(tag) "tags"
 
-cleanup_old $Root
+cleanup_old $SVNROOT
 
-mkfiles "cvs_test"
-repository $Root "cvs_test"
-checkout_branch "cvs_test" "trunk"
+mkfiles "svn_test"
+repository $SVNROOT "svn_test"
+checkout_branch "$SVNROOT" "$taghead(trunk)"
+
 
 puts "==============================="
-puts "First revision on trunk"
-cd cvs_test_trunk
+puts "First revision on $taghead(trunk)"
+cd svn_test_$taghead(trunk)
 modfiles
 writefile Ftrunk.txt 2
-addfile Ftrunk.txt trunk
-commit "First revision on trunk"
+addfile Ftrunk.txt $taghead(trunk)
+# When commit, get "svn: '/home/dorothyr/tksvn/teststuff' has no ancestry information"
+# This is because tkstuff itself is in a (different) .svn root.
+commit "First revision on $taghead(trunk)"
 cd $WD
+
+exit
 
 puts "==============================="
 puts "MAKING BRANCH A"
-newbranch cvs_test HEAD branchA
-cd $WD/cvs_test_branchA
+newbranch svn_test HEAD branchA
+cd $WD/svn_test_branchA
 writefile FbranchA.txt 2
 addfile FbranchA.txt branchA
 commit "Add file FbranchA.txt on branchA"
 cd $WD
 
 puts "==============================="
-puts "Second revision on trunk"
-cd $WD/cvs_test_trunk
+puts "Second revision on $taghead(trunk)"
+cd $WD/svn_test_trunk
 modfiles
-commit "Second revision on trunk"
+commit "Second revision on $taghead(trunk)"
 cd $WD
 
 puts "==============================="
 puts "First revision on Branch A"
-cd $WD/cvs_test_branchA
+cd $WD/svn_test_branchA
 modfiles
 commit "First revision on branchA"
 cd $WD
 
 puts "==============================="
 # Make another modification on each
-puts "Third revision on trunk"
-cd $WD/cvs_test_trunk
+puts "Third revision on $taghead(trunk)"
+cd $WD/svn_test_trunk
 modfiles
-commit "Third revision on trunk"
+commit "Third revision on $taghead(trunk)"
 cd $WD
 
 puts "==============================="
 puts "Second revision on Branch A"
-cd $WD/cvs_test_branchA
+cd $WD/svn_test_branchA
 modfiles
 commit "Second revision on branchA"
 cd $WD
@@ -213,8 +222,8 @@ cd $WD
 # Branch off of the branch
 puts "==============================="
 puts "MAKING BRANCH AA"
-newbranch cvs_test branchA branchAA
-cd $WD/cvs_test_branchAA
+newbranch svn_test branchA branchAA
+cd $WD/svn_test_branchAA
 modfiles
 writefile FbranchAA.txt 2
 addfile FbranchAA.txt branchAA
@@ -225,7 +234,7 @@ cd $WD
 # Branch B
 puts "==============================="
 puts "MAKING BRANCH B"
-newbranch cvs_test HEAD branchB
+newbranch svn_test HEAD branchB
 cd $WD/cvs_test_branchB
 modfiles
 writefile FbranchB.txt 1
