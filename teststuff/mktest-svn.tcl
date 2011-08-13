@@ -26,7 +26,9 @@ proc repository {Root topdir} {
 
   # Create the repository
   file mkdir $Root
-  set ret [catch {eval "exec svnadmin create $Root"} out]
+  set exec_cmd "svnadmin create $Root"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   if {$ret} {
     puts $out
     puts "COULD NOT CREATE REPOSITORY $Root"
@@ -39,7 +41,9 @@ proc repository {Root topdir} {
   file mkdir [file join $topdir $taghead(tag)]
   puts "==============================="
   puts "IMPORTING FILETREE"
-  set ret [catch {eval "exec svn import $topdir file:///$Root -m \"Imported\""} out]
+  set exec_cmd "svn import $topdir file:///$Root -m \"Imported\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   puts "IMPORT FINISHED"
 }
@@ -51,10 +55,12 @@ proc checkout_branch {Root tag} {
   puts "CHECKING OUT $tag"
   # Check out 
   if {$tag eq $taghead(trunk)} {
-    set ret [catch {eval "exec svn co file:///$Root/$taghead(trunk) svn_test_$tag"} out]
+    set exec_cmd "svn co file:///$Root/$taghead(trunk) svn_test_$tag"
   } else {
-    set ret [catch {eval "exec svn co file:///$Root/$taghead(branch)/$tag svn_test_$tag"} out]
+    set exec_cmd "svn co file:///$Root/$taghead(branch)/$tag svn_test_$tag"
   }
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   puts "CHECKOUT FINISHED"
 }
@@ -62,10 +68,18 @@ proc checkout_branch {Root tag} {
 proc newbranch {Root oldtag newtag} {
   global taghead
 
-  set ret [catch {eval "exec svn copy file:///$Root/$oldtag file:///$Root/$taghead(branch)/$newtag  -m \"Branch $newtag\""} out]
+  if {$oldtag eq $taghead(trunk)} {
+    set exec_cmd "svn copy file:///$Root/$oldtag file:///$Root/$taghead(branch)/$newtag  -m \"Branch $newtag\""
+  } else {
+    set exec_cmd "svn copy file:///$Root/$taghead(branch)/$oldtag file:///$Root/$taghead(branch)/$newtag  -m \"Branch $newtag\""
+  }
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   puts "CHECKING OUT BRANCH"
-  set ret [catch {eval exec "svn co file:///$Root/$taghead(branch)/$newtag"} out]
+  set exec_cmd "svn co file:///$Root/$taghead(branch)/$newtag svn_test_$newtag"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
 }
 
 proc writefile {filename wn} {
@@ -84,7 +98,9 @@ proc addfile {filename branch} {
   global env
 
   puts "Add $filename on $branch"
-  set ret [catch {eval "exec svn add $filename"} out]
+  set exec_cmd "svn add $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
@@ -93,12 +109,16 @@ proc delfile {filename branch} {
 
   puts "Delete $filename on $branch"
   file delete $filename
-  set ret [catch {eval "exec cvs delete $filename"} out]
+  set exec_cmd "svn delete $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
 proc commit {comment} {
-  set ret [catch {eval "exec svn commit -m \"$comment\""} out]
+  set exec_cmd "svn commit -m \"$comment\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
@@ -138,7 +158,7 @@ proc modfiles {} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
-    set ret [catch {eval "exec find . -name 'F*.txt' -o -name CVS -prune -a -type f > $tmpfile"} out]
+    set ret [catch {eval "exec find . -name 'F*.txt' -o -name .svn -prune -a -type f > $tmpfile"} out]
   }
   if {$ret} {
     puts "Find failed"
@@ -156,7 +176,7 @@ proc modfiles {} {
 ##############################################
 
 set WD [pwd]
-set SVNROOT [file join $WD "SVN_REPOSITORY"]
+set SVNROOT [file join $env(HOME) "SVN_REPOSITORY"]
 set taghead(trunk) "trunk"
 set taghead(branch) "branches"
 set taghead(tag) "tags"
@@ -175,15 +195,14 @@ modfiles
 writefile Ftrunk.txt 2
 addfile Ftrunk.txt $taghead(trunk)
 # When commit, get "svn: '/home/dorothyr/tksvn/teststuff' has no ancestry information"
-# This is because tkstuff itself is in a (different) .svn root.
+# This is because tkstuff itself is in a (different) .svn root.  It doesn't happen if
+# you put the repository outside this tree.
 commit "First revision on $taghead(trunk)"
 cd $WD
 
-exit
-
 puts "==============================="
 puts "MAKING BRANCH A"
-newbranch svn_test HEAD branchA
+newbranch $SVNROOT $taghead(trunk) branchA
 cd $WD/svn_test_branchA
 writefile FbranchA.txt 2
 addfile FbranchA.txt branchA
@@ -221,8 +240,7 @@ cd $WD
 
 # Branch off of the branch
 puts "==============================="
-puts "MAKING BRANCH AA"
-newbranch svn_test branchA branchAA
+newbranch $SVNROOT branchA branchAA
 cd $WD/svn_test_branchAA
 modfiles
 writefile FbranchAA.txt 2
@@ -234,8 +252,8 @@ cd $WD
 # Branch B
 puts "==============================="
 puts "MAKING BRANCH B"
-newbranch svn_test HEAD branchB
-cd $WD/cvs_test_branchB
+newbranch $SVNROOT $taghead(trunk) branchB
+cd $WD/svn_test_branchB
 modfiles
 writefile FbranchB.txt 1
 addfile FbranchB.txt branchB
