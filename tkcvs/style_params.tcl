@@ -23,10 +23,10 @@ proc get_cde_params { } {
   set txtfont [option get . FontSet FontSet]
   set listfont [option get . textFontList textFontList]
   # Use these defaults
-  set textbg $bg
-  set textfg $fg
-  #set textbg white
-  #set textfg black
+  #set textbg $bg
+  #set textfg $fg
+  set textbg white
+  set textfg black
 
   # If any of these aren't set, I don't think we're in CDE after all
   if {![string length $fg]} {return 0}
@@ -144,11 +144,6 @@ proc get_cde_params { } {
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
 
-  #foreach key [array names cvsglb] {
-    #puts " $key\t$cvsglb($key)"
-  #}
-  #puts ""
-
   option add *Button.activeBackground $bg
   option add *Button.activeForeground $fg
   option add *Canvas.Background $cvsglb(shadow)
@@ -223,7 +218,7 @@ proc get_gtk_params { } {
   close $pipe
 
   if {! [info exists bg] || ! [info exists fg]} {
-    #puts " Falling back to plain X"
+    puts " Falling back to plain X"
     return 0
   }
 
@@ -236,15 +231,6 @@ proc get_gtk_params { } {
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
-
-  set cvscfg(guifont) TkHeadingFont
-  #set cvscfg(listboxfont) TkFixedFont
-  set cvscfg(dialogfont) TkCaptionFont
-
-  #foreach key [array names cvsglb] {
-    #puts " $key\t$cvsglb($key)"
-  #}
-  #puts ""
 
   # These are already set, but maybe I like mine better
   option add *Canvas.Background $cvsglb(shadow)
@@ -260,12 +246,20 @@ proc get_gtk_params { } {
   option add *Text.Foreground $textfg
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
-  option add *selectColor $hlbg
+  #option add *selectColor $hlbg
   #option add *Menu.activeBackground $bg
-  option add *Menu.activeForeground $fg
-  option add *Menubutton.Background $bg
+  #option add *Menu.activeForeground $fg
+  #option add *Menubutton.Background $bg
   #option add *Menubutton.activeBackground $bg
-  option add *Menubutton.activeForeground $fg
+  #option add *Menubutton.activeForeground $fg
+
+  # This works for the Tk 8.5 menu checkboxes
+  option add *Menu.selectColor $fg
+  # This affects UI checkbuttons, not the ones on menus
+  # and is the color of the box, not the checkmark
+  option add *Checkbutton.selectColor $bg
+
+  option add *Button.activeBackground $cvsglb(light)
 
   return 1
 }
@@ -291,20 +285,17 @@ proc set_fallback_params {} {
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
-  set cvsglb(light) "#ececec"
+  #set cvsglb(light) "#ececec"
 
-  font configure TkHeadingFont -size 9
-  set cvscfg(guifont) TkHeadingFont
-  #set cvscfg(guifont) TkCaptionFont
-  #set cvscfg(listboxfont) TkFixedFont
-  set cvscfg(dialogfont) TkCaptionFont
+  if { ! [catch { font configure TkHeadingFont -size 9 }] } {
+    set cvscfg(guifont) TkHeadingFont
+  }
 
-  #foreach key [array names cvsglb] {
-    #puts " $key\t$cvsglb($key)"
-  #}
-  #puts ""
+  if {! [info exists cvscfg(dialogfont)]} {
+    set cvscfg(dialogfont) $cvscfg(guifont)
+  }
 
-  option add *Background $bg
+  #option add *Background $bg
   option add *Canvas.Background $cvsglb(shadow)
   option add *Canvas.Foreground black
   option add *Entry.Background $textbg
@@ -318,13 +309,23 @@ proc set_fallback_params {} {
   option add *Text.Foreground $textfg
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
-  option add *selectColor $hlbg
-  option add *Menu.Background $bg
-  #option add *Menu.activeBackground $bg
+  #option add *selectColor $hlbg
+  #option add *Menu.Background $bg
+
+  # Keep them from fading out when you mouse over them
+  option add *Button.activeForeground $fg
+  #option add *Button.activeBackground $bg
   option add *Menu.activeForeground $fg
-  option add *Menubutton.Background $bg
+  #option add *Menubutton.Background $bg
   #option add *Menubutton.activeBackground $bg
-  option add *Menubutton.activeForeground $fg
+  #option add *Menubutton.activeForeground $fg
+
+  # This works for the Tk 8.5 menu checkboxes
+  option add *Menu.selectColor $fg
+  # This affects UI checkbuttons, not the ones on menus
+  # and is the color of the box, not the checkmark
+  option add *Checkbutton.selectColor $bg
+
 }
 
 proc shades {bg} {
@@ -390,7 +391,7 @@ proc rgb_diff {c1 c2} {
   set maxdiff 0
   set dr [expr {abs($r2 - $r1)}]
   if {$dr > $maxdiff} {set maxdiff $dr}
-  set dg [expr {abs($g2 - $g1)}]
+  set dg [estyle.tgzxpr {abs($g2 - $g1)}]
   if {$dg > $maxdiff} {set maxdiff $dg}
   set db [expr {abs($b2 - $b1)}]
   if {$db > $maxdiff} {set maxdiff $db}
