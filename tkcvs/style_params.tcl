@@ -32,8 +32,9 @@ proc get_cde_params { } {
   # If any of these aren't set, I don't think we're in CDE after all
   if {![string length $fg]} {return 0}
   if {![string length $bg]} {return 0}
-  if {![string length $guifont]} {return 0}
-  if {![string length $txtfont]} {return 0}
+  # Fie.  Tk8.5 doesn't seem to detect buttonFontList on AIX's CDE
+  if {![string length $guifont]} {puts "no guifont"; return 0}
+  if {![string length $txtfont]} {puts "no txtfont"; return 0}
 
   set guifont [string trimright $guifont ":"]
   set txtfont [string trimright $txtfont ":"]
@@ -378,29 +379,5 @@ proc shades {bg} {
   set cvsglb(darkest) $darkest
   set cvsglb(light) $light
   set cvsglb(lighter) $lighter
-}
-
-proc rgb_diff {c1 c2} {
-  set rgb_c1 [winfo rgb . $c1]
-  set rgb_c2 [winfo rgb . $c2]
-
-  set r1 [lindex $rgb_c1 0]
-  set g1 [lindex $rgb_c1 1]
-  set b1 [lindex $rgb_c1 2]
-  set r2 [lindex $rgb_c2 0]
-  set g2 [lindex $rgb_c2 1]
-  set b2 [lindex $rgb_c2 2]
-  #puts "$r1 $g1 $b1"
-  #puts "$r2 $g2 $b2"
-
-  set maxdiff 0
-  set dr [expr {abs($r2 - $r1)}]
-  if {$dr > $maxdiff} {set maxdiff $dr}
-  set dg [estyle.tgzxpr {abs($g2 - $g1)}]
-  if {$dg > $maxdiff} {set maxdiff $dg}
-  set db [expr {abs($b2 - $b1)}]
-  if {$db > $maxdiff} {set maxdiff $db}
-  #puts "maxdiff: $maxdiff"
-  return $maxdiff
 }
 
