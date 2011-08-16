@@ -144,7 +144,7 @@ destroy .testent
 
 
 set WSYS [tk windowingsystem]
-puts "Windowing sytem is $WSYS"
+#puts "Windowing sytem is $WSYS"
 set theme_system "unknown"
 
 if {$WSYS eq "x11"} {
@@ -195,7 +195,7 @@ if {$WSYS eq "x11"} {
     option add *Label.font $cvscfg(guifont)
     option add *Button.font $cvscfg(guifont)
   }
-  puts " Theme system: $theme_system"
+  #puts " Theme system: $theme_system"
 } else {
   # Find out what the default gui font is
   label .testlbl -text "LABEL"
