@@ -508,6 +508,7 @@ namespace eval joincanvas {
 
         # Put the name in the "To" entry and disable it.  You can only
         # merge to where you are.
+        $joincanvas.up.rversTo configure -state normal
         $joincanvas.up.rversTo delete 0 end
         $joincanvas.up.rversTo insert end $tags($rev)
         $joincanvas.up.rversTo configure -state readonly

@@ -137,7 +137,6 @@ proc get_cde_params { } {
 
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
-  set cvsglb(readonlybg) $cvsglb(shadow)
   set cvsglb(textbg) $textbg
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
@@ -151,11 +150,10 @@ proc get_cde_params { } {
   option add *Dialog.Background $menubg
   option add *Entry.Background $textbg
   option add *Entry.Foreground $textfg
-  #option add *Entry.Background white
-  #option add *Entry.Foreground black
-  #option add *Entry.HighlightThickness 1
+  option add *Entry.readonlyBackground $bg
   option add *Entry.highlightBackground $bg
   option add *Entry.highlightColor $activetitle
+  #option add *Entry.HighlightThickness 1
   option add *Listbox.background $textbg
   option add *Listbox.selectBackground $hlbg
   option add *Listbox.selectForeground $hlfg
@@ -236,7 +234,6 @@ proc get_gtk_params { } {
 
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
-  set cvsglb(readonlybg) $cvsglb(shadow)
   set cvsglb(textbg) $textbg
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
@@ -251,6 +248,7 @@ proc get_gtk_params { } {
   option add *Entry.Foreground $textfg
   option add *Entry.selectBackground $hlbg
   option add *Entry.selectForeground $hlfg
+  option add *Entry.readonlyBackground $bg
   option add *Listbox.background $textbg
   option add *Listbox.selectBackground $hlbg
   option add *Listbox.selectForeground $hlfg
@@ -294,7 +292,6 @@ proc set_fallback_params {} {
 
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
-  set cvsglb(readonlybg) $cvsglb(shadow)
   set cvsglb(textbg) $textbg
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
@@ -309,6 +306,7 @@ proc set_fallback_params {} {
   option add *Entry.Foreground $textfg
   option add *Entry.selectBackground $hlbg
   option add *Entry.selectForeground $hlfg
+  option add *Entry.readonlyBackground $bg
   option add *Listbox.background $textbg
   option add *Listbox.selectBackground $hlbg
   option add *Listbox.selectForeground $hlfg

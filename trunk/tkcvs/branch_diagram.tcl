@@ -172,9 +172,10 @@ namespace eval ::logcanvas {
             $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn} \
               -image Modules_svn
             $logcanvas.up.lfname configure -text "SVN Path"
+            $logcanvas.up.rfname configure -state normal
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$fname"
-            $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+            $logcanvas.up.rfname configure -state readonly
             $logcanvas.log configure \
                 -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text] 
@@ -258,9 +259,10 @@ namespace eval ::logcanvas {
            $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs} \
               -image Modules_cvs
            $logcanvas.up.lfname configure -text "RCS file"
+           $logcanvas.up.rfname configure -state normal
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname,v"
-           $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+           $logcanvas.up.rfname configure -state readonly
            if {$loc == "rep"} {
              # Working on repository files, not checked out
              $logcanvas.view configure \
@@ -322,9 +324,11 @@ namespace eval ::logcanvas {
             }
          }
          "RCS" {
+           $logcanvas.up.lfname configure -text "RCS file"
+           $logcanvas.up.rfname configure -state normal
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname"
-           $logcanvas.up.rfname configure -state readonly -bg $cvsglb(textbg)
+           $logcanvas.up.rfname configure -state readonly
            $logcanvas.view configure -state disabled
            $logcanvas.annotate configure -state disabled
            $logcanvas.log configure -command [namespace code {rcs_log $filename}]
@@ -1598,7 +1602,7 @@ gen_log:log D " $pattern MATCHED $text"
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove \
-        -bd 1 -relief sunk -state readonly -readonlybackground $cvsglb(bg)
+        -bd 1 -relief sunk -state readonly
         
       button $logcanvas.up.bmodbrowse -image Modules \
         -command modbrowse_run
