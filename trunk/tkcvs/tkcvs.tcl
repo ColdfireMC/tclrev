@@ -146,66 +146,66 @@ destroy .testent
 
 
 set WSYS [tk windowingsystem]
-#puts "Windowing sytem is $WSYS"
+puts "Windowing sytem is $WSYS"
 set theme_system "unknown"
 
 if {$WSYS eq "x11"} {
   # If X11, see if we can sense our environment somehow
-  if {[info exists ::env(DTUSERSESSION)]} {
-    if [get_cde_params] {
-      set theme_system "CDE" # Find out what the default gui font is
   label .testlbl -text "LABEL"
-  if { [info exists cvscfg(guifont)] } {
-    # If you set a guifont, I'm going to assume you want to use it for
-    # the menus too.
-    set menufont $cvscfg(guifont)
-  } else {
-    # Find out what the tk default is
-    set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-  }
-  set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
-  # If we're not in CDE but the background option is set, we're probably
-  # in KDE or Gnome or some such.  It rather rudely sets all the Tk
-  # backgrounds the same which I don't like, so I'm going to use the same
-  # trick I use for CDE to give the canvases a little shading.  I don't
-  # do this for raw X11 because the user might have set their own options.
-  set cvsglb(bg) [lindex [.testlbl cget -background] 0]
-  set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
-  set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
-  set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
-  destroy .testlbl
-
-    }
-  } elseif {[info exists env(GTK_RC_FILES)]} {
-    if [get_gtk_params]  {
+  set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+  if [get_cde_params] {
+      set theme_system "CDE" 
+      # Find out what the default gui font is
+      if { [info exists cvscfg(guifont)] } {
+        # If you set a guifont in your ~/.tkcvs , I'm going to assume you want
+        # to use it for the menus too.
+        set menufont $cvscfg(guifont)
+      } else {
+        # Find out what the tk default is
+        set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      }
+      #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
+      set cvsglb(canvbg) $cvsglb(shadow)
+  } elseif [get_gtk_params] {
       set theme_system "GTK"
-    }
-  }
-  if {$theme_system == "unknown"} {
+      #if { ! [info exists cvscfg(guifont)] } {
+        #set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      #}
+      # in KDE or Gnome or some such.  It rather rudely sets all the Tk
+      # backgrounds the same which I don't like, so I'm going to use the same
+      # trick I use for CDE to give the canvases a little shading.  I don't
+      # do this for raw X11 because the user might have set their own options.
+      set cvsglb(bg) [lindex [.testlbl cget -background] 0]
+      set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+      set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
+      set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
+  } else {
     set_fallback_params
   }
-  if {$theme_system == "CDE"} {
-    option add *Menu.font TkHeadingFont
-    option add *Label.font MySmallerBold
-    set cvscfg(guifont) MySmallerBold
-  } else {
-    option add *Menu.font $cvscfg(guifont)
-    option add *Label.font $cvscfg(guifont)
+  destroy .testlbl
+
+  if {! [info exists cvscfg(dialogfont)]} {
+    set cvscfg(dialogfont) $cvscfg(guifont)
   }
 
-  #puts " Theme system: $theme_system"
+  if {$theme_system == "CDE"} {
+    # This makes it consistent with the rest of the CDE interface
+    option add *Menu.font $cvscfg(guifont)
+    option add *Label.font $cvscfg(guifont)
+    option add *Button.font $cvscfg(guifont)
+  } else {
+    # This makes it look like tk8.4.  Want?  dunno.
+    #option add *Menu.font $cvscfg(guifont)
+    #option add *Label.font $cvscfg(guifont)
+    #option add *Button.font $cvscfg(guifont)
+  }
+  puts " Theme system: $theme_system"
 } else {
-  #set_fallback_params
   # Find out what the default gui font is
   label .testlbl -text "LABEL"
-  if { [info exists cvscfg(guifont)] } {
-    # If you set a guifont, I'm going to assume you want to use it for
-    # the menus too.
-    set menufont $cvscfg(guifont)
-  } else {
-    # Find out what the tk default is
-    set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-  }
+  # Find out what the tk default is
+  set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+  set cvscfg(dialogfont) $cvscfg(guifont)
 
   set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
   set cvsglb(bg) [lindex [.testlbl cget -background] 0]
@@ -213,7 +213,6 @@ if {$WSYS eq "x11"} {
   set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
-  set cvscfg(dialogfont) TkCaptionFont
 }
 
 
@@ -228,15 +227,22 @@ set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
 regsub -- {-} $fsiz {} fsiz
 
+# FIXME:  I hope we don't need this.
+# Should use *Menu.selectColor instead
+if {$tk_version >= 8.5} {
+  set cvsglb(menusel) $cvsglb(fg)
+} else {
+  set cvsglb(menusel) $cvsglb(hlbg)
+}
+
 if {[tk windowingsystem] eq "x11"} {
-  # FIXME: check for X.Org in server string?
-  #puts [winfo server .]
   if {$tk_version >= 8.5} {
     # Put the help menu back on the right
     tk::classic::restore menu
-    # FIXME:  the menus have yellow checkmarks now, not good
 
     if {$tcl_platform(os) eq "Linux" && [lindex $tk_patchLevel 2] < 8} {
+      # FIXME: check for X.Org in server string?
+      #puts [winfo server .]
       # Overstrike and underline fonts in Xorg were too big from 8.5.0 to 8.5.7
       set fsiz -$fsiz
     }
@@ -265,7 +271,7 @@ option add *Dialog.msg.font $cvscfg(dialogfont) userDefault
 option add *Message.font $cvscfg(dialogfont) userDefault
 
 
-# Initialize logging (classes are CFTD)
+# Initialize logging (classes are C,F,T,D)
 if { ! [info exists cvscfg(log_classes)] } {
   set cvscfg(log_classes) "C"
 }
@@ -476,5 +482,4 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 } else {
   workdir_setup
 }
-
 
