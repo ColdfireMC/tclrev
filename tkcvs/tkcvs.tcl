@@ -132,7 +132,6 @@ destroy .native
 entry .testent
 set cvsglb(textbg) white
 set cvsglb(textfg) black
-set cvsglb(readonlybg) gray96
 set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
 set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
 if {$cvsglb(hlfg) eq {} } {
@@ -195,11 +194,6 @@ if {$WSYS eq "x11"} {
     option add *Menu.font $cvscfg(guifont)
     option add *Label.font $cvscfg(guifont)
     option add *Button.font $cvscfg(guifont)
-  } else {
-    # This makes it look like tk8.4.  Want?  dunno.
-    #option add *Menu.font $cvscfg(guifont)
-    #option add *Label.font $cvscfg(guifont)
-    #option add *Button.font $cvscfg(guifont)
   }
   puts " Theme system: $theme_system"
 } else {
