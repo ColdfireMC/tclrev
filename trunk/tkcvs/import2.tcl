@@ -52,7 +52,7 @@ proc import2_run {} {
 #  entry .import2.top.tnewdesc -textvariable cvsglb(newdesc) -width 40
   entry .import2.top.tnewvers -textvariable cvsglb(newvers) -width 40
   
-  button .import2.top.bnewcode -text "Browse ..." -highlightbackground $cvsglb(bg) \
+  button .import2.top.bnewcode -text "Browse ..." \
    -command "moduleDialog" 
 
   grid .import2.top.explain -column 0 -row 0 -columnspan 3 -sticky ew
@@ -67,13 +67,13 @@ proc import2_run {} {
   grid .import2.top.tnewvers -column 1 -row 3 -sticky ew
 
   frame .import2.down -relief groove -border 2
-  button .import2.down.ok -text "OK" -highlightbackground $cvsglb(bg) \
+  button .import2.down.ok -text "OK" \
     -command {
       grab release .import2
 #      wm withdraw .import2
       catch do_import2 results
     }
-  button .import2.down.quit -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .import2.down.quit -text "Cancel" \
     -command {
       grab release .import2
       wm withdraw .import2

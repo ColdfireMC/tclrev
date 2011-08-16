@@ -1598,11 +1598,11 @@ gen_log:log D " $pattern MATCHED $text"
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove \
-        -readonlybackground $cvsglb(readonlybg)
+        -bd 1 -relief sunk -state readonly -readonlybackground $cvsglb(bg)
         
-      button $logcanvas.up.bmodbrowse -image Modules -highlightbackground $cvsglb(bg) \
+      button $logcanvas.up.bmodbrowse -image Modules \
         -command modbrowse_run
-      button $logcanvas.up.bworkdir -image Workdir -highlightbackground $cvsglb(bg) \
+      button $logcanvas.up.bworkdir -image Workdir \
         -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
@@ -1687,20 +1687,20 @@ gen_log:log D " $pattern MATCHED $text"
       #
       frame $logcanvas.down.btnfm
       frame $logcanvas.down.closefm -relief groove -bd 2
-      button $logcanvas.refresh -image Refresh -highlightbackground $cvsglb(bg) \
+      button $logcanvas.refresh -image Refresh \
         -command [namespace code {
                  $scope\::reloadLog
                }]
-      button $logcanvas.view -image Fileview -highlightbackground $cvsglb(bg)
-      button $logcanvas.log -image Log -highlightbackground $cvsglb(bg)
-      button $logcanvas.annotate -image Annotate -highlightbackground $cvsglb(bg)
-      button $logcanvas.diff -image Diff -highlightbackground $cvsglb(bg) \
+      button $logcanvas.view -image Fileview 
+      button $logcanvas.log -image Log 
+      button $logcanvas.annotate -image Annotate 
+      button $logcanvas.diff -image Diff \
         -command [namespace code {
           comparediff_r [$logcanvas.up.revA_rvers cget -text] \
           [$logcanvas.up.revB_rvers cget -text] $logcanvas $filename
         }]
-      button $logcanvas.delta -image Mergediff -highlightbackground $cvsglb(bg)
-      button $logcanvas.viewtags -image Tags -highlightbackground $cvsglb(bg) \
+      button $logcanvas.delta -image Mergediff 
+      button $logcanvas.viewtags -image Tags \
         -command [namespace code {
                    variable revtags
                    variable revbtags
@@ -1716,7 +1716,7 @@ gen_log:log D " $pattern MATCHED $text"
                    }
                    view_output::new Tags $taglist
                  }]
-      button $logcanvas.close -text "Close" -highlightbackground $cvsglb(bg) \
+      button $logcanvas.close -text "Close" \
         -command [namespace code {
                  global cvscfg
                  variable logcanvas
@@ -1728,7 +1728,7 @@ gen_log:log D " $pattern MATCHED $text"
                  namespace delete [namespace current]
                  exit_cleanup 0
                }]
-      button $logcanvas.stop -text "Stop" -bg red4 -fg white -highlightbackground $cvsglb(bg) \
+      button $logcanvas.stop -text "Stop" -bg red4 -fg white \
         -activebackground red4 -activeforeground white \
         -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
         -command "$scope\::abortLog"

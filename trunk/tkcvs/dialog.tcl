@@ -78,7 +78,7 @@ proc dialog_FormCreate { title form_data } {
   frame $w.buttons -relief groove -bd 2
   pack $w.buttons -side top -fill x
 
-  button $w.ok -text "OK" -highlightbackground $cvsglb(bg) \
+  button $w.ok -text "OK" \
     -command "
     if {\[dialog_FormComplete $w [list $form_data]\] } {
       destroy $w
@@ -87,14 +87,14 @@ proc dialog_FormCreate { title form_data } {
     }
     "
 
-  button $w.apply -text "Apply" -highlightbackground $cvsglb(bg) \
+  button $w.apply -text "Apply" \
     -command "
     if {\[dialog_FormComplete $w [list $form_data]\] } {
       $dialog_action
     }
     "
 
-  button $w.close -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button $w.close -text "Cancel" \
     -command "
       destroy $w
       exit_cleanup 0
@@ -448,7 +448,7 @@ proc add_dialog {args} {
   message .add.middle -text $mess -aspect 200
   pack .add.middle -side top -fill x
   frame .add.down
-  button .add.down.add -text "Add" -highlightbackground $cvsglb(bg)
+  button .add.down.add -text "Add" 
   if {$incvs} {
     .add.down.add configure -command {
       grab release .add
@@ -466,7 +466,7 @@ proc add_dialog {args} {
     }
   }
 
-  button .add.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .add.down.cancel -text "Cancel" \
     -command { grab release .add; destroy .add }
   pack .add.down -side bottom -fill x -expand 1
   pack .add.down.add .add.down.cancel -side left \
@@ -542,7 +542,7 @@ proc file_tag_dialog {branch} {
 
   frame .tag.down -relief groove -bd 2
   pack .tag.down -side bottom -fill x -expand 1
-  button .tag.down.tag -text "Tag" -highlightbackground $cvsglb(bg)
+  button .tag.down.tag -text "Tag" 
   if {$incvs} {
     .tag.down.tag configure -command {
       cvs_tag $usertagname $forceflag $branchflag $updflag \
@@ -559,7 +559,7 @@ proc file_tag_dialog {branch} {
       destroy .tag
     }
   }
-  button .tag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .tag.down.cancel -text "Cancel" \
     -command { grab release .tag; destroy .tag }
 
   pack .tag.down.tag .tag.down.cancel -in .tag.down -side left \
@@ -617,19 +617,19 @@ proc rtag_dialog { cvsroot module b_or_t } {
   frame .modtag.down -relief groove -bd 2
   pack .modtag.down -side top -fill x
 
-  button .modtag.down.tag -text "Tag" -highlightbackground $cvsglb(bg) \
+  button .modtag.down.tag -text "Tag" \
     -command "
                cvs_rtag $cvsroot $module $b_or_t \$force \$otag \$ntag; \
                .modtag.down.cancel invoke
              "
 
-  button .modtag.down.delete -text "Remove" -highlightbackground $cvsglb(bg) \
+  button .modtag.down.delete -text "Remove" \
     -command "
                cvs_rtag $cvsroot $module tag remove \$otag \$ntag; \
                .modtag.down.cancel invoke
              "
 
-  button .modtag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .modtag.down.cancel -text "Cancel" \
     -command {
                grab release .modtag
                destroy .modtag
@@ -682,7 +682,7 @@ proc subtract_dialog {args} {
   message .subtract.middle -text $mess -aspect 200
   pack .subtract.middle -side top -fill x
   frame .subtract.down
-  button .subtract.down.remove -text "Remove" -highlightbackground $cvsglb(bg)
+  button .subtract.down.remove -text "Remove" 
   if {$incvs} {
     .subtract.down.remove configure -command {
       grab release .subtract
@@ -697,7 +697,7 @@ proc subtract_dialog {args} {
     }
   }
   
-  button .subtract.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .subtract.down.cancel -text "Cancel" \
     -command { grab release .subtract; destroy .subtract }
   pack .subtract.down -side bottom -fill x -expand 1
   pack .subtract.down.remove .subtract.down.cancel -side left \
@@ -740,13 +740,13 @@ proc edit_dialog {args} {
   pack .editflag.middle -side top -fill x
 
   frame .editflag.down
-  button .editflag.down.remove -text "Edit" -highlightbackground $cvsglb(bg) \
+  button .editflag.down.remove -text "Edit" \
     -command {
       grab release .editflag
       destroy .editflag
       cvs_edit [workdir_list_files]
     }
-  button .editflag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .editflag.down.cancel -text "Cancel" \
     -command { grab release .editflag; destroy .editflag }
   pack .editflag.down -side bottom -fill x -expand 1
   pack .editflag.down.remove .editflag.down.cancel -side left \
@@ -789,13 +789,13 @@ proc unedit_dialog {args} {
   pack .uneditflag.middle -side top -fill x
 
   frame .uneditflag.down
-  button .uneditflag.down.remove -text "Unedit" -highlightbackground $cvsglb(bg) \
+  button .uneditflag.down.remove -text "Unedit" \
     -command {
       grab release .uneditflag
       destroy .uneditflag
       cvs_unedit [workdir_list_files]
     }
-  button .uneditflag.down.cancel -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .uneditflag.down.cancel -text "Cancel" \
     -command { grab release .uneditflag; destroy .uneditflag }
   pack .uneditflag.down -side bottom -fill x -expand 1
   pack .uneditflag.down.remove .uneditflag.down.cancel -side left \
@@ -1522,13 +1522,11 @@ proc history_browser {} {
     frame .ci_history.bottom
     search_textwidget_init
     button .ci_history.bottom.srchbtn -text Search \
-      -highlightbackground $cvsglb(bg) \
       -command "search_textwidget .ci_history.text"
     entry .ci_history.bottom.entry -width 20 -textvariable cvsglb(searchstr)
     bind .ci_history.bottom.entry <Return> \
         "search_textwidget .ci_history.text"
     button .ci_history.bottom.close -text "Close" \
-       -highlightbackground $cvsglb(bg) \
        -command { wm withdraw .ci_history }
 
     pack .ci_history.bottom -side bottom -fill x

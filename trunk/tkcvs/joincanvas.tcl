@@ -542,9 +542,9 @@ namespace eval joincanvas {
       frame $joincanvas.up -relief groove -border 2
       pack $joincanvas.up -side top -fill x
 
-      button $joincanvas.up.bworkdir -image Workdir -highlightbackground $cvsglb(bg) \
+      button $joincanvas.up.bworkdir -image Workdir \
        -command { workdir_setup }
-      button $joincanvas.up.bmodbrowse -image Modules_cvs -highlightbackground $cvsglb(bg) \
+      button $joincanvas.up.bmodbrowse -image Modules_cvs \
        -command { modbrowse_run cvs }
 
       label $joincanvas.up.lfname -text "Representative File" -anchor w
@@ -562,7 +562,7 @@ namespace eval joincanvas {
       ::picklist::entry $joincanvas.up.rversSince "" alltags
       label $joincanvas.up.lversTo -text "Merge To" -anchor w
       entry $joincanvas.up.rversTo -relief groove \
-        -readonlybackground $cvsglb(readonlybg)
+        -bd 1 -relief sunk -state readonly -readonlybackground $cvsglb(bg)
 
       grid columnconf $joincanvas.up 1 -weight 1
       grid rowconf $joincanvas.up 3 -weight 1
@@ -605,7 +605,7 @@ namespace eval joincanvas {
       #
       # Create buttons
       #
-      button $joincanvas.delta -image Mergediff -highlightbackground $cvsglb(bg) \
+      button $joincanvas.delta -image Mergediff \
           -command [namespace code {
                  set fromrev [$joincanvas.up.rversFrom get]
                  if {$fromrev == ""} {
@@ -615,11 +615,11 @@ namespace eval joincanvas {
                  cvs_merge $joincanvas $fromrev $sincerev $fromrev .
                  }]
 
-      button $joincanvas.down.blogfile -image Branches -highlightbackground $cvsglb(bg) \
+      button $joincanvas.down.blogfile -image Branches \
          -command "cvs_branches $repfile"
       frame $joincanvas.down.btnfm
       frame $joincanvas.down.closefm -relief groove -bd 2
-      button $joincanvas.close -text "Close" -highlightbackground $cvsglb(bg) \
+      button $joincanvas.close -text "Close" \
         -command [namespace code "
                    destroy $joincanvas
                    namespace delete [namespace current]

@@ -14,6 +14,7 @@ proc cde_open_resourcefile { file } {
 proc get_cde_params { } {
   global cvsglb
   global cvscfg
+  global tk_version
 
   #puts " CDE: Getting X11 options"
   # Set defaults for all the necessary things
@@ -47,8 +48,6 @@ proc get_cde_params { } {
   #puts " Dialog Font $dlgfont"
 
   set cvscfg(guifont) $guifont
-  #set cvscfg(guifont) $dlgfont
-  #set cvscfg(listboxfont) $listfont
   set cvscfg(dialogfont) $dlgfont
 
   # If we can find the user's dt.resources file, we can find out the
@@ -144,6 +143,7 @@ proc get_cde_params { } {
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
 
+  option add *selectColor $activetitle
   option add *Button.activeBackground $bg
   option add *Button.activeForeground $fg
   option add *Canvas.Background $cvsglb(shadow)
@@ -156,17 +156,9 @@ proc get_cde_params { } {
   #option add *Entry.HighlightThickness 1
   option add *Entry.highlightBackground $bg
   option add *Entry.highlightColor $activetitle
-  #option add *HighlightThickness 0
   option add *Listbox.background $textbg
   option add *Listbox.selectBackground $hlbg
   option add *Listbox.selectForeground $hlfg
-  option add *Menu.Background $menubg
-  option add *Menu.activeBackground $menubg
-  option add *Menu.activeForeground $fg
-  option add *Menu.borderWidth 1
-  option add *Menubutton.Background $menubg
-  option add *Menubutton.activeBackground $menubg
-  option add *Menubutton.activeForeground $fg
   option add *Scrollbar.activeBackground $bg
   option add *Scrollbar.troughColor $cvsglb(shadow)
   option add *Text.Background $textbg
@@ -174,7 +166,25 @@ proc get_cde_params { } {
   #option add *Text.HighlightThickness 2
   option add *Text.highlightBackground $bg
   option add *Text.highlightColor $wkspc4
-  option add *selectColor $activetitle
+
+  option add *Menu.borderWidth 1
+  option add *Menu.Background $menubg
+  option add *Menu.activeBackground $menubg
+  option add *Menu.activeForeground $fg
+  option add *Menubutton.Background $menubg
+  option add *Menubutton.activeBackground $menubg
+  option add *Menubutton.activeForeground $fg
+  # Menu checkboxes
+  if {$tk_version >= 8.5} {
+    # This makes it look like the native CDE checkbox
+    option add *Menu.selectColor $fg
+    option add *Checkbutton.offRelief sunken
+    option add *Checkbutton.selectColor ""
+  } else {
+    option add *Menu.selectColor $hlbg
+  }
+  option add *Checkbutton.activeBackground $bg
+  option add *Checkbutton.activeForeground $fg
 
   return 1
 }
@@ -183,6 +193,7 @@ proc get_gtk_params { } {
   global env
   global cvsglb
   global cvscfg
+  global tk_version
 
   #puts " GTK: Getting X11 options"
 
@@ -218,7 +229,6 @@ proc get_gtk_params { } {
   close $pipe
 
   if {! [info exists bg] || ! [info exists fg]} {
-    puts " Falling back to plain X"
     return 0
   }
 
@@ -233,6 +243,8 @@ proc get_gtk_params { } {
   set cvsglb(hlfg) $hlfg
 
   # These are already set, but maybe I like mine better
+  #option add *selectColor $hlbg
+  option add *Button.activeBackground $cvsglb(light)
   option add *Canvas.Background $cvsglb(shadow)
   option add *Canvas.Foreground black
   option add *Entry.Background $textbg
@@ -246,20 +258,21 @@ proc get_gtk_params { } {
   option add *Text.Foreground $textfg
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
-  #option add *selectColor $hlbg
   #option add *Menu.activeBackground $bg
   #option add *Menu.activeForeground $fg
   #option add *Menubutton.Background $bg
   #option add *Menubutton.activeBackground $bg
   #option add *Menubutton.activeForeground $fg
 
-  # This works for the Tk 8.5 menu checkboxes
-  option add *Menu.selectColor $fg
+  # Menu checkboxes
+  if {$tk_version >= 8.5} {
+    option add *Menu.selectColor $fg
+  } else {
+    option add *Menu.selectColor $hlbg
+    option add *Checkbutton.selectColor $hlbg
+  }
   # This affects UI checkbuttons, not the ones on menus
   # and is the color of the box, not the checkmark
-  option add *Checkbutton.selectColor $bg
-
-  option add *Button.activeBackground $cvsglb(light)
 
   return 1
 }
@@ -267,6 +280,7 @@ proc get_gtk_params { } {
 proc set_fallback_params {} {
   global cvsglb
   global cvscfg
+  global tk_version
 
   #set bg "#bebebe"
   set bg "#d3d3d3"
@@ -287,15 +301,8 @@ proc set_fallback_params {} {
   set cvsglb(hlfg) $hlfg
   #set cvsglb(light) "#ececec"
 
-  if { ! [catch { font configure TkHeadingFont -size 9 }] } {
-    set cvscfg(guifont) TkHeadingFont
-  }
-
-  if {! [info exists cvscfg(dialogfont)]} {
-    set cvscfg(dialogfont) $cvscfg(guifont)
-  }
-
   #option add *Background $bg
+  #option add *selectColor $hlbg
   option add *Canvas.Background $cvsglb(shadow)
   option add *Canvas.Foreground black
   option add *Entry.Background $textbg
@@ -309,9 +316,8 @@ proc set_fallback_params {} {
   option add *Text.Foreground $textfg
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
-  #option add *selectColor $hlbg
-  #option add *Menu.Background $bg
 
+  #option add *Menu.Background $bg
   # Keep them from fading out when you mouse over them
   option add *Button.activeForeground $fg
   #option add *Button.activeBackground $bg
@@ -320,12 +326,13 @@ proc set_fallback_params {} {
   #option add *Menubutton.activeBackground $bg
   #option add *Menubutton.activeForeground $fg
 
-  # This works for the Tk 8.5 menu checkboxes
-  option add *Menu.selectColor $fg
-  # This affects UI checkbuttons, not the ones on menus
-  # and is the color of the box, not the checkmark
-  option add *Checkbutton.selectColor $bg
-
+  # Menu checkboxes
+  if {$tk_version >= 8.5} {
+    option add *Menu.selectColor $fg
+  } else {
+    option add *Menu.selectColor $hlbg
+    option add *Checkbutton.selectColor $hlbg
+  }
 }
 
 proc shades {bg} {

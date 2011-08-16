@@ -65,7 +65,7 @@ proc merge_run {mcode} {
   pack .merge.vendor.name -side top -fill x -expand yes
   label .merge.vendor.name.l -text "Vendor Module" -width 16 -anchor w
   label .merge.vendor.name.e -relief sunken -textvariable venselect_mcode -anchor w
-  button .merge.vendor.name.b -text "Browse ..." -highlightbackground $cvsglb(bg) \
+  button .merge.vendor.name.b -text "Browse ..." \
     -command "vendorDialog"
   pack .merge.vendor.name.l -side left -fill x -pady 3
   pack .merge.vendor.name.b -side right -anchor w -fill x 
@@ -117,7 +117,7 @@ proc merge_run {mcode} {
     pack .merge.vendor.$i.f.s -side left -pady 3
   }
 
-  button .merge.ok -text "OK" -highlightbackground $cvsglb(bg) \
+  button .merge.ok -text "OK" \
     -command {
       if { $venselect_mcode == "" } {
          cvsfail "Please select a Vendor" .merge
@@ -128,7 +128,7 @@ proc merge_run {mcode} {
       grab release .merge
       wm withdraw .merge
     }
-  button .merge.quit -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .merge.quit -text "Cancel" \
     -command {
       grab release .merge
       wm withdraw .merge
@@ -489,7 +489,7 @@ proc vendorDialog {} {
 
   frame $w.buttons
   pack $w.buttons -side bottom -fill x -pady 2m
-  button $w.buttons.ok -text Ok -highlightbackground $cvsglb(bg) \
+  button $w.buttons.ok -text Ok \
     -command {
       if {$venselect_mcode == ""} {
          return
@@ -499,7 +499,7 @@ proc vendorDialog {} {
       raise .merge
       #grab set .merge
     }
-  button $w.buttons.cancel -text Cancel -highlightbackground $cvsglb(bg) \
+  button $w.buttons.cancel -text Cancel \
     -command {
       grab release .venDialog
       wm withdraw .venDialog
