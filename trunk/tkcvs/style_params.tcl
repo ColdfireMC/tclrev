@@ -32,7 +32,10 @@ proc get_cde_params { } {
   # If any of these aren't set, I don't think we're in CDE after all
   if {![string length $fg]} {return 0}
   if {![string length $bg]} {return 0}
-  # Fie.  Tk8.5 doesn't seem to detect buttonFontList on AIX's CDE
+  if {![string length $guifont]} {
+    # For AIX
+    set guifont [option get . Font Font]
+  }
   if {![string length $guifont]} {puts "no guifont"; return 0}
   if {![string length $txtfont]} {puts "no txtfont"; return 0}
 
