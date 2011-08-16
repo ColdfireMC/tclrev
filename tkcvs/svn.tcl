@@ -445,7 +445,7 @@ proc svn_commit_dialog {} {
 
   pack .commit.message -in .commit.top -padx 2 -pady 5
 
-  button .commit.ok -text "OK" -highlightbackground $cvsglb(bg) \
+  button .commit.ok -text "OK" \
     -command {
       #grab release .commit
       wm withdraw .commit
@@ -453,18 +453,18 @@ proc svn_commit_dialog {} {
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
       commit_history $cvsglb(commit_comment)
     }
-  button .commit.apply -text "Apply" -highlightbackground $cvsglb(bg) \
+  button .commit.apply -text "Apply" \
     -command {
       set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
       svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
       commit_history $cvsglb(commit_comment)
     }
-  button .commit.clear -text "ClearAll" -highlightbackground $cvsglb(bg) \
+  button .commit.clear -text "ClearAll" \
     -command {
       set version ""
       .commit.comment.tcomment delete 1.0 end
     }
-  button .commit.quit -highlightbackground $cvsglb(bg) \
+  button .commit.quit \
     -command {
       #grab release .commit
       wm withdraw .commit

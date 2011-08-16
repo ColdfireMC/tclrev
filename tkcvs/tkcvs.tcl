@@ -1,4 +1,3 @@
-
 #!/bin/sh
 #-*-tcl-*-
 # the next line restarts using wish \
@@ -168,9 +167,9 @@ if {$WSYS eq "x11"} {
       set cvsglb(canvbg) $cvsglb(shadow)
   } elseif [get_gtk_params] {
       set theme_system "GTK"
-      #if { ! [info exists cvscfg(guifont)] } {
-        #set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      #}
+      if { ! [info exists cvscfg(guifont)] } {
+        set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      }
       # in KDE or Gnome or some such.  It rather rudely sets all the Tk
       # backgrounds the same which I don't like, so I'm going to use the same
       # trick I use for CDE to give the canvases a little shading.  I don't
@@ -181,6 +180,9 @@ if {$WSYS eq "x11"} {
       set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   } else {
     set_fallback_params
+    if { ! [info exists cvscfg(guifont)] } {
+      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+    }
   }
   destroy .testlbl
 
@@ -226,14 +228,6 @@ set lbf [font actual $cvscfg(listboxfont)]
 set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
 regsub -- {-} $fsiz {} fsiz
-
-# FIXME:  I hope we don't need this.
-# Should use *Menu.selectColor instead
-if {$tk_version >= 8.5} {
-  set cvsglb(menusel) $cvsglb(fg)
-} else {
-  set cvsglb(menusel) $cvsglb(hlbg)
-}
 
 if {[tk windowingsystem] eq "x11"} {
   if {$tk_version >= 8.5} {

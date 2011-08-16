@@ -71,13 +71,13 @@ proc import_run {} {
   grid .import.top.tnewvers -column 1 -row 4 -sticky ew
 
   frame .import.down -relief groove -border 2
-  button .import.down.ok -text "OK" -highlightbackground $cvsglb(bg) \
+  button .import.down.ok -text "OK" \
     -command {
       grab release .import
       wm withdraw .import
       do_import
     }
-  button .import.down.quit -text "Cancel" -highlightbackground $cvsglb(bg) \
+  button .import.down.quit -text "Cancel" \
     -command {
       grab release .import
       wm withdraw .import

@@ -50,7 +50,7 @@ proc browse_files {module} {
 
   label $filebrowse.top.verlbl -text "Version / Tag " -anchor w
   entry $filebrowse.top.verent -relief sunken -textvariable checkout_version
-  button $filebrowse.srch.srchbtn -text Search -highlightbackground $cvsglb(bg) \
+  button $filebrowse.srch.srchbtn -text Search \
     -command "search_listbox $filebrowse.list"
   entry $filebrowse.srch.srchent -width 20 -textvariable cvsglb(searchstr)
   bind $filebrowse.srch.srchent <Return> "search_listbox $filebrowse.list"
@@ -67,15 +67,15 @@ proc browse_files {module} {
     workdir_images
   }
 
-  button $filebrowse.view -image Fileview -highlightbackground $cvsglb(bg) \
+  button $filebrowse.view -image Fileview \
     -command "module_fileview $filebrowse $module"
-  button $filebrowse.log -image Log -highlightbackground $cvsglb(bg) \
+  button $filebrowse.log -image Log \
     -command "module_filelog $filebrowse $module 0"
-  button $filebrowse.branches -image Branches -highlightbackground $cvsglb(bg) \
+  button $filebrowse.branches -image Branches \
     -command "module_filelog $filebrowse $module 1"
-  button $filebrowse.tag -image Tags -highlightbackground $cvsglb(bg) \
+  button $filebrowse.tag -image Tags \
     -command "module_tagview $filebrowse $module"
-  button $filebrowse.quit -text "Close" -highlightbackground $cvsglb(bg) \
+  button $filebrowse.quit -text "Close" \
     -padx 0 -pady 0 \
     -command "destroy $filebrowse; exit_cleanup 0"
 

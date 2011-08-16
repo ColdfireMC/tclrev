@@ -70,7 +70,7 @@ proc aboutbox {} {
   pack .about.top.msg4 -expand 1 -fill x
 
   frame .about.down
-  button .about.down.ok -text "OK" -highlightbackground $cvsglb(bg) -command {destroy .about}
+  button .about.down.ok -text "OK" -command {destroy .about}
 
   pack .about.down -side bottom -expand 1 -fill x -pady 2
   pack .about.down.ok
@@ -244,7 +244,7 @@ proc do_help {title helptext} {
     -yscroll "$cvshelpview.scroll set"
   scrollbar $cvshelpview.scroll -relief sunken \
     -command "$cvshelpview.text yview"
-  button $cvshelpview.close -text "Close" -highlightbackground $cvsglb(bg) \
+  button $cvshelpview.close -text "Close" \
     -command "destroy $cvshelpview; exit_cleanup 0"
 
   pack $cvshelpview.close -side bottom

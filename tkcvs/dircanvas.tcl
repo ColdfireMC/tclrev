@@ -48,7 +48,7 @@ proc DirCanvas:create {w} {
 
   # Put an extra arrow on the file column for sorting by status
   set statusbutton $w.filecol.head.statbut
-  button $statusbutton -image arr_dn -highlightbackground $cvsglb(bg) \
+  button $statusbutton -image arr_dn \
     -relief raised -bd 1 -highlightthickness 0
   set arr(filestatcol) $statusbutton
   pack $statusbutton -side left
@@ -121,7 +121,7 @@ proc DirCanvas:column {w column headtext} {
   frame $w.$column.head -relief raised -bd 2
   label $w.$column.head.lbl -text "$headtext"
   button $w.$column.head.sbut -image arr_dn -relief flat \
-    -highlightthickness 0 -highlightbackground $cvsglb(bg)
+    -highlightthickness 0
   set arr($column) $w.$column.head.sbut
   gen_log:log D "$w.$column.head.sbut"
 
