@@ -158,7 +158,7 @@ proc modfiles {} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
-    set ret [catch {eval "exec find . -name 'F*.txt' -o -name .svn -prune -a -type f > $tmpfile"} out]
+    set ret [catch {eval "exec find . -name F*.txt -o -name .svn -prune -a -type f > $tmpfile"} out]
   }
   if {$ret} {
     puts "Find failed"
@@ -175,8 +175,13 @@ proc modfiles {} {
 
 ##############################################
 
+if [file isdirectory .svn] {
+  puts "Please don't do that here.  There's already a .svn directory."
+  exit 1
+}
+
 set WD [pwd]
-set SVNROOT [file join $env(HOME) "SVN_REPOSITORY"]
+set SVNROOT [file join $WD "SVN_REPOSITORY"]
 set taghead(trunk) "trunk"
 set taghead(branch) "branches"
 set taghead(tag) "tags"

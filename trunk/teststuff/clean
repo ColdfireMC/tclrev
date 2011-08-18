@@ -2,7 +2,9 @@
 # the next line restarts using tclsh \
 exec tclsh "$0" -- ${1+"$@"}
 
-set CvsRoot [file join $env(HOME) "CVS_REPOSITORY"]
+set WD [pwd]
+
+set CvsRoot [file join $WD "CVS_REPOSITORY"]
 if {[ file isdirectory $CvsRoot ]} {
   file delete -force $CvsRoot
 }
@@ -12,7 +14,7 @@ foreach od $oldirs {
   file delete -force $od
 }
 
-set SvnRoot [file join $env(HOME) "SVN_REPOSITORY"]
+set SvnRoot [file join $WD "SVN_REPOSITORY"]
 if {[ file isdirectory $SvnRoot ]} {
   file delete -force $SvnRoot
 }
@@ -22,3 +24,12 @@ foreach od $oldirs {
   file delete -force $od
 }
 
+set RcsRoot [file join $WD "RCS_REPOSITORY"]
+if {[ file isdirectory $RcsRoot ]} {
+  file delete -force $RcsRoot
+}
+set oldirs [glob -nocomplain -- rcs_test*]
+foreach od $oldirs {
+  puts "Deleting $od"
+  file delete -force $od
+}
