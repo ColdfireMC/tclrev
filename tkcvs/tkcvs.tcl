@@ -143,32 +143,45 @@ set theme_system "unknown"
 if {$WSYS eq "x11"} {
   # If X11, see if we can sense our environment somehow
   label .testlbl -text "LABEL"
-  set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
   if [get_cde_params] {
-      set theme_system "CDE" 
-      # Find out what the default gui font is
-      if { ! [info exists cvscfg(guifont)] } {
-        # Find out what the tk default is
-        set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      }
-      #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
-      set cvsglb(canvbg) $cvsglb(shadow)
+    set theme_system "CDE" 
+    # Find out what the default gui font is
+    if { ! [info exists cvscfg(guifont)] } {
+      # Find out what the tk default is
+      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+    }
+    #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
+    set cvsglb(canvbg) $cvsglb(shadow)
   } elseif [get_gtk_params] {
-      set theme_system "GTK"
-      if { ! [info exists cvscfg(guifont)] } {
-        set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      }
-      # in KDE or Gnome or some such.  It rather rudely sets all the Tk
-      # backgrounds the same which I don't like, so I'm going to use the same
-      # trick I use for CDE to give the canvases a little shading.  I don't
-      # do this for raw X11 because the user might have set their own options.
-      set cvsglb(bg) [lindex [.testlbl cget -background] 0]
-      set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
-      set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
+    set theme_system "GTK"
+    if { ! [info exists cvscfg(guifont)] } {
+      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      #if {$tk_version >= 8.5} {
+       #set cvscfg(guifont) TkHeadingFont
+       # This makes it look like tk8.4.  Want?  dunno.
+       #option add *Menu.font $cvscfg(guifont)
+       #option add *Label.font $cvscfg(guifont)
+       #option add *Button.font $cvscfg(guifont)
+      #}
+    }
+    # in KDE or Gnome or some such.  It rather rudely sets all the Tk
+    # backgrounds the same which I don't like, so I'm going to use the same
+    # trick I use for CDE to give the canvases a little shading.  I don't
+    # do this for raw X11 because the user might have set their own options.
+    set cvsglb(bg) [lindex [.testlbl cget -background] 0]
+    set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+    set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   } else {
     set_fallback_params
     if { ! [info exists cvscfg(guifont)] } {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      if {$tk_version >= 8.5} {
+       set cvscfg(guifont) TkHeadingFont
+       # This makes it look like tk8.4.  Want?  dunno.
+       option add *Menu.font $cvscfg(guifont)
+       option add *Label.font $cvscfg(guifont)
+       option add *Button.font $cvscfg(guifont)
+      }
     }
   }
   destroy .testlbl
@@ -236,7 +249,7 @@ set cvscfg(flashfont) [list $ffam $fsiz underline]
 #puts "try underline: [font actual $cvscfg(flashfont) -underline]"
 # Prefer underline, but it isn't working at all in tk8.5.0 on linux
 if {! [font actual $cvscfg(flashfont) -underline]} {
-  puts "Underline font not working.  Trying $ffam -$fsiz bold"
+  puts "Underline font not working.  Trying $ffam $fsiz bold"
   puts " (known problem in Tk 8.5.0 on Linux)"
   set cvscfg(flashfont) [list $ffam $fsiz bold]
 }
