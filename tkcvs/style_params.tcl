@@ -34,7 +34,7 @@ proc get_cde_params { } {
   if {![string length $bg]} {return 0}
   if {![string length $guifont]} {
     # For AIX
-    set guifont [option get . Font Font]
+    set guifont [option get . FontList FontList]
   }
   if {![string length $guifont]} {return 0}
   if {![string length $txtfont]} {return 0}
