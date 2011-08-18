@@ -121,13 +121,6 @@ if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
   cvserror "cvscfg(terminal) is required if cvscfg(use_cvseditor) is set"
 }
 
-# First, see what the native menu font is.
-# This makes it look "normal" on Windows.
-. configure -menu .native
-menu .native
-set menufont [lindex [.native configure -font] 4]
-destroy .native
-
 # Hilight colors.  Get the colorful ones.
 entry .testent
 set cvsglb(textbg) white
@@ -154,11 +147,7 @@ if {$WSYS eq "x11"} {
   if [get_cde_params] {
       set theme_system "CDE" 
       # Find out what the default gui font is
-      if { [info exists cvscfg(guifont)] } {
-        # If you set a guifont in your ~/.tkcvs , I'm going to assume you want
-        # to use it for the menus too.
-        set menufont $cvscfg(guifont)
-      } else {
+      if { ! [info exists cvscfg(guifont)] } {
         # Find out what the tk default is
         set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
       }
@@ -175,7 +164,6 @@ if {$WSYS eq "x11"} {
       # do this for raw X11 because the user might have set their own options.
       set cvsglb(bg) [lindex [.testlbl cget -background] 0]
       set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
-      set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
       set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   } else {
     set_fallback_params
@@ -206,9 +194,14 @@ if {$WSYS eq "x11"} {
   set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
   set cvsglb(bg) [lindex [.testlbl cget -background] 0]
   set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
-  set cvslb(dfg) [lindex [.testlbl cget -disabledforeground] 0]
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
+  if {$WSYS eq "aqua"} {
+    # This at least keeps the live menu items from looking disabled.
+    # I can't get the disabled ones to look disabled though.
+    # Nothing but Menu.Foreground seems to do anything
+    option add *Menu.Foreground $cvsglb(fg)
+  }
 }
 
 
