@@ -662,12 +662,6 @@ proc DirCanvas:build {w} {
     #  CVS doesn't know anything about this file. For example, you have created
     #     a new file and have not run add.
 
-    # Prepending ./ to the filename prevents tilde expansion
-    #if {! [file exists ./$f]} {
-      # If a file CVS knows about doesn't exist, write its name in light ink
-      #set lblfg $cvsglb(dfg)
-    #}
-
     switch -glob -- $DirList($w:$f:status) {
      "<file>" {
        set DirList($w:$f:icon) paper

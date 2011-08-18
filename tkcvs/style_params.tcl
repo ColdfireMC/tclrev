@@ -284,6 +284,7 @@ proc set_fallback_params {} {
   global cvscfg
   global tk_version
 
+  #puts " X11 Fallback"
   #set bg "#bebebe"
   set bg "#d3d3d3"
   set fg "#000000"
