@@ -156,6 +156,13 @@ if {$WSYS eq "x11"} {
     set theme_system "GTK"
     if { ! [info exists cvscfg(guifont)] } {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      if {$tk_version >= 8.5} {
+       font configure TkDefaultFont -size 9
+       set cvscfg(guifont) TkDefaultFont
+       option add *Menu.font $cvscfg(guifont)
+       option add *Label.font $cvscfg(guifont)
+       option add *Button.font $cvscfg(guifont)
+      }
     }
     # in KDE or Gnome or some such.  It rather rudely sets all the Tk
     # backgrounds the same which I don't like, so I'm going to use the same
