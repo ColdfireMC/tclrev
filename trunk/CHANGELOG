@@ -2,6 +2,10 @@ Release 8.2.3    2011
 
 - Make the CVS module-level file browser searchable
 
+- Unwork-around some work-arounds for wish8.5, which are fixed now
+
+- Fix Bug #2797830 Bookmark delete with space
+
 
 Release 8.2.2 May, 2010
 

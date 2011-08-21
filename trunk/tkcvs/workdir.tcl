@@ -843,7 +843,7 @@ proc delete_bookmark {w} {
   set items [$w.lbx curselection]
   foreach item $items {
     set itemstring [$w.lbx get $item]
-    set dir [lindex $itemstring 0]
+    set dir [join [lrange $itemstring 0 end-1]]
     gen_log:log D "$item \"$itemstring\""
     gen_log:log D "  directory \"$dir\""
     unset bookmarks($dir)
