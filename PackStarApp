@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# http://code.google.com/p/tclkit/
+# http://rkeene.org/projects/info/wiki/Tclkits
+
+Tclkit=$HOME/tclkits/MacOSX/tclkit-8.5.9-macosx-universal
+#Tclkit=$HOME/tclkits/MacOSX/tclkit-darwin-univ-aqua
+
+echo "Cleaning up"
+rm -f tkcvs.app
+rm -f tkcvs.kit
+rm -rf tkcvs.vfs
+
+echo "Making tkcvs.tcl into a starkit"
+cp tkcvs/tkcvs.tcl .
+# Make a .kit
+sdx qwrap tkcvs.tcl
+if [ $? -gt 0 ]; then
+  echo "sdx qwrap failed"
+  exit 1
+fi
+
+# Open it into a directory tree
+echo "Unwrapping the kit"
+sdx unwrap tkcvs.kit
+if [ $? -gt 0 ]; then
+  echo "sdx unwrap failed"
+  exit 1
+fi
+rm -f tkcvs.kit
+
+mkdir tkcvs.vfs/lib/tkcvs
+cp tkcvs/*.tcl tkcvs.vfs/lib/tkcvs
+cp tkcvs/tclIndex tkcvs.vfs/lib/tkcvs
+cp -r tkcvs/bitmaps tkcvs.vfs/lib/tkcvs
+rm tkcvs.vfs/lib/tkcvs/tkcvs.tcl
+
+# To test:
+#tclkit tkcvs.vfs/main.tcl
+
+echo "Converting the kit into a runtime"
+sdx wrap tkcvs.kit -runtime $Tclkit
+
+rm tkcvs.tcl
+#mv tkcvs.kit tkcvs.linux
+#mv tkcvs.kit tkcvs.exe
+#mv tkcvs.kit tkcvs.macosx
+
+echo "Making TkCvs.app"
+mkdir TkCvs.app
+mkdir TkCvs.app/Contents
+mkdir TkCvs.app/Contents/MacOS
+mkdir TkCvs.app/Contents/Resources
+
+echo "Copying tkcvs.kit, icons and plist into the app"
+cp Info.plist TkCvs.app/Contents
+cp tkcvs/bitmaps/Anglerfish.icns TkCvs.app/Contents/Resources
+mv tkcvs.kit TkCvs.app/Contents/MacOS/tkcvs.kit
+
