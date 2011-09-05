@@ -7,10 +7,14 @@
 
 # the diff.exe file is added later in the InstallJammer setup.
 
-#Tclkit=$HOME/tclkits/Unix/tclkit-linux-x86
-Tclkit=$HOME/tclkits/Windows/tclkit-win32.upx.exe
-#Tclkit=$HOME/tclkits/MacOSX/tclkit-darwin-univ-aqua
+# http://code.google.com/p/tclkit/
+# http://rkeene.org/projects/info/wiki/Tclkits
 
+#Tclkit=$HOME/tclkits/Linux/tclkit-8.5.9-linux-ix86
+Tclkit=$HOME/tclkits/Windows/tclkit-8.5.9-win32.upx.exe
+#Tclkit=$HOME/tclkits/MacOSX/tclkit-8.5.9-macosx-universal
+
+echo "Cleaning up"
 rm -f tkcvs.exe
 rm -f tkcvs.kit
 rm -rf tkcvs.vfs
