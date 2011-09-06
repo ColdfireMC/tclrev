@@ -2312,6 +2312,8 @@ proc build-menubar {} {
       -command do-help-preferences
     $helpMenu add separator
     $helpMenu add command -label "About $g(name)" -underline 0 -command do-about
+    $helpMenu add command -label "About Wish" -underline 0 -command about_wish
+    $helpMenu add command -label "About Diff" -underline 0 -command about_diff
 
     bind $fileMenu <<MenuSelect>> {showTooltip menu %W}
     bind $editMenu <<MenuSelect>> {showTooltip menu %W}
@@ -2325,6 +2327,8 @@ proc build-menubar {} {
       Interface"
     set "g(tooltip,On Command Line)" "Show help on the command line arguments"
     set "g(tooltip,About $g(name))" "Show information about this application"
+    set "g(tooltip,About Wish)" "Show information about Wish"
+    set "g(tooltip,About Diff)" "Show information about diff"
 }
 
 ###############################################################################
@@ -6044,6 +6048,37 @@ proc write-report {command args} {
             write-report update
         }
     }
+}
+
+###############################################################################
+# Report the version of wish
+###############################################################################
+proc about_wish {} {
+  global tk_patchLevel
+
+  set version $tk_patchLevel
+  set whichwish [info nameofexecutable]
+
+  set about_string "$whichwish\n\n"
+  append about_string "Tk version  $version"
+
+  tk_messageBox -title "About Wish" \
+    -message $about_string \
+    -parent . \
+    -type ok
+}
+
+###############################################################################
+# Report the version of diff
+###############################################################################
+proc about_diff {} {
+  set commandline "diff -v"
+  set ret [catch {eval "exec $commandline"} output]
+
+  tk_messageBox -title "About Diff" \
+    -message $output \
+    -parent . \
+    -type ok
 }
 
 ###############################################################################
