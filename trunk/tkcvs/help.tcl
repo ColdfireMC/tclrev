@@ -86,24 +86,42 @@ proc help_cvs_version {} {
   gen_log:log T "ENTER"
   set v [viewer::new "Versions"]
 
-  $v\::log "\n-----------------------------------------"
-  set commandline "$cvs -v"
-  set ret [catch {eval "exec $commandline"} output]
-  $v\::log $output
+  $v\::log "-----------------------------------------\n"
+  set whichcvs  [auto_execok $cvs]
+  if {[llength $whichcvs]} {
+    set whichcvs [join $whichcvs]
+    set commandline "$cvs -v"
+    catch {eval "exec $commandline"} output
+    $v\::log "$whichcvs $output"
+  } else {
+    $v\::log "$cvs was not found in your path."
+  }
 
   $v\::log "\n-----------------------------------------\n"
-  set commandline "svn --version"
-  set ret [catch {eval "exec $commandline"} output]
-  $v\::log $output
+  set whichsvn  [auto_execok svn]
+  if {[llength $whichsvn]} {
+    set whichsvn [join $whichsvn]
+    set commandline "svn --version"
+    set ret [catch {eval "exec $commandline"} output]
+    $v\::log "$whichsvn\n$output"
+  } else {
+    $v\::log "svn was not found in your path."
+  }
 
   $v\::log "\n-----------------------------------------\n"
-  set commandline "rcs -V"
-  set ret [catch {eval "exec $commandline"} output]
-  $v\::log $output
-  if {$ret != 0} {
-    $v\::log "\nIf you see a usage message here, you have"
-    $v\::log " a very old version of RCS.\nSome things still work,"
-    $v\::log " but some won't.\n"
+  set whichrcs  [auto_execok rcs]
+  if {[llength $whichrcs]} {
+    set whichrcs [join $whichrcs]
+    set commandline "rcs -V"
+    set ret [catch {eval "exec $commandline"} output]
+    $v\::log "$whichrcs\n$output"
+    if {$ret != 0} {
+      $v\::log "\nIf you see a usage message here, you have"
+      $v\::log " a very old version of RCS.\nSome things still work,"
+      $v\::log " but some won't.\n"
+    }
+  } else {
+    $v\::log "rcs was not found in your path."
   }
 
   gen_log:log T "LEAVE"
