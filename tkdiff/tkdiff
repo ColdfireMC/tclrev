@@ -6072,11 +6072,19 @@ proc about_wish {} {
 # Report the version of diff
 ###############################################################################
 proc about_diff {} {
-  set commandline "diff -v"
-  set ret [catch {eval "exec $commandline"} output]
+
+  set whichdiff [auto_execok diff]
+  if {[llength $whichdiff]} {
+    set whichdiff [join $whichdiff]
+    set commandline "diff -v"
+    catch {eval "exec $commandline"} output
+    set message "$whichdiff\n$output"
+  } else {
+    set message "diff was not found in your path!"
+  }
 
   tk_messageBox -title "About Diff" \
-    -message $output \
+    -message $message \
     -parent . \
     -type ok
 }
