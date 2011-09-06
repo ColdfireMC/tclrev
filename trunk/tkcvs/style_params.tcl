@@ -199,6 +199,9 @@ proc get_gtk_params { } {
 
   #puts " GTK: Getting X11 options"
 
+  if {! [llength [auto_execok xrdb]]} {
+    return 0
+  }
   set pipe [open "|xrdb -q" r]
   while {[gets $pipe ln] > -1} {
     switch -glob -- $ln {
