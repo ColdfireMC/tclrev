@@ -251,6 +251,9 @@ proc get_gtk_params { } {
   option add *Button.activeBackground $cvsglb(light)
   option add *Canvas.Background $cvsglb(shadow)
   option add *Canvas.Foreground black
+  # These don't work
+  #option add *Dialog.Background $bg
+  #option add *__tk__messagebox*background $bg
   option add *Entry.Background $textbg
   option add *Entry.Foreground $textfg
   option add *Entry.selectBackground $hlbg
@@ -280,65 +283,6 @@ proc get_gtk_params { } {
   # and is the color of the box, not the checkmark
 
   return 1
-}
-
-proc set_fallback_params {} {
-  global cvsglb
-  global cvscfg
-  global tk_version
-
-  #puts " X11 Fallback"
-  #set bg "#bebebe"
-  set bg "#d3d3d3"
-  set fg "#000000"
-  set hlbg "#4a6984"
-  set hlfg "#ffffff"
-  set textbg "#ffffff"
-  set textfg "#000000"
-
-  shades $bg
-
-  set cvsglb(bg) $bg
-  set cvsglb(fg) $fg
-  set cvsglb(textbg) $textbg
-  set cvsglb(textfg) $textfg
-  set cvsglb(hlbg) $hlbg
-  set cvsglb(hlfg) $hlfg
-  #set cvsglb(light) "#ececec"
-
-  #option add *Background $bg
-  #option add *selectColor $hlbg
-  option add *Canvas.Background $cvsglb(shadow)
-  option add *Canvas.Foreground black
-  option add *Entry.Background $textbg
-  option add *Entry.Foreground $textfg
-  option add *Entry.selectBackground $hlbg
-  option add *Entry.selectForeground $hlfg
-  option add *Entry.readonlyBackground $bg
-  option add *Listbox.background $textbg
-  option add *Listbox.selectBackground $hlbg
-  option add *Listbox.selectForeground $hlfg
-  option add *Text.Background $textbg
-  option add *Text.Foreground $textfg
-  option add *Text.selectBackground $hlbg
-  option add *Text.selectForeground $hlfg
-
-  #option add *Menu.Background $bg
-  # Keep them from fading out when you mouse over them
-  option add *Button.activeForeground $fg
-  #option add *Button.activeBackground $bg
-  option add *Menu.activeForeground $fg
-  #option add *Menubutton.Background $bg
-  #option add *Menubutton.activeBackground $bg
-  #option add *Menubutton.activeForeground $fg
-
-  # Menu checkboxes
-  if {$tk_version >= 8.5} {
-    option add *Menu.selectColor $fg
-  } else {
-    option add *Menu.selectColor $hlbg
-    option add *Checkbutton.selectColor $hlbg
-  }
 }
 
 proc shades {bg} {

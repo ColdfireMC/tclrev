@@ -166,13 +166,50 @@ if {$WSYS eq "x11"} {
     }
     # in KDE or Gnome or some such.  It rather rudely sets all the Tk
     # backgrounds the same which I don't like, so I'm going to use the same
-    # trick I use for CDE to give the canvases a little shading.  I don't
-    # do this for raw X11 because the user might have set their own options.
+    # trick I use for CDE to give the canvases a little shading.
     set cvsglb(bg) [lindex [.testlbl cget -background] 0]
     set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
     set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   } else {
-    set_fallback_params
+    set bg  [lindex [.testlbl cget -background] 0]
+    set fg  [lindex [.testlbl cget -foreground] 0]
+    set hlbg "#4a6984"
+    set hlfg "#ffffff"
+    set textbg "#ffffff"
+    set textfg "#000000"
+
+    shades $bg
+
+    set cvsglb(bg) $bg
+    set cvsglb(fg) $fg
+    set cvsglb(textbg) $textbg
+    set cvsglb(textfg) $textfg
+    set cvsglb(hlbg) $hlbg
+    set cvsglb(hlfg) $hlfg
+
+    option add *Canvas.Background $cvsglb(shadow)
+    option add *Canvas.Foreground black
+    option add *Entry.Background $textbg
+    option add *Entry.Foreground $textfg
+    option add *Entry.selectBackground $hlbg
+    option add *Entry.selectForeground $hlfg
+    option add *Entry.readonlyBackground $bg
+    option add *Listbox.background $textbg
+    option add *Listbox.selectBackground $hlbg
+    option add *Listbox.selectForeground $hlfg
+    option add *Text.Background $textbg
+    option add *Text.Foreground $textfg
+    option add *Text.selectBackground $hlbg
+    option add *Text.selectForeground $hlfg
+    option add *Button.activeForeground $fg
+    option add *Menu.activeForeground $fg
+    if {$tk_version >= 8.5} {
+      option add *Menu.selectColor $fg
+    } else {
+      option add *Menu.selectColor $hlbg
+      option add *Checkbutton.selectColor $hlbg
+    }
+
     if { ! [info exists cvscfg(guifont)] } {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
       if {$tk_version >= 8.5} {
