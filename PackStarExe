@@ -42,8 +42,8 @@ cp tkcvs/*.tcl tkcvs.vfs/lib/tkcvs
 cp tkcvs/tclIndex tkcvs.vfs/lib/tkcvs
 cp -r tkcvs/bitmaps tkcvs.vfs/lib/tkcvs
 rm tkcvs.vfs/lib/tkcvs/tkcvs.tcl
-echo "Copying icons into the kit" cp tkcvs.exe /mnt/tadg/dorothyr/
-cp tkcvs/bitmaps/Ticklefish.ico tkcvs.vfs/tclkit.ico
+echo "Copying icons into the kit"
+cp tkcvs/bitmaps/Anglerfish.ico tkcvs.vfs/tclkit.ico
 
 # To test:
 #tclkit tkcvs.vfs/main.tcl
