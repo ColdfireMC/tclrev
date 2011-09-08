@@ -182,7 +182,8 @@ if {$tcl_platform(platform) == "windows"} {
 
     # set temp directory
     set cvscfg(tmpdir) "c:/temp"
-    set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
+    #set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
+    set cvscfg(tkdiff) "[file join \"[file dirname "$ScriptBin"] tkdiff\"]"
     set cvscfg(print_cmd)    "pr"
     set cvscfg(shell)  ""
     set cvscfg(allow_abort)  "no"
