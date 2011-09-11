@@ -873,7 +873,7 @@ proc get-file-rev {f index {r ""}} {
         set finfo(lbl,$index) "$f (RCS $rev)"
         debug-info "  Setting lbl $finfo(lbl,$index)"
         die-unless "exec $cmd -p$rcsopt \"$f\"" \""$finfo(pth,$index)\""
-    } elseif {[file exists [file join $dirname vcs.cfg]]} {
+    } elseif {[file exists [file join $dirname vcs.cfg]] || [info exists ::env(VCSCFG)]} {
         set cmd "get"
         if {$::tcl_platform(platform) == "windows"} {
             append cmd ".exe"
