@@ -839,18 +839,20 @@ proc get-file-rev {f index {r ""}} {
             set command "$cmd cat -r$rev $path"
         }
         die-unless "exec $command" $finfo(pth,$index)
-    } elseif {[file isdirectory [file join $dirname SCCS]]} {
-        if {[sccs-is-bk]} {
-            set cmd "bk"
-            set opt $bkopt
-            set finfo(lbl,$index) "$f (bitkeeper $rev)"
-            debug-info "  Setting lbl $finfo(lbl,$index)"
-        } else {
-            set finfo(lbl,$index) "$f (SCCS $rev)"
-            debug-info "  Setting lbl $finfo(lbl,$index)"
-            set opt $sccsopt
-            set cmd "sccs"
+    } elseif {[sccs-is-bk]} {
+	set cmd "bk"
+	set opt $bkopt
+	set finfo(lbl,$index) "$f (bitkeeper $rev)"
+	debug-info "  Setting lbl $finfo(lbl,$index)"
+        if {$::tcl_platform(platform) == "windows"} {
+            append cmd ".exe"
         }
+        die-unless "exec $cmd get -p $opt \"$f\"" "\"$finfo(pth,$index)\""
+    } elseif {[file isdirectory [file join $dirname SCCS]]} {
+	set finfo(lbl,$index) "$f (SCCS $rev)"
+	debug-info "  Setting lbl $finfo(lbl,$index)"
+	set opt $sccsopt
+	set cmd "sccs"
         if {$::tcl_platform(platform) == "windows"} {
             append cmd ".exe"
         }
