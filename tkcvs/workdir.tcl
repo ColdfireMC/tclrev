@@ -560,6 +560,12 @@ proc workdir_menus {} {
                   DirCanvas:unmap_column .workdir.main datecol
                 }
               }
+  .workdir.menubar.options add radiobutton -label "Sort by Name" \
+     -variable cvscfg(sortcol) -value filecol \
+     -command "DirCanvas:sort_by_col .workdir.main filecol -decreasing"
+  .workdir.menubar.options add radiobutton -label "Sort by Status" \
+     -variable cvscfg(sortcol) -value statcol \
+     -command "DirCanvas:sort_by_col .workdir.main statcol -decreasing"
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Report->Check Shows Unknown Files" \
      -variable cvscfg(status_filter) -onvalue false -offvalue true
@@ -1554,7 +1560,7 @@ proc save_options { } {
                  showstatcol showdatecol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums}
   set STRGopts { file_filter ignore_file_filter clean_these \
-                 printer rdetail ldetail log_classes lastdir \
+                 printer rdetail ldetail log_classes lastdir sortcol \
                  workgeom modgeom loggeom tracgeom editor editorargs}
 
   # Plus the logcanvas options
