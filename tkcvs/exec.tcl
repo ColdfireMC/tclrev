@@ -505,7 +505,6 @@ namespace eval ::view_output {
 
 proc viewer_window {w title parent} {
   global cvscfg
-  global cvsglb
   global tcl_platform
 
   toplevel $w
@@ -515,7 +514,7 @@ proc viewer_window {w title parent} {
   wm protocol $w WM_DELETE_WINDOW "$w.close invoke"
 
   text $w.text -setgrid yes -relief sunken -border 2 \
-      -bg $cvsglb(textbg) \
+      -bg white -fg black \
       -exportselection 1 -height 30 \
       -yscroll "$w.scroll set"
   bind $w.text <KeyPress> {
