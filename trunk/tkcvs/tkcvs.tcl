@@ -112,7 +112,7 @@ if {[file exists $optfile]} {
 ::picklist::load
 
 # Set some defaults
-set cvsglb(sort_pref) { filecol -decreasing }
+set cvsglb(sort_pref) [list $cvscfg(sortcol) "-decreasing"]
 set cvsglb(commit_comment) ""
 set cvsglb(cvs_version) ""
 set cvsglb(svn_version) ""

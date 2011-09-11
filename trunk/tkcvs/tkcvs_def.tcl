@@ -18,6 +18,8 @@ set cvscfg(showstatcol) true
 set cvscfg(showdatecol) true
 # If you want to see the editors/author/lockers column
 set cvscfg(showeditcol) true
+# Sort by filename or status (filecol or statcol)
+set cvscfg(sortcol) filecol
 
 # Branch Diagram options
 # Number of tags in a Subversion repository that's "too many", ie
