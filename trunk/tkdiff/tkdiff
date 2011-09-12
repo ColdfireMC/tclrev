@@ -132,9 +132,6 @@ entry .testent
 set w(selcolor) [lindex [.testent configure -selectbackground] 4]
 set entryfont [lindex [.testent configure -font] 3]
 destroy .testent
-# the above results in a nearly undistinguishable darker gray for the
-# selected color (rh8 with tk 8.3.3-74) "#c3c3c3"
-set w(selcolor) "#b03060"
 
 #debug-info "menufont $menufont"
 #debug-info "labelfont $labelfont"
@@ -2270,41 +2267,41 @@ proc build-menubar {} {
     # update the tooltips.
     menu $viewMenu
     $viewMenu add checkbutton -label "Ignore White Spaces" -underline 8 \
-      -selectcolor $w(selcolor) -variable opts(ignoreblanks) \
+      -variable opts(ignoreblanks) \
       -command do-show-ignoreblanks
 
     $viewMenu add checkbutton -label "Show Line Numbers" -underline 12 \
-      -selectcolor $w(selcolor) -variable opts(showln) \
+      -variable opts(showln) \
       -command do-show-linenumbers
 
     $viewMenu add checkbutton -label "Show Change Bars" -underline 12 \
-      -selectcolor $w(selcolor) -variable opts(showcbs) \
+      -variable opts(showcbs) \
       -command do-show-changebars
 
     $viewMenu add checkbutton -label "Show Diff Map" -underline 5 \
-      -selectcolor $w(selcolor) -variable opts(showmap) -command do-show-map
+      -variable opts(showmap) -command do-show-map
 
     $viewMenu add checkbutton -label "Show Line Comparison Window" \
-      -underline 11 -selectcolor $w(selcolor) -variable opts(showlineview) \
+      -underline 11 -variable opts(showlineview) \
       -command do-show-lineview
 
     $viewMenu add checkbutton -label "Show Inline Comparison (byte)" \
-      -selectcolor $w(selcolor) -variable opts(showinline1) \
+      -variable opts(showinline1) \
       -command do-show-inline1
 
     $viewMenu add checkbutton -label "Show Inline Comparison (recursive)" \
-      -selectcolor $w(selcolor) -variable opts(showinline2) \
+      -variable opts(showinline2) \
       -command do-show-inline2
 
     $viewMenu add separator
 
     $viewMenu add checkbutton -label "Synchronize Scrollbars" -underline 0 \
-      -selectcolor $w(selcolor) -variable opts(syncscroll)
+      -variable opts(syncscroll)
     $viewMenu add checkbutton -label "Auto Center" -underline 0 \
-      -selectcolor $w(selcolor) -variable opts(autocenter) -command {if \
+      -variable opts(autocenter) -command {if \
       {$opts(autocenter)} {center}}
     $viewMenu add checkbutton -label "Auto Select" -underline 1 \
-      -selectcolor $w(selcolor) -variable opts(autoselect)
+      -variable opts(autoselect)
 
     $viewMenu add separator
 
@@ -2352,7 +2349,7 @@ proc build-menubar {} {
     # update the tooltips.
     menu $mergeMenu
     $mergeMenu add checkbutton -label "Show Merge Window" -underline 9 \
-      -selectcolor $w(selcolor) -variable g(showmerge) -command "do-show-merge 1"
+      -variable g(showmerge) -command "do-show-merge 1"
     $mergeMenu add command -label "Write Merge File..." -underline 6 \
       -command popup-merge
     set "g(tooltip,Show Merge Window)" "Pops up a window showing the current \
@@ -3076,7 +3073,7 @@ proc customize {} {
         set rb $w(preferences).notebook.f$page
         radiobutton $rb -command "customize-selectPage $frame" \
           -variable g(prefPage) -value $frame -height 2 -text $page \
-          -indicatoron $indicatoron -width 10 -borderwidth 1
+          -indicatoron $indicatoron -borderwidth 1
 
         pack $rb -side left
 
@@ -5473,23 +5470,6 @@ proc main {} {
     global opts
     global waitvar
 
-    set cmd_empty [commandline]
-    debug-info "  main: commandline returned $cmd_empty"
-    if {! $cmd_empty} {
-        assemble-args
-    } else {
-        newDiffDialog
-        # If they cancel the dialog before doing any diffs, exit
-        if {[assemble-args] != 0} {
-          if {! [winfo exists .client]} {
-             do-exit
-          }
-          # If the full UI is drawn, don't exit
-          return
-        }
-        set cmd_empty 0
-    }
-
     wm withdraw .
     wm protocol . WM_DELETE_WINDOW do-exit
     wm title . "$g(name) $g(version)"
@@ -5511,14 +5491,27 @@ proc main {} {
         }
     }
 
-    set g(started) 1
-    wipe
-
     if {$g(windowingSystem) == "x11"} {
         get_cde_params
     }
     if {$g(windowingSystem) == "aqua"} {
         get_aqua_params
+    }
+
+    set g(started) 1
+    wipe
+
+    set cmd_empty [commandline]
+    debug-info "  main: commandline returned $cmd_empty"
+    if {! $cmd_empty} {
+        assemble-args
+    } else {
+        newDiffDialog
+        # If they cancel the dialog before doing any diffs, exit
+        if {[assemble-args] != 0} {
+          return
+        }
+        set cmd_empty 0
     }
 
     create-display
@@ -5764,6 +5757,7 @@ proc newDiffDialog {} {
         }
         button $commands.cancel -text "Cancel" -width 5 -default normal \
           -command {
+            if {! [winfo exists .client]} {do-exit}
             wm withdraw $w(newDiffPopup); set waitvar 0
         }
 
@@ -5849,9 +5843,24 @@ proc close-more-options {} {
 proc newDiffBrowse {title widget} {
     global w
 
-    set foo [$widget get]
-    set initialdir [file dirname $foo]
-    set initialfile [file tail $foo]
+    debug-info "newDiffBrowse($title $widget)"
+    set n [string index $widget end]
+    set widgroot [string range $widget 0 end-1]
+    if {$n == 1} { set other 2 } elseif { $n == 2} { set other 1 }
+    set entrystuff [$widget get]
+    debug-info "$n: entrystuff $entrystuff"
+    if {$entrystuff != ""} {
+      set initialdir [file dirname $entrystuff]
+    } else {
+      set otherentrystuff [${widgroot}$other get]
+      if {$otherentrystuff ne ""} {
+        set initialdir [file dirname $otherentrystuff]
+      } else {
+        set initialdir [pwd]
+      }
+    }
+    debug-info "initialdir $initialdir"
+    set initialfile [file tail $entrystuff]
     set filename [tk_getOpenFile -title $title -initialfile $initialfile \
       -initialdir $initialdir]
     if {[string length $filename] > 0} {
@@ -6853,7 +6862,7 @@ proc do-edit {} {
 # platform-specific stuff
 ##########################################################################
 proc setAquaDialogStyle {toplevel} {
-    tk::unsupported::MacWindowStyle style $toplevel movableDBoxProc
+    tk::unsupported::MacWindowStyle style $toplevel moveableModal
 }
 
 ##########################################################################
@@ -6879,7 +6888,6 @@ proc simpleEd {command args} {
 
             menu $w.menubar
             $w configure -menu $w.menubar
-
             $w.menubar add cascade -label "File" -menu $w.menubar.fileMenu
             $w.menubar add cascade -label "Edit" -menu $w.menubar.editMenu
 
@@ -9599,17 +9607,17 @@ proc get_cde_params {} {
 proc get_aqua_params {} {
     global w
 
-    # This doesn't seem to do anything?
-    set w(selcolor) lightsteelblue
-
     # button highlightbackground has to be the same as background
     # or else there are little white boxes around the button "pill"
     option add *background #ebebeb userDefault
     option add *Button.highlightBackground #ebebeb userDefault
+    # That totally screws up the menus unless you fix it with this
+    option add *Menu.Background white
+    option add *Menu.Foreground black
 
     option add *Entry.HighlightThickness 2 userDefault
     option add *Entry.highlightBackground $w(selcolor) userDefault
-    #option add *Canvas.background #eeeeee userDefault
+    option add *Canvas.background #eeeeee userDefault
     option add *Entry.background #ffffff userDefault
     option add *Text.background white userDefault
 }
