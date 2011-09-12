@@ -235,12 +235,6 @@ if {$tcl_platform(platform) == "windows"} {
       #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
       set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
       set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/Wish Shell\""
-
-      # We can't do the Aqua "pinstripes", but at least this helps keep
-      # the UI from being completely washed out (thanks Bryan Oakley)
-      option add *background #ebebeb
-      option add *Canvas.background #f0f0f0
-      option add *Entry.background #ffffff
     }
 }
 

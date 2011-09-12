@@ -248,10 +248,20 @@ if {$WSYS eq "x11"} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
   if {$WSYS eq "aqua"} {
-    # This at least keeps the live menu items from looking disabled.
-    # I can't get the disabled ones to look disabled though.
-    # Nothing but Menu.Foreground seems to do anything
-    option add *Menu.Foreground $cvsglb(fg)
+    # keep evertyhing from being blinding white
+    # button highlightbackground has to be the same as background
+    # or else there are little white boxes around the button "pill"
+    option add *background #ebebeb userDefault
+    option add *Button.highlightBackground #ebebeb userDefault
+    # That totally screws up the menus unless you fix it with this
+    option add *Menu.Background white
+    option add *Menu.Foreground black
+
+    option add *Entry.HighlightThickness 2 userDefault
+    option add *Entry.highlightBackground $cvsglb(hlbg) userDefault
+    option add *Canvas.background #eeeeee userDefault
+    option add *Entry.background #ffffff userDefault
+    option add *Text.background white userDefault
   }
 }
 
