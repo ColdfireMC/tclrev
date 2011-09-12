@@ -42,7 +42,7 @@ wm withdraw .
 
 # set a couple o' globals that we might need sooner than later
 set g(name) "TkDiff"
-set g(version) "4.2.0"
+set g(version) "4.2"
 set g(started) 0
 
 # FIXME - move to preferences
@@ -6862,7 +6862,9 @@ proc do-edit {} {
 # platform-specific stuff
 ##########################################################################
 proc setAquaDialogStyle {toplevel} {
-    tk::unsupported::MacWindowStyle style $toplevel moveableModal
+    if {[catch {tk::unsupported::MacWindowStyle style $toplevel moveableModal}] } {
+        tk::unsupported::MacWindowStyle style $toplevel movableDBoxProc
+    }
 }
 
 ##########################################################################
