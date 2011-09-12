@@ -688,7 +688,7 @@ proc workdir_edit_command {file} {
       }
     }
   }
-  return "$cvscfg(editor) $cvscfg(editorargs) \"$file\""
+  return "$cvscfg(editor) \"$file\""
 }
 
 proc workdir_newdir {file} {
