@@ -476,7 +476,7 @@ proc svn_commit_dialog {} {
   grid columnconf .commit.comment 1 -weight 1
   grid rowconf .commit.comment 1 -weight 1
   grid .commit.comment.lcomment -column 0 -row 0
-  grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2
+  grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
   grid .commit.comment.history  -column 0 -row 1
 
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
