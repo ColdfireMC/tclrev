@@ -5469,6 +5469,7 @@ proc main {} {
     global startupError
     global opts
     global waitvar
+    global tk_version
 
     wm withdraw .
     wm protocol . WM_DELETE_WINDOW do-exit
@@ -5492,7 +5493,19 @@ proc main {} {
     }
 
     if {$g(windowingSystem) == "x11"} {
-        get_cde_params
+        if {[get_gtk_params]} {
+           ;
+        } elseif {[get_cde_params]} {
+           ;
+        } else {
+           set hlbg "#4a6984"
+           set hlfg "#ffffff"
+           option add *selectColor $hlbg
+           if {$tk_version < 8.5} {
+             option add *Menu.selectColor $hlbg
+             option add *Checkbutton.selectColor $hlbg
+           }
+        }
     }
     if {$g(windowingSystem) == "aqua"} {
         get_aqua_params
@@ -9451,10 +9464,73 @@ proc internal_tooltips_PopDown {} {
     catch {destroy .tooltips_wind}
 }
 
-# Most of this was stolen from the "CDE" package by D. J. Hagberg.
-# I dig a couple more things out of the palette. -dar
+proc get_gtk_params { } {
+  global w
+  global tk_version
+
+  if {! [llength [auto_execok xrdb]]} {
+    return 0
+  }
+  set pipe [open "|xrdb -q" r]
+  while {[gets $pipe ln] > -1} {
+    switch -glob -- $ln {
+      {\*Toplevel.background:*} {
+        #puts $ln
+        set bg [lindex $ln 1]
+      }
+      {\*Toplevel.foreground:*} {
+        #puts $ln
+        set fg [lindex $ln 1]
+      }
+      {\*Text.background:*} {
+        #puts $ln
+        set textbg [lindex $ln 1]
+      }
+      {\*Text.foreground:*} {
+        #puts $ln
+        set textfg [lindex $ln 1]
+      }
+      {\*Text.selectBackground:*} {
+        #puts $ln
+        set hlbg [lindex $ln 1]
+      }
+      {\*Text.selectForeground:*} {
+        #puts $ln
+        set hlfg [lindex $ln 1]
+      }
+    }
+  }
+  close $pipe
+
+  if {! [info exists bg] || ! [info exists fg]} {
+    return 0
+  }
+  option add *Entry.Background $textbg
+  option add *Entry.Foreground $textfg
+  option add *Entry.selectBackground $hlbg
+  option add *Entry.selectForeground $hlfg
+  option add *Entry.readonlyBackground $bg
+  option add *Listbox.background $textbg
+  option add *Listbox.selectBackground $hlbg
+  option add *Listbox.selectForeground $hlfg
+  option add *Text.Background $textbg
+  option add *Text.Foreground $textfg
+  option add *Text.selectBackground $hlbg
+  option add *Text.selectForeground $hlfg
+  option add *selectColor $hlbg
+  # Menu checkboxes
+  if {$tk_version >= 8.5} {
+    option add *Menu.selectColor $fg
+  } else {
+    option add *Menu.selectColor $hlbg
+    option add *Checkbutton.selectColor $hlbg
+  }
+
+  return 1
+}
+
 proc get_cde_params {} {
-    global w
+    global tk_version
 
     # Set defaults for all the necessary things
     set bg [option get . background background]
@@ -9462,22 +9538,19 @@ proc get_cde_params {} {
     set guifont [option get . buttonFontList buttonFontList]
     set txtfont [option get . FontSet FontSet]
     set listfont [option get . textFontList textFontList]
-    set textbg $bg
-    set textfg $fg
+
+    set textbg white
+    set textfg black
 
     # If any of these aren't set, I don't think we're in CDE after all
-    if {![string length $fg]} {
-        return 0
-    }
-    if {![string length $bg]} {
-        return 0
-    }
+    if {![string length $fg]} { return 0 }
+    if {![string length $bg]} { return 0 }
     if {![string length $guifont]} {
-        return 0
+      # For AIX
+      set guifont [option get . FontList FontList]
     }
-    if {![string length $txtfont]} {
-        return 0
-    }
+    if {![string length $guifont]} { return 0 }
+    if {![string length $txtfont]} { return 0 }
 
     set guifont [string trimright $guifont ":"]
     set txtfont [string trimright $txtfont ":"]
@@ -9499,6 +9572,7 @@ proc get_cde_params {} {
     set cur_rsrc ~/.dt/sessions/current/dt.resources
     set hom_rsrc ~/.dt/sessions/home/dt.resources
     if {[file readable $cur_rsrc] && [file readable $hom_rsrc]} {
+        # Both exist.  Use whichever is newer
         if {[file mtime $cur_rsrc] > [file mtime $hom_rsrc]} {
             if {[catch {open $cur_rsrc r} fh]} {
                 set fh ""
@@ -9551,14 +9625,6 @@ proc get_cde_params {} {
                     gets $fh iconbg ;#control panel bg too
                     close $fh
 
-                    option add *Entry.highlightColor $activetitle userDefault
-                    option add *selectColor $activetitle userDefault
-                    option add *Text.highlightColor $wkspc4 userDefault
-                    option add *Dialog.Background $menubg userDefault
-                    option add *Menu.Background $menubg userDefault
-                    option add *Menubutton.Background $menubg userDefault
-                    option add *Menu.activeBackground $menubg userDefault
-                    option add *Menubutton.activeBackground $menubg userDefault
                     set w(selcolor) $activetitle
                 }
             }
@@ -9570,34 +9636,55 @@ proc get_cde_params {} {
         return 0
     }
 
-    #option add *Button.font $guifont userDefault
-    #option add *Label.font $guifont userDefault
-    #option add *Menu.font $guifont userDefault
-    #option add *Menubutton.font $guifont userDefault
-    #option add *Dialog.msg.font $dlgfont userDefault
+    set hlfg $fg
+    if {! [info exists w(selcolor)]} {
+      set w(selcolor) $fg
+    }
 
-    option add *Text.Background $textbg userDefault
-    option add *Entry.Background $textbg userDefault
-    option add *Text.Foreground $textfg userDefault
-    option add *Entry.Foreground $textfg userDefault
-    option add *Button.activeBackground $bg userDefault
-    option add *Button.activeForeground $fg userDefault
-    option add *Scrollbar.activeBackground $bg userDefault
-    option add *Scrollbar.troughColor $shadow userDefault
-    option add *Canvas.Background $shadow userDefault
+    option add *selectColor $activetitle
+    option add *Button.activeBackground $bg
+    option add *Button.activeForeground $fg
+    option add *Canvas.Background $shadow
+    option add *Canvas.Foreground black
+    option add *Dialog.Background $menubg
+    option add *Entry.Background $textbg
+    option add *Entry.Foreground $textfg
+    option add *Entry.readonlyBackground $bg
+    option add *Entry.highlightBackground $bg
+    option add *Entry.highlightColor $activetitle
+    option add *Listbox.background $textbg
+    option add *Listbox.selectBackground $w(selcolor)
+    option add *Listbox.selectForeground $hlfg
+    option add *Scrollbar.activeBackground $bg
+    option add *Scrollbar.troughColor $shadow
+    option add *Text.Background $textbg
+    option add *Text.Foreground $textfg
+    option add *Text.highlightBackground $bg
+    option add *Text.highlightColor $wkspc4
 
-    # These menu configs work if you use native menus.
-    option add *Menu.borderWidth 1 userDefault
-    option add *Menu.activeForeground $fg userDefault
-    option add *Menubutton.activeForeground $fg userDefault
+    option add *Menu.borderWidth 1
+    option add *Menu.Background $menubg
+    option add *Menu.activeBackground $menubg
+    option add *Menu.activeForeground $fg
+    option add *Menubutton.Background $menubg
+    option add *Menubutton.activeBackground $menubg
+    option add *Menubutton.activeForeground $fg
 
-    # This draws a thin border around buttons
-    #option add *highlightBackground $bg userDefault
+    # Menu checkboxes
+    if {$tk_version >= 8.5} {
+      # This makes it look like the native CDE checkbox
+      option add *Menu.selectColor $fg
+      option add *Checkbutton.offRelief sunken
+      option add *Checkbutton.selectColor ""
+    } else {
+      option add *Menu.selectColor $w(selcolor)
+    }
+    option add *Checkbutton.activeBackground $bg
+    option add *Checkbutton.activeForeground $fg
+
     # Suppress the border
     option add *HighlightThickness 0 userDefault
     # Add it back for text and entry widgets
-    option add *Text.highlightBackground $bg userDefault
-    option add *Entry.highlightBackground $bg userDefault
     option add *Text.HighlightThickness 2 userDefault
     option add *Entry.HighlightThickness 1 userDefault
 
