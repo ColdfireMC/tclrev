@@ -16,16 +16,13 @@ proc get_cde_params { } {
   global cvscfg
   global tk_version
 
-  #puts " CDE: Getting X11 options"
   # Set defaults for all the necessary things
   set bg [option get . background background]
   set fg [option get . foreground foreground]
   set guifont [option get . buttonFontList buttonFontList]
   set txtfont [option get . FontSet FontSet]
   set listfont [option get . textFontList textFontList]
-  # Use these defaults
-  #set textbg $bg
-  #set textfg $fg
+
   set textbg white
   set textfg black
 
@@ -44,25 +41,21 @@ proc get_cde_params { } {
   set listfont [string trimright $txtfont ":"]
   regsub {medium} $txtfont "bold" dlgfont
 
-  #puts " Background $bg"
-  #puts " Foreground $fg"
-  #puts " UI Font $guifont"
-  #puts " User Font $txtfont"
-  #puts " Text Font $listfont"
-  #puts " Dialog Font $dlgfont"
+  # They don't tell us the slightly darker color they use for the
+  # scrollbar backgrounds and graphics backgrounds, so we'll make
+  # one up.
+  shades $bg
 
   set cvscfg(guifont) $guifont
   set cvscfg(dialogfont) $dlgfont
 
   # If we can find the user's dt.resources file, we can find out the
   # palette and background/foreground colors
-  #puts "TRYING TO READ dt.resources"
   set fh ""
   set palette ""
   set cur_rsrc ~/.dt/sessions/current/dt.resources
   set hom_rsrc ~/.dt/sessions/home/dt.resources
   if {[file readable $cur_rsrc] && [file readable $hom_rsrc]} {
-    #puts " Both $cur_rsrc and $hom_rsrc exist."
     # Both exist.  Use whichever is newer
     if {[file mtime $cur_rsrc] > [file mtime $hom_rsrc]} {
       #puts "  $cur_rsrc is newer"
@@ -103,14 +96,13 @@ proc get_cde_params { } {
     if {[string length $palette]} {
       foreach dtdir {/usr/dt /etc/dt ~/.dt} {
         # This uses the last palette that we find
-        if {[file readable $dtdir/palettes/$palette]} {
-          set palf $dtdir/palettes/$palette
+        if {[file readable [file join $dtdir palettes $palette]]} {
+          set palf [file join $dtdir palettes $palette]
         }
       }
       # puts "Using palette $palf"
       if {[string length $palf]} {
         if {![catch {open $palf r} fh]} {
-          #puts " Reading palette $palf"
           gets $fh activetitle
           gets $fh inactivetitle
           gets $fh wkspc1
@@ -137,8 +129,6 @@ proc get_cde_params { } {
     set hlbg $bg
   }
 
-  shades $bg
-
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
   set cvsglb(textbg) $textbg
@@ -157,7 +147,6 @@ proc get_cde_params { } {
   option add *Entry.readonlyBackground $bg
   option add *Entry.highlightBackground $bg
   option add *Entry.highlightColor $activetitle
-  #option add *Entry.HighlightThickness 1
   option add *Listbox.background $textbg
   option add *Listbox.selectBackground $hlbg
   option add *Listbox.selectForeground $hlfg
@@ -165,7 +154,6 @@ proc get_cde_params { } {
   option add *Scrollbar.troughColor $cvsglb(shadow)
   option add *Text.Background $textbg
   option add *Text.Foreground $textfg
-  #option add *Text.HighlightThickness 2
   option add *Text.highlightBackground $bg
   option add *Text.highlightColor $wkspc4
 
@@ -192,13 +180,10 @@ proc get_cde_params { } {
 }
 
 proc get_gtk_params { } {
-  global env
   global cvsglb
-  global cvscfg
   global tk_version
 
   #puts " GTK: Getting X11 options"
-
   if {! [llength [auto_execok xrdb]]} {
     return 0
   }
@@ -247,13 +232,9 @@ proc get_gtk_params { } {
   set cvsglb(hlfg) $hlfg
 
   # These are already set, but maybe I like mine better
-  #option add *selectColor $hlbg
   option add *Button.activeBackground $cvsglb(light)
   option add *Canvas.Background $cvsglb(shadow)
   option add *Canvas.Foreground black
-  # These don't work
-  #option add *Dialog.Background $bg
-  #option add *__tk__messagebox*background $bg
   option add *Entry.Background $textbg
   option add *Entry.Foreground $textfg
   option add *Entry.selectBackground $hlbg
@@ -266,11 +247,6 @@ proc get_gtk_params { } {
   option add *Text.Foreground $textfg
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
-  #option add *Menu.activeBackground $bg
-  #option add *Menu.activeForeground $fg
-  #option add *Menubutton.Background $bg
-  #option add *Menubutton.activeBackground $bg
-  #option add *Menubutton.activeForeground $fg
 
   # Menu checkboxes
   if {$tk_version >= 8.5} {
@@ -279,8 +255,7 @@ proc get_gtk_params { } {
     option add *Menu.selectColor $hlbg
     option add *Checkbutton.selectColor $hlbg
   }
-  # This affects UI checkbuttons, not the ones on menus
-  # and is the color of the box, not the checkmark
+  option add *selectColor $hlbg
 
   return 1
 }
