@@ -131,7 +131,6 @@ if {$cvsglb(hlfg) eq {} } {
   # This happens on the Mac
   set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
 }
-#set hlbg_rgb [winfo rgb .testent $cvsglb(hlbg)]
 set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
 destroy .testent
 
@@ -280,7 +279,7 @@ regsub -- {-} $fsiz {} fsiz
 if {[tk windowingsystem] eq "x11"} {
   if {$tk_version >= 8.5} {
     # Put the help menu back on the right
-    tk::classic::restore menu
+    #tk::classic::restore menu
 
     if {$tcl_platform(os) eq "Linux" && [lindex $tk_patchLevel 2] < 8} {
       # FIXME: check for X.Org in server string?
