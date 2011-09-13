@@ -1,12 +1,12 @@
 4.2             (2011)
      * Make opening file dialog know where it started from, and start in the
-       same directory as the first file when looking for the second one.  Will
-       still have to do something about when it's started with a double click.
+       same directory as the first file when looking for the second one.
      * Detect PVCS by environment variable (patch 1839361 by nafmo)
      * Update BitKeeper support (patch 3053551 by wscott)
      * Mercurial support (patch 1867700 by damonmc)
      * Rudimentary Git support (patch 1836293 by cecilh3)
      * add help menu items to report versions of wish and diff
+     * Fix location of temp files on MacOS X
 
 4.1.4           (11/15/2007):
      * Ignore -u option from svn for usage "svn diff --diff-cmd=tkdiff"

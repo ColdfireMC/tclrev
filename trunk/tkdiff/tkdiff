@@ -72,8 +72,8 @@ if {[catch {tk windowingsystem} g(windowingSystem)]} {
 # time you run
 switch -- $::tcl_platform(platform) {
 windows {
-        if {[info exists env(TEMP)]} {
-            set opts(tmpdir) [file nativename $env(TEMP)]
+        if {[info exists ::env(TEMP)]} {
+            set opts(tmpdir) [file nativename $::env(TEMP)]
         } else {
             set opts(tmpdir) C:/temp
         }
@@ -83,8 +83,10 @@ windows {
         set opts(relief) flat
     }
 default {
-        if {[info exists env(TMPDIR)]} {
-            set opts(tmpdir) $env(TMPDIR)
+        if {[info exists ::env(TMPDIR)] && $g(windowingSystem) != "aqua"} {
+            # MacOS X sets TMPDIR to something like /var/folders/uC/uCFr1z6qESSEYkTuOsevX++++yw/-Tmp-/
+            # don't let it do that
+            set opts(tmpdir) $::env(TMPDIR)
         } else {
             set opts(tmpdir) /tmp
         }
@@ -97,15 +99,22 @@ default {
 
 # compute preferences file location. Note that TKDIFFRC can hold either
 # a directory or a file, though we document it as being a file name
-if {[info exists env(TKDIFFRC)]} {
-    set rcfile $env(TKDIFFRC)
+if {[info exists ::env(TKDIFFRC)]} {
+    set rcfile $::env(TKDIFFRC)
     if {[file isdirectory $rcfile]} {
         set rcfile [file join $rcfile $basercfile]
     }
-} elseif {[info exists env(HOME)]} {
-    set rcfile [file join $env(HOME) $basercfile]
+} elseif {[info exists ::env(HOME)]} {
+    set rcfile [file join $::env(HOME) $basercfile]
 } else {
     set rcfile [file join "/" $basercfile]
+}
+
+# Where should we start?  MacOSX apps want to start in / which is obnoxious
+if {[pwd] eq "/"} {
+    if {[info exists ::env(HOME)]} {
+       catch {cd $::env(HOME)}
+    }
 }
 
 # Try to find a pleasing native look for each platform.
@@ -5773,7 +5782,6 @@ proc newDiffDialog {} {
             if {! [winfo exists .client]} {do-exit}
             wm withdraw $w(newDiffPopup); set waitvar 0
         }
-
         pack $commands.ok $commands.cancel -side left -fill none -expand y \
           -pady 4
 
@@ -9465,68 +9473,68 @@ proc internal_tooltips_PopDown {} {
 }
 
 proc get_gtk_params { } {
-  global w
-  global tk_version
-
-  if {! [llength [auto_execok xrdb]]} {
-    return 0
-  }
-  set pipe [open "|xrdb -q" r]
-  while {[gets $pipe ln] > -1} {
-    switch -glob -- $ln {
-      {\*Toplevel.background:*} {
-        #puts $ln
-        set bg [lindex $ln 1]
-      }
-      {\*Toplevel.foreground:*} {
-        #puts $ln
-        set fg [lindex $ln 1]
-      }
-      {\*Text.background:*} {
-        #puts $ln
-        set textbg [lindex $ln 1]
-      }
-      {\*Text.foreground:*} {
-        #puts $ln
-        set textfg [lindex $ln 1]
-      }
-      {\*Text.selectBackground:*} {
-        #puts $ln
-        set hlbg [lindex $ln 1]
-      }
-      {\*Text.selectForeground:*} {
-        #puts $ln
+    global w
+    global tk_version
+  
+    if {! [llength [auto_execok xrdb]]} {
+      return 0
+    }
+    set pipe [open "|xrdb -q" r]
+    while {[gets $pipe ln] > -1} {
+      switch -glob -- $ln {
+        {\*Toplevel.background:*} {
+          #puts $ln
+          set bg [lindex $ln 1]
+        }
+        {\*Toplevel.foreground:*} {
+          #puts $ln
+          set fg [lindex $ln 1]
+        }
+        {\*Text.background:*} {
+          #puts $ln
+          set textbg [lindex $ln 1]
+        }
+        {\*Text.foreground:*} {
+          #puts $ln
+          set textfg [lindex $ln 1]
+        }
+        {\*Text.selectBackground:*} {
+          #puts $ln
+          set hlbg [lindex $ln 1]
+        }
+        {\*Text.selectForeground:*} {
+          #puts $ln
         set hlfg [lindex $ln 1]
+        }
       }
     }
-  }
-  close $pipe
+    close $pipe
+  
+    if {! [info exists bg] || ! [info exists fg]} {
+        return 0
+    }
+    option add *Entry.Background $textbg
+    option add *Entry.Foreground $textfg
+    option add *Entry.selectBackground $hlbg
+    option add *Entry.selectForeground $hlfg
+    option add *Entry.readonlyBackground $bg
+    option add *Listbox.background $textbg
+    option add *Listbox.selectBackground $hlbg
+    option add *Listbox.selectForeground $hlfg
+    option add *Text.Background $textbg
+    option add *Text.Foreground $textfg
+    option add *Text.selectBackground $hlbg
+    option add *Text.selectForeground $hlfg
+    option add *selectColor $hlbg
+    # Menu checkboxes
+    if {$tk_version >= 8.5} {
+        option add *Menu.selectColor $fg
+    } else {
+        option add *Menu.selectColor $hlbg
+        option add *Checkbutton.selectColor $hlbg
+    }
 
-  if {! [info exists bg] || ! [info exists fg]} {
-    return 0
-  }
-  option add *Entry.Background $textbg
-  option add *Entry.Foreground $textfg
-  option add *Entry.selectBackground $hlbg
-  option add *Entry.selectForeground $hlfg
-  option add *Entry.readonlyBackground $bg
-  option add *Listbox.background $textbg
-  option add *Listbox.selectBackground $hlbg
-  option add *Listbox.selectForeground $hlfg
-  option add *Text.Background $textbg
-  option add *Text.Foreground $textfg
-  option add *Text.selectBackground $hlbg
-  option add *Text.selectForeground $hlfg
-  option add *selectColor $hlbg
-  # Menu checkboxes
-  if {$tk_version >= 8.5} {
-    option add *Menu.selectColor $fg
-  } else {
-    option add *Menu.selectColor $hlbg
-    option add *Checkbutton.selectColor $hlbg
-  }
-
-  return 1
+    return 1
 }
 
 proc get_cde_params {} {
