@@ -149,6 +149,10 @@ if {$WSYS eq "x11"} {
       # Find out what the tk default is
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
     }
+    # Put the Help menu back on the right
+    if {$tk_version >= 8.5} {
+      tk::classic::restore menu
+    }
     #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
     set cvsglb(canvbg) $cvsglb(shadow)
   } elseif [get_gtk_params] {
