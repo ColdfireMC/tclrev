@@ -140,7 +140,7 @@ set textfont [lindex [.testtext configure -font] 3]
 destroy .testtext
 
 entry .testent
-#set w(selcolor) [lindex [.testent configure -selectbackground] 4]
+set w(selcolor) [lindex [.testent configure -selectbackground] 4]
 set entryfont [lindex [.testent configure -font] 3]
 destroy .testent
 
@@ -3074,22 +3074,15 @@ proc customize {} {
     pack $w(preferences).notebook -side top -fill x -pady 4
     set pagelist {}
 
-    # Radiobuttons without indicators look rather sucky on MacOSX, so
-    # we'll tweak the style for that platform
-    if {$::tcl_platform(os) == "Darwin"} {
-        set indicatoron true
-    } else {
-        set indicatoron false
-    }
-
+    # The relief makes these work, so we don't need to use the selcolor
     foreach page [list General Display Appearance] {
         set frame $w(preferences).f$page
         lappend pagelist $frame
         set rb $w(preferences).notebook.f$page
         radiobutton $rb -command "customize-selectPage $frame" \
-          -selectcolor $w(selcolor) \
+          -selectcolor $w(background) \
           -variable g(prefPage) -value $frame -height 2 -text $page \
-          -indicatoron $indicatoron -borderwidth 1
+          -indicatoron false -borderwidth 1
 
         pack $rb -side left
 
@@ -5517,7 +5510,7 @@ proc main {} {
            debug-info "x11 fallback"
            set hlbg "#4a6984"
            set hlfg "#ffffff"
-           set w(selcolor) $hlbg
+           #set w(selcolor) $hlbg
            if {$tk_version >= 8.5} {
              option add *Menu.selectColor $w(foreground)
              option add *Checkbutton.selectColor ""
