@@ -1,0 +1,9 @@
+cp CHANGELOG FAQ doinstall.tcl ~/tkcvs-proj
+cp PackApp Info.plist ~/tkcvs-proj
+cd tkcvs
+cp *.tcl tclIndex *.pl *.1 mkindex ~/tkcvs-proj/tkcvs
+cp bitmaps/* ~/tkcvs-proj/tkcvs/bitmaps
+cd ..
+cp contrib/* ~/tkcvs-proj/contrib
+cp teststuff/* ~/tkcvs-proj/teststuff
+cp tkdiff/*  ~/tkcvs-proj/tkdiff

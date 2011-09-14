@@ -5520,8 +5520,8 @@ proc main {} {
            set w(selcolor) $hlbg
            if {$tk_version >= 8.5} {
              option add *Menu.selectColor $w(foreground)
-             option add *Checkbutton.selectColor "#ffffff"
-             option add *Radiobutton.selectColor "#ffffff"
+             option add *Checkbutton.selectColor ""
+             option add *Radiobutton.selectColor ""
            } else {
              option add *selectColor $hlbg
            }
@@ -9537,12 +9537,11 @@ proc get_gtk_params { } {
     option add *Text.Foreground $textfg
     option add *Text.selectBackground $hlbg
     option add *Text.selectForeground $hlfg
-    #option add *selectColor $hlbg
     # Menu checkboxes
     if {$tk_version >= 8.5} {
        option add *Menu.selectColor $fg
-       option add *Checkbutton.activeBackground $bg
-       option add *Radiobutton.activeBackground $bg
+       option add *Checkbutton.selectColor ""
+       option add *Radiobutton.selectColor ""
     } else {
        option add *selectColor $w(selcolor)
     }

@@ -253,8 +253,8 @@ proc get_gtk_params { } {
   # checkbuttons and radiobuttons
   if {$tk_version >= 8.5} {
     option add *Menu.selectColor $fg
-    option add *Checkbutton.activeBackground $bg
-    option add *Radiobutton.activeBackground $bg
+    option add *Checkbutton.selectColor ""
+    option add *Radiobutton.selectColor ""
   } else {
     option add *selectColor $hlbg
   }
