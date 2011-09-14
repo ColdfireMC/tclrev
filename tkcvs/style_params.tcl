@@ -164,17 +164,19 @@ proc get_cde_params { } {
   option add *Menubutton.Background $menubg
   option add *Menubutton.activeBackground $menubg
   option add *Menubutton.activeForeground $fg
-  # Menu checkboxes
+
+  # checkbuttons and radiobuttons
   if {$tk_version >= 8.5} {
     # This makes it look like the native CDE checkbox
-    option add *Menu.selectColor $fg
     option add *Checkbutton.offRelief sunken
     option add *Checkbutton.selectColor ""
+    option add *Radiobutton.selectColor ""
+    option add *Menu.selectColor $fg
+    option add *Checkbutton.activeBackground $bg
+    option add *Checkbutton.activeForeground $fg
   } else {
-    option add *Menu.selectColor $hlbg
+    option add *selectColor $hlbg
   }
-  option add *Checkbutton.activeBackground $bg
-  option add *Checkbutton.activeForeground $fg
 
   return 1
 }
@@ -248,14 +250,14 @@ proc get_gtk_params { } {
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
 
-  # Menu checkboxes
+  # checkbuttons and radiobuttons
   if {$tk_version >= 8.5} {
     option add *Menu.selectColor $fg
+    option add *Checkbutton.activeBackground $bg
+    option add *Radiobutton.activeBackground $bg
   } else {
-    option add *Menu.selectColor $hlbg
-    option add *Checkbutton.selectColor $hlbg
+    option add *selectColor $hlbg
   }
-  option add *selectColor $hlbg
 
   return 1
 }
