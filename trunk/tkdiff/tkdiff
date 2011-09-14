@@ -130,6 +130,8 @@ destroy .native
 
 # Find out what the tk default is
 label .testlbl -text "LABEL"
+set w(background) [lindex [.testlbl cget -background] 0]
+set w(foreground) [lindex [.testlbl cget -foreground] 0]
 set labelfont [lindex [.testlbl configure -font] 3]
 destroy .testlbl
 
@@ -138,7 +140,7 @@ set textfont [lindex [.testtext configure -font] 3]
 destroy .testtext
 
 entry .testent
-set w(selcolor) [lindex [.testent configure -selectbackground] 4]
+#set w(selcolor) [lindex [.testent configure -selectbackground] 4]
 set entryfont [lindex [.testent configure -font] 3]
 destroy .testent
 
@@ -2521,6 +2523,7 @@ proc build-toolbar {} {
     label $toolbar.mergechoicelbl -text "Merge:" -pady 0 -bd 2 -relief groove
 
     radiobutton $toolbar.m2_im -borderwidth 1 -indicatoron false \
+      -selectcolor $w(selcolor) \
       -image mergeChoice2Image -value 2 -variable g(toggle) -command \
       [list do-merge-choice 2] -takefocus 0
     radiobutton $toolbar.m2_tx -borderwidth 1 -indicatoron true -text "R" \
@@ -2528,6 +2531,7 @@ proc build-toolbar {} {
       -takefocus 0
 
     radiobutton $toolbar.m1_im -borderwidth 1 -indicatoron false \
+      -selectcolor $w(selcolor) \
       -image mergeChoice1Image -value 1 -variable g(toggle) -command \
       [list do-merge-choice 1] -takefocus 0
     radiobutton $toolbar.m1_tx -borderwidth 1 -indicatoron true -text "L" \
@@ -2535,6 +2539,7 @@ proc build-toolbar {} {
       -takefocus 0
 
     radiobutton $toolbar.m12_im -borderwidth 1 -indicatoron false \
+      -selectcolor $w(selcolor) \
       -image mergeChoice12Image -value 12 -variable g(toggle) -command \
       [list do-merge-choice 12] -takefocus 0
     radiobutton $toolbar.m12_tx -borderwidth 1 -indicatoron true -text "LR" \
@@ -2542,6 +2547,7 @@ proc build-toolbar {} {
       -takefocus 0
 
     radiobutton $toolbar.m21_im -borderwidth 1 -indicatoron false \
+      -selectcolor $w(selcolor) \
       -image mergeChoice21Image -value 21 -variable g(toggle) -command \
       [list do-merge-choice 21] -takefocus 0
     radiobutton $toolbar.m21_tx -borderwidth 1 -indicatoron true -text "RL" \
@@ -3081,6 +3087,7 @@ proc customize {} {
         lappend pagelist $frame
         set rb $w(preferences).notebook.f$page
         radiobutton $rb -command "customize-selectPage $frame" \
+          -selectcolor $w(selcolor) \
           -variable g(prefPage) -value $frame -height 2 -text $page \
           -indicatoron $indicatoron -borderwidth 1
 
@@ -5503,16 +5510,20 @@ proc main {} {
 
     if {$g(windowingSystem) == "x11"} {
         if {[get_gtk_params]} {
-           ;
+           debug-info "gtk"
         } elseif {[get_cde_params]} {
-           ;
+           debug-info "cde"
         } else {
+           debug-info "x11 fallback"
            set hlbg "#4a6984"
            set hlfg "#ffffff"
-           option add *selectColor $hlbg
-           if {$tk_version < 8.5} {
-             option add *Menu.selectColor $hlbg
-             option add *Checkbutton.selectColor $hlbg
+           set w(selcolor) $hlbg
+           if {$tk_version >= 8.5} {
+             option add *Menu.selectColor $w(foreground)
+             option add *Checkbutton.selectColor "#ffffff"
+             option add *Radiobutton.selectColor "#ffffff"
+           } else {
+             option add *selectColor $hlbg
            }
         }
     }
@@ -9513,6 +9524,7 @@ proc get_gtk_params { } {
     if {! [info exists bg] || ! [info exists fg]} {
         return 0
     }
+    set w(selcolor) $hlbg
     option add *Entry.Background $textbg
     option add *Entry.Foreground $textfg
     option add *Entry.selectBackground $hlbg
@@ -9525,13 +9537,14 @@ proc get_gtk_params { } {
     option add *Text.Foreground $textfg
     option add *Text.selectBackground $hlbg
     option add *Text.selectForeground $hlfg
-    option add *selectColor $hlbg
+    #option add *selectColor $hlbg
     # Menu checkboxes
     if {$tk_version >= 8.5} {
-        option add *Menu.selectColor $fg
+       option add *Menu.selectColor $fg
+       option add *Checkbutton.activeBackground $bg
+       option add *Radiobutton.activeBackground $bg
     } else {
-        option add *Menu.selectColor $hlbg
-        option add *Checkbutton.selectColor $hlbg
+       option add *selectColor $w(selcolor)
     }
 
     return 1
@@ -9539,6 +9552,7 @@ proc get_gtk_params { } {
 
 proc get_cde_params {} {
     global tk_version
+    global w
 
     # Set defaults for all the necessary things
     set bg [option get . background background]
@@ -9633,7 +9647,6 @@ proc get_cde_params {} {
                     gets $fh iconbg ;#control panel bg too
                     close $fh
 
-                    set w(selcolor) $activetitle
                 }
             }
         }
@@ -9644,12 +9657,8 @@ proc get_cde_params {} {
         return 0
     }
 
-    set hlfg $fg
-    if {! [info exists w(selcolor)]} {
-      set w(selcolor) $fg
-    }
-
-    option add *selectColor $activetitle
+    set hlbg $activetitle
+    set w(selcolor) $hlbg
     option add *Button.activeBackground $bg
     option add *Button.activeForeground $fg
     option add *Canvas.Background $shadow
@@ -9662,7 +9671,7 @@ proc get_cde_params {} {
     option add *Entry.highlightColor $activetitle
     option add *Listbox.background $textbg
     option add *Listbox.selectBackground $w(selcolor)
-    option add *Listbox.selectForeground $hlfg
+    option add *Listbox.selectForeground $fg
     option add *Scrollbar.activeBackground $bg
     option add *Scrollbar.troughColor $shadow
     option add *Text.Background $textbg
@@ -9684,11 +9693,12 @@ proc get_cde_params {} {
       option add *Menu.selectColor $fg
       option add *Checkbutton.offRelief sunken
       option add *Checkbutton.selectColor ""
+      option add *Radiobutton.selectColor ""
+      option add *Checkbutton.activeBackground $bg
+      option add *Checkbutton.activeForeground $fg
     } else {
-      option add *Menu.selectColor $w(selcolor)
+      option add *selectColor $w(selcolor)
     }
-    option add *Checkbutton.activeBackground $bg
-    option add *Checkbutton.activeForeground $fg
 
     # Suppress the border
     option add *HighlightThickness 0 userDefault

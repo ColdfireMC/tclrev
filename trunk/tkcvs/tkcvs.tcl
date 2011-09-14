@@ -206,12 +206,15 @@ if {$WSYS eq "x11"} {
     option add *Text.selectForeground $hlfg
     option add *Button.activeForeground $fg
     option add *Menu.activeForeground $fg
+
+    # checkbuttons and radiobuttons
     if {$tk_version >= 8.5} {
-      option add *Menu.selectColor $fg
-    } else {
-      option add *Menu.selectColor $hlbg
-      option add *Checkbutton.selectColor $hlbg
-    }
+       option add *Menu.selectColor $fg
+       option add *Checkbutton.selectColor "#ffffff"
+       option add *Radiobutton.selectColor "#ffffff"
+     } else {
+       option add *selectColor $hlbg
+     }
 
     if { ! [info exists cvscfg(guifont)] } {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
