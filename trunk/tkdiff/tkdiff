@@ -9649,7 +9649,11 @@ proc get_cde_params {} {
         return 0
     }
 
-    set hlbg $activetitle
+    if {[info exists activetitle]} {
+      set hlbg $activetitle
+    } else {
+      set hlbg $fg
+    }
     set w(selcolor) $hlbg
     option add *Button.activeBackground $bg
     option add *Button.activeForeground $fg
