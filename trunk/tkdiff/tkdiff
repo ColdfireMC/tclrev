@@ -1093,6 +1093,9 @@ proc commandline {} {
         "^-u$"  {
                 # Ignore flag from "svn diff --diff-cmd=tkdiff"
             }
+        "^-d$"  {
+                set g(debug) t
+            }
         "^-psn" {
                 # Ignore the Carbon Process Serial Number
                 set argv [lreplace $argv $argindex $argindex]
@@ -6249,6 +6252,7 @@ proc do-usage {mode} {
 	-a ANCESTORFILE 
 	-o MERGEOUTPUTFILE 
 	-L LEFT_FILE_LABEL [-L RIGHT_FILE_LABEL]
+        -d debug
     }
 
     set usage [subst -nobackslashes -nocommands $usage]
