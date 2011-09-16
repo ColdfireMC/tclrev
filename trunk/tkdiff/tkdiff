@@ -225,6 +225,7 @@ array set opts {
     ignoreblanksopt   "-b"
     ignoreblanks      0
     editor            ""
+    filetypes         {{{All Files} *} {{Text Files} .txt} {{TclFiles} .tcl}}
     geometry          "80x30"
     showcbs           1
     showln            1
@@ -623,18 +624,15 @@ proc popup-merge {{writeproc merge-write-file}} {
     debug-info "popup-merge ($writeproc)"
     global g
     global w
+    global opts
 
     if {$g(mergefileset)} {
         $writeproc
         return
     }
 
-    set types {
-        {{Text Files}         {.txt}}
-        {{All Files}         {*}}
-    }
-
-    set path [tk_getSaveFile -defaultextension "" -filetypes $types \
+    set path [tk_getSaveFile -defaultextension "" \
+      -filetypes $opts(filetypes) \
       -initialfile [file nativename $g(mergefile)]]
 
     if {[string length $path] > 0} {
@@ -3101,7 +3099,7 @@ proc customize {} {
     # General
     set count 0
     set frame $w(preferences).fGeneral
-    foreach key {diffcmd ignoreblanksopt tmpdir editor geometry} {
+    foreach key {diffcmd ignoreblanksopt tmpdir editor filetypes geometry } {
         label $frame.l$count -text "$pref($key): " -anchor w
         set tmpopts($key) $opts($key)
         entry $frame.e$count -textvariable tmpopts($key) -width 50 -bd 2 \
@@ -3346,6 +3344,7 @@ proc customize-initLabels {} {
     set pref(geometry) {Text window size}
     set pref(tmpdir) {Directory for scratch files}
     set pref(editor) {Program for editing files}
+    set pref(filetypes) {Choice of file suffixes for file dialogs}
 
     set pref(fancyButtons) {Windows-style toolbar buttons}
     set pref(showlineview) {Show current line comparison window}
@@ -3488,7 +3487,7 @@ proc apply {{remark 0}} {
 
     # set opts to the values from tmpopts
     foreach key {autocenter autoselect chgtag colorcbs currtag deltag diffcmd \
-      difftag inlinetag editor fancyButtons geometry ignoreblanks \
+      difftag inlinetag editor fancyButtons filetypes geometry ignoreblanks \
       ignoreblanksopt instag overlaptag showcbs showlineview showln showmap \
       syncscroll tabstops tagcbs tagln tagtext textopt tmpdir toolbarIcons} {
         set opts($key) $tmpopts($key)
@@ -5867,6 +5866,7 @@ proc close-more-options {} {
 ###############################################################################
 proc newDiffBrowse {title widget} {
     global w
+    global opts
 
     debug-info "newDiffBrowse($title $widget)"
     set n [string index $widget end]
@@ -5886,7 +5886,9 @@ proc newDiffBrowse {title widget} {
     }
     debug-info "initialdir $initialdir"
     set initialfile [file tail $entrystuff]
-    set filename [tk_getOpenFile -title $title -initialfile $initialfile \
+    set filename [tk_getOpenFile -title $title \
+      -filetypes $opts(filetypes) \
+      -initialfile $initialfile \
       -initialdir $initialdir]
     if {[string length $filename] > 0} {
         $widget delete 0 end
@@ -6040,11 +6042,7 @@ proc write-report {command args} {
             wm withdraw $w(reportPopup)
         }
     browse {
-            set types {
-                {{All Files}         {*}}
-            }
-
-            set path [tk_getSaveFile -defaultextension "" -filetypes $types \
+            set path [tk_getSaveFile \
               -initialfile $report(filename)]
 
             if {[string length $path] > 0} {
@@ -6578,6 +6576,12 @@ If the supplied string contains the string "\$file", it\'s treated as a whole \
  \$line: the starting line of the current diff
 For example, in the case of NEdit or Emacs you can use "nc -line \$line \
      \$file" and "emacs +\$line \$file" respectively.
+
+<bld>$pref(filetypes)</bld>
+
+The choice of file suffixes you want to see in the file open and save dialogs \
+       A list of the form { {{All Files} *} {{Text Files} .txt} } and so on.
+
 
 <bld>$pref(geometry)</bld>
 
