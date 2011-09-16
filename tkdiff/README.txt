@@ -1,4 +1,4 @@
-TkDiff 4.1.4
+TkDiff 4.2
 
 TkDiff is a Tcl/Tk front-end to diff for Unix and  Windows, and is Copyright (C) 1994-2005 by John M. Klassa.
 
