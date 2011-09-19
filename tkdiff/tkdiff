@@ -111,7 +111,7 @@ if {[info exists ::env(TKDIFFRC)]} {
 }
 
 # Where should we start?  MacOSX apps want to start in / which is obnoxious
-if {[pwd] eq "/"} {
+if {[pwd] == "/"} {
     if {[info exists ::env(HOME)]} {
        catch {cd $::env(HOME)}
     }
@@ -5881,7 +5881,7 @@ proc newDiffBrowse {title widget} {
       set initialdir [file dirname $entrystuff]
     } else {
       set otherentrystuff [${widgroot}$other get]
-      if {$otherentrystuff ne ""} {
+      if {$otherentrystuff != ""} {
         set initialdir [file dirname $otherentrystuff]
       } else {
         set initialdir [pwd]
