@@ -83,7 +83,7 @@ proc get_cde_params { } {
     set palf ""
     while {[gets $fh ln] != -1} {
       regexp "^\\*background:\[ \t]*(.*)\$" $ln nil textbg
-      regexp "^\\*foreground:\[ \t]*(.*)\$" $ln nil textbg
+      regexp "^\\*foreground:\[ \t]*(.*)\$" $ln nil textfg
       regexp "^\\*0\\*ColorPalette:\[ \t]*(.*)\$" $ln nil palette
       regexp "^Window.Color.Background:\[ \t]*(.*)\$" $ln nil textbg
       regexp "^Window.Color.Foreground:\[ \t]*(.*)\$" $ln nil textfg
@@ -113,7 +113,14 @@ proc get_cde_params { } {
           gets $fh iconbg  ;#control panel bg too
           close $fh
 
-          set hlbg $activetitle
+          option add *Text.highlightColor $wkspc4
+          option add *Dialog.Background $menubg
+          option add *Menu.Background $menubg
+          option add *Menu.activeBackground $menubg
+          option add *Menu.activeForeground $fg
+          option add *Menubutton.Background $menubg
+          option add *Menubutton.activeBackground $menubg
+          option add *Menubutton.activeForeground $fg
         }
       }
     }
@@ -125,8 +132,10 @@ proc get_cde_params { } {
   }
 
   set hlfg $fg
-  if {! [info exists hlbg]} {
-    set hlbg $bg
+  if {[info exists activetitle]} {
+    set hlbg $activetitle
+  } else {
+    set hlbg "#b24d7a"
   }
 
   set cvsglb(bg) $bg
@@ -136,34 +145,25 @@ proc get_cde_params { } {
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
 
-  option add *selectColor $activetitle
+  option add *selectColor $hlbg
   option add *Button.activeBackground $bg
   option add *Button.activeForeground $fg
   option add *Canvas.Background $cvsglb(shadow)
   option add *Canvas.Foreground black
-  option add *Dialog.Background $menubg
   option add *Entry.Background $textbg
   option add *Entry.Foreground $textfg
   option add *Entry.readonlyBackground $bg
   option add *Entry.highlightBackground $bg
-  option add *Entry.highlightColor $activetitle
+  option add *Entry.highlightColor $hlbg
   option add *Listbox.background $textbg
   option add *Listbox.selectBackground $hlbg
   option add *Listbox.selectForeground $hlfg
+  option add *Menu.borderWidth 1
   option add *Scrollbar.activeBackground $bg
   option add *Scrollbar.troughColor $cvsglb(shadow)
   option add *Text.Background $textbg
   option add *Text.Foreground $textfg
   option add *Text.highlightBackground $bg
-  option add *Text.highlightColor $wkspc4
-
-  option add *Menu.borderWidth 1
-  option add *Menu.Background $menubg
-  option add *Menu.activeBackground $menubg
-  option add *Menu.activeForeground $fg
-  option add *Menubutton.Background $menubg
-  option add *Menubutton.activeBackground $menubg
-  option add *Menubutton.activeForeground $fg
 
   # checkbuttons and radiobuttons
   if {$tk_version >= 8.5} {
