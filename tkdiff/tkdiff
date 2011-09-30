@@ -622,7 +622,7 @@ proc draw-line-numbers {} {
 # Pop up a window for file merge.
 ###############################################################################
 proc popup-merge {{writeproc merge-write-file}} {
-    debug-info "popup-merge ($writeproc $merge-write-file)"
+    debug-info "popup-merge ($writeproc)"
     global g
     global w
     global opts
@@ -1248,10 +1248,17 @@ proc assemble-args {} {
             if {[get-file "$f" 2]} {return}
 
         } else {
-            do-error "Error: you specified $pths file(s) and $revs revision(s)"
-            do-usage gui
-            tkwait window .usage
-            return 1
+            if {[winfo exists .toolbar]} {
+                do-error "Error: you specified $pths file(s) and $revs revision(s)"
+                do-usage gui
+                tkwait window .usage
+
+                return 1
+            } else {
+                puts stderr "Error: you specified $pths file(s) and $revs revision(s)"
+                do-usage cline
+                exit 1
+            }
         }
     }
 
