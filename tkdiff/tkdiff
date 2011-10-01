@@ -3072,6 +3072,13 @@ proc customize {} {
     set pagelist {}
 
     # The relief makes these work, so we don't need to use the selcolor
+    # Radiobuttons without indicators look rather sucky on MacOSX, so
+    # we'll tweak the style for that platform
+    if {$::tcl_platform(os) == "Darwin"} {
+        set indicatoron true
+    } else {
+        set indicatoron false
+    }
     foreach page [list General Display Appearance] {
         set frame $w(preferences).f$page
         lappend pagelist $frame
@@ -3079,7 +3086,7 @@ proc customize {} {
         radiobutton $rb -command "customize-selectPage $frame" \
           -selectcolor $w(background) \
           -variable g(prefPage) -value $frame -height 2 -text $page \
-          -indicatoron false -borderwidth 1
+          -indicatoron $indicatoron -borderwidth 1
 
         pack $rb -side left
 
@@ -6625,7 +6632,7 @@ If not set, no line numbers will appear.
 <bld>$pref(tagln)</bld>
 
 If set, line numbers are highlighted with the options defined in the \
-      Appearance section of the preferences.
+       Appearance section of the preferences.
 If not set, line numbers won\'t be highlighted.
 
 <bld>$pref(showcbs)</bld>
@@ -6679,7 +6686,7 @@ finds the largest common substring, and recursively repeats on the left and \
 <bld>$pref(tagtext)</bld>
 
 If set, the file contents will be highlighted with the options defined in the \
-      Appearance section of the preferences.
+       Appearance section of the preferences.
 If not set, the file contents won\'t be highlighted.
 
 <bld>$pref(colorcbs)</bld>
