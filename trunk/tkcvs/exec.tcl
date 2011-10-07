@@ -347,10 +347,7 @@ namespace eval ::viewer {
 
       proc destroy {} {
         variable v_e
-       if [catch {namespace inscope $v_e destroy} err] {
-          puts "deleteing $v_e"
-          puts $err
-        }
+        catch {namespace inscope $v_e destroy}
         if [catch {namespace delete [namespace current]} err] {
           puts "deleting [namespace current]"
           puts $err
