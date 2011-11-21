@@ -1000,10 +1000,23 @@ proc cvs_merge {parent from since frombranch args} {
 
   gen_log:log T "ENTER (\"$from\" \"$since\" \"$frombranch\" \"$args\")"
   gen_log:log D "mergetrunkname $cvscfg(mergetrunkname)"
-  set realfrom "$frombranch"
-  if {$frombranch eq $cvscfg(mergetrunkname)} {
-    set realfrom "HEAD"
-  }
+
+  # Bug # 3434817
+  # there's an annoying bug in merging: the ending revision is ignored.
+  # Example: there are revisions 1.1, 1.2, 1.3, 1.4 and 1.5 (HEAD). You are on
+  # a branch made from rev 1.1 and want to merge revisions 1.2 to 1.4. When you
+  # click in the merge diagram left mouse on 1.4, right mouse on 1.2 and click
+  # Diff it will correctly use the following command:
+  #  /usr/bin/tkdiff -r "1.4" -r "1.2" "Filename.ext"
+  # However, when you leave the revision selection as-is and click the Merge
+  # the following command is used:
+  #  cvs update -d -j1.2 -jHEAD Filename.ext
+  # Obviously the second "-j" parameter is wrong, there should have been "-j1.4".
+
+  #set realfrom "$frombranch"
+  #if {$frombranch eq $cvscfg(mergetrunkname)} {
+    #set realfrom "HEAD"
+  #}
 
   set filelist [join $args]
 
@@ -1025,9 +1038,9 @@ proc cvs_merge {parent from since frombranch args} {
 
   # Do the update here, and defer the tagging until later
   if {$since == {}} {
-    set commandline "$cvs update -d -j$realfrom $filelist"
+    set commandline "$cvs update -d -j$from $filelist"
   } else {
-    set commandline "$cvs update -d -j$since -j$realfrom $filelist"
+    set commandline "$cvs update -d -j$since -j$from $filelist"
   }
   set v [viewer::new "CVS Join"]
   $v\::do "$commandline" 1 status_colortags
