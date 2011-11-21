@@ -7,7 +7,7 @@ Tclkit=$HOME/tclkits/MacOSX/tclkit-8.5.9-macosx-universal
 #Tclkit=$HOME/tclkits/MacOSX/tclkit-darwin-univ-aqua
 
 echo "Cleaning up"
-rm -f tkcvs.app
+rm -rf TkCVS.app
 rm -f tkcvs.kit
 rm -rf tkcvs.vfs
 
@@ -46,14 +46,14 @@ rm tkcvs.tcl
 #mv tkcvs.kit tkcvs.exe
 #mv tkcvs.kit tkcvs.macosx
 
-echo "Making TkCvs.app"
-mkdir TkCvs.app
-mkdir TkCvs.app/Contents
-mkdir TkCvs.app/Contents/MacOS
-mkdir TkCvs.app/Contents/Resources
+echo "Making TkCVS.app"
+mkdir TkCVS.app
+mkdir TkCVS.app/Contents
+mkdir TkCVS.app/Contents/MacOS
+mkdir TkCVS.app/Contents/Resources
 
 echo "Copying tkcvs.kit, icons and plist into the app"
-cp Info.plist TkCvs.app/Contents
-cp tkcvs/bitmaps/Anglerfish.icns TkCvs.app/Contents/Resources
-mv tkcvs.kit TkCvs.app/Contents/MacOS/tkcvs.kit
+cp Info.plist TkCVS.app/Contents
+cp tkcvs/bitmaps/Anglerfish.icns TkCVS.app/Contents/Resources
+mv tkcvs.kit TkCVS.app/Contents/MacOS/tkcvs.kit
 
