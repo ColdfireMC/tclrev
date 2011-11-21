@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>tkcvs</string>
+	<string>tkcvs.kit</string>
 	<key>CFBundleGetInfoString</key>
 	<string>TkCVS 8.2.3</string>
 	<key>CFBundleIconFile</key>

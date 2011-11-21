@@ -1380,7 +1380,7 @@ proc cvsroot_check { dir } {
 
   if {[file isfile [file join $dir CVS Root]]} {
     set incvs [ read_cvs_dir [file join $dir CVS] ]
-  } elseif {[file isfile [file join $dir .svn entries]]} {
+  } elseif {! [catch {eval "exec svn info"}]} {
     set insvn [ read_svn_dir $dir ]
   } else {
     set rcsdir [file join $dir RCS]

@@ -790,19 +790,17 @@ proc get-file-rev {f index {r ""}} {
         }
         set finfo(lbl,$index) "$f (CVS $rev)"
         die-unless "exec $cmd update -p $cvsopt \"$f\"" "\"$finfo(pth,$index)\""
-    } elseif {[file isdirectory [file join $dirname .svn]]} {
+    } elseif {! [catch {eval "exec svn info"}]} {
         set cmd "svn"
         if {$::tcl_platform(platform) == "windows"} {
             append cmd ".exe"
         }
         if {"$r" == "" || "$rev" == "rBASE"} {
             set finfo(lbl,$index) "$f (SVN BASE)"
-            die-unless "exec cat \"$dirname/.svn/text-base/$tailname.svn-base\"" \
-              $finfo(pth,$index)
         } else {
             set finfo(lbl,$index) "$f (SVN $rev)"
-            die-unless "exec $cmd cat $svnopt \"$f\"" $finfo(pth,$index)
         }
+        die-unless "exec $cmd cat $svnopt \"$f\"" $finfo(pth,$index)
     } elseif {[file isdirectory [file join $dirname .git]]} {
         set cmd "git"
         if {$::tcl_platform(platform) == "windows"} {
@@ -819,8 +817,7 @@ proc get-file-rev {f index {r ""}} {
         set prefix [exec $cmd rev-parse --show-prefix]
         if {"$r" == "" || "$rev" == "rBASE"} {
             set finfo(lbl,$index) "$f (GIT BASE)"
-            die-unless "exec $cmd show \":$prefix$f\"" \
-              $finfo(pth,$index)
+            die-unless "exec $cmd show \":$prefix$f\"" $finfo(pth,$index)
         } else {
             set finfo(lbl,$index) "$f (GIT $rev)"
             die-unless "exec $cmd show \"$gitopt$prefix$f\"" $finfo(pth,$index)
