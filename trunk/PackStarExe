@@ -60,3 +60,6 @@ rm tkcvs.tcl
 mv tkcvs.kit tkcvs.exe
 #mv tkcvs.kit tkcvs.macosx
 
+echo "Making README.txt from manpage"
+man tkcvs > README.txt
+

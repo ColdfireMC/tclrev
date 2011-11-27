@@ -234,7 +234,7 @@ if {$tcl_platform(platform) == "windows"} {
       # If you invoke vim this way, -psn_ tells it to run in its own window
       #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
       set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
-      set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/Wish Shell\""
+      set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
     }
 }
 
