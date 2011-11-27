@@ -1,0 +1,18 @@
+# Now, on the Mac, do this:
+set V = "8.2.3"
+if ( ! -f tkcvs-$V) mkdir tkcvs-$V
+mv TkCVS.app tkcvs-$V
+cp LICENSE.txt tkcvs-$V
+cp CHANGELOG.txt tkcvs-$V
+cp FAQ.txt tkcvs-$V
+echo "hdiutil create -fs HFS+ -volname TkCVS-$V -srcfolder tkcvs-${V} tkcvs-$V.dmg"
+hdiutil create -fs "HFS+" -volname TkCVS-$V -srcfolder tkcvs-${V} tkcvs-$V.dmg
+if ($status != 0) exit
+
+echo "Compressing DMG."
+if ( -f "tkcvs-$V.dmg.gz" ) rm -f "tkcvs-$V.dmg.gz"
+gzip tkcvs-$V.dmg
+
+echo "Created:"
+ls -al tkcvs-$V.dmg.gz
+

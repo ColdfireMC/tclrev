@@ -9,7 +9,7 @@ Windows it's C:. If you want to put TkCVS somewhere else, type a new directory
 in the entry and hit return.  doinstall.tcl can be run without the gui and with
 an argument specifying the destination. 
 
-Usage: doinstall.tcl [-nox] [destination]
+Usage: [sudo] doinstall.tcl [-nox] [destination]
 
 
 --- IMPORTANT: Configuration Files ---
@@ -40,13 +40,17 @@ Some important preferences:
 --------------------------------------
 On Windows:
 
-You need Tcl/Tk, CVS, and diff.exe.  Make sure these are in your PATH.
-Also set CVSROOT.  If your version of Windows doesn't set HOME, you should
-set that too.
+There's a Windows installer that includes diff.exe and tkdiff now.  You still
+need to have Wish and CVS.
 
-We recommend not to use Cygwin to set up TkCVS for Windows.  TkCVS runs just
-fine native, and the Windows version of Tcl won't understand Cygwin's
-paths, which can lead to problems if you use the Cygwin shell.
+Or, you can use the .gz source tarball and install as for unix/linux.  In that
+case, you will need to find diff.exe somewhere.  Make sure Wish, CVS, and diff
+are in your PATH.  Also set CVSROOT.  If your version of Windows doesn't set
+HOME, you should set that too.
+
+It isn't recommended to use Cygwin to set up TkCVS for Windows, unless you're
+using Cygwin versions of Wish and CVS also. The Windows version of Tcl won't
+understand Cygwin's paths.
 
 --------------------------------------
 
@@ -58,5 +62,4 @@ your home directory when TkCVS is run.  You may want to specify a different
 editor or shell:
 
 set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
-
 
