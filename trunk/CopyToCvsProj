@@ -1,4 +1,4 @@
-cp CHANGELOG FAQ doinstall.tcl ~/tkcvs-proj
+cp *.txt doinstall.tcl ~/tkcvs-proj
 cp PackApp Info.plist ~/tkcvs-proj
 cd tkcvs
 cp *.tcl tclIndex *.pl *.1 mkindex ~/tkcvs-proj/tkcvs
