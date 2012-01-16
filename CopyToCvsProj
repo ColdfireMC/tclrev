@@ -1,5 +1,5 @@
 cp *.txt doinstall.tcl ~/tkcvs-proj
-cp PackApp Info.plist ~/tkcvs-proj
+cp PackApp Info.plist README.MacOS ~/tkcvs-proj
 cd tkcvs
 cp *.tcl tclIndex *.pl *.1 mkindex ~/tkcvs-proj/tkcvs
 cp bitmaps/* ~/tkcvs-proj/tkcvs/bitmaps
