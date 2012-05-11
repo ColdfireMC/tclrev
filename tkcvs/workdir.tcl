@@ -1380,19 +1380,34 @@ proc cvsroot_check { dir } {
 
   if {[file isfile [file join $dir CVS Root]]} {
     set incvs [ read_cvs_dir [file join $dir CVS] ]
-  } elseif {! [catch {eval "exec svn info"}]} {
-    set insvn [ read_svn_dir $dir ]
-  } else {
-    set rcsdir [file join $dir RCS]
-    if {[file exists $rcsdir]} {
-      set cvscfg(rcsdir) $rcsdir
-      set inrcs 1
-    } elseif {[llength [glob -nocomplain -dir $dir *,v]] > 0} {
-      set inrcs 1
-      set cvscfg(rcsdir) $dir
-    } else {
-      set cvscfg(rcsdir) ""
+    # Outta here, don't check for svn or rcs
+    if {$incvs} {
+      gen_log:log T "LEAVE ($incvs $insvn $inrcs)"
+      return [list $incvs $insvn $inrcs]
     }
+  }
+
+  gen_log:log C "svn info"
+  set svnret [catch {eval "exec svn info"} svnout]
+  if {$svnret} {
+    gen_log:log E $svnout
+  } else {
+    set insvn [ read_svn_dir $dir ]
+    if {$insvn} {
+      gen_log:log T "LEAVE ($incvs $insvn $inrcs)"
+      return [list $incvs $insvn $inrcs]
+    }
+  }
+
+  set rcsdir [file join $dir RCS]
+  if {[file exists $rcsdir]} {
+    set cvscfg(rcsdir) $rcsdir
+    set inrcs 1
+  } elseif {[llength [glob -nocomplain -dir $dir *,v]] > 0} {
+    set inrcs 1
+    set cvscfg(rcsdir) $dir
+  } else {
+    set cvscfg(rcsdir) ""
   }
 
   if {$inrcs} {
