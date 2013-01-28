@@ -2392,7 +2392,7 @@ namespace eval ::cvs_branchlog {
         gen_log:log T "ENTER"
 
         if {[llength [array names revkind]] < 1} {
-          cvsfail "Log empty.  Check error status of cvs log comand"
+          cvsfail "Log empty.  Check error status of cvs log command"
           $lc close invoke
           return
         }
