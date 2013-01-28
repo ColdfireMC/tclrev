@@ -1717,7 +1717,7 @@ proc cvs_commit_dialog {} {
     }
   button .commit.clear -text "ClearAll" \
     -command {
-      set version ""e
+      set version ""
       .commit.comment.tcomment delete 1.0 end
     }
   button .commit.quit \

@@ -4,6 +4,9 @@ Release 8.2.4
 
 - Save last column-sort to preferences automatically
 
+- Fix Bug #3573395 When using the "Clear all" button in the "Commit Changes"
+  windows, a "extra characters after close-quote" error appears
+
 
 Release 8.2.3 November, 2011
 
