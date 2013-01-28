@@ -59,9 +59,9 @@ proc DirCanvas:create {w} {
   bind $statusbutton <ButtonPress-3> \
     "DirCanvas:sort_by_col $w statcol -increasing"
 
-  gen_log:log D "sort_pref:  $cvsglb(sort_pref)"
-  set col [lindex $cvsglb(sort_pref) 0]
-  set sense [lindex $cvsglb(sort_pref) 1]
+  gen_log:log D "sort_pref:  $cvscfg(sort_pref)"
+  set col [lindex $cvscfg(sort_pref) 0]
+  set sense [lindex $cvscfg(sort_pref) 1]
   gen_log:log D "$incvs  $col"
   if { (! ($incvs || $inrcs || $insvn))  && ( $col == "editcol" || $col == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
@@ -96,7 +96,6 @@ proc DirCanvas:headtext {w lbltext} {
 
 proc DirCanvas:column {w column headtext} {
   global cvscfg
-  global cvsglb
   global incvs
   global insvn
   global inrcs
@@ -574,8 +573,8 @@ proc DirCanvas:build {w} {
   set maxtag 0; set longtag ""
   set maxed 0; set longed ""
 
-  set sortcol [lindex $cvsglb(sort_pref) 0]
-  set sortsense [lindex $cvsglb(sort_pref) 1]
+  set sortcol [lindex $cvscfg(sort_pref) 0]
+  set sortsense [lindex $cvscfg(sort_pref) 1]
   if { (!($incvs || $inrcs || $insvn))  && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set sortcol "filecol"
@@ -1088,7 +1087,6 @@ proc DirCanvas:yview_windows {w yview} {
 
 proc DirCanvas:scroll_windows {w args} {
   global cvscfg
-  global cvsglb
   global incvs
   global insvn
   global inrcs
@@ -1146,14 +1144,14 @@ proc DirCanvas:drag_windows {w W y} {
 
 proc DirCanvas:sort_by_col {w col sense} {
   global DirList
-  global cvsglb
+  global cvscfg
   global arr
 
   gen_log:log T "ENTER ($w $col $sense)"
   foreach a [array names arr] {
     catch "$arr($a) configure -image arr_dn"
   }
-  set cvsglb(sort_pref) [list $col $sense]
+  set cvscfg(sort_pref) [list $col $sense]
 
   if {[string match "-inc*" $sense]} {
     gen_log:log D "sort column $col -increasing"
@@ -1168,19 +1166,18 @@ proc DirCanvas:sort_by_col {w col sense} {
     $arr(filestatcol) configure -image arr_dn
   }
 
-  gen_log:log D "  $cvsglb(sort_pref)"
+  gen_log:log D "  $cvscfg(sort_pref)"
 
   DirCanvas:build $w
   gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:toggle_col {w col} {
-  global cvsglb
   global cvscfg
 
   gen_log:log T "ENTER ($col)"
-  set cur_col [lindex $cvsglb(sort_pref) 0]
-  set cur_sense [lindex $cvsglb(sort_pref) 1]
+  set cur_col [lindex $cvscfg(sort_pref) 0]
+  set cur_sense [lindex $cvscfg(sort_pref) 1]
 
   if {$col == $cur_col} {
     # if it's the currently sorted column, reverse the direction.

@@ -1,3 +1,10 @@
+Release 8.2.4
+
+- Fix Bug #3602137 "Typo in error string"
+
+- Save last column-sort to preferences automatically
+
+
 Release 8.2.3 November, 2011
 
 - Works with Subversion 1.7 (no .svn directory at lower levels)
