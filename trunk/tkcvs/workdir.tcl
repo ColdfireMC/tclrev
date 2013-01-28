@@ -560,9 +560,6 @@ proc workdir_menus {} {
                   DirCanvas:unmap_column .workdir.main datecol
                 }
               }
-  .workdir.menubar.options add cascade -label "Column Sorting" \
-     -menu .workdir.menubar.options.sortpref
-  .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Report->Check Shows Unknown Files" \
      -variable cvscfg(status_filter) -onvalue false -offvalue true
   .workdir.menubar.options add checkbutton -label "Report->Check/Status are Recursive" \
@@ -580,17 +577,6 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add command -label "Save Options" -underline 0 \
      -command save_options
-
-  menu .workdir.menubar.options.sortpref
-  .workdir.menubar.options.sortpref add radiobutton -label "by Name" \
-     -variable cvscfg(sortcol) -value filecol \
-     -command "DirCanvas:sort_by_col .workdir.main filecol -decreasing"
-  .workdir.menubar.options.sortpref add radiobutton -label "by Status" \
-     -variable cvscfg(sortcol) -value statcol \
-     -command "DirCanvas:sort_by_col .workdir.main statcol -decreasing"
-  .workdir.menubar.options.sortpref add radiobutton -label "by Date" \
-     -variable cvscfg(sortcol) -value datecol \
-     -command "DirCanvas:sort_by_col .workdir.main datecol -increasing"
 
   menu .workdir.menubar.options.loglevel
   .workdir.menubar.options.loglevel add checkbutton -label "commands (C)" \
@@ -1582,7 +1568,7 @@ proc save_options { } {
                  showstatcol showdatecol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums}
   set STRGopts { file_filter ignore_file_filter clean_these \
-                 printer rdetail ldetail log_classes lastdir sortcol \
+                 printer rdetail ldetail log_classes lastdir sort_pref \
                  workgeom modgeom loggeom tracgeom editor editorargs}
 
   # Plus the logcanvas options
@@ -1654,7 +1640,7 @@ proc save_options { } {
           if {[string match "*set *cvscfg($opt)*" $line]} {
             # Print it and remove it from the list
             gen_log:log D "REPLACING $line  w/ set cvscfg($opt) $cvscfg($opt)"
-            puts $fo "set cvscfg($opt) \"$cvscfg($opt)\""
+            puts $fo "set cvscfg($opt) \{$cvscfg($opt)\}"
             set idx [lsearch $STRGset $opt]
             set STRGset [lreplace $STRGset $idx $idx]
             set match 1

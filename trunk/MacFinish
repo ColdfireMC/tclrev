@@ -1,5 +1,5 @@
 # Now, on the Mac, do this:
-set V = "8.2.3"
+set V = "8.2.4"
 if ( ! -f tkcvs-$V) mkdir tkcvs-$V
 mv TkCVS.app tkcvs-$V
 cp -r ~/tkdiff-src/TkDiff.app tkcvs-$V

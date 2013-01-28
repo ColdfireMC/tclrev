@@ -112,12 +112,6 @@ if {[file exists $optfile]} {
 ::picklist::load
 
 # Set some defaults
-if {$cvscfg(sortcol) == "datecol"} {
-  set sort_ord "increasing"
-} else {
-  set sort_ord "decreasing"
-}
-set cvsglb(sort_pref) [list $cvscfg(sortcol) "-$sort_ord"]
 set cvsglb(commit_comment) ""
 set cvsglb(cvs_version) ""
 set cvsglb(svn_version) ""
