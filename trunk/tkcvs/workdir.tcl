@@ -560,12 +560,8 @@ proc workdir_menus {} {
                   DirCanvas:unmap_column .workdir.main datecol
                 }
               }
-  .workdir.menubar.options add radiobutton -label "Sort by Name" \
-     -variable cvscfg(sortcol) -value filecol \
-     -command "DirCanvas:sort_by_col .workdir.main filecol -decreasing"
-  .workdir.menubar.options add radiobutton -label "Sort by Status" \
-     -variable cvscfg(sortcol) -value statcol \
-     -command "DirCanvas:sort_by_col .workdir.main statcol -decreasing"
+  .workdir.menubar.options add cascade -label "Column Sorting" \
+     -menu .workdir.menubar.options.sortpref
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Report->Check Shows Unknown Files" \
      -variable cvscfg(status_filter) -onvalue false -offvalue true
@@ -584,6 +580,17 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add command -label "Save Options" -underline 0 \
      -command save_options
+
+  menu .workdir.menubar.options.sortpref
+  .workdir.menubar.options.sortpref add radiobutton -label "by Name" \
+     -variable cvscfg(sortcol) -value filecol \
+     -command "DirCanvas:sort_by_col .workdir.main filecol -decreasing"
+  .workdir.menubar.options.sortpref add radiobutton -label "by Status" \
+     -variable cvscfg(sortcol) -value statcol \
+     -command "DirCanvas:sort_by_col .workdir.main statcol -decreasing"
+  .workdir.menubar.options.sortpref add radiobutton -label "by Date" \
+     -variable cvscfg(sortcol) -value datecol \
+     -command "DirCanvas:sort_by_col .workdir.main datecol -increasing"
 
   menu .workdir.menubar.options.loglevel
   .workdir.menubar.options.loglevel add checkbutton -label "commands (C)" \
