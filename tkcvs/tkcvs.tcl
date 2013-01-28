@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "8.2.3"
+set cvscfg(version) "8.2.4"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -112,7 +112,12 @@ if {[file exists $optfile]} {
 ::picklist::load
 
 # Set some defaults
-set cvsglb(sort_pref) [list $cvscfg(sortcol) "-decreasing"]
+if {$cvscfg(sortcol) == "datecol"} {
+  set sort_ord "increasing"
+} else {
+  set sort_ord "decreasing"
+}
+set cvsglb(sort_pref) [list $cvscfg(sortcol) "-$sort_ord"]
 set cvsglb(commit_comment) ""
 set cvsglb(cvs_version) ""
 set cvsglb(svn_version) ""
