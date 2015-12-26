@@ -1,5 +1,8 @@
 Release 8.2.4
 
+- Implicit -dir on invocation.  added use case: tkcvs <dir> 
+  Same as tkcvs -dir <file>  (patch #101 by Maxim Yanchenko)
+
 - Fix Bug #3602137 "Typo in error string"
 
 - Save last column-sort to preferences automatically
