@@ -345,6 +345,7 @@ set usage "Usage:"
 append usage "\n tkcvs \[-dir <directory>\] \[-root <cvsroot>\] \[-win workdir|module|merge\]"
 append usage "\n tkcvs \[-dir <directory>\] \[-root <cvsroot>\] \[-log|blame <file>\]"
 append usage "\n tkcvs <file> - same as tkcvs -log <file>"
+append usage "\n tkcvs <dir>  - same as tkcvs -dir <file>"
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
   set val [lindex $argv [expr {$i+1}]]
@@ -382,8 +383,13 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
     }
     {\w*} {
       # If a filename is provided as an argument, assume -log
-      set cvscfg(startwindow) log
-      set lcfile $arg; incr i
+      if [file isdirectory $arg] {
+        set dir $arg
+        cd $arg
+      } else {
+        set cvscfg(startwindow) log
+        set lcfile $arg; incr i
+      }
     }
     default {
       puts $usage
