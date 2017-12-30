@@ -1134,11 +1134,11 @@ proc setup_dir { } {
       gen_log:log C "$command"
       set ret [catch {eval "exec $command"} output]
       if {$ret} {
-        cvsfail $output
-        return
-      }
-      foreach infoline [split $output "\n"] {
-        append cvscfg(ignore_file_filter) " $infoline"
+        gen_log:log E "$ret"
+      } else {
+        foreach infoline [split $output "\n"] {
+          append cvscfg(ignore_file_filter) " $infoline"
+        }
       }
     }
   }
