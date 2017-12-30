@@ -173,7 +173,58 @@ proc modfiles {} {
   file delete -force $tmpfile
 }
 
+proc conflict {filename} {
+  # Create a conflict
+
+  # Find out current revision
+  set exec_cmd "svn log -q -r PREV Ftrunk.txt"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  foreach logline [split $out "\n"] {
+    if {[string match "r*" $logline]} {
+      set previous [lindex $logline 0]
+      break
+    }
+  }
+
+  # Save the current, up-to-date one
+  file copy Ftrunk.txt Ftmp.txt
+  writefile Ftrunk.txt 1
+
+  # Make a change
+  set exec_cmd "svn commit -m \"change1\" Ftrunk.txt"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Check out previous revision
+  set exec_cmd "svn update -r $previous Ftrunk.txt"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Make a different change (we hope)
+  file delete -force -- Ftrunk.txt
+  file rename Ftmp.txt Ftrunk.txt
+  writefile Ftrunk.txt 2
+  # Check out head, which now conflicts with our change
+  set exec_cmd "svn update --non-interactive -r HEAD Ftrunk.txt"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+}
+
 ##############################################
+set branching_desired 1
+
+for {set i 0} {$i < [llength $argv]} {incr i} {
+  set arg [lindex $argv $i]
+
+  switch -regexp -- $arg {
+    {^--*nobranch.*} {
+      set branching_desired 0; incr i
+    }
+  }
+}
 
 if [file isdirectory .svn] {
   puts "Please don't do that here.  There's already a .svn directory."
@@ -205,6 +256,7 @@ addfile Ftrunk.txt $taghead(trunk)
 commit "First revision on $taghead(trunk)"
 cd $WD
 
+if {$branching_desired} {
 puts "==============================="
 puts "MAKING BRANCH A"
 newbranch $SVNROOT $taghead(trunk) branchA
@@ -213,6 +265,7 @@ writefile FbranchA.txt 2
 addfile FbranchA.txt branchA
 commit "Add file FbranchA.txt on branchA"
 cd $WD
+}
 
 puts "==============================="
 puts "Second revision on $taghead(trunk)"
@@ -221,12 +274,14 @@ modfiles
 commit "Second revision on $taghead(trunk)"
 cd $WD
 
+if {$branching_desired} {
 puts "==============================="
 puts "First revision on Branch A"
 cd $WD/svn_test_branchA
 modfiles
 commit "First revision on branchA"
 cd $WD
+}
 
 puts "==============================="
 # Make another modification on each
@@ -236,6 +291,7 @@ modfiles
 commit "Third revision on $taghead(trunk)"
 cd $WD
 
+if {$branching_desired} {
 puts "==============================="
 puts "Second revision on Branch A"
 cd $WD/svn_test_branchA
@@ -245,6 +301,7 @@ cd $WD
 
 # Branch off of the branch
 puts "==============================="
+puts "MAKING BRANCH AA"
 newbranch $SVNROOT branchA branchAA
 cd $WD/svn_test_branchAA
 modfiles
@@ -263,5 +320,25 @@ modfiles
 writefile FbranchB.txt 1
 addfile FbranchB.txt branchB
 commit "Add file FB on BranchB"
+}
+
+# Leave the trunk with uncommitted changes
+puts "==============================="
+puts "Uncommitted changes on trunk"
+cd $WD/svn_test_trunk
+# Local only
+writefile FileLocal.txt 1
+# Newly added
+writefile FileAdd.txt 2
+addfile FileAdd.txt trunk
+# Deleted
+delfile File3.txt trunk
+# Modify
+writefile File2.txt 2
+# Conflict
+conflict Ftrunk.txt
 cd $WD
+
+# Remove the source
+file delete -force -- svn_test
 
