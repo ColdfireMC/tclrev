@@ -17,6 +17,7 @@ auto_mkindex . \
   exec.tcl \
   filebrowse.tcl \
   gen_log.tcl \
+  git.tcl \
   help.tcl \
   import.tcl \
   import2.tcl \

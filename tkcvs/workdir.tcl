@@ -538,7 +538,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
-     -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
+     -command { if {($incvs || $insvn || $inrcs ) && $cvscfg(showeditcol)} {
                   DirCanvas:map_column .workdir.main editcol
                 } else {
                   DirCanvas:unmap_column .workdir.main editcol
@@ -546,7 +546,7 @@ proc workdir_menus {} {
               }
   .workdir.menubar.options add checkbutton -label "Status Column" \
      -variable cvscfg(showstatcol) -onvalue true -offvalue false \
-     -command { if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
+     -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showstatcol)} {
                   DirCanvas:map_column .workdir.main statcol
                 } else {
                   DirCanvas:unmap_column .workdir.main statcol
@@ -761,7 +761,7 @@ proc workdir_view_file {args} {
 
 # Let the user mark directories they visit often
 proc add_bookmark { } {
-  global incvs inrcs insvn
+  global incvs inrcs insvn ingit
   global bookmarks
 
   gen_log:log T "ENTER"
@@ -783,6 +783,8 @@ proc add_bookmark { } {
     set rtype "(CVS)"
   } elseif {$insvn} {
     set rtype "(SVN)"
+  } elseif {$ingit} {
+    set rtype "(GIT)"
   }
   set bookmarks($dir) $rtype
   .workdir.menubar.goto add command -label "$dir $rtype" \
@@ -893,6 +895,7 @@ proc setup_dir { } {
   global incvs
   global insvn
   global inrcs
+  global ingit
   global cvscfg
   global current_tagname
   global cvsglb
@@ -924,8 +927,8 @@ proc setup_dir { } {
   set current_tagname ""
   ::picklist::used directory [pwd]
 
-  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
-  gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn"
+  foreach {incvs insvn inrcs ingit} [cvsroot_check [pwd]] { break }
+  gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn  ingit $ingit"
 
   .workdir.top.bmodbrowse configure -image Modules
   .workdir.top.lmodule configure -text "Path"
@@ -1157,6 +1160,7 @@ proc directory_list { filenames } {
   global incvs
   global insvn
   global inrcs
+  global ingit
   global cvs
   global cwd
   global cvscfg
@@ -1197,7 +1201,7 @@ proc directory_list { filenames } {
     if {[file isdirectory $i]} {
       if {[isCmDirectory $i]} {
         # Read the bookkeeping files but don't list the directory
-        if {$i == "CVS" || $i == ".svn" || $i == "RCS"} {
+        if {$i == "CVS" || $i == ".svn" || $i == "RCS" || $i == ".git"} {
           continue
         }
       }
@@ -1205,6 +1209,8 @@ proc directory_list { filenames } {
         set Filelist($i:status) "<directory:CVS>"
       } elseif {[file exists [file join $i ".svn"]]} {
         set Filelist($i:status) "<directory:SVN>"
+      } elseif {[file exists [file join $i ".git"]]} {
+        set Filelist($i:status) "<directory:GIT>"
       } elseif {[file exists [file join $i "RCS"]]} {
         set Filelist($i:status) "<directory:RCS>"
       } else {
@@ -1217,7 +1223,7 @@ proc directory_list { filenames } {
         set Filelist($i:status) "<file>"
       }
     }
-    set Filelist($i:wrev) ""
+    #set Filelist($i:wrev) ""
     set Filelist($i:stickytag) ""
     set Filelist($i:option) ""
     # Prepending ./ to the filename prevents tilde expansion
@@ -1225,20 +1231,25 @@ proc directory_list { filenames } {
        [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
   }
 
-  gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs"
+  gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
   if {$incvs} {
-    DirCanvas:headtext .workdir.main "editors"
+    DirCanvas:headtext .workdir.main editcol "editors"
     cvs_workdir_status
   }
 
   if {$inrcs} {
-    DirCanvas:headtext .workdir.main "locked by"
+    DirCanvas:headtext .workdir.main editcol "locked by"
     rcs_workdir_status
   }
 
   if {$insvn} {
-    DirCanvas:headtext .workdir.main "author"
+    DirCanvas:headtext .workdir.main editcol "author"
     svn_workdir_status
+  }
+
+  if {$ingit} {
+    DirCanvas:headtext .workdir.main wrevcol "hash"
+    git_workdir_status
   }
 
   gen_log:log D "Sending all files to the canvas"
@@ -1369,14 +1380,14 @@ proc cvsroot_check { dir } {
 
   gen_log:log T "ENTER ($dir)"
 
-  foreach {incvs insvn inrcs} {0 0 0} {break}
+  foreach {incvs insvn inrcs ingit} {0 0 0 0} {break}
 
   if {[file isfile [file join $dir CVS Root]]} {
     set incvs [ read_cvs_dir [file join $dir CVS] ]
     # Outta here, don't check for svn or rcs
     if {$incvs} {
-      gen_log:log T "LEAVE ($incvs $insvn $inrcs)"
-      return [list $incvs $insvn $inrcs]
+      gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
+      return [list $incvs $insvn $inrcs $ingit]
     }
   }
 
@@ -1387,8 +1398,8 @@ proc cvsroot_check { dir } {
   } else {
     set insvn [ read_svn_dir $dir ]
     if {$insvn} {
-      gen_log:log T "LEAVE ($incvs $insvn $inrcs)"
-      return [list $incvs $insvn $inrcs]
+      gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
+      return [list $incvs $insvn $inrcs $ingit]
     }
   }
 
@@ -1419,8 +1430,17 @@ proc cvsroot_check { dir } {
     }
   }
 
-  gen_log:log T "LEAVE ($incvs $insvn $inrcs)"
-  return [list $incvs $insvn $inrcs]
+  gen_log:log C "git rev-parse --is-inside-work-tree"
+  set gitret [catch {eval "exec git rev-parse --is-inside-work-tree"} gitout]
+  gen_log:log D "gitout $gitout"
+  gen_log:log D "gitret $gitout"
+  if {$gitret} {
+    set ingit 0
+  } else {
+    set ingit 1
+  }
+  gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
+  return [list $incvs $insvn $inrcs $ingit]
 }
 
 proc isCmDirectory { file } {
@@ -1429,6 +1449,7 @@ proc isCmDirectory { file } {
     "CVS"  -
     "RCS"  -
     ".svn"  -
+    ".git"  -
     "SCCS" { set value 1 }
     default { set value 0 }
   }
