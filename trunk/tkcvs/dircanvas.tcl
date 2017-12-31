@@ -9,6 +9,7 @@ proc DirCanvas:create {w} {
   global incvs
   global insvn
   global inrcs
+  global ingit
 
   gen_log:log T "ENTER ($w)"
 
@@ -39,8 +40,8 @@ proc DirCanvas:create {w} {
   DirCanvas:column $w filecol "file"
   DirCanvas:column $w statcol "status"
   DirCanvas:column $w datecol "date"
-  gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs"
-  if {$incvs || $insvn || $inrcs} {
+  gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
+  if {$incvs || $insvn || $inrcs || $ingit} {
     gen_log:log D "**** going to make wrevcol ****"
     DirCanvas:column $w wrevcol "revision"
     DirCanvas:column $w editcol "editors"
@@ -90,8 +91,8 @@ proc DirCanvas:create {w} {
   gen_log:log T "LEAVE"
 }
 
-proc DirCanvas:headtext {w lbltext} {
-  $w.editcol.head.lbl configure -text "$lbltext"
+proc DirCanvas:headtext {w column lbltext} {
+  $w.$column.head.lbl configure -text "$lbltext"
 }
 
 proc DirCanvas:column {w column headtext} {
@@ -99,6 +100,7 @@ proc DirCanvas:column {w column headtext} {
   global incvs
   global insvn
   global inrcs
+  global ingit
   global arr
 
   gen_log:log T "ENTER ($w $column headtext)"
@@ -137,7 +139,7 @@ proc DirCanvas:column {w column headtext} {
     return
   }
   if {$column == "statcol"} {
-    if {($incvs || $insvn || $inrcs) && $cvscfg(showstatcol)} {
+    if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showstatcol)} {
       DirCanvas:map_column $w statcol
     } else {
       gen_log:log T "LEAVE (skipping statcol)"
@@ -228,14 +230,22 @@ proc DirCanvas:newitem {w f} {
   global Filelist
   global cvsglb
 
-  #gen_log:log T "ENTER ($w $f)"
+  gen_log:log T "ENTER ($w $f)"
 
   set DirList($w:$f:name) $f
-  #gen_log:log D "Newitem $f status $Filelist($f:status)"
+  gen_log:log D "Newitem $f status $Filelist($f:status)"
   set DirList($w:$f:status) $Filelist($f:status)
   set DirList($w:$f:date) $Filelist($f:date)
-  set DirList($w:$f:sticky) $Filelist($f:stickytag)
-  set DirList($w:$f:option) $Filelist($f:option)
+  if {[info exists Filelist($f:stickytag)]} {
+    set DirList($w:$f:sticky) $Filelist($f:stickytag)
+  } else {
+    set DirList($w:$f:sticky) ""
+  }
+  if {[info exists Filelist($f:option)]} {
+    set DirList($w:$f:option) $Filelist($f:option)
+  } else {
+    set DirList($w:$f:option) ""
+  }
   #gen_log:log D "Newitem $f option $Filelist($f:option)"
   # Why did I do this?
   #set DirList($w:$f:option) ""
@@ -247,7 +257,7 @@ proc DirCanvas:newitem {w f} {
   set DirList($w:$f:selected) 0
 
   DirCanvas:buildwhenidle $w
-  #gen_log:log T "LEAVE"
+  gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:loadimages { } {
@@ -261,6 +271,8 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) svndir.gif]
   image create photo rcsdir \
     -format gif -file [file join $cvscfg(bitmapdir) rcsdir.gif]
+  image create photo gitdir \
+    -format gif -file [file join $cvscfg(bitmapdir) gitdir.gif]
   image create photo folder \
     -format gif -file [file join $cvscfg(bitmapdir) folder.gif]
   image create photo dir_ok \
@@ -543,6 +555,7 @@ proc DirCanvas:build {w} {
   global incvs
   global insvn
   global inrcs
+  global ingit
 
   gen_log:log T "ENTER ($w)"
   foreach b [winfo children $w.filecol.list] {
@@ -575,7 +588,7 @@ proc DirCanvas:build {w} {
 
   set sortcol [lindex $cvscfg(sort_pref) 0]
   set sortsense [lindex $cvscfg(sort_pref) 1]
-  if { (!($incvs || $inrcs || $insvn))  && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
+  if { (!($incvs || $inrcs || $insvn || $ingit))  && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set sortcol "filecol"
     set sortsense "-decreasing"
@@ -588,6 +601,8 @@ proc DirCanvas:build {w} {
     set rtype "CVS"
   } elseif {$insvn} {
     set rtype "SVN"
+  } elseif {$ingit} {
+    set rtype "GIT"
   }
   gen_log:log D "Directory Type: $rtype"
 
@@ -751,6 +766,9 @@ proc DirCanvas:build {w} {
      "<directory:RCS>" {
        set DirList($w:$f:icon) rcsdir
        set DirList($w:$f:popup) folder_pop
+      }
+     "<directory:GIT>" {
+       set DirList($w:$f:icon) gitdir
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
@@ -995,11 +1013,11 @@ proc DirCanvas:build {w} {
   }
 
   # See which optional columns we need to draw
-  if {$incvs || $insvn || $inrcs} {
+  if {$incvs || $insvn || $inrcs || $ingit} {
     if {$cvscfg(showstatcol)} {
       DirCanvas:map_column $w statcol
     }
-    if {$cvscfg(showeditcol)} {
+    if {!$ingit && $cvscfg(showeditcol)} {
       DirCanvas:map_column $w editcol
     }
   }
@@ -1035,7 +1053,7 @@ proc DirCanvas:build {w} {
       $w.datecol.list yview moveto 0
     }
 
-    if {$incvs || $insvn || $inrcs} {
+    if {$incvs || $insvn || $inrcs || $ingit} {
       $w.wrevcol.list config -scrollregion [$w.wrevcol.list bbox all]
       $w.wrevcol.list yview moveto 0
 
@@ -1090,6 +1108,7 @@ proc DirCanvas:scroll_windows {w args} {
   global incvs
   global insvn
   global inrcs
+  global ingit
 
   #gen_log:log T "ENTER ($w $args)"
   set way [lindex $args 1]
@@ -1102,7 +1121,7 @@ proc DirCanvas:scroll_windows {w args} {
   if {$cvscfg(showdatecol)} {
     eval $w.datecol.list yview $args
   }
-  if {$incvs || $insvn || $inrcs} {
+  if {$incvs || $insvn || $inrcs || $ingit} {
     eval $w.wrevcol.list yview $args
     if {$cvscfg(showstatcol)} {
       eval $w.statcol.list yview $args
@@ -1118,6 +1137,7 @@ proc DirCanvas:drag_windows {w W y} {
   global incvs
   global insvn
   global inrcs
+  global ingit
   global cvscfg
   global cvsglb
 
@@ -1131,7 +1151,7 @@ proc DirCanvas:drag_windows {w W y} {
   if {$cvscfg(showdatecol)} {
     eval $w.datecol.list yview moveto $yfrac
   }
-  if {$incvs || $insvn || $inrcs} {
+  if {$incvs || $insvn || $inrcs || $ingit} {
     eval $w.wrevcol.list yview moveto $yfrac
     if {$cvscfg(showstatcol)} {
       eval $w.statcol.list yview moveto $yfrac

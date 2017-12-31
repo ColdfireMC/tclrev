@@ -472,6 +472,7 @@ image create photo Man \
 set incvs 0
 set insvn 0
 set inrcs 0
+set ingit 0
 
 # Create a window
 # Start with Module Browser

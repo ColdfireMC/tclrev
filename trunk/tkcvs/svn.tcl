@@ -47,8 +47,8 @@ proc read_svn_dir {dirname} {
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
-  # Whether mergeinfo works depends on the server as well as the local svn program,
-  # so it may work for us in one repository but not another
+  # Whether mergeinfo works depends on the server as well as the local svn
+  # program, so it may work for us in one repository but not another
   svn_version
   # svn info gets the URL
   # Have to do eval exec because we need the error output
@@ -1780,6 +1780,8 @@ namespace eval ::svn_branchlog {
         # This is better than it used to be but there are still more propgets than there
         # could be, I think.  We could match all the properties from one query instead of
         # just the one we're looking for
+        # FIXME is that what svn mergeinfo is for? given two paths, it prints a funky ascii
+        # branch diagram.
         if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
           gen_log:log D "Finding all mergeprops"
           set bdirs {}
