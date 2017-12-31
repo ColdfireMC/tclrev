@@ -24,7 +24,7 @@ proc repository {Root topdir} {
 
   # Create the repository
   #file mkdir $Root
-  set exec_cmd "git init --separate-git-dir $Root git_test"
+  set exec_cmd "git init --separate-git-dir $Root git_test_master"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   if {$ret} {
@@ -64,10 +64,15 @@ proc repository {Root topdir} {
   puts "==============================="
   puts "IMPORTING FILETREE"
   # Import it
-  set exec_cmd "git add --verbose ."
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
+  set wd [pwd]
+  foreach dir {. Dir1 "Dir 2"} {
+    cd $dir
+    set exec_cmd "git add --verbose ."
+    puts "$exec_cmd"
+    set ret [catch {eval "exec $exec_cmd"} out]
+    puts $out
+    cd $wd
+  }
   # See what we did
   set exec_cmd "git status"
   puts "$exec_cmd"
@@ -78,14 +83,15 @@ proc repository {Root topdir} {
 }
 
 proc checkout_branch {proj tag} {
+  global Root
   puts "==============================="
   puts "CHECKING OUT $tag"
   # Check out 
-  if {$tag eq "trunk"} {
-    set exec_cmd "cvs -d $Root co -d git_test_$tag $proj"
-  } else {
-    set exec_cmd "cvs -d $Root co -d git_test_$tag -r $tag $proj"
-  }
+  #if {$tag eq "master"} {
+    set exec_cmd "git clone -v $Root git_test_$tag"
+  #} else {
+    #set exec_cmd "git clone $Root co -d git_test_$tag $proj"
+  #}
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -129,6 +135,7 @@ proc addfile {filename branch} {
 }
 
 proc stage {filename} {
+  puts "Stage $filename"
   set exec_cmd "git add --verbose $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -138,13 +145,41 @@ proc stage {filename} {
 proc delfile {filename branch} {
   puts "Delete $filename on $branch"
   file delete $filename
-  set exec_cmd "cvs delete $filename"
+  set exec_cmd "git rm -r $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
 proc commit {comment} {
+  # It seems to need the email all over again in a cloned directory
+  set exec_cmd "whoami"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} myname]
+  if {$ret} {
+    puts $myname
+  }
+  set exec_cmd "hostname"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} host]
+  if {$ret} {
+    puts $host
+  }
+  set mymail "$myname@$host"
+  set exec_cmd "git config user.name $myname"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+  }
+  set exec_cmd "git config user.email $mymail"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+  }
+
+  # Finally, do it
   set exec_cmd "git commit -m \"$comment\""
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -200,6 +235,18 @@ proc modfiles {} {
 }
 
 ##############################################
+# Branching isn't implemented yet
+set branching_desired 0
+
+for {set i 0} {$i < [llength $argv]} {incr i} {
+  set arg [lindex $argv $i]
+
+  switch -regexp -- $arg {
+    {^--*nobranch.*} {
+      set branching_desired 0; incr i
+    }
+  }
+}
 
 if [file isdirectory .git] {
   puts "Please don't do that here.  There's already a .git directory."
@@ -211,24 +258,24 @@ set Root [file join $WD "GIT_REPOSITORY"]
 
 cleanup_old $Root
 
-mkfiles "git_test"
-repository $Root "git_test"
+mkfiles "git_test_master"
+repository $Root "git_test_master"
 
 # So far so good
-cd git_test
+cd git_test_master
 commit "Commit the staged tree"
 cd $WD
 
 puts "==============================="
 puts "First revision on trunk"
-cd git_test
+cd git_test_master
 modfiles
 writefile Ftrunk.txt 2
 addfile Ftrunk.txt trunk
 commit "First revision on trunk"
 cd $WD
 
-if {0} {
+if {$branching_desired} {
 puts "==============================="
 puts "MAKING BRANCH A"
 newbranch git_test HEAD branchA
@@ -241,13 +288,12 @@ cd $WD
 
 puts "==============================="
 puts "Second revision on trunk"
-cd $WD/git_test
+cd $WD/git_test_master
 modfiles
 stage .
 cd $WD
-exit
 
-if {0} {
+if {$branching_desired} {
 puts "==============================="
 puts "First revision on Branch A"
 cd $WD/git_test_branchA
@@ -259,13 +305,12 @@ cd $WD
 puts "==============================="
 # Make another modification on each
 puts "Third revision on trunk"
-cd $WD/git_test
+cd $WD/git_test_master
 modfiles
 commit "Third revision on trunk"
 cd $WD
 
-exit
-
+if {$branching_desired} {
 puts "==============================="
 puts "Second revision on Branch A"
 cd $WD/git_test_branchA
@@ -295,4 +340,23 @@ writefile FbranchB.txt 1
 addfile FbranchB.txt branchB
 commit "Add file FB on BranchB"
 cd $WD
+}
+
+# Leave the trunk with uncommitted changes
+puts "==============================="
+puts "Uncommitted changes on trunk"
+cd $WD/git_test_master
+# Local only
+writefile FileLocal.txt 1
+# Newly added
+writefile FileAdd.txt 2
+addfile FileAdd.txt trunk
+# Deleted
+delfile File3.txt trunk
+# Modify
+writefile File2.txt 2
+# Conflict
+#conflict Ftrunk.txt
+cd $WD
+
 
