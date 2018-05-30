@@ -619,7 +619,7 @@ namespace eval joincanvas {
       button $joincanvas.down.blogfile -image Branches \
          -command "cvs_branches $repfile"
       frame $joincanvas.down.btnfm
-      frame $joincanvas.down.closefm -relief groove -bd 2
+      frame $joincanvas.down.closefm
       button $joincanvas.close -text "Close" \
         -command [namespace code "
                    destroy $joincanvas
@@ -633,10 +633,10 @@ namespace eval joincanvas {
       pack $joincanvas.delta \
         -in $joincanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
-      pack $joincanvas.down.closefm -side right
+      pack $joincanvas.down.closefm -side right -expand yes
       pack $joincanvas.close \
         -in $joincanvas.down.closefm -side right \
-        -fill both -expand 1
+        -fill both -expand yes
 
       set_tooltips $joincanvas.down.blogfile \
          {"Revision Log and Branch Diagram of the current file"}

@@ -23,7 +23,7 @@ proc modbrowse_setup {} {
     wm iconbitmap .modbrowse @$cvscfg(bitmapdir)/tkcvs48.xbm
   }
   wm protocol .modbrowse WM_DELETE_WINDOW {
-    .modbrowse.bottom.buttons.closefm.close invoke 
+    .modbrowse.bottom.buttons.close invoke 
   }
   if {[info exists cvscfg(modgeom)]} {
     wm geometry .modbrowse $cvscfg(modgeom)
@@ -77,11 +77,11 @@ proc modbrowse_setup {} {
   frame .modbrowse.bottom.buttons.cvsfuncs -relief groove -bd 2
   frame .modbrowse.bottom.buttons.svnfuncs -relief groove -bd 2
   frame .modbrowse.bottom.buttons.modfuncs -relief groove -bd 2
-  frame .modbrowse.bottom.buttons.closefm -relief groove -bd 2
+  frame .modbrowse.bottom.buttons.closefm
 
   pack .modbrowse.bottom -side bottom -fill x
   pack .modbrowse.bottom.buttons -side top -fill x -expand yes
-  pack .modbrowse.bottom.buttons.closefm -side right -padx 10
+  pack .modbrowse.bottom.buttons.closefm -side right -expand yes
   pack .modbrowse.bottom.buttons.cvsfuncs -side left
   pack .modbrowse.bottom.buttons.svnfuncs -side left -expand yes
   pack .modbrowse.bottom.buttons.modfuncs -side left -expand yes
@@ -118,7 +118,7 @@ proc modbrowse_setup {} {
   button .modbrowse.bottom.buttons.cvsfuncs.brefresh  -image Refresh \
      -command { modbrowse_run }
 
-  button .modbrowse.bottom.buttons.closefm.close -text "Close" \
+  button .modbrowse.bottom.buttons.close -text "Close" \
     -command { module_exit; exit_cleanup 0 }
 
   grid .modbrowse.bottom.buttons.cvsfuncs.brefresh -column 0 -row 0 \
@@ -150,8 +150,9 @@ proc modbrowse_setup {} {
   grid .modbrowse.bottom.buttons.svnfuncs.remove -column 2 -row 0 \
      -ipadx 4 -ipady 4
 
-  pack .modbrowse.bottom.buttons.closefm.close \
-     -side right -fill both -expand yes
+  pack .modbrowse.bottom.buttons.close \
+     -in .modbrowse.bottom.buttons.closefm -side right \
+     -fill both -expand yes
 
   set_tooltips .modbrowse.bottom.buttons.modfuncs.checkout \
      {"Check out selection from the repository"}
@@ -179,7 +180,7 @@ proc modbrowse_setup {} {
      {"Show who has modules checked out"}
   set_tooltips .modbrowse.bottom.buttons.cvsfuncs.brefresh \
      {"Re-read the modules"}
-  set_tooltips .modbrowse.bottom.buttons.closefm.close \
+  set_tooltips .modbrowse.bottom.buttons.close \
      {"Close the repository browser"}
 
   set_tooltips .modbrowse.top.bworkdir \
@@ -247,7 +248,7 @@ proc modbrowse_menus {} {
      -command workdir_setup
   .modbrowse.modmenu.file add separator
   .modbrowse.modmenu.file add command -label "Close" -underline 1 \
-     -command {.modbrowse.bottom.buttons.closefm.close invoke}
+     -command {.modbrowse.bottom.buttons.close invoke}
   .modbrowse.modmenu.file add command -label "Exit" -underline 1 \
      -command { module_exit; exit_cleanup 1 }
 

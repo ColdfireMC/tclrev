@@ -253,7 +253,14 @@ if {$WSYS eq "x11"} {
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
   if {$WSYS eq "aqua"} {
-    # Nothing needed anymore
+    # Keep everything from being blinding white
+    option add *Frame.background #ebebeb userDefault
+    option add *Label.background #ebebeb userDefault
+    option add *Entry.highlightBackground #ebebeb userDefault
+    option add *Canvas.highlightBackground #eeeeee userDefault
+    # button highlightbackground has to be the same as background
+    # or else there are little white boxes around the button "pill"
+    option add *Button.highlightBackground #ebebeb userDefault
   }
 }
 
