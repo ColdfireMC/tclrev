@@ -128,9 +128,9 @@ proc workdir_setup {} {
   frame .workdir.bottom.buttons.dirfuncs -relief groove -bd 2
   frame .workdir.bottom.buttons.cvsfuncs -relief groove -bd 2
   frame .workdir.bottom.buttons.oddfuncs -relief groove -bd 2
-  frame .workdir.bottom.buttons.close -relief groove -bd 2
+  frame .workdir.bottom.buttons.closefm
   pack .workdir.bottom.buttons -side top -fill x -expand yes
-  pack .workdir.bottom.buttons.close -side right -padx 10
+  pack .workdir.bottom.buttons.closefm -side right -expand yes
   pack .workdir.bottom.buttons.funcs -side left -expand yes -anchor w
   pack .workdir.bottom.buttons.dirfuncs -side left -expand yes -anchor w
   pack .workdir.bottom.buttons.cvsfuncs -side left -expand yes -anchor w
@@ -244,7 +244,7 @@ proc workdir_setup {} {
   grid .workdir.bottom.buttons.oddfuncs.bcvsedit_files -column 1 -row 0
   grid .workdir.bottom.buttons.oddfuncs.bunedit_files  -column 1 -row 1
 
-  pack .workdir.close -in .workdir.bottom.buttons.close \
+  pack .workdir.close -in .workdir.bottom.buttons.closefm \
     -side right -fill both -expand yes
 
   set_tooltips .workdir.top.updir_btn \

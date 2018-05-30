@@ -1690,7 +1690,7 @@ gen_log:log D " $pattern MATCHED $text"
       # Create buttons
       #
       frame $logcanvas.down.btnfm
-      frame $logcanvas.down.closefm -relief groove -bd 2
+      frame $logcanvas.down.closefm
       button $logcanvas.refresh -image Refresh \
         -command [namespace code {
                  $scope\::reloadLog
@@ -1749,10 +1749,10 @@ gen_log:log D " $pattern MATCHED $text"
            $logcanvas.viewtags \
         -in $logcanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
-      pack $logcanvas.down.closefm -side right
+      pack $logcanvas.down.closefm -side right -expand yes
       pack $logcanvas.close \
         -in $logcanvas.down.closefm -side right \
-        -fill both -expand 1
+        -fill both -expand yes
 
       set_tooltips $logcanvas.refresh \
         {"Re-read the log information"}
