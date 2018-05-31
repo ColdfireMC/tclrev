@@ -258,6 +258,7 @@ if {$WSYS eq "x11"} {
     option add *Label.background #ebebeb userDefault
     option add *Entry.highlightBackground #ebebeb userDefault
     option add *Canvas.highlightBackground #eeeeee userDefault
+    option add *Message.Background #ebebeb userDefault
     # button highlightbackground has to be the same as background
     # or else there are little white boxes around the button "pill"
     option add *Button.highlightBackground #ebebeb userDefault
