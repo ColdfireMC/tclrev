@@ -12,8 +12,8 @@ proc git_workdir_status {} {
     }
   }
 
+if {0} {
   foreach f [glob -nocomplain *] {
-    set good_line ""
     set command "git log -n 1 --pretty=format:\"%h|%cd\" -- $f"
     set cmd(git_log) [exec::new "$command"]
     foreach log_line [split [$cmd(git_log)\::output] "\n"] {
@@ -33,50 +33,47 @@ proc git_workdir_status {} {
     gen_log:log D "$Filelist($f:stickytag)"
     gen_log:log D "$Filelist($f:date)"
   }
+}
 
-  set cmd(git_status) [exec::new "git status --porcelain"]
-  set status_lines [split [$cmd(git_status)\::output] "\n"]
-  foreach logline $status_lines {
-    gen_log:log D "$logline"
-    if {[regexp {/} $logline]} {
-      # Skip directory recursion
-      gen_log:log D "Skipping $logline"
-      continue
-    }
-    set status [lindex $logline 0]
-    set filename [lindex $logline 1]
-    switch -- $status {
-      "M" {
-       set Filelist($filename:status) "Locally Modified"
-       gen_log:log D "$Filelist($filename:status)"
-      }
-      "A" {
-       set Filelist($filename:status) "Locally Added"
-       gen_log:log D "$Filelist($filename:status)"
-      }
-      "D" {
-       set Filelist($filename:status) "Locally Removed"
-       gen_log:log D "$Filelist($filename:status)"
-      }
-      "R" {
-       set Filelist($filename:status) "Renamed"
-       gen_log:log D "$Filelist($filename:status)"
-      }
-      "C" {
-       set Filelist($filename:status) "Copied"
-       gen_log:log D "$Filelist($filename:status)"
-      }
-      "U" {
-       set Filelist($filename:status) "Updated"
-       gen_log:log D "$Filelist($filename:status)"
-      }
-      "??" {
-       set Filelist($filename:status) "Not Managed"
-       gen_log:log D "$Filelist($filename:status)"
-       # This might list some missing files, in which case some things
-       # like stickytag might not have been set
-       set Filelist($filename:stickytag) ""
-       set Filelist($filename:option) ""
+  foreach f [glob -nocomplain *] {
+    if {![file isdirectory $f]} {
+      set cmd(git_status) [exec::new "git status --porcelain $f"]
+      set logline [lindex [split [$cmd(git_status)\::output] "\n"] 0]
+      set status [lindex $logline 0]
+      set filename [lindex $logline 1]
+      switch -- $status {
+        "M" {
+         set Filelist($filename:status) "Locally Modified"
+         gen_log:log D "$Filelist($filename:status)"
+        }
+        "A" {
+         set Filelist($filename:status) "Locally Added"
+         gen_log:log D "$Filelist($filename:status)"
+        }
+        "D" {
+         set Filelist($filename:status) "Locally Removed"
+         gen_log:log D "$Filelist($filename:status)"
+        }
+        "R" {
+         set Filelist($filename:status) "Renamed"
+         gen_log:log D "$Filelist($filename:status)"
+        }
+        "C" {
+         set Filelist($filename:status) "Copied"
+         gen_log:log D "$Filelist($filename:status)"
+        }
+        "U" {
+         set Filelist($filename:status) "Updated"
+         gen_log:log D "$Filelist($filename:status)"
+        }
+        "??" {
+         set Filelist($filename:status) "Not Managed"
+         gen_log:log D "$Filelist($filename:status)"
+          #This might list some missing files, in which case some things
+          #like stickytag might not have been set
+         set Filelist($filename:stickytag) ""
+         set Filelist($filename:option) ""
+       }
       }
     }
   }
