@@ -769,6 +769,7 @@ proc DirCanvas:build {w} {
       }
      "<directory:GIT>" {
        set DirList($w:$f:icon) gitdir
+       set DirList($w:$f:popup) gitdir_pop
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
@@ -1260,6 +1261,11 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_edit_file [workdir_list_files] }
   $w.cvsdir_pop add command -label "CVS Release" \
     -command { release_dialog [workdir_list_files] }
+
+  # For CVS directories when cwd isn't in CVS
+  menu $w.gitdir_pop -tearoff 0
+  $w.gitdir_pop add command -label "Descend" \
+    -command { workdir_edit_file [workdir_list_files] }
 
   # For CVS files
   menu $w.stat_cvsok_pop -tearoff 0
