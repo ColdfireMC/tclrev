@@ -1,3 +1,17 @@
+4.3             (2018):
+     * Add ability to create a file-pairs list from a Git diff (by Kevin X),
+       then extended (by vampm) facilitating other sources of multi-pairs,
+       including local directory-to-directory comparisons and Subversion.
+     * Rework the main text windows as a text + canvas hybrid so everything
+       stays visually aligned while scrolling with multiple fonts (by vampm)
+     * Add a facility to slice individual Diff records into logical pieces
+       providing more exacting mergefile generation capabilities (by vampm)
+     * Report generation can now suppress NON changed Text lines (by vampm)
+     * Merge Preview now indicates diff line contributors and line numbers
+     * Repaired handling of data files having random <CR> bytes embedded
+     * Numerous small enhancements (wheel scrolling, more GUI feedback, ...)
+     * Extensive audit and content update of the online help text (by vampm)
+
 4.2             (2011):
      * Works with Subversion 1.7
      * Make opening file dialog know where it started from, and start in the
