@@ -1114,6 +1114,8 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 3 -state normal \
        -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.menubar.reports entryconfigure 4 -state disabled
+  } elseif {$ingit} {
+    .workdir.top.lmodule configure -text "Gitdir"
   }
 
   DirCanvas:create .workdir.main
