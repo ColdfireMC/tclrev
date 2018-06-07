@@ -538,7 +538,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
-     -command { if {($incvs || $insvn || $inrcs ) && $cvscfg(showeditcol)} {
+     -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showeditcol)} {
                   DirCanvas:map_column .workdir.main editcol
                 } else {
                   DirCanvas:unmap_column .workdir.main editcol
@@ -1249,6 +1249,7 @@ proc directory_list { filenames } {
 
   if {$ingit} {
     DirCanvas:headtext .workdir.main wrevcol "hash"
+    DirCanvas:headtext .workdir.main editcol "committer"
     git_workdir_status
   }
 

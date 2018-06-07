@@ -64,7 +64,7 @@ proc DirCanvas:create {w} {
   set col [lindex $cvscfg(sort_pref) 0]
   set sense [lindex $cvscfg(sort_pref) 1]
   gen_log:log D "$incvs  $col"
-  if { (! ($incvs || $inrcs || $insvn))  && ( $col == "editcol" || $col == "wrevcol") } {
+  if { (! ($incvs || $inrcs || $insvn || $ingit))  && ( $col == "editcol" || $col == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set col "filecol"
     set sense "-decreasing"
@@ -147,7 +147,7 @@ proc DirCanvas:column {w column headtext} {
     return
   }
   if {$column == "editcol"} {
-    if {($incvs || $insvn || $inrcs) && $cvscfg(showeditcol)} {
+    if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showeditcol)} {
       DirCanvas:map_column $w editcol
     } else {
       gen_log:log T "LEAVE (skipping editcol)"
