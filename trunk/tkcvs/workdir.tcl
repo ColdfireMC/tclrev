@@ -1115,7 +1115,13 @@ proc setup_dir { } {
        -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.menubar.reports entryconfigure 4 -state disabled
   } elseif {$ingit} {
-    .workdir.top.lmodule configure -text "Gitdir"
+    # Top
+    .workdir.top.lmodule configure -text ""
+    .workdir.top.ltagname configure -text "Branch"
+    .workdir.top.lcvsroot configure -text "Git Source"
+    .workdir.top.tcvsroot configure -textvariable cvscfg(url)
+    # Buttons
+    .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
   }
 
   DirCanvas:create .workdir.main
@@ -1441,6 +1447,7 @@ proc cvsroot_check { dir } {
     set ingit 0
   } else {
     set ingit 1
+    read_git_file $dir
   }
   gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
   return [list $incvs $insvn $inrcs $ingit]
