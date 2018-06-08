@@ -89,3 +89,29 @@ proc git_workdir_status {} {
   gen_log:log T "LEAVE"
 }
 
+proc read_git_file {dirname} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($dirname)"
+
+  if {[file isfile [file join $dirname ".git"]]} {
+    gen_log:log F "OPEN .git"
+    set f [open [file join $dirname .git] r]
+    while {![eof $f]} {
+      gets $f gitline
+      gen_log:log F $gitline
+      if {[string match "gitdir:*" $gitline]} {
+        set cvscfg(url) [lindex $gitline 1]
+      }
+    }
+    close $f
+  } elseif {[file isdirectory [file join $dirname ".git"]]} {
+    #set cmd "git config -l"
+    set cmd(git_config) [exec::new "git config remote.origin.url"]
+    set cfgline [lindex [split [$cmd(git_config)\::output] "\n"] 0]
+    set cvscfg(url) $cfgline
+    $cmd(git_config)\::destroy
+  }
+  gen_log:log T "LEAVE"
+}
+

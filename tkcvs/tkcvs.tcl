@@ -130,8 +130,9 @@ if {$cvsglb(hlfg) eq {} } {
   # This happens on the Mac
   set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
 }
-puts [.testent configure -font]
 set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
+#puts [font actual $cvscfg(listboxfont) -displayof .testent]
+#puts [font metrics $cvscfg(listboxfont) -displayof .testent]
 destroy .testent
 
 
@@ -268,18 +269,39 @@ if {$WSYS eq "x11"} {
 
 
 # Fonts for the canvas "listboxes"
-puts "Platform:$tcl_platform(os) Tk version:$tk_patchLevel   [winfo server .]"
-puts "\nlistboxfont: $cvscfg(listboxfont)"
+set cvscfg(flashfont) $cvscfg(listboxfont)
 set fsiz [lindex $cvscfg(listboxfont) 1]
 set lbf [font actual $cvscfg(listboxfont)]
-puts "actual listboxfont: $lbf"
+#puts "$tcl_platform(os) $tk_patchLevel   [winfo server .]"
+#puts "listboxfont: $cvscfg(listboxfont)"
+#puts "actual listboxfont: $lbf"
 set ffam [lindex $lbf 1]
 set fsiz [lindex $lbf 3]
-puts "  Family: $ffam   Size: $fsiz"
 
-# I give up on underline. Let's just hope TkHeadingFont is the same size as
-# TkTextFont
-set cvscfg(flashfont) TkHeadingFont
+# On X11, fsiz is often 0 because it's a scaled font. Then linespace
+# is about the best you can do to deduce the real size.
+if {$fsiz == 0} {
+  set linespace [font metrics $cvscfg(listboxfont) -linespace]
+  #puts "linespace $linespace"
+  foreach size {8 9 10 11 12 13 14} {
+    set negsize -$size
+    font create Z$size -family $ffam -size $negsize
+    set lnspc [font metric Z$size -linespace]
+    set fsize($lnspc) $negsize
+    #puts "fsize($lnspc) = $fsize($lnspc)"
+    font delete Z$size
+  }
+  set fsiz $fsize($linespace)
+}
+set cvscfg(flashfont) [list $ffam $fsiz underline]
+
+# Prefer underline, but it isn't working at all in tk8.5.0 on linux
+if {! [font actual $cvscfg(flashfont) -underline]} {
+  puts "Underline font not working.  Trying $ffam $fsiz bold"
+  puts " (known problem in Tk 8.5.0 on Linux)"
+  set cvscfg(flashfont) [list $ffam $fsiz bold]
+}
+#puts "final flashfont: $cvscfg(flashfont)"
 
 option add *ToolTip.background  "LightGoldenrod1" userDefault
 option add *ToolTip.foreground  "black" userDefault
