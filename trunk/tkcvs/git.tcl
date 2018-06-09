@@ -13,7 +13,30 @@ proc git_workdir_status {} {
     }
   }
 
-  foreach f [glob -nocomplain *] {
+  # This lists the files that git tracks. It's the only way to list up-to-date
+  # files.
+  #set cmd(git_list) [exec::new "git ls-tree --name-status -r $current_tagname"]
+  set cmd(git_list) [exec::new "git ls-tree --name-only -r $current_tagname"]
+  set gitlist_lines [split [$cmd(git_list)\::output] "\n"]
+  if {[info exists cmd(git_list)]} {
+    $cmd(git_list)\::destroy
+    catch {unset cmd(git_list)}
+    foreach line $gitlist_lines {
+      gen_log:log D "$line"
+      if {[string length $line]} {
+        if {[regsub {/.*$} $line "" head]} {
+          set Filelist($head:status) "<directory:GIT>"
+        } else {
+          set f $line
+          # temporary, should be overwritten in next loop
+        }
+        lappend tracked_files $head
+      }
+    }
+  }
+
+  # Get the status of the tracked files (top level only)
+  foreach f [lsort -unique $tracked_files] {
     set cmd(git_status) [exec::new "git status --porcelain \"$f\""]
     set statline [lindex [split [$cmd(git_status)\::output] "\n"] 0]
     if {![file isdirectory $f]} {
@@ -66,52 +89,42 @@ proc git_workdir_status {} {
          set Filelist($f:status) "Updated"
          gen_log:log D "$Filelist($f:status)"
         }
-        "??" {
-         set Filelist($f:status) "Not Managed"
+        default {
+         set Filelist($f:status) "Up-to-date"
          gen_log:log D "$Filelist($f:status)"
-         #This might list some missing files, in which case some things
-         #like stickytag might not have been set
-         set Filelist($f:stickytag) ""
-         set Filelist($f:option) ""
        }
       }
     } else {
-      if {[llength $statline]} {
-         set Filelist($f:status) "<directory:GIT>"
-         gen_log:log D "$Filelist($f:status)"
-      } else {
-         set Filelist($f:status) "<directory>"
-         gen_log:log D "$Filelist($f:status)"
-      }
+      set Filelist($f:status) "<directory:GIT>"
+      gen_log:log D "$Filelist($f:status)"
+    }
+  }
+
+  # Deal with the ones that aren't tracked
+  foreach f [glob -nocomplain *] {
+    if {! [info exists Filelist($f:status)]} {
+      set Filelist($f:status) "Not Managed"
+      gen_log:log D "$Filelist($f:status)"
+      #This might list some missing files, in which case some things
+      #like stickytag might not have been set
+      #set Filelist($f:stickytag) ""
+      #set Filelist($f:option) ""
     }
   }
   
   gen_log:log T "LEAVE"
 }
 
-proc read_git_file {dirname} {
+proc find_git_remote {dirname} {
   global cvscfg
 
   gen_log:log T "ENTER ($dirname)"
 
-  if {[file isfile [file join $dirname ".git"]]} {
-    gen_log:log F "OPEN .git"
-    set f [open [file join $dirname .git] r]
-    while {![eof $f]} {
-      gets $f gitline
-      gen_log:log F $gitline
-      if {[string match "gitdir:*" $gitline]} {
-        set cvscfg(url) [lindex $gitline 1]
-      }
-    }
-    close $f
-  } elseif {[file isdirectory [file join $dirname ".git"]]} {
-    #set cmd "git config -l"
-    set cmd(git_config) [exec::new "git config remote.origin.url"]
-    set cfgline [lindex [split [$cmd(git_config)\::output] "\n"] 0]
-    set cvscfg(url) $cfgline
-    $cmd(git_config)\::destroy
-  }
+  set cmd(git_config) [exec::new "git remote -v"]
+  set cfgline [lindex [split [$cmd(git_config)\::output] "\n"] 0]
+  set cvscfg(origin) [lindex $cfgline 0]
+  set cvscfg(url) [lindex $cfgline 1]
+  $cmd(git_config)\::destroy
   gen_log:log T "LEAVE"
 }
 

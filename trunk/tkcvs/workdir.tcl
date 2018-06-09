@@ -1117,8 +1117,8 @@ proc setup_dir { } {
   } elseif {$ingit} {
     # Top
     .workdir.top.lmodule configure -text ""
-    .workdir.top.ltagname configure -text "Branch"
-    .workdir.top.lcvsroot configure -text "Git Source"
+    .workdir.top.ltagname configure -text "branch"
+    .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
@@ -1447,7 +1447,7 @@ proc cvsroot_check { dir } {
     set ingit 0
   } else {
     set ingit 1
-    read_git_file $dir
+    find_git_remote $dir
   }
   gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
   return [list $incvs $insvn $inrcs $ingit]
