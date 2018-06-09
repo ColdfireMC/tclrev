@@ -539,7 +539,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
      -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showeditcol)} {
-                  DirCanvas:map_column .workdir.main editcol
+                  DirCanvas:build .workdir.main
                 } else {
                   DirCanvas:unmap_column .workdir.main editcol
                 }
@@ -547,7 +547,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Status Column" \
      -variable cvscfg(showstatcol) -onvalue true -offvalue false \
      -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showstatcol)} {
-                  DirCanvas:map_column .workdir.main statcol
+                  DirCanvas:build .workdir.main
                 } else {
                   DirCanvas:unmap_column .workdir.main statcol
                 }
@@ -555,7 +555,7 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Date Column" \
      -variable cvscfg(showdatecol) -onvalue true -offvalue false \
      -command { if {$cvscfg(showdatecol)} {
-                  DirCanvas:map_column .workdir.main datecol
+                  DirCanvas:build .workdir.main
                 } else {
                   DirCanvas:unmap_column .workdir.main datecol
                 }

@@ -1018,7 +1018,7 @@ proc DirCanvas:build {w} {
     if {$cvscfg(showstatcol)} {
       DirCanvas:map_column $w statcol
     }
-    if {!$ingit && $cvscfg(showeditcol)} {
+    if {$cvscfg(showeditcol)} {
       DirCanvas:map_column $w editcol
     }
   }
