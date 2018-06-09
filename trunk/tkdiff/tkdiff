@@ -43,7 +43,7 @@ wm withdraw .
 
 # set a couple o' globals that we might need sooner than later
 set g(name) "TkDiff"
-set g(version) "4.3"
+set g(version) "4.3.1"
 set g(startPhase) 0
 
 # FIXME - move to preferences
@@ -1542,6 +1542,7 @@ proc assemble-args {} {
     global opts
     global g
 
+    set msg ""
     if {$g(ancfile) != ""} {
         set g(ancfileset) 1
     }
@@ -1586,6 +1587,7 @@ proc assemble-args {} {
     set cnt 0 ;# Track how many IMPLIED files ultimately are derived
 
     if {$g(conflictset)} {
+        set msg "you specified $pths filespec(s) for a conflict resolution"
         if {$revs == 0 && $pths == 1} {
             #################################################################
             # tkdiff -conflict FILE
@@ -1598,6 +1600,7 @@ proc assemble-args {} {
             # are taken from the <<<<<<< and >>>>>>> lines inside it.
             set finfo(lbl,1) [lindex "$files" 2]
             set finfo(lbl,2) [lindex "$files" 3]
+            incr cnt 2
         } else {
             fatal-error "Usage: tkdiff -conflict FILE"
         }
