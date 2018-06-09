@@ -177,7 +177,7 @@ proc conflict {filename} {
   # Create a conflict
 
   # Find out current revision
-  set exec_cmd "svn log -q -r PREV Ftrunk.txt"
+  set exec_cmd "svn log -q Ftrunk.txt"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
