@@ -956,7 +956,7 @@ proc setup_dir { } {
   set rptmenu_idx [.workdir.menubar index "Reports"]
   #puts "reports $rptmenu_idx"
   foreach label {"RCS" "CVS" "SVN" "GIT"} {
-    puts -nonewline "$label "
+    #puts -nonewline "$label "
     if [catch {set vcsmenu_idx [.workdir.menubar index "$label"]}] {
        #puts "error "
     } else {
