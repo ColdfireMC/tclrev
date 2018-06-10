@@ -76,54 +76,77 @@ proc aboutbox {} {
   pack .about.down.ok
 }
 
-proc help_cvs_version {} {
+proc help_cvs_version {visual} {
 #
-# This shows CVS banner.
+# This shows the banners of the available revision control systems.
 #
   global cvs
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER"
-  set v [viewer::new "Versions"]
 
-  $v\::log "-----------------------------------------\n"
-  set whichcvs  [auto_execok $cvs]
+  set cvsglb(have_cvs) 0
+  set cvsglb(have_svn) 0
+  set cvsglb(have_rcs) 0
+  set cvsglb(have_git) 0
+
+  set whichcvs [auto_execok $cvs]
   if {[llength $whichcvs]} {
     set whichcvs [join $whichcvs]
     set commandline "$cvs -v"
-    catch {eval "exec $commandline"} output
-    $v\::log "$whichcvs $output"
-  } else {
-    $v\::log "$cvs was not found in your path."
+    catch {eval "exec $commandline"} cvs_output
+    set cvsglb(have_cvs) 1
   }
-
-  $v\::log "\n-----------------------------------------\n"
-  set whichsvn  [auto_execok svn]
+  set whichsvn [auto_execok svn]
   if {[llength $whichsvn]} {
     set whichsvn [join $whichsvn]
     set commandline "svn --version"
-    set ret [catch {eval "exec $commandline"} output]
-    $v\::log "$whichsvn\n$output"
-  } else {
-    $v\::log "svn was not found in your path."
+    set ret [catch {eval "exec $commandline"} svn_output]
+    set cvsglb(have_svn) 1
   }
-
-  $v\::log "\n-----------------------------------------\n"
-  set whichrcs  [auto_execok rcs]
+  set whichrcs [auto_execok rcs]
   if {[llength $whichrcs]} {
     set whichrcs [join $whichrcs]
-    set commandline "rcs -V"
-    set ret [catch {eval "exec $commandline"} output]
-    $v\::log "$whichrcs\n$output"
-    if {$ret != 0} {
-      $v\::log "\nIf you see a usage message here, you have"
-      $v\::log " a very old version of RCS.\nSome things still work,"
-      $v\::log " but some won't.\n"
-    }
-  } else {
-    $v\::log "rcs was not found in your path."
+    set commandline "rcs --version"
+    set ret [catch {eval "exec $commandline"} rcs_output]
+    set cvsglb(have_rcs) 1
+  }
+  set whichgit  [auto_execok git]
+  if {[llength $whichgit]} {
+    set whichgit [join $whichgit]
+    set commandline "git --version"
+    set ret [catch {eval "exec $commandline"} git_output]
+    set cvsglb(have_git) 1
   }
 
+  if {$visual} {
+    set v [viewer::new "Versions"]
+    $v\::log "-----------------------------------------\n"
+    if {$cvsglb(have_cvs)} {
+      $v\::log "$whichcvs\n$cvs_output"
+    } else {
+      $v\::log "$cvs was not found in your path."
+    }
+    $v\::log "\n-----------------------------------------\n"
+    if {$cvsglb(have_svn)} {
+      $v\::log "$whichsvn\n$svn_output"
+    } else {
+      $v\::log "svn was not found in your path."
+    }
+    $v\::log "\n-----------------------------------------\n"
+    if {$cvsglb(have_rcs)} {
+      $v\::log "$whichrcs\n$rcs_output"
+    } else {
+      $v\::log "rcs was not found in your path."
+    }
+    $v\::log "\n-----------------------------------------\n"
+    if {$cvsglb(have_git)} {
+      $v\::log "$whichgit\n$git_output"
+    } else {
+      $v\::log "git was not found in your path."
+    }
+  }
   gen_log:log T "LEAVE"
 }
 
@@ -986,8 +1009,8 @@ proc menu_std_help { w } {
   menu $w.help
   $w.help add command -label "About TkCVS" -underline 0 \
      -command aboutbox
-  $w.help add command -label "About CVS SVN RCS" -underline 6 \
-     -command help_cvs_version
+  $w.help add command -label "About CVS SVN RCS GIT" -underline 6 \
+     -command {help_cvs_version 1}
   $w.help add command -label "About Wish" -underline 6 \
      -command "wish_version [winfo parent $w]"
   $w.help add separator
