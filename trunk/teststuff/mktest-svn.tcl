@@ -177,7 +177,7 @@ proc conflict {filename} {
   # Create a conflict
 
   # Find out current revision
-  set exec_cmd "svn log -q Ftrunk.txt"
+  set exec_cmd "svn log -q $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -188,26 +188,25 @@ proc conflict {filename} {
     }
   }
 
-  # Save the current, up-to-date one
-  file copy Ftrunk.txt Ftmp.txt
-  writefile Ftrunk.txt 1
-
+  # Save a copy
+  file copy $filename Ftmp.txt
   # Make a change
-  set exec_cmd "svn commit -m \"change1\" Ftrunk.txt"
+  writefile $filename 1
+  set exec_cmd "svn commit -m \"change1\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   # Check out previous revision
-  set exec_cmd "svn update -r $previous Ftrunk.txt"
+  set exec_cmd "svn update -r $previous $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   # Make a different change (we hope)
-  file delete -force -- Ftrunk.txt
-  file rename Ftmp.txt Ftrunk.txt
-  writefile Ftrunk.txt 2
+  file delete -force -- $filename
+  file rename Ftmp.txt $filename
+  writefile $filename 2
   # Check out head, which now conflicts with our change
-  set exec_cmd "svn update --non-interactive -r HEAD Ftrunk.txt"
+  set exec_cmd "svn update --non-interactive -r HEAD $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out

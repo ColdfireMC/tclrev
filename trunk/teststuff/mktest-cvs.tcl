@@ -2,6 +2,7 @@
 # the next line restarts using tclsh \
 exec tclsh "$0" -- ${1+"$@"}
 
+
 proc cleanup_old {root} {
   global env
 
@@ -171,38 +172,36 @@ proc conflict {filename} {
   # Create a conflict
 
   # Find out current revision
-  set exec_cmd "cvs log -bt Ftrunk.txt"
+  set exec_cmd "cvs log -b $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   foreach logline [split $out "\n"] {
-    if {[string match "head*" $logline]} {
-      set version [lindex $logline 1]
+    if {[string match "revision *" $logline]} {
+      set previous [lindex $logline 1]
       break
     }
   }
-  set previous [expr {$version - 0.1}]
 
-  # Save the current, up-to-date one
-  file copy Ftrunk.txt Ftmp.txt
-  writefile Ftrunk.txt 1
-
+  # Save a copy
+  file copy $filename Ftmp.txt
   # Make a change
-  set exec_cmd "cvs commit -m \"change1\" Ftrunk.txt"
+  writefile $filename 1
+  set exec_cmd "cvs commit -m \"change1\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   # Check out previous revision
-  set exec_cmd "cvs update -r $previous Ftrunk.txt"
+  set exec_cmd "cvs update -r $previous $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   # Make a different change (we hope)
-  file delete -force -- Ftrunk.txt
-  file rename Ftmp.txt Ftrunk.txt
-  writefile Ftrunk.txt 2
+  file delete -force -- $filename
+  file rename Ftmp.txt $filename
+  writefile $filename 2
   # Check out head, which now conflicts with our change
-  set exec_cmd "cvs update -A Ftrunk.txt"
+  set exec_cmd "cvs update -r HEAD $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -309,8 +308,8 @@ modfiles
 writefile FbranchB.txt 1
 addfile FbranchB.txt branchB
 commit "Add file FB on BranchB"
+cd $WD
 }
-
 # Leave the trunk with uncommitted changes
 puts "==============================="
 puts "Uncommitted changes on trunk"
