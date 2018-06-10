@@ -279,18 +279,22 @@ proc do_help {title helptext} {
   incr helpviewer
   set cvshelpview ".cvshelpview$helpviewer"
   toplevel $cvshelpview
-  text $cvshelpview.text -setgrid yes -wrap word \
+  frame $cvshelpview.top
+  text $cvshelpview.top.text -setgrid yes -wrap word \
     -exportselection 1 \
     -width 55 -relief sunken -border 2 \
-    -yscroll "$cvshelpview.scroll set"
-  scrollbar $cvshelpview.scroll -relief sunken \
-    -command "$cvshelpview.text yview"
-  button $cvshelpview.close -text "Close" \
+    -yscroll "$cvshelpview.top.scroll set"
+  scrollbar $cvshelpview.top.scroll -relief sunken \
+    -command "$cvshelpview.top.text yview"
+  frame $cvshelpview.bot
+  button $cvshelpview.bot.close -text "Close" \
     -command "destroy $cvshelpview; exit_cleanup 0"
 
-  pack $cvshelpview.close -side bottom
-  pack $cvshelpview.scroll -side right -fill y
-  pack $cvshelpview.text -fill both -expand 1
+  pack $cvshelpview.bot -side bottom -fill x
+  pack $cvshelpview.bot.close -side bottom
+  pack $cvshelpview.top -side top -fill both -expand y
+  pack $cvshelpview.top.scroll -side right -fill y
+  pack $cvshelpview.top.text -fill both -expand y
 
   wm title $cvshelpview "$title Help"
   if {$tcl_platform(platform) != "windows"} {
@@ -298,7 +302,7 @@ proc do_help {title helptext} {
   }
   wm minsize $cvshelpview 1 1
 
-  put-text $cvshelpview.text $helptext
+  put-text $cvshelpview.top.text $helptext
   gen_log:log T "LEAVE"
 }
 
@@ -1006,17 +1010,17 @@ These extension lines commence with a "#" character, so CVS interprets them as c
 # Populates the Help menu.  Called from the browser windows.
 proc menu_std_help { w } {
   if {[tk windowingsystem] == "aqua"} {
-    set aboutmenu "apple"
+    set aboutmenu ".workdir.menubar.apple"
   } else {
-    set aboutmenu "help"
+    set aboutmenu "$w.help"
   }
   $w add cascade -label "Help" -menu $w.help -underline 0
   menu $w.help
-  $w.$aboutmenu add command -label "About TkCVS" -underline 0 \
+  $aboutmenu add command -label "About TkCVS" -underline 0 \
      -command aboutbox
-  $w.$aboutmenu add command -label "About CVS SVN RCS GIT" -underline 6 \
+  $aboutmenu add command -label "About CVS SVN RCS GIT" -underline 6 \
      -command {help_cvs_version 1}
-  $w.$aboutmenu add command -label "About Wish" -underline 6 \
+  $aboutmenu add command -label "About Wish" -underline 6 \
      -command "wish_version [winfo parent $w]"
   $w.help add separator
   $w.help add command -label "Current Directory Display" \
