@@ -302,6 +302,9 @@ if {! [font actual $cvscfg(flashfont) -underline]} {
 }
 #puts "final flashfont: $cvscfg(flashfont)"
 
+# Suppress tearoffs in menubars
+option add *tearOff 0
+
 option add *ToolTip.background  "LightGoldenrod1" userDefault
 option add *ToolTip.foreground  "black" userDefault
 

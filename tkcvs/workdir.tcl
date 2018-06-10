@@ -401,32 +401,34 @@ proc workdir_menus {} {
   gen_log:log T "ENTER"
   set startdir "[pwd]"
 
-  .workdir configure -menu .workdir.menubar
+  #.workdir configure -menu .workdir.menubar
   menu .workdir.menubar
 
   #
   # Create the Menu bar
   #
-  .workdir.menubar add cascade -label "File" -menu .workdir.menubar.file -underline 0
-  menu .workdir.menubar.file -tearoff 0
-  .workdir.menubar add cascade -label "VCS" -menu .workdir.menubar.cvs
-  menu .workdir.menubar.vcs -tearoff 0
-  .workdir.menubar add cascade -label "Reports" -menu .workdir.menubar.reports -underline 2
-  menu .workdir.menubar.reports -tearoff 0
-  .workdir.menubar add cascade -label "Options" -menu .workdir.menubar.options -underline 0
-  menu .workdir.menubar.options -tearoff 0
+  if {[tk windowingsystem] == "aqua"} {
+    # There's an extra menu in the first postion on apple, whether you like it or not.
+    # So you have to configure it.
+    .workdir.menubar add cascade -label "TkCVS" -menu [menu .workdir.menubar.apple]
+  }
+  .workdir.menubar add cascade -label "File" -menu [menu .workdir.menubar.file] -underline 0
+  #.workdir.menubar add cascade -label "VCS" -menu [menu .workdir.menubar.vcs]
+  .workdir.menubar add cascade -label "Reports" -menu [menu .workdir.menubar.reports] -underline 2
+  .workdir.menubar add cascade -label "Options" -menu [menu .workdir.menubar.options] -underline 0
 
   if { [info exists cvsmenu] || \
        [info exists usermenu] || \
        [info exists execmenu]} {
-    .workdir.menubar add cascade -label "User Defined" -menu .workdir.menubar.user -underline 0
-    menu .workdir.menubar.user -tearoff 0
+    .workdir.menubar add cascade -label "User Defined" -menu [menu .workdir.menubar.user] -underline 0
     gen_log:log T "Adding user defined menu"
   }
-  .workdir.menubar add cascade -label "Go" -menu .workdir.menubar.goto -underline 0
-  menu .workdir.menubar.goto -tearoff 0
+  .workdir.menubar add cascade -label "Go" -menu [menu .workdir.menubar.goto] -underline 0
 
+  # Populate the help menu
   menu_std_help .workdir.menubar
+  # Have to do this after the .apple menu
+  .workdir configure -menu .workdir.menubar
 
   #
   # Create the Menus
@@ -454,14 +456,14 @@ proc workdir_menus {} {
      -command { exit_cleanup 1 }
 
   # Pulldown for revision control systems, in case we're not in one
-  .workdir.menubar.vcs add command -label "CVS" -state disabled -command {}
-  .workdir.menubar.vcs add command -label "SVN" -state disabled -command {}
-  .workdir.menubar.vcs add command -label "RCS" -state disabled -command {}
-  .workdir.menubar.vcs add command -label "GIT" -state disabled -command {}
-  if {$cvsglb(have_cvs)} {.workdir.menubar.vcs entryconfigure "CVS" -state normal}
-  if {$cvsglb(have_svn)} {.workdir.menubar.vcs entryconfigure "SVN" -state normal}
-  if {$cvsglb(have_rcs)} {.workdir.menubar.vcs entryconfigure "RCS" -state normal}
-  if {$cvsglb(have_git)} {.workdir.menubar.vcs entryconfigure "GIT" -state normal}
+  #.workdir.menubar.vcs add command -label "CVS" -state disabled -command {}
+  #.workdir.menubar.vcs add command -label "SVN" -state disabled -command {}
+  #.workdir.menubar.vcs add command -label "RCS" -state disabled -command {}
+  #.workdir.menubar.vcs add command -label "GIT" -state disabled -command {}
+  #if {$cvsglb(have_cvs)} {.workdir.menubar.vcs entryconfigure "CVS" -state normal}
+  #if {$cvsglb(have_svn)} {.workdir.menubar.vcs entryconfigure "SVN" -state normal}
+  #if {$cvsglb(have_rcs)} {.workdir.menubar.vcs entryconfigure "RCS" -state normal}
+  #if {$cvsglb(have_git)} {.workdir.menubar.vcs entryconfigure "GIT" -state normal}
 
   # CVS
   menu .workdir.menubar.cvs
@@ -949,9 +951,23 @@ proc setup_dir { } {
   .workdir.top.lcvsroot configure -text "CVSROOT"
   .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
 
-  # Start with generic revision-control menu
+  # Start without revision-control menu
   gen_log:log D "CONFIGURE VCS MENU"
-  .workdir.menubar entryconfigure 1 -label "VCS" -menu .workdir.menubar.vcs
+  set rptmenu_idx [.workdir.menubar index "Reports"]
+  #puts "reports $rptmenu_idx"
+  foreach label {"RCS" "CVS" "SVN" "GIT"} {
+    puts -nonewline "$label "
+    if [catch {set vcsmenu_idx [.workdir.menubar index "$label"]}] {
+       #puts "error "
+    } else {
+       #puts "$vcsmenu_idx"
+      .workdir.menubar delete $vcsmenu_idx
+    }
+  }
+  set rptmenu_idx [.workdir.menubar index "Reports"]
+  #puts "reports $rptmenu_idx"
+  #puts "----------"
+
   # Disable report menu items 
   .workdir.menubar.reports entryconfigure 0 -state disabled
   .workdir.menubar.reports entryconfigure 1 -state disabled
@@ -974,7 +990,7 @@ proc setup_dir { } {
   if {$inrcs} {
     # Top
 gen_log:log D "CONFIGURE RCS MENU"
-    .workdir.menubar entryconfigure 1 -label "RCS" -menu .workdir.menubar.rcs
+    .workdir.menubar insert $rptmenu_idx cascade -label "RCS" -menu .workdir.menubar.rcs
     .workdir.top.lcvsroot configure -text "RCS *,v"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
     # Buttons
@@ -1008,7 +1024,7 @@ gen_log:log D "CONFIGURE RCS MENU"
   } elseif {$insvn} {
     # Top
 gen_log:log D "CONFIGURE SVN MENU"
-    .workdir.menubar entryconfigure 1 -label "SVN" -menu .workdir.menubar.svn
+    .workdir.menubar insert $rptmenu_idx cascade -label "SVN" -menu .workdir.menubar.svn
     .workdir.top.bmodbrowse configure -image Modules_svn \
       -command {modbrowse_run svn}
     .workdir.top.lmodule configure -text "Path"
@@ -1064,7 +1080,7 @@ gen_log:log D "CONFIGURE SVN MENU"
   } elseif {$incvs} {
     # Top
 gen_log:log D "CONFIGURE CVS MENU"
-    .workdir.menubar entryconfigure 1 -label "CVS" -menu .workdir.menubar.cvs
+    .workdir.menubar insert $rptmenu_idx cascade -label "CVS" -menu .workdir.menubar.cvs
     .workdir.top.bmodbrowse configure -image Modules_cvs \
       -command {modbrowse_run cvs}
     .workdir.top.lmodule configure -text "Module"
@@ -1127,15 +1143,13 @@ gen_log:log D "CONFIGURE CVS MENU"
   } elseif {$ingit} {
     # Top
 gen_log:log D "CONFIGURE GIT MENU"
-    .workdir.menubar entryconfigure 1 -label "GIT" -menu .workdir.menubar.git
+    .workdir.menubar insert $rptmenu_idx cascade -label "GIT" -menu .workdir.menubar.git
     .workdir.top.lmodule configure -text ""
     .workdir.top.ltagname configure -text "branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
-  } else {
-    .workdir.menubar entryconfigure 1 -label "VCS" -menu .workdir.menubar.vcs
   }
 
   DirCanvas:create .workdir.main

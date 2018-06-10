@@ -1226,21 +1226,21 @@ proc DirCanvas:makepopup {w} {
   gen_log:log T "ENTER ($w)"
 
   # For plain files in an un-versioned directory
-  menu $w.paper_pop -tearoff 0
+  menu $w.paper_pop
   $w.paper_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.paper_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For plain directories in an un-versioned directory
-  menu $w.folder_pop -tearoff 0
+  menu $w.folder_pop
   $w.folder_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.folder_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For plain directories in CVS
-  menu $w.incvs_folder_pop -tearoff 0
+  menu $w.incvs_folder_pop
   $w.incvs_folder_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.incvs_folder_pop add command -label "CVS Add Recursively" \
@@ -1249,26 +1249,26 @@ proc DirCanvas:makepopup {w} {
     -command { workdir_delete_file [workdir_list_files] }
 
   # For CVS directories when cwd is in CVS
-  menu $w.cvscvs_pop -tearoff 0
+  menu $w.cvscvs_pop
   $w.cvscvs_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.cvscvs_pop add command -label "CVS Remove Recursively" \
     -command { subtractdir_dialog [workdir_list_files] }
 
   # For CVS directories when cwd isn't in CVS
-  menu $w.cvsdir_pop -tearoff 0
+  menu $w.cvsdir_pop
   $w.cvsdir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.cvsdir_pop add command -label "CVS Release" \
     -command { release_dialog [workdir_list_files] }
 
   # For CVS directories when cwd isn't in CVS
-  menu $w.gitdir_pop -tearoff 0
+  menu $w.gitdir_pop
   $w.gitdir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
 
   # For CVS files
-  menu $w.stat_cvsok_pop -tearoff 0
+  menu $w.stat_cvsok_pop
   $w.stat_cvsok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Browse the Log Diagram" \
@@ -1287,7 +1287,7 @@ proc DirCanvas:makepopup {w} {
      -command { cvs_ascii [workdir_list_files] }
 
   # For CVS files that are not up-to-date
-  menu $w.needsupdate_pop -tearoff 0
+  menu $w.needsupdate_pop
   $w.needsupdate_pop add command -label "Update" \
     -command { \
         cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
@@ -1295,7 +1295,7 @@ proc DirCanvas:makepopup {w} {
     -command cvs_update_options
 
   # For CVS files that need merging
-  menu $w.stat_merge_pop -tearoff 0
+  menu $w.stat_merge_pop
   $w.stat_merge_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_merge_pop add command -label "Diff" \
@@ -1306,7 +1306,7 @@ proc DirCanvas:makepopup {w} {
     -command { cvs_branches [workdir_list_files] }
 
   # For CVS files that are modified
-  menu $w.stat_mod_pop -tearoff 0
+  menu $w.stat_mod_pop
   $w.stat_mod_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_mod_pop add command -label "Diff" \
@@ -1317,14 +1317,14 @@ proc DirCanvas:makepopup {w} {
     -command { cvs_revert [workdir_list_files] }
 
   # For CVS files that have been added or removed but not commited
-  menu $w.stat_plus_pop -tearoff 0
+  menu $w.stat_plus_pop
   $w.stat_plus_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_plus_pop add command -label "CVS Commit" \
     -command { cvs_commit_dialog }
 
   # For CVS files with conflicts
-  menu $w.stat_conf_pop -tearoff 0
+  menu $w.stat_conf_pop
   $w.stat_conf_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_conf_pop add command -label "Merge Conflict" \
@@ -1335,7 +1335,7 @@ proc DirCanvas:makepopup {w} {
     -command { cvs_branches [workdir_list_files] }
 
   # For RCS files
-  menu $w.rcs_pop -tearoff 0
+  menu $w.rcs_pop
   $w.rcs_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.rcs_pop add command -label "Browse the Log Diagram" \
@@ -1350,7 +1350,7 @@ proc DirCanvas:makepopup {w} {
     -command { rcs_revert [workdir_list_files] }
 
   # For SVN files
-  menu $w.stat_svnok_pop -tearoff 0
+  menu $w.stat_svnok_pop
   $w.stat_svnok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Log" \
@@ -1365,14 +1365,14 @@ proc DirCanvas:makepopup {w} {
     -command { subtract_dialog [workdir_list_files] }
 
   # For SVN files that are out of date
-  menu $w.stat_svnood_pop -tearoff 0
+  menu $w.stat_svnood_pop
   $w.stat_svnood_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnood_pop add command -label "SVN Update" \
     -command { svn_update [workdir_list_files] }
 
   # For SVN file added/deleted
-  menu $w.stat_svnplus_pop -tearoff 0
+  menu $w.stat_svnplus_pop
   $w.stat_svnplus_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnplus_pop add command -label "SVN Commit" \
@@ -1381,7 +1381,7 @@ proc DirCanvas:makepopup {w} {
     -command { svn_revert [workdir_list_files] }
 
   # For SVN files that are modified
-  menu $w.stat_svnmod_pop -tearoff 0
+  menu $w.stat_svnmod_pop
   $w.stat_svnmod_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnmod_pop add command -label "Diff" \
@@ -1392,7 +1392,7 @@ proc DirCanvas:makepopup {w} {
     -command { svn_revert [workdir_list_files] }
 
   # For SVN directories
-  menu $w.svnfolder_pop -tearoff 0
+  menu $w.svnfolder_pop
   $w.svnfolder_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.svnfolder_pop add command -label "SVN Log" \
@@ -1405,7 +1405,7 @@ proc DirCanvas:makepopup {w} {
     -command { subtract_dialog [workdir_list_files] }
 
   # For SVN directories
-  menu $w.svndir_pop -tearoff 0
+  menu $w.svndir_pop
   $w.svndir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Log" \

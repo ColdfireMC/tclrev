@@ -232,14 +232,10 @@ proc modbrowse_menus {} {
   #
   # Create the Menu bar
   #
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.file -label "File" -underline 0
-  menu .modbrowse.modmenu.file -tearoff 0
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.cvs -label "CVS" -underline 0
-  menu .modbrowse.modmenu.cvs -tearoff 0
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.svn -label "SVN" -underline 0
-  menu .modbrowse.modmenu.svn -tearoff 0
-  .modbrowse.modmenu add cascade -menu .modbrowse.modmenu.options -label "Options" -underline 0
-  menu .modbrowse.modmenu.options -tearoff 0
+  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.file] -label "File" -underline 0
+  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.cvs] -label "CVS" -underline 0
+  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.svn] -label "SVN" -underline 0
+  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.options] -label "Options" -underline 0
 
   #
   # Create the menus
