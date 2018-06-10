@@ -1005,13 +1005,18 @@ These extension lines commence with a "#" character, so CVS interprets them as c
 
 # Populates the Help menu.  Called from the browser windows.
 proc menu_std_help { w } {
+  if {[tk windowingsystem] == "aqua"} {
+    set aboutmenu "apple"
+  } else {
+    set aboutmenu "help"
+  }
   $w add cascade -label "Help" -menu $w.help -underline 0
   menu $w.help
-  $w.help add command -label "About TkCVS" -underline 0 \
+  $w.$aboutmenu add command -label "About TkCVS" -underline 0 \
      -command aboutbox
-  $w.help add command -label "About CVS SVN RCS GIT" -underline 6 \
+  $w.$aboutmenu add command -label "About CVS SVN RCS GIT" -underline 6 \
      -command {help_cvs_version 1}
-  $w.help add command -label "About Wish" -underline 6 \
+  $w.$aboutmenu add command -label "About Wish" -underline 6 \
      -command "wish_version [winfo parent $w]"
   $w.help add separator
   $w.help add command -label "Current Directory Display" \

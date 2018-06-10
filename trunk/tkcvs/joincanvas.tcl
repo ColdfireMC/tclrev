@@ -528,7 +528,7 @@ namespace eval joincanvas {
 
       $joincanvas.menubar add cascade -label "File" \
         -menu $joincanvas.menubar.file -underline 0
-      menu $joincanvas.menubar.file -tearoff 0
+      menu $joincanvas.menubar.file
       $joincanvas.menubar.file add command -label "Close" -underline 0 \
         -command [namespace code {$joincanvas.close invoke}]
       $joincanvas.menubar.file add command -label "Exit" -underline 1 \
@@ -536,7 +536,7 @@ namespace eval joincanvas {
 
       $joincanvas.menubar add cascade -label "Help" \
         -menu $joincanvas.menubar.help -underline 0
-      menu $joincanvas.menubar.help -tearoff 0
+      menu $joincanvas.menubar.help
       $joincanvas.menubar.help add command -label "Merge Tool" -underline 0 \
         -command directory_branch_viewer
 

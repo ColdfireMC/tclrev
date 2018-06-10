@@ -1473,8 +1473,7 @@ gen_log:log D " $pattern MATCHED $text"
       menu $logcanvas.menubar
   
       $logcanvas.menubar add cascade -label "File"\
-         -menu $logcanvas.menubar.file -underline 0
-      menu $logcanvas.menubar.file -tearoff 0
+         -menu [menu $logcanvas.menubar.file] -underline 0
       $logcanvas.menubar.file add command -label "Shell window" -underline 0 \
         -command {exec::new $cvscfg(shell)}
       $logcanvas.menubar.file add separator
@@ -1483,8 +1482,7 @@ gen_log:log D " $pattern MATCHED $text"
       $logcanvas.menubar.file add command -label "Exit" -underline 1 \
         -command { exit_cleanup 1 }
       $logcanvas.menubar add cascade -label "View"\
-         -menu $logcanvas.menubar.view -underline 0
-      menu $logcanvas.menubar.view -tearoff 0
+         -menu [menu $logcanvas.menubar.view] -underline 0
       $logcanvas.menubar.view add cascade -label "Update When Drawing" \
         -menu $logcanvas.menubar.view.update
       menu $logcanvas.menubar.view.update
