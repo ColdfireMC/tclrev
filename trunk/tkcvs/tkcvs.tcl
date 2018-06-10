@@ -267,7 +267,6 @@ if {$WSYS eq "x11"} {
   }
 }
 
-
 # Fonts for the canvas "listboxes"
 set cvscfg(flashfont) $cvscfg(listboxfont)
 set fsiz [lindex $cvscfg(listboxfont) 1]
@@ -409,23 +408,10 @@ if { ! [info exists cvscfg(cvsroot)] } {
     set cvscfg(cvsroot) $env(CVSROOT)
   }
 }
-# This helps with Samba-mounted CVS repositories
-# And also completely messes up SVN repositories
-#set cvscfg(cvsroot) [file join $cvscfg(cvsroot)]
-# If SVNROOT is set, use that instead.  SVNROOT isn't
-# known by Subversion itself, so if it's set we must have
-# done it for the present purpose
-if {! [info exists cvscfg(svnroot)] } {
-  if { [info exists env(SVNROOT)] } {
-    set cvscfg(svnroot) $env(SVNROOT)
-  } else {
-    set cvscfg(svnroot) ""
-  }
-}
-set cvsglb(root) $cvscfg(cvsroot)
-if {$cvscfg(svnroot) != ""} {
-  set cvsglb(root) $cvscfg(svnroot)
-}
+# Find out which of the supported VCSs we can run. Maybe we can use it later.
+# This sets cvscfg(have_cvs) and so on.
+help_cvs_version 0
+
 # Thought better of saving this
 catch unset cvscfg(svnconform_seen)
 
@@ -435,10 +421,6 @@ if {![info exists cvscfg(ignore_file_filter)]} {
 # Remember what the setting was.  We'll have to restore it after
 # leaving a directory with a .cvsignore file.
 set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
-
-#foreach c [lsort [array names cvscfg]] {
-  #gen_log:log D "cvscfg($c) $cvscfg($c)"
-#}
 
 # Load the images that are used in more than one module
 image create photo Log \
@@ -461,8 +443,6 @@ image create photo Mergediff \
   -format gif -file [file join $cvscfg(bitmapdir) newmerge.gif]
 image create photo Man \
   -format gif -file [file join $cvscfg(bitmapdir) man.gif]
-
-
 
 set incvs 0
 set insvn 0

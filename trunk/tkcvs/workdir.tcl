@@ -409,12 +409,8 @@ proc workdir_menus {} {
   #
   .workdir.menubar add cascade -label "File" -menu .workdir.menubar.file -underline 0
   menu .workdir.menubar.file -tearoff 0
-  .workdir.menubar add cascade -label "CVS" -menu .workdir.menubar.cvs -underline 0
-  menu .workdir.menubar.cvs -tearoff 0
-  .workdir.menubar add cascade -label "SVN" -menu .workdir.menubar.svn -underline 0
-  menu .workdir.menubar.svn -tearoff 0
-  .workdir.menubar add cascade -label "RCS" -menu .workdir.menubar.rcs -underline 0
-  menu .workdir.menubar.rcs -tearoff 0
+  .workdir.menubar add cascade -label "VCS" -menu .workdir.menubar.cvs
+  menu .workdir.menubar.vcs -tearoff 0
   .workdir.menubar add cascade -label "Reports" -menu .workdir.menubar.reports -underline 2
   menu .workdir.menubar.reports -tearoff 0
   .workdir.menubar add cascade -label "Options" -menu .workdir.menubar.options -underline 0
@@ -457,7 +453,18 @@ proc workdir_menus {} {
   .workdir.menubar.file add command -label Exit -underline 1 \
      -command { exit_cleanup 1 }
 
+  # Pulldown for revision control systems, in case we're not in one
+  .workdir.menubar.vcs add command -label "CVS" -state disabled -command {}
+  .workdir.menubar.vcs add command -label "SVN" -state disabled -command {}
+  .workdir.menubar.vcs add command -label "RCS" -state disabled -command {}
+  .workdir.menubar.vcs add command -label "GIT" -state disabled -command {}
+  if {$cvsglb(have_cvs)} {.workdir.menubar.vcs entryconfigure "CVS" -state normal}
+  if {$cvsglb(have_svn)} {.workdir.menubar.vcs entryconfigure "SVN" -state normal}
+  if {$cvsglb(have_rcs)} {.workdir.menubar.vcs entryconfigure "RCS" -state normal}
+  if {$cvsglb(have_git)} {.workdir.menubar.vcs entryconfigure "GIT" -state normal}
+
   # CVS
+  menu .workdir.menubar.cvs
   .workdir.menubar.cvs add command -label "Update" -underline 0 \
      -command { \
         cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
@@ -496,6 +503,7 @@ proc workdir_menus {} {
      -underline 0 -command import_run
 
   # SVN
+  menu .workdir.menubar.svn
   .workdir.menubar.svn add command -label "Update" -underline 0 \
      -command {svn_update [workdir_list_files]}
   .workdir.menubar.svn add command -label "Resolve (Un-mark Conflict)" -underline 0 \
@@ -513,12 +521,17 @@ proc workdir_menus {} {
      -underline 0 -command svn_import_run
 
   # RCS
+  menu .workdir.menubar.rcs
   .workdir.menubar.rcs add command -label "Checkout" -underline 0 \
      -command { rcs_checkout [workdir_list_files] }
   .workdir.menubar.rcs add command -label "Checkin" -underline 0 \
      -command { rcs_checkin [workdir_list_files] }
   .workdir.menubar.rcs add command -label "Browse the Log Diagram" \
      -command { rcs_branches [workdir_list_files] }
+
+  # GIT
+  # Just make it exist, there's nothing in it yet
+  menu .workdir.menubar.git
 
   # These commands will vary according to revision system.  Does it still make sense to
   # keep them in their own menu?
@@ -933,16 +946,19 @@ proc setup_dir { } {
   .workdir.top.bmodbrowse configure -image Modules
   .workdir.top.lmodule configure -text "Path"
   .workdir.top.ltagname configure -text "Tag"
-  # Start with the revision-control menus disabled
-  .workdir.menubar entryconfigure "CVS" -state normal
-  .workdir.menubar entryconfigure "SVN" -state normal
-  .workdir.menubar entryconfigure "RCS" -state normal
+  .workdir.top.lcvsroot configure -text "CVSROOT"
+  .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
+
+  # Start with generic revision-control menu
+  gen_log:log D "CONFIGURE VCS MENU"
+  .workdir.menubar entryconfigure 1 -label "VCS" -menu .workdir.menubar.vcs
+  # Disable report menu items 
   .workdir.menubar.reports entryconfigure 0 -state disabled
   .workdir.menubar.reports entryconfigure 1 -state disabled
   .workdir.menubar.reports entryconfigure 2 -state disabled
   .workdir.menubar.reports entryconfigure 3 -state disabled
   .workdir.menubar.reports entryconfigure 4 -state disabled
-  # Start with the revision-control buttons disabled and the
+  # Start with the revision-control buttons disabled
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
     $widget configure -state disabled
@@ -957,6 +973,8 @@ proc setup_dir { } {
   # Now enable them depending on where we are
   if {$inrcs} {
     # Top
+gen_log:log D "CONFIGURE RCS MENU"
+    .workdir.menubar entryconfigure 1 -label "RCS" -menu .workdir.menubar.rcs
     .workdir.top.lcvsroot configure -text "RCS *,v"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
     # Buttons
@@ -977,10 +995,6 @@ proc setup_dir { } {
       -command { rcs_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
       -command { rcs_lock unlock [workdir_list_files] }
-    # Menus
-    .workdir.menubar entryconfigure "CVS" -state disabled
-    .workdir.menubar entryconfigure "SVN" -state disabled
-    .workdir.menubar entryconfigure "RCS" -state normal
     # Reports Menu
     # Check Directory (log & rdiff)
     .workdir.menubar.reports entryconfigure 0 -state normal \
@@ -993,6 +1007,8 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 4 -state disabled
   } elseif {$insvn} {
     # Top
+gen_log:log D "CONFIGURE SVN MENU"
+    .workdir.menubar entryconfigure 1 -label "SVN" -menu .workdir.menubar.svn
     .workdir.top.bmodbrowse configure -image Modules_svn \
       -command {modbrowse_run svn}
     .workdir.top.lmodule configure -text "Path"
@@ -1029,10 +1045,6 @@ proc setup_dir { } {
       -command { svn_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
       -command { svn_lock unlock [workdir_list_files] }
-    # Menus
-    .workdir.menubar entryconfigure "CVS" -state disabled
-    .workdir.menubar entryconfigure "SVN" -state normal
-    .workdir.menubar entryconfigure "RCS" -state disabled
     # Reports Menu
     # Check Directory (svn status)
     .workdir.menubar.reports entryconfigure 0 -state normal \
@@ -1051,6 +1063,8 @@ proc setup_dir { } {
        -command { svn_info [workdir_list_files] }
   } elseif {$incvs} {
     # Top
+gen_log:log D "CONFIGURE CVS MENU"
+    .workdir.menubar entryconfigure 1 -label "CVS" -menu .workdir.menubar.cvs
     .workdir.top.bmodbrowse configure -image Modules_cvs \
       -command {modbrowse_run cvs}
     .workdir.top.lmodule configure -text "Module"
@@ -1096,10 +1110,6 @@ proc setup_dir { } {
       .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
         -command { cvs_lock unlock [workdir_list_files] }
     }
-    # Menus
-    .workdir.menubar entryconfigure "CVS" -state normal
-    .workdir.menubar entryconfigure "SVN" -state disabled
-    .workdir.menubar entryconfigure "RCS" -state disabled
     # Reports Menu
     # Check Directory (cvs -n -q update)
     .workdir.menubar.reports entryconfigure 0 -state normal \
@@ -1116,12 +1126,16 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure 4 -state disabled
   } elseif {$ingit} {
     # Top
+gen_log:log D "CONFIGURE GIT MENU"
+    .workdir.menubar entryconfigure 1 -label "GIT" -menu .workdir.menubar.git
     .workdir.top.lmodule configure -text ""
     .workdir.top.ltagname configure -text "branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
+  } else {
+    .workdir.menubar entryconfigure 1 -label "VCS" -menu .workdir.menubar.vcs
   }
 
   DirCanvas:create .workdir.main
@@ -1425,12 +1439,12 @@ proc cvsroot_check { dir } {
 
   if {$inrcs} {
     # Make sure we have rcs, and bag this (silently) if we don't   
-    set command "rcs -V"
+    set command "rcs --version"
     gen_log:log C "$command"
     set ret [catch {eval "exec $command"} raw_rcs_log]
     if {$ret} {
        gen_log:log D "$raw_rcs_log"
-       if [string match {*Unknown option:*} $raw_rcs_log] {
+       if [string match {rcs*} $raw_rcs_log] {
          # An old version of RCS, but it's here
          set inrcs 1
        } else {
@@ -1441,8 +1455,8 @@ proc cvsroot_check { dir } {
 
   gen_log:log C "git rev-parse --is-inside-work-tree"
   set gitret [catch {eval "exec git rev-parse --is-inside-work-tree"} gitout]
+  gen_log:log D "gitret $gitret"
   gen_log:log D "gitout $gitout"
-  gen_log:log D "gitret $gitout"
   if {$gitret} {
     set ingit 0
   } else {
