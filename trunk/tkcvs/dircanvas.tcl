@@ -279,8 +279,6 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) dir_ok.gif]
   image create photo dir_ood \
     -format gif -file [file join $cvscfg(bitmapdir) dir_ood.gif]
-  image create photo dir_ques \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_ques.gif]
   image create photo dir_plus \
     -format gif -file [file join $cvscfg(bitmapdir) dir_plus.gif]
   image create photo dir_minus \
@@ -299,13 +297,8 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) link_modml.gif]
   image create photo link_modol \
     -format gif -file [file join $cvscfg(bitmapdir) link_modol.gif]
-  image create photo link_ques \
-    -format gif -file [file join $cvscfg(bitmapdir) link_ques.gif]
   image create photo link_plus \
     -format gif -file [file join $cvscfg(bitmapdir) link_plus.gif]
-
-  image create photo stat_ques \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
   image create photo stat_ex \
     -format gif -file [file join $cvscfg(bitmapdir) stat_ex.gif]
   image create photo stat_kb \
@@ -690,7 +683,7 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:popup) svnfolder_pop
      }
      "<dir> Not managed*" {
-       set DirList($w:$f:icon) dir_ques
+       set DirList($w:$f:icon) dir
        set DirList($w:$f:popup) svnfolder_pop
      }
      "<dir> Locally Added" {
@@ -706,7 +699,7 @@ proc DirCanvas:build {w} {
 	 set DirList($w:$f:popup) paper_pop
      }
      "<link> Not managed by SVN" {
-	 set DirList($w:$f:icon) link_ques
+	 set DirList($w:$f:icon) link
 	 set DirList($w:$f:popup) paper_pop
      }
      "<link> Up-to-date" {
@@ -895,7 +888,7 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:popup) stat_conf_pop
       }
       "Not managed*" {
-       set DirList($w:$f:icon) stat_ques
+       set DirList($w:$f:icon) paper
        set DirList($w:$f:popup) paper_pop
       }
       "RCS Up-to-date" {

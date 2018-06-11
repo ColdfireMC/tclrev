@@ -325,10 +325,10 @@ proc workdir_images {} {
 
   image create photo arr_up \
     -format gif -file [file join $cvscfg(bitmapdir) arrow_up.gif]
-  image create photo arr_dn \
-    -format gif -file [file join $cvscfg(bitmapdir) arrow_dn.gif]
   image create photo arh_up \
     -format gif -file [file join $cvscfg(bitmapdir) arrow_hl_up.gif]
+  image create photo arr_dn \
+    -format gif -file [file join $cvscfg(bitmapdir) arrow_dn.gif]
   image create photo arh_dn \
     -format gif -file [file join $cvscfg(bitmapdir) arrow_hl_dn.gif]
   image create photo updir \
