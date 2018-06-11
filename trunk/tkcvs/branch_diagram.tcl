@@ -329,7 +329,10 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname"
            $logcanvas.up.rfname configure -state readonly
-           $logcanvas.view configure -state disabled
+           $logcanvas.view configure \
+             -command [namespace code {
+               rcs_fileview_checkout  [$logcanvas.up.revA_rvers cget -text] $filename
+                }]
            $logcanvas.annotate configure -state disabled
            $logcanvas.log configure -command [namespace code {rcs_log $filename}]
            $logcanvas.delta configure -state disabled

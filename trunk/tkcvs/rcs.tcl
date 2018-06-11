@@ -258,6 +258,25 @@ proc rcs_log {args} {
   gen_log:log T "LEAVE"
 }
 
+proc rcs_fileview_checkout {revision filename} {
+#
+# This views a specific revision of a file
+#
+  global cvscfg
+
+  gen_log:log T "ENTER ($revision $filename)"
+  if {$revision == {}} {
+    set commandline "co -p \"$filename\""
+    set v [viewer::new "$filename"]
+    $v\::do "$commandline" 0
+  } else {
+    set commandline "co -p -r$revision \"$filename\""
+    set v [viewer::new "$filename Revision $revision"]
+    $v\::do "$commandline" 0
+  }
+  gen_log:log T "LEAVE"
+}
+
 # Revert a file to checked-in version by removing the local
 # copy and updating it
 proc rcs_revert {args} {
