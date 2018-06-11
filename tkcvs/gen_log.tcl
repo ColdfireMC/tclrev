@@ -12,6 +12,14 @@ proc gen_log:init {} {
   if {[info exists cvscfg(tracgeom)]} {
     wm geometry .trace $cvscfg(tracgeom)
   }
+
+  # Define the colors right away
+  set logcolor(C) purple
+  set logcolor(E) maroon
+  set logcolor(F) darkgreen
+  set logcolor(T) black
+  set logcolor(D) red
+
   text .trace.text -setgrid yes -relief sunken -border 2 \
       -exportselection 1 -yscroll ".trace.scroll set"
   scrollbar .trace.scroll -relief sunken \
@@ -23,6 +31,23 @@ proc gen_log:init {} {
   button .trace.bottom.save -text "Save to File" \
     -command gen_log:save
 
+  frame .trace.top
+  checkbutton .trace.top.c -text "commands (C)" \
+     -variable logclass(C) -onvalue "C" -offvalue "" \
+     -foreground $logcolor(C) -command gen_log:changeclass
+  checkbutton .trace.top.e -text "stderr (E)" \
+     -variable logclass(E) -onvalue "E" -offvalue "" \
+     -foreground $logcolor(E) -command gen_log:changeclass
+  checkbutton .trace.top.f -text "stdout and file creation/deletion (F)" \
+     -variable logclass(F) -onvalue "F" -offvalue "" \
+     -foreground $logcolor(F) -command gen_log:changeclass
+  checkbutton .trace.top.t -text "Function entry/exit (T)" \
+     -variable logclass(T) -onvalue "T" -offvalue "" \
+     -foreground $logcolor(T) -command gen_log:changeclass
+  checkbutton .trace.top.d -text "Debugging (D)" \
+     -variable logclass(D) -onvalue "D" -offvalue "" \
+     -foreground $logcolor(D) -command gen_log:changeclass
+
   search_textwidget_init
   button .trace.bottom.srchbtn -text Search \
     -command "search_textwidget .trace.text"
@@ -32,6 +57,11 @@ proc gen_log:init {} {
 
   button .trace.close -text "Stop Tracing" \
     -command { gen_log:quit; exit_cleanup 0 }
+
+  pack .trace.top -side top -fill x
+  foreach logclass {c e f t d} {
+    pack .trace.top.$logclass -side left -anchor w
+  }
 
   pack .trace.bottom -side bottom -fill x
   pack .trace.scroll -side right -fill y
@@ -43,14 +73,13 @@ proc gen_log:init {} {
   pack .trace.bottom.save -side left
   pack .trace.close -in .trace.bottom -side right
 
-  # Lets hard-code these colors - otherwise at least one is very
-  # likely to blend into the bakcground
-  .trace.text configure -background gray92
-  .trace.text tag configure tagC -foreground purple
-  .trace.text tag configure tagE -foreground maroon
-  .trace.text tag configure tagF -foreground darkgreen
-  .trace.text tag configure tagT -foreground black
-  .trace.text tag configure tagD -foreground red
+
+  #.trace.text configure -background gray92
+  .trace.text tag configure tagC -foreground $logcolor(C)
+  .trace.text tag configure tagE -foreground $logcolor(E)
+  .trace.text tag configure tagF -foreground $logcolor(F)
+  .trace.text tag configure tagT -foreground $logcolor(T)
+  .trace.text tag configure tagD -foreground $logcolor(D)
 
   # Focus in the text widget to activate the text bindings
   focus .trace.text

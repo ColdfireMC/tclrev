@@ -207,6 +207,7 @@ if {$WSYS eq "x11"} {
     option add *Text.selectForeground $hlfg
     option add *Button.activeForeground $fg
     option add *Menu.activeForeground $fg
+    option add *Checkbutton.Background $bg
 
     # checkbuttons and radiobuttons
     if {$tk_version >= 8.5} {
@@ -256,15 +257,17 @@ if {$WSYS eq "x11"} {
   destroy .testlbl
   if {$WSYS eq "aqua"} {
     # Keep everything from being blinding white
-    option add *Frame.background #dddddd userDefault
-    option add *Label.background #dddddd userDefault
-    option add *Entry.highlightBackground #dddddd userDefault
+    set arbitrarybg "#dddddd"
+    option add *Frame.background $arbitrarybg userDefault
+    option add *Label.background $arbitrarybg userDefault
+    option add *Entry.highlightBackground $arbitrarybg userDefault
     option add *Canvas.highlightBackground #fefefe userDefault
-    option add *Message.Background #dddddd userDefault
-    #option add *Text.Background #ffffff userDefault
+    option add *Message.Background $arbitrarybg userDefault
+    option add *Checkbutton.Background $arbitrarybg userDefault
+    option add *Radiobutton.Background $arbitrarybg userDefault
     # button highlightbackground has to be the same as background
     # or else there are little white boxes around the button "pill"
-    option add *Button.highlightBackground #dddddd userDefault
+    option add *Button.highlightBackground $arbitrarybg userDefault
     set cvsglb(canvbg) "#eeeeee"
   }
 }
@@ -415,7 +418,7 @@ if { ! [info exists cvscfg(cvsroot)] } {
 }
 # Find out which of the supported VCSs we can run. Maybe we can use it later.
 # This sets cvscfg(have_cvs) and so on.
-help_cvs_version 0
+#help_cvs_version 0
 
 # Thought better of saving this
 catch unset cvscfg(svnconform_seen)

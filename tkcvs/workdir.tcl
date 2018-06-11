@@ -413,7 +413,6 @@ proc workdir_menus {} {
     .workdir.menubar add cascade -label "TkCVS" -menu [menu .workdir.menubar.apple]
   }
   .workdir.menubar add cascade -label "File" -menu [menu .workdir.menubar.file] -underline 0
-  #.workdir.menubar add cascade -label "VCS" -menu [menu .workdir.menubar.vcs]
   .workdir.menubar add cascade -label "Reports" -menu [menu .workdir.menubar.reports] -underline 2
   .workdir.menubar add cascade -label "Options" -menu [menu .workdir.menubar.options] -underline 0
 
@@ -454,16 +453,6 @@ proc workdir_menus {} {
      -command {.workdir.close invoke}
   .workdir.menubar.file add command -label Exit -underline 1 \
      -command { exit_cleanup 1 }
-
-  # Pulldown for revision control systems, in case we're not in one
-  #.workdir.menubar.vcs add command -label "CVS" -state disabled -command {}
-  #.workdir.menubar.vcs add command -label "SVN" -state disabled -command {}
-  #.workdir.menubar.vcs add command -label "RCS" -state disabled -command {}
-  #.workdir.menubar.vcs add command -label "GIT" -state disabled -command {}
-  #if {$cvsglb(have_cvs)} {.workdir.menubar.vcs entryconfigure "CVS" -state normal}
-  #if {$cvsglb(have_svn)} {.workdir.menubar.vcs entryconfigure "SVN" -state normal}
-  #if {$cvsglb(have_rcs)} {.workdir.menubar.vcs entryconfigure "RCS" -state normal}
-  #if {$cvsglb(have_git)} {.workdir.menubar.vcs entryconfigure "GIT" -state normal}
 
   # CVS
   menu .workdir.menubar.cvs
@@ -587,28 +576,10 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
      -command log_toggle
-  .workdir.menubar.options add cascade -label "Trace Level" \
-     -menu .workdir.menubar.options.loglevel
+
   .workdir.menubar.options add separator
   .workdir.menubar.options add command -label "Save Options" -underline 0 \
      -command save_options
-
-  menu .workdir.menubar.options.loglevel
-  .workdir.menubar.options.loglevel add checkbutton -label "commands (C)" \
-     -variable logclass(C) -onvalue "C" -offvalue "" \
-     -command gen_log:changeclass
-  .workdir.menubar.options.loglevel add checkbutton -label "stderr (E)" \
-     -variable logclass(E) -onvalue "E" -offvalue "" \
-     -command gen_log:changeclass
-  .workdir.menubar.options.loglevel add checkbutton -label "stdout and file creation/deletion (F)"\
-     -variable logclass(F) -onvalue "F" -offvalue "" \
-     -command gen_log:changeclass
-  .workdir.menubar.options.loglevel add checkbutton -label "Function entry/exit (T)" \
-     -variable logclass(T) -onvalue "T" -offvalue "" \
-     -command gen_log:changeclass
-  .workdir.menubar.options.loglevel add checkbutton -label "Debugging (D)" \
-     -variable logclass(D) -onvalue "D" -offvalue "" \
-     -command gen_log:changeclass
 
   menu .workdir.menubar.options.report_detail
   .workdir.menubar.options.report_detail add radiobutton -label "Verbose" \

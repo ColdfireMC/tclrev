@@ -305,25 +305,6 @@ proc modbrowse_menus {} {
   .modbrowse.modmenu.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
      -command log_toggle
-  .modbrowse.modmenu.options add cascade -label "Trace Level" \
-     -menu .modbrowse.modmenu.options.loglevel
-  menu .modbrowse.modmenu.options.loglevel
-  .modbrowse.modmenu.options.loglevel add checkbutton -label "CVS commands (C)" \
-     -variable logclass(C) -onvalue "C" -offvalue "" \
-     -command gen_log:changeclass
-  .modbrowse.modmenu.options.loglevel add checkbutton -label "CVS stderr (E)" \
-     -variable logclass(E) -onvalue "E" -offvalue "" \
-     -command gen_log:changeclass
-  .modbrowse.modmenu.options.loglevel add checkbutton -label "File creation/deletion (F)"\
-     -variable logclass(F) -onvalue "F" -offvalue "" \
-     -command gen_log:changeclass
-  .modbrowse.modmenu.options.loglevel add checkbutton -label "Function entry/exit (T)" \
-     -variable logclass(T) -onvalue "T" -offvalue "" \
-     -command gen_log:changeclass
-  .modbrowse.modmenu.options.loglevel add checkbutton -label "Debugging (D)" \
-     -variable logclass(D) -onvalue "D" -offvalue "" \
-     -command gen_log:changeclass
-
 
   menu_std_help .modbrowse.modmenu
 
