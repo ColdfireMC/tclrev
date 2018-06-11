@@ -3,13 +3,8 @@
 exec tclsh "$0" -- ${1+"$@"}
 
 
-proc cleanup_old {root} {
-  global env
+proc cleanup_old {} {
 
-  if {[ file isdirectory $root ]} {
-    puts "Deleting $root"
-    file delete -force $root
-  }
   set oldirs [glob -nocomplain -- rcs_test*]
   foreach od $oldirs {
     puts "Deleting $od"
@@ -18,22 +13,18 @@ proc cleanup_old {root} {
   puts "==============================="
 }
 
-proc repository {Root topdir} {
+proc checkin_files {topdir} {
   global WD
   
   puts "==============================="
-  puts "MAKING REPOSITORY $Root"
+  file mkdir RCS
 
-  # Create the repository
-  #file mkdir $Root
-  file mkdir $Root/RCS
-
-  puts "IMPORTING FILES $Root"
+  puts "IMPORTING FILES $topdir"
   # Check in files
-  cd $WD/$topdir
   foreach n {1 2 3} {
-    set filename "File$n.txt"
-    set rcsfile "$Root/RCS/$filename,v"
+    set filename File$n.txt
+    set rcsfile RCS/$filename,v
+    # Escape the spaces in filenames
     regsub -all { } $filename {\ } filename
     regsub -all { } $rcsfile {\ } rcsfile
     set exec_cmd "ci -u -t-small_text_file -mInitial_checkin $filename $rcsfile"
@@ -43,100 +34,65 @@ proc repository {Root topdir} {
   }
   foreach D {Dir1 "Dir 2"} {
     puts $D
-    file mkdir $Root/$D/RCS
-    cd $WD/$topdir/$D
+    cd $D
+    file mkdir RCS
     foreach n {1 2 " 3"} {
-      set subf "F$n.txt"
-      set rcsfile "$Root/$D/RCS/$subf,v"
-      regsub -all { } $subf {\ } subf
+      set rcsfile RCS/F$n.txt,v
+      # Escape the spaces in filenames
+      regsub -all { } F$n.txt {\ } F$n.txt
       regsub -all { } $rcsfile {\ } rcsfile
-      set exec_cmd "ci -u -t-small_text_file -mInitial_checkin $subf $rcsfile"
+      set exec_cmd "ci -u -t-small_text_file -mInitial_checkin F$n.txt $rcsfile"
       puts "$exec_cmd"
       set ret [catch {eval "exec $exec_cmd"} out]
       puts $out
     }
-    cd $WD/$topdir
+    cd $topdir
   }
 }
 
-proc checkout_branch {proj tag} {
-  global env
+proc checkout_files {topdir} {
   global WD
 
   puts "==============================="
-  puts "CHECKING OUT $tag"
+  puts "CHECKING OUT"
 
-  set co_dir "${proj}_$tag"
-  file mkdir $WD/$co_dir
-  cd $WD/$co_dir
-
-  # Check out 
-  set globpat "$env(RCSROOT)/RCS/*,v"
+  set globpat "RCS/*,v"
   regsub -all { } $globpat {\ } globpat
-  if {$tag eq "trunk"} {
-    set exec_cmd "co -u [glob $globpat]"
-  } else {
-    set exec_cmd "cvs -d $env(CVSROOT) co -d rcs_test_$tag -r $tag $proj"
-  }
+  set exec_cmd "co -l [glob $globpat]"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  file link -symbolic RCS $env(RCSROOT)/RCS
 
   foreach D {Dir1 "Dir 2"} {
-    puts $D
-    file mkdir $D
     cd $D
-
-    set globpat "$env(RCSROOT)/$D/RCS/*,v"
+    set globpat "RCS/*,v"
     regsub -all { } $globpat {\ } globpat
-    if {$tag eq "trunk"} {
-      set exec_cmd "co -u [glob $globpat]"
-    } else {
-      set exec_cmd "cvs -d $env(CVSROOT) co -d rcs_test_$tag -r $tag $proj"
-    }
+    set exec_cmd "co -l [glob $globpat]"
     puts "$exec_cmd"
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
-    file link -symbolic RCS $env(RCSROOT)/$D/RCS
-    cd $WD/$co_dir
+    cd $topdir
   }
-
   puts "CHECKOUT FINISHED"
 }
 
-proc newbranch {proj oldtag newtag} {
-  global env
-
-  set exec_cmd "cvs -d $env(CVSROOT) rtag -r $oldtag -b $newtag $proj"
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
-
-  puts "CHECKING OUT BRANCH"
-  set exec_cmd "cvs -d $env(CVSROOT) co -r $newtag -d ${proj}_$newtag rcs_test"
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-}
-
 proc writefile {filename wn} {
+  # Assume we have write permission, we got it from the calling proc
   set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
   set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
 
   set ind [expr {int(rand()*[llength $wordlist($wn)])}]
   set word [lindex $wordlist($wn) $ind]
   puts " append \"$word\" to $filename"
-  set fp [open "$filename" a]
+  set fp [open $filename a]
   puts $fp $word
   close $fp
 }
 
-proc addfile {filename branch} {
-  global env
+proc addfile {filename} {
 
-  puts "Add $filename on $branch"
-  set rcsfile "$env(RCSROOT)/RCS/$filename,v"
-  set exec_cmd "ci -u -t-new_text_file -mInitial_checkin $filename $rcsfile"
+  puts "Add $filename"
+  set exec_cmd "ci -u -t-small_text_file -mInitial_checkin $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -146,25 +102,76 @@ proc addfile {filename branch} {
   puts $out
 }
 
-proc delfile {filename branch} {
-  global env
+proc delfile {filename} {
 
-  puts "Delete $filename on $branch"
+  puts "Delete $filename"
   file delete $filename
-  set exec_cmd "cvs delete $filename"
+  file delete RCS/$filename,v
+}
+
+proc getrev {filename} {
+  # Find out current revision
+
+  set exec_cmd "rcs log -b $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  #puts $out
+  foreach logline [split $out "\n"] {
+    if {[string match "revision *" $logline]} {
+      set latest [lindex $logline 1]
+      break
+    }
+  }
+  puts "latest rev is $latest"
+  return $latest
+}
+
+proc conflict {filename} {
+  # Create a conflict
+
+  set latest [getrev $filename]
+  # Save a copy
+  file copy $filename Ftmp.txt
+  # Make a change
+  set exec_cmd "rcs -l $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  file attributes $filename -permissions u+w
+  writefile $filename 1
+  set exec_cmd "ci -m\"change1\" $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Check out previous revision
+  set exec_cmd "co -l -r$latest $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Make a different change (we hope)
+  file delete -force -- $filename
+  file rename Ftmp.txt $filename
+  file attributes $filename -permissions u+w
+  writefile $filename 2
+  # When we check in a conflicting version, it creates
+  # a branch
+  set exec_cmd "ci -m\"change2_conflicting\" $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Check out the branch
+  set exec_cmd "co -r1.2.1 $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 }
 
 proc commit {comment} {
-  global env
-
   puts "COMMIT"
   puts [pwd]
   set tmpfile "list.tmp"
   file delete -force $tmpfile
 
+  puts "Finding RCS files"
   if {[ info exists env(SystemDrive) ]} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
@@ -176,12 +183,12 @@ proc commit {comment} {
     puts "Find failed"
     exit 1
   }
-
+  puts "CHECKING IN FILES"
   regsub -all { } $comment {_} comment
   set fl [open $tmpfile r]
   while { [gets $fl item] >= 0} {
     regsub -all { } $item {\ } filename
-    set exec_cmd "ci -u -m$comment $filename"
+    set exec_cmd "ci -u -t-small_text_file -m$comment $filename"
     puts $exec_cmd
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
@@ -194,31 +201,31 @@ proc mkfiles {topdir} {
   global WD
 
   puts "MAKING FILETREE"
-  # Make some files to put in the repository
   file mkdir "$topdir"
   cd $topdir
 
   # Make some files each containing a random word
   foreach n {1 2 3} {
-    writefile "File$n.txt" 1
+    writefile File$n.txt 1
   }
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
+    cd $D
     foreach n {1 2 " 3"} {
-      set subf [file join $D "F$n.txt"]
-      writefile $subf 1
+      writefile F$n.txt 1
     }
+    cd $topdir
   }
-  cd $WD
 }
 
 proc modfiles {} {
-  global env
 
+  puts "MODIFYING FILES"
   set tmpfile "list.tmp"
   file delete -force $tmpfile
 
+  puts "Finding RCS files"
   if {[ info exists env(SystemDrive) ]} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
@@ -230,13 +237,10 @@ proc modfiles {} {
     puts "Find failed"
     exit 1
   }
-
   set fl [open $tmpfile r]
   while { [gets $fl item] >= 0} {
-    regsub -all { } $item {\ } filename
-    set exec_cmd "co -l $filename"
-    set ret [catch {eval "exec $exec_cmd"} out]
-    puts $out
+    # Why didn't co -l make it writeable?
+    file attributes $item -permissions u+w
     writefile $item 2
   }
   close $fl
@@ -251,86 +255,38 @@ if [file isdirectory RCS] {
 }
 
 set WD [pwd]
-set Root [file join $WD "RCS_REPOSITORY"]
-set env(RCSROOT) $Root
-
-cleanup_old $Root
-
-mkfiles "rcs_test"
-repository $Root "rcs_test"
-checkout_branch "rcs_test" "trunk"
-cd $WD
-
+set testdir "$WD/rcs_test"
+cleanup_old
+mkfiles $testdir
+checkin_files $testdir
+checkout_files $testdir
 
 puts "==============================="
-puts "First revision on trunk"
-cd rcs_test_trunk
+puts "First revision"
+puts "** modfiles"
 modfiles
-commit "First Revision on trunk"
-writefile Ftrunk.txt 2
-addfile Ftrunk.txt trunk
-cd $WD
-
-exit
-
-puts "==============================="
-puts "MAKING BRANCH A"
-newbranch rcs_test HEAD branchA
-cd $WD/rcs_test_branchA
-writefile FbranchA.txt 2
-addfile FbranchA.txt branchA
-commit "Add file FbranchA.txt on branchA"
-cd $WD
+puts "** commit"
+commit "First Revision"
+puts "** writefile"
+writefile Fnew.txt 2
+puts "** addfile"
+addfile Fnew.txt
 
 puts "==============================="
-puts "Second revision on trunk"
-cd $WD/rcs_test_trunk
+puts "Second revision"
 modfiles
-commit "Second revision on trunk"
-cd $WD
+commit "Second revision"
 
 puts "==============================="
-puts "First revision on Branch A"
-cd $WD/rcs_test_branchA
-modfiles
-commit "First revision on branchA"
-cd $WD
-
-puts "==============================="
-# Make another modification on each
-puts "Third revision on trunk"
-cd $WD/rcs_test_trunk
-modfiles
-commit "Third revision on trunk"
-cd $WD
-
-puts "==============================="
-puts "Second revision on Branch A"
-cd $WD/rcs_test_branchA
-modfiles
-commit "Second revision on branchA"
-cd $WD
-
-# Branch off of the branch
-puts "==============================="
-puts "MAKING BRANCH AA"
-newbranch rcs_test branchA branchAA
-cd $WD/rcs_test_branchAA
-modfiles
-writefile FbranchAA.txt 2
-addfile FbranchAA.txt branchAA
-delfile Ftrunk.txt branchAA
-commit "Changes on Branch AA"
-cd $WD
-
-# Branch B
-puts "==============================="
-puts "MAKING BRANCH B"
-newbranch rcs_test HEAD branchB
-cd $WD/rcs_test_branchB
-modfiles
-writefile FbranchB.txt 1
-addfile FbranchB.txt branchB
-commit "Add file FB on BranchB"
+puts "Uncommitted changes"
+#Local only
+writefile FileLocal.txt 1
+# Deleted
+delfile File3.txt
+# Modify
+writefile File2.txt 2
+# Conflict
+puts "** conflict"
+conflict Fnew.txt
 cd $WD
 
