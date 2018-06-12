@@ -103,3 +103,31 @@ proc find_git_remote {dirname} {
   gen_log:log T "LEAVE"
 }
 
+proc git_log {args} {
+ global cvscfg
+  gen_log:log T "ENTER"
+
+  set filelist [join $args]
+  gen_log:log D "detail $cvscfg(ldetail)"
+  gen_log:log D "$filelist"
+
+  set commandline "git log "
+  switch -- $cvscfg(ldetail) {
+    latest {
+      append commandline " --pretty=oneline --max-count=1"
+    }
+    summary {
+      append commandline " --pretty=oneline"
+    }
+  }
+  append commandline " $filelist"
+
+  set logcmd [viewer::new "Git log ($cvscfg(ldetail))"]
+  $logcmd\::do "$commandline"
+  busy_done .workdir.main
+
+  gen_log:log T "LEAVE"
+
+}
+
+

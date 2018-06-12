@@ -523,6 +523,8 @@ proc workdir_menus {} {
   # GIT
   # Just make it exist, there's nothing in it yet
   menu .workdir.menubar.git
+  .workdir.menubar.git add command -label "Log" -underline 0 \
+     -command {git_log [workdir_list_files] }
 
   # These commands will vary according to revision system.  Does it still make sense to
   # keep them in their own menu?
@@ -1121,6 +1123,8 @@ gen_log:log D "CONFIGURE GIT MENU"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
+      -command { git_log [workdir_list_files] }
   }
 
   DirCanvas:create .workdir.main
