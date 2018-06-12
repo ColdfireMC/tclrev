@@ -2,6 +2,7 @@ proc git_workdir_status {} {
   global cvscfg
   global Filelist
   global current_tagname
+  global module_dir
 
   gen_log:log T "ENTER"
   set cmd(git_branch) [exec::new "git branch"]
@@ -13,34 +14,13 @@ proc git_workdir_status {} {
     }
   }
 
-  # This lists the files that git tracks. It's the only way to list up-to-date
-  # files.
-  #set cmd(git_list) [exec::new "git ls-tree --name-status -r $current_tagname"]
-  set cmd(git_list) [exec::new "git ls-tree --name-only -r $current_tagname"]
-  set gitlist_lines [split [$cmd(git_list)\::output] "\n"]
-  if {[info exists cmd(git_list)]} {
-    $cmd(git_list)\::destroy
-    catch {unset cmd(git_list)}
-    foreach line $gitlist_lines {
-      gen_log:log D "$line"
-      if {[string length $line]} {
-        if {[regsub {/.*$} $line "" head]} {
-          set Filelist($head:status) "<directory:GIT>"
-        } else {
-          set f $line
-          # temporary, should be overwritten in next loop
-        }
-        lappend tracked_files $head
-      }
-    }
-  }
-
-  # Get the status of the tracked files (top level only)
-  foreach f [lsort -unique $tracked_files] {
-    set cmd(git_status) [exec::new "git status --porcelain \"$f\""]
+  # Get the status of the files (top level only)
+  foreach f [glob -nocomplain *] {
+    set cmd(git_status) [exec::new "git status -u --porcelain \"$f\""]
     set statline [lindex [split [$cmd(git_status)\::output] "\n"] 0]
     if {![file isdirectory $f]} {
       set status [lindex $statline 0]
+      set filepath [lindex $statline 1]
       set good_line ""
       # Format: short hash, commit time, committer
       set command "git log -n 1 --pretty=format:\"%h|%ct|%cn\" -- $f"
@@ -89,6 +69,10 @@ proc git_workdir_status {} {
          set Filelist($f:status) "Updated"
          gen_log:log D "$Filelist($f:status)"
         }
+        "??" {
+         set Filelist($f:status) "Not managed by Git"
+         gen_log:log D "$Filelist($f:status)"
+        }
         default {
          set Filelist($f:status) "Up-to-date"
          gen_log:log D "$Filelist($f:status)"
@@ -99,19 +83,10 @@ proc git_workdir_status {} {
       gen_log:log D "$Filelist($f:status)"
     }
   }
-
-  # Deal with the ones that aren't tracked
-  foreach f [glob -nocomplain *] {
-    if {! [info exists Filelist($f:status)]} {
-      set Filelist($f:status) "Not Managed"
-      gen_log:log D "$Filelist($f:status)"
-      #This might list some missing files, in which case some things
-      #like stickytag might not have been set
-      #set Filelist($f:stickytag) ""
-      #set Filelist($f:option) ""
-    }
+  if [info exists filepath] {
+    set module_dir [file dirname $filepath]
   }
-  
+
   gen_log:log T "LEAVE"
 }
 

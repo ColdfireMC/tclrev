@@ -1115,8 +1115,8 @@ gen_log:log D "CONFIGURE CVS MENU"
     # Top
 gen_log:log D "CONFIGURE GIT MENU"
     .workdir.menubar insert $rptmenu_idx cascade -label "GIT" -menu .workdir.menubar.git
-    .workdir.top.lmodule configure -text ""
-    .workdir.top.ltagname configure -text "branch"
+    .workdir.top.lmodule configure -text "Path"
+    .workdir.top.ltagname configure -text "Branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
