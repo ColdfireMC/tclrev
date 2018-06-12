@@ -14,10 +14,10 @@ proc gen_log:init {} {
   }
 
   # Define the colors right away
-  set logcolor(C) purple
+  set logcolor(C) navy
   set logcolor(E) maroon
   set logcolor(F) darkgreen
-  set logcolor(T) black
+  set logcolor(T) goldenrod4
   set logcolor(D) red
 
   text .trace.text -setgrid yes -relief sunken -border 2 \
