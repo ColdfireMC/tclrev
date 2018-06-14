@@ -536,6 +536,29 @@ proc workdir_menus {} {
   .workdir.menubar.reports add command -label "Log" -underline 0
   .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
   .workdir.menubar.reports add command -label "Info" -underline 0
+  .workdir.menubar.reports add separator
+  .workdir.menubar.reports add checkbutton -label "Report->Check Shows Unknown Files" \
+     -variable cvscfg(status_filter) -onvalue false -offvalue true
+  .workdir.menubar.reports add checkbutton -label "Report->Check/Status are Recursive" \
+     -variable cvscfg(recurse) -onvalue true -offvalue false
+  .workdir.menubar.reports add cascade -label "Status Detail" \
+     -menu .workdir.menubar.reports.report_detail
+  .workdir.menubar.reports add cascade -label "Log Detail" \
+     -menu .workdir.menubar.reports.logfile_detail
+  menu .workdir.menubar.reports.report_detail
+  .workdir.menubar.reports.report_detail add radiobutton -label "Terse" \
+     -variable cvscfg(rdetail) -value "terse"
+  .workdir.menubar.reports.report_detail add radiobutton -label "Summary" \
+     -variable cvscfg(rdetail) -value "summary"
+  .workdir.menubar.reports.report_detail add radiobutton -label "Verbose" \
+     -variable cvscfg(rdetail) -value "verbose"
+  menu .workdir.menubar.reports.logfile_detail
+  .workdir.menubar.reports.logfile_detail add radiobutton -label "Latest" \
+     -variable cvscfg(ldetail) -value "latest"
+  .workdir.menubar.reports.logfile_detail add radiobutton -label "Summary" \
+     -variable cvscfg(ldetail) -value "summary"
+  .workdir.menubar.reports.logfile_detail add radiobutton -label "Verbose" \
+     -variable cvscfg(ldetail) -value "verbose"
 
   .workdir.menubar.options add checkbutton -label "Show hidden files" \
      -variable cvscfg(allfiles) -onvalue true -offvalue false \
@@ -569,14 +592,6 @@ proc workdir_menus {} {
                   DirCanvas:unmap_column .workdir.main datecol
                 }
               }
-  .workdir.menubar.options add checkbutton -label "Report->Check Shows Unknown Files" \
-     -variable cvscfg(status_filter) -onvalue false -offvalue true
-  .workdir.menubar.options add checkbutton -label "Report->Check/Status are Recursive" \
-     -variable cvscfg(recurse) -onvalue true -offvalue false
-  .workdir.menubar.options add cascade -label "Status Detail" \
-     -menu .workdir.menubar.options.report_detail
-  .workdir.menubar.options add cascade -label "Log Detail" \
-     -menu .workdir.menubar.options.logfile_detail
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
@@ -585,22 +600,6 @@ proc workdir_menus {} {
   .workdir.menubar.options add separator
   .workdir.menubar.options add command -label "Save Options" -underline 0 \
      -command save_options
-
-  menu .workdir.menubar.options.report_detail
-  .workdir.menubar.options.report_detail add radiobutton -label "Verbose" \
-     -variable cvscfg(rdetail) -value "verbose"
-  .workdir.menubar.options.report_detail add radiobutton -label "Summary" \
-     -variable cvscfg(rdetail) -value "summary"
-  .workdir.menubar.options.report_detail add radiobutton -label "Terse" \
-     -variable cvscfg(rdetail) -value "terse"
-
-  menu .workdir.menubar.options.logfile_detail
-  .workdir.menubar.options.logfile_detail add radiobutton -label "Summary" \
-     -variable cvscfg(ldetail) -value "summary"
-  .workdir.menubar.options.logfile_detail add radiobutton -label "Latest" \
-     -variable cvscfg(ldetail) -value "latest"
-  .workdir.menubar.options.logfile_detail add radiobutton -label "Verbose" \
-     -variable cvscfg(ldetail) -value "verbose"
 
   .workdir.menubar.goto add command -label "Go Home" \
      -command {change_dir $cvscfg(home)}
