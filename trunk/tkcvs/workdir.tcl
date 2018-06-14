@@ -521,13 +521,16 @@ proc workdir_menus {} {
      -command { rcs_branches [workdir_list_files] }
 
   # GIT
-  # Just make it exist, there's nothing in it yet
   menu .workdir.menubar.git
   .workdir.menubar.git add command -label "Log" -underline 0 \
      -command {git_log [workdir_list_files] }
+  .workdir.menubar.git add command -label "Add Files" -underline 0 \
+     -command {add_dialog [workdir_list_files] }
+  .workdir.menubar.git add command -label "Remove Files" -underline 0 \
+     -command { subtract_dialog [workdir_list_files] }
 
-  # These commands will vary according to revision system.  Does it still make sense to
-  # keep them in their own menu?
+  # These commands will vary according to revision system.  Does it still make
+  # sense to keep them in their own menu?
   .workdir.menubar.reports add command -label "Check Directory" -underline 0
   .workdir.menubar.reports add command -label "Status" -underline 0
   .workdir.menubar.reports add command -label "Log" -underline 0
@@ -1125,6 +1128,8 @@ gen_log:log D "CONFIGURE GIT MENU"
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { git_log [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
   }
 
   DirCanvas:create .workdir.main
