@@ -423,6 +423,7 @@ proc add_dialog {args} {
   global cvsglb
   global incvs
   global insvn
+  global ingit
 
   gen_log:log T "ENTER ($args)"
 
@@ -463,6 +464,12 @@ proc add_dialog {args} {
       grab release .add
       destroy .add
       svn_add [workdir_list_files]
+    }
+  } elseif {$ingit} {
+    .add.down.add configure -command {
+      grab release .add
+      destroy .add
+      git_add [workdir_list_files]
     }
   }
 
@@ -647,9 +654,10 @@ proc rtag_dialog { cvsroot module b_or_t } {
 }
 
 proc subtract_dialog {args} {
+  global cvsglb
   global incvs
   global insvn
-  global cvsglb
+  global ingit
 
   gen_log:log T "ENTER ($args)"
 
@@ -694,6 +702,12 @@ proc subtract_dialog {args} {
       grab release .subtract
       destroy .subtract
       svn_remove [workdir_list_files]
+    }
+  } elseif {$ingit} {
+    .subtract.down.remove configure -command {
+      grab release .subtract
+      destroy .subtract
+      git_rm [workdir_list_files]
     }
   }
   

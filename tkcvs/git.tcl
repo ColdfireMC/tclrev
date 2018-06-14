@@ -127,7 +127,42 @@ proc git_log {args} {
   busy_done .workdir.main
 
   gen_log:log T "LEAVE"
-
 }
 
+# does git add from workdir browser
+proc git_add {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
+  if {$filelist == ""} {
+    set mess "This will add all new files"
+  } else {
+    set mess "This will add these files:\n\n"
+    foreach file $filelist {
+      append mess "   $file\n"
+    }
+  }
+
+  if {$filelist == ""} {
+    append filelist [glob -nocomplain $cvscfg(aster) .??*]
+  }
+  set addcmd [exec::new "git add $filelist"]
+  auto_setup_dir $addcmd
+
+  gen_log:log T "LEAVE"
+}
+
+# does git rm from workdir browser
+proc git_rm {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
+
+  set command [exec::new "git rm $filelist"]
+  auto_setup_dir $command
+
+  gen_log:log T "LEAVE"
+}
 
