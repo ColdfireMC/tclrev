@@ -1115,10 +1115,9 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   }
 }
 
+# does a status report on the files in the current directory. Called from
+# "Status" in the Reports menu. Uses the rdetail and recurse settings.
 proc cvs_status {args} {
-#
-# This does a status report on the files in the current directory.
-#
   global cvs
   global cvscfg
 
@@ -1183,31 +1182,24 @@ proc cvs_status {args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_check {directory} {
-#
-# This does a cvscheck on the files in the current directory.
-#
+# called from the "Check Directory" button in the workdir and Reports menu
+proc cvs_check {} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($directory)"
+  gen_log:log T "ENTER ()"
 
   busy_start .workdir.main
-
-  # The current directory doesn't have to be in CVS for cvs update to work.
-
-  # Sometimes, cvs update doesn't work with ".", only with "" or an argument
-  if {$directory == "."} {
-    set directory ""
-  }
-
-  if $cvscfg(recurse) {
-    set checkrecursive ""
+  set title "CVS Directory Check"
+  set flags ""
+  if {$cvscfg(recurse)} {
+    append title " (recursive)"
   } else {
-    set checkrecursive "-l"
+    append flags "-l"
+    append title " (toplevel)"
   }
-  set commandline "$cvs -n -q update $checkrecursive $directory"
-  set check_cmd [viewer::new "CVS Directory Status Check"]
+  set commandline "$cvs -n -q update $flags"
+  set check_cmd [viewer::new $title]
   $check_cmd\::do $commandline 1 status_colortags
 
   busy_done .workdir.main
