@@ -129,6 +129,19 @@ proc git_log {args} {
   gen_log:log T "LEAVE"
 }
 
+# does git rm from workdir browser
+proc git_rm {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
+
+  set command [exec::new "git rm $filelist"]
+  auto_setup_dir $command
+
+  gen_log:log T "LEAVE"
+}
+
 # does git add from workdir browser
 proc git_add {args} {
   global cvscfg
@@ -153,16 +166,49 @@ proc git_add {args} {
   gen_log:log T "LEAVE"
 }
 
-# does git rm from workdir browser
-proc git_rm {args} {
+# called by "Status" in the Reports menu. Uses the rdetail and recurse settings
+proc git_status {args} {
+  global cvscfg
+ 
+  gen_log:log T "ENTER ($args)"
+
+  busy_start .workdir.main
+  set filelist [join $args]
+  set flags ""
+  set title "GIT Status ($cvscfg(rdetail))"
+  # Hide unknown files if desired
+  if {$cvscfg(status_filter)} {
+    append flags " -uno"
+  }
+  if {$cvscfg(rdetail) == "terse"} {
+    append flags " --short"
+  }
+  set commandline "git status $flags $filelist"
+  set stat_cmd [viewer::new $title]
+  $stat_cmd\::do "$commandline" 0 status_colortags
+
+  busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+
+# called from the "Check Directory" button in the workdir and Reports menu
+proc git_check {} {
   global cvscfg
 
-  gen_log:log T "ENTER ($args)"
-  set filelist [join $args]
+  gen_log:log T "ENTER ()"
 
-  set command [exec::new "git rm $filelist"]
-  auto_setup_dir $command
+  busy_start .workdir.main
+  set title "GIT Directory Check"
+  set flags "--short"
+  # Show unknown files if desired
+  if {$cvscfg(status_filter)} {
+    append flags " -uno"
+  }
+  set command "git status $flags"
+  set check_cmd [viewer::new $title]
+  $check_cmd\::do "$command" 0 status_colortags
 
+  busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 

@@ -306,27 +306,54 @@ proc svn_remove {args} {
   gen_log:log T "LEAVE"
 }
 
-# called from the workdir browser checkmark button
-proc svn_check {directory} {
+# does a status report on the files in the current directory. Called from
+# "Status" in the Reports menu. Uses the rdetail and recurse settings.
+proc svn_status {args} {
   global cvscfg
-
-  gen_log:log T "ENTER ($directory)"
+ 
+  gen_log:log T "ENTER ($args)"
 
   busy_start .workdir.main
+  set filelist [join $args]
+  set flags ""
+  set title "SVN Status ($cvscfg(rdetail))"
 
-  # Always show updates
-  set flags "-u"
-  # Only recurse if flag is set
-  if {! $cvscfg(recurse)} {
-    append flags "N"
-  }
-  # unknown files are removed by the filter but we might as well minimize
-  # the work the filter has to do
   if {$cvscfg(status_filter)} {
-    append flags "q"
+    append flags " -q"
   }
-  set command "svn status $flags $directory"
-  set check_cmd [viewer::new "SVN Status Check"]
+  if {! $cvscfg(recurse)} {
+    append flags " --depth=files"
+  }
+  if {$cvscfg(rdetail) == "verbose"} {
+    append flags " -v"
+  } elseif {$cvscfg(rdetail) == "summary"} {
+    append flags " -u"
+  }
+  set command "svn status $flags $filelist"
+  set check_cmd [viewer::new "$title"]
+  $check_cmd\::do "$command" 0 status_colortags
+
+  busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+
+# called from the "Check Directory" button in the workdir and the Reports menu
+proc svn_check {} {
+  global cvscfg
+
+  gen_log:log T "ENTER ()"
+
+  busy_start .workdir.main
+  set title "SVN Directory Check"
+  set flags ""
+  if {$cvscfg(recurse)} {
+    append title " (recursive)"
+  } else {
+    append flags " --depth=files"
+    append title " (toplevel)"
+  }
+  set command "svn status $flags"
+  set check_cmd [viewer::new "$title"]
   $check_cmd\::do "$command" 0 status_colortags
 
   busy_done .workdir.main

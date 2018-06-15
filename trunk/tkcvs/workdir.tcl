@@ -537,9 +537,9 @@ proc workdir_menus {} {
   .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
   .workdir.menubar.reports add command -label "Info" -underline 0
   .workdir.menubar.reports add separator
-  .workdir.menubar.reports add checkbutton -label "Report->Check Shows Unknown Files" \
+  .workdir.menubar.reports add checkbutton -label "Report Unknown Files" \
      -variable cvscfg(status_filter) -onvalue false -offvalue true
-  .workdir.menubar.reports add checkbutton -label "Report->Check/Status are Recursive" \
+  .workdir.menubar.reports add checkbutton -label "Report Recursively" \
      -variable cvscfg(recurse) -onvalue true -offvalue false
   .workdir.menubar.reports add cascade -label "Status Detail" \
      -menu .workdir.menubar.reports.report_detail
@@ -927,15 +927,10 @@ proc setup_dir { } {
   .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
 
   # Start without revision-control menu
-  gen_log:log D "CONFIGURE VCS MENU"
+  gen_log:log D "CONFIGURE VCS MENUS"
   set rptmenu_idx [.workdir.menubar index "Reports"]
-  #puts "reports $rptmenu_idx"
   foreach label {"RCS" "CVS" "SVN" "GIT"} {
-    #puts -nonewline "$label "
-    if [catch {set vcsmenu_idx [.workdir.menubar index "$label"]}] {
-       #puts "error "
-    } else {
-       #puts "$vcsmenu_idx"
+    if {! [catch {set vcsmenu_idx [.workdir.menubar index "$label"]}]} {
       .workdir.menubar delete $vcsmenu_idx
     }
   }
@@ -944,11 +939,11 @@ proc setup_dir { } {
   #puts "----------"
 
   # Disable report menu items 
-  .workdir.menubar.reports entryconfigure 0 -state disabled
-  .workdir.menubar.reports entryconfigure 1 -state disabled
-  .workdir.menubar.reports entryconfigure 2 -state disabled
-  .workdir.menubar.reports entryconfigure 3 -state disabled
-  .workdir.menubar.reports entryconfigure 4 -state disabled
+  .workdir.menubar.reports entryconfigure "Check Directory" -state disabled
+  .workdir.menubar.reports entryconfigure "Status" -state disabled
+  .workdir.menubar.reports entryconfigure "Log" -state disabled
+  .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
+  .workdir.menubar.reports entryconfigure "Info" -state disabled
   # Start with the revision-control buttons disabled
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
@@ -964,8 +959,9 @@ proc setup_dir { } {
   # Now enable them depending on where we are
   if {$inrcs} {
     # Top
-gen_log:log D "CONFIGURE RCS MENU"
-    .workdir.menubar insert $rptmenu_idx cascade -label "RCS" -menu .workdir.menubar.rcs
+    gen_log:log D "CONFIGURE RCS MENUS"
+    .workdir.menubar insert $rptmenu_idx cascade -label "RCS" \
+      -menu .workdir.menubar.rcs
     .workdir.top.lcvsroot configure -text "RCS *,v"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
     # Buttons
@@ -986,20 +982,26 @@ gen_log:log D "CONFIGURE RCS MENU"
       -command { rcs_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
       -command { rcs_lock unlock [workdir_list_files] }
-    # Reports Menu
+    # Reports menu for RCS
     # Check Directory (log & rdiff)
-    .workdir.menubar.reports entryconfigure 0 -state normal \
+    .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
        -command { rcs_check }
-    .workdir.menubar.reports entryconfigure 1 -state disabled
+    .workdir.menubar.reports entryconfigure "Status" -state disabled
     # Log (rlog)
-    .workdir.menubar.reports entryconfigure 2 -state normal \
+    .workdir.menubar.reports entryconfigure "Log" -state normal \
        -command { rcs_log [workdir_list_files] }
-    .workdir.menubar.reports entryconfigure 3 -state disabled
-    .workdir.menubar.reports entryconfigure 4 -state disabled
+    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
+    .workdir.menubar.reports entryconfigure "Info" -state disabled
+    # Options for reports
+    .workdir.menubar.reports entryconfigure "Report Unknown Files" -state disabled
+    .workdir.menubar.reports entryconfigure "Report Recursively" -state disabled
+    .workdir.menubar.reports entryconfigure "Status Detail" -state disabled
+    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   } elseif {$insvn} {
     # Top
-gen_log:log D "CONFIGURE SVN MENU"
-    .workdir.menubar insert $rptmenu_idx cascade -label "SVN" -menu .workdir.menubar.svn
+    gen_log:log D "CONFIGURE SVN MENUS"
+    .workdir.menubar insert $rptmenu_idx cascade -label "SVN" \
+      -menu .workdir.menubar.svn
     .workdir.top.bmodbrowse configure -image Modules_svn \
       -command {modbrowse_run svn}
     .workdir.top.lmodule configure -text "Path"
@@ -1008,7 +1010,7 @@ gen_log:log D "CONFIGURE SVN MENU"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
-      -command { svn_check [workdir_list_files] }
+      -command { svn_check }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -command { svn_branches . }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
@@ -1036,26 +1038,32 @@ gen_log:log D "CONFIGURE SVN MENU"
       -command { svn_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
       -command { svn_lock unlock [workdir_list_files] }
-    # Reports Menu
+    # Reports menu for SVN
     # Check Directory (svn status)
-    .workdir.menubar.reports entryconfigure 0 -state normal \
-       -command { svn_check {} }
+    .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
+       -command { svn_check }
     # Status (svn status <filelist>)
-    .workdir.menubar.reports entryconfigure 1 -state normal \
-       -command { svn_check [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Status" -state normal \
+       -command { svn_status [workdir_list_files] }
     # Log (svn log)
-    .workdir.menubar.reports entryconfigure 2 -state normal \
+    .workdir.menubar.reports entryconfigure "Log" -state normal \
        -command { svn_log [workdir_list_files] }
     # Annotate/Blame (svn blame)
-    .workdir.menubar.reports entryconfigure 3 -state normal \
+    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
        -command { svn_annotate BASE [workdir_list_files] }
-    # Info (svn info)
-    .workdir.menubar.reports entryconfigure 4 -state normal \
+    # General info (svn info)
+    .workdir.menubar.reports entryconfigure "Info" -state normal \
        -command { svn_info [workdir_list_files] }
+    # Options for reports
+    .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
+    .workdir.menubar.reports entryconfigure "Report Recursively" -state normal
+    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
+    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   } elseif {$incvs} {
     # Top
-gen_log:log D "CONFIGURE CVS MENU"
-    .workdir.menubar insert $rptmenu_idx cascade -label "CVS" -menu .workdir.menubar.cvs
+    gen_log:log D "CONFIGURE CVS MENUS"
+    .workdir.menubar insert $rptmenu_idx cascade -label "CVS" \
+      -menu .workdir.menubar.cvs
     .workdir.top.bmodbrowse configure -image Modules_cvs \
       -command {modbrowse_run cvs}
     .workdir.top.lmodule configure -text "Module"
@@ -1064,7 +1072,7 @@ gen_log:log D "CONFIGURE CVS MENU"
     .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
-      -command { cvs_check [workdir_list_files] }
+      -command { cvs_check }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -command cvs_joincanvas
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
@@ -1101,34 +1109,60 @@ gen_log:log D "CONFIGURE CVS MENU"
       .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
         -command { cvs_lock unlock [workdir_list_files] }
     }
-    # Reports Menu
+    # Reports menu for CVS
     # Check Directory (cvs -n -q update)
-    .workdir.menubar.reports entryconfigure 0 -state normal \
-       -command { cvs_check {} }
+    .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
+       -command { cvs_check }
     # Status (cvs -Q status)
-    .workdir.menubar.reports entryconfigure 1 -state normal \
+    .workdir.menubar.reports entryconfigure "Status" -state normal \
        -command { cvs_status [workdir_list_files] }
     # Log (cvs log)
-    .workdir.menubar.reports entryconfigure 2 -state normal \
+    .workdir.menubar.reports entryconfigure "Log" -state normal \
        -command { cvs_log [workdir_list_files] }
     # Annotate/Blame (cvs annotate)
-    .workdir.menubar.reports entryconfigure 3 -state normal \
+    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
        -command { cvs_annotate $current_tagname [workdir_list_files] }
-    .workdir.menubar.reports entryconfigure 4 -state disabled
+    .workdir.menubar.reports entryconfigure "Info" -state disabled
+    # Options for reports
+    .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
+    .workdir.menubar.reports entryconfigure "Report Recursively" -state normal
+    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
+    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   } elseif {$ingit} {
     # Top
-gen_log:log D "CONFIGURE GIT MENU"
-    .workdir.menubar insert $rptmenu_idx cascade -label "GIT" -menu .workdir.menubar.git
+    gen_log:log D "CONFIGURE GIT MENUS"
+    .workdir.menubar insert $rptmenu_idx cascade -label "GIT" \
+      -menu .workdir.menubar.git
     .workdir.top.lmodule configure -text "Path"
     .workdir.top.ltagname configure -text "Branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
+    .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
+      -command { git_check }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { git_log [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
+    # Reports menu for GIT
+    # Check Directory (git status --short)
+    .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
+       -command { git_check }
+    # Status (git status <filelist>
+    .workdir.menubar.reports entryconfigure "Status" -state normal \
+       -command { git_status [workdir_list_files] }
+    # Log (git log)
+    .workdir.menubar.reports entryconfigure "Log" -state normal \
+       -command { git_log [workdir_list_files] }
+    # Annotate/Blame
+    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
+    .workdir.menubar.reports entryconfigure "Info" -state disabled
+    # Options for reports
+    .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
+    .workdir.menubar.reports entryconfigure "Report Recursively" -state disabled
+    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
+    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   }
 
   DirCanvas:create .workdir.main

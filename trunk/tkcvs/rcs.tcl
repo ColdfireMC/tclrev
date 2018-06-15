@@ -199,7 +199,7 @@ proc rcs_check {} {
 
   gen_log:log T "ENTER"
 
-  set v [::viewer::new "Directory Status Check"]
+  set v [::viewer::new "RCS Directory Check"]
   set rcsfiles [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   set command "rlog -h $rcsfiles"
   gen_log:log C "$command"
@@ -235,7 +235,7 @@ proc rcs_log {args} {
 
   set filelist [join $args]
   if {$filelist == ""} {
-    set filelist [glob -nocomplain -dir RCS *,v]
+    set filelist [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   }
   gen_log:log D "detail $cvscfg(ldetail)"
   gen_log:log D "$filelist"
