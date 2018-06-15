@@ -1160,14 +1160,17 @@ proc cvs_status {args} {
     foreach statline $stat_lines {
       if {[string match "*Status:*" $statline]} {
         gen_log:log D "$statline"
-        if {$cvscfg(rdetail) == "terse" &&\
+        if {$cvscfg(rdetail) == "terse" && \
             [string match "*Up-to-date*" $statline]} {
           continue
         } else {
-          regsub {^File: } $statline {} statline
-          regsub {Status:} $statline " " line
-          append cooked_status $line
-          append cooked_status "\n"
+          regsub {\s+no file } $statline { } statline
+          regsub {^File:\s+} $statline {} statline
+          regsub {Status:\s+} $statline " " statline
+          regsub {Locally Removed} $statline "  Locally Removed" statline
+          # FIXME why do the tabs disappear?
+          #regsub {\s+} $statline "\t" statline
+          append cooked_status "$statline\n"
         }
       }
     }
