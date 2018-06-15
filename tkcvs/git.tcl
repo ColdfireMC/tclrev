@@ -185,7 +185,12 @@ proc git_status {args} {
   }
   set commandline "git status $flags $filelist"
   set stat_cmd [viewer::new $title]
-  $stat_cmd\::do "$commandline" 0 status_colortags
+  # Only the terse case is the classic status format
+  if {$cvscfg(rdetail) == "terse" {
+    $stat_cmd\::do "$commandline" 0 status_colortags
+  } else {
+    $stat_cmd\::do "$commandline"
+  }
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"

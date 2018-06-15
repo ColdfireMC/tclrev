@@ -392,25 +392,23 @@ proc status_colortags {exec line} {
   #gen_log:log T "ENTER ($exec \"$line\")"
   set tag default
   # Return the type of the line being output
-  # Neat trick I found on clt: -> is a valid variable name!
-  if {[regexp {^([PUARMCD?!]) (.*)} $line -> mode file]} {
+  set mode [lindex $line 0]
+  set file [lrange $line 1 end]
     gen_log:log D "$line"
-    gen_log:log D "mode $mode file $file"
+    gen_log:log D "mode \"$mode\" file $file"
     switch -exact -- $mode {
-      U { set tag updated }
-      A { set tag added }
-      R { set tag removed }
-      D { set tag removed }
-      M { set tag modified }
-      C { set tag conflict }
-      P { set tag patched }
-      ! { set tag warning }
-      ? { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
+      "U" { set tag updated }
+      "A" { set tag added }
+      "R" { set tag removed }
+      "D" { set tag removed }
+      "M" { set tag modified }
+      "C" { set tag conflict }
+      "P" { set tag patched }
+      "!" { set tag warning }
+      "?" { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
+      "??" { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
       default { set tag default }
     }
-  } elseif {[regexp {^cvs server: warning: .*} $line]} {
-    set tag warning
-  }
   #gen_log:log T "LEAVE: $tag"
   return [list $tag $line]
 }
