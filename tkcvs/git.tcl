@@ -16,10 +16,10 @@ proc git_workdir_status {} {
 
   # Get the status of the files (top level only)
   foreach f [glob -nocomplain *] {
-    set cmd(git_status) [exec::new "git status -u --porcelain \"$f\""]
+    set cmd(git_status) [exec::new "git status -u --porcelain -- \"$f\""]
     set statline [lindex [split [$cmd(git_status)\::output] "\n"] 0]
     if {![file isdirectory $f]} {
-      set status [lindex $statline 0]
+      set status [string range $statline 0 1]
       set filepath [lindex $statline 1]
       set good_line ""
       # Format: short hash, commit time, committer
@@ -44,28 +44,32 @@ proc git_workdir_status {} {
       gen_log:log D "$Filelist($f:date)"
       gen_log:log D "$Filelist($f:editors)"
 
-      switch -- $status {
-        "M" {
+      switch -exact -- $status {
+        "M " {
          set Filelist($f:status) "Locally Modified"
          gen_log:log D "$Filelist($f:status)"
         }
-        "A" {
+        " M" {
+         set Filelist($f:status) "Modified, not staged"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        "A " {
          set Filelist($f:status) "Locally Added"
          gen_log:log D "$Filelist($f:status)"
         }
-        "D" {
+        "D " {
          set Filelist($f:status) "Locally Removed"
          gen_log:log D "$Filelist($f:status)"
         }
-        "R" {
+        "R " {
          set Filelist($f:status) "Renamed"
          gen_log:log D "$Filelist($f:status)"
         }
-        "C" {
+        "C " {
          set Filelist($f:status) "Copied"
          gen_log:log D "$Filelist($f:status)"
         }
-        "U" {
+        "U " {
          set Filelist($f:status) "Updated"
          gen_log:log D "$Filelist($f:status)"
         }
@@ -120,7 +124,7 @@ proc git_log {args} {
       append commandline " --pretty=oneline"
     }
   }
-  append commandline " $filelist"
+  append commandline " -- $filelist"
 
   set logcmd [viewer::new "Git log ($cvscfg(ldetail))"]
   $logcmd\::do "$commandline"
@@ -167,13 +171,12 @@ proc git_add {args} {
 }
 
 # called by "Status" in the Reports menu. Uses the rdetail and recurse settings
-proc git_status {args} {
+proc git_status {} {
   global cvscfg
  
-  gen_log:log T "ENTER ($args)"
+  gen_log:log T "ENTER ()"
 
   busy_start .workdir.main
-  set filelist [join $args]
   set flags ""
   set title "GIT Status ($cvscfg(rdetail))"
   # Hide unknown files if desired
@@ -181,15 +184,21 @@ proc git_status {args} {
     append flags " -uno"
   }
   if {$cvscfg(rdetail) == "terse"} {
-    append flags " --short"
+    append flags " --porcelain"
+  } elseif {$cvscfg(rdetail) == "summary"} {
+    append flags " --long"
+  } elseif {$cvscfg(rdetail) == "verbose"} {
+    append flags " --verbose"
   }
-  set commandline "git status $flags $filelist"
+  # do some highlighting
   set stat_cmd [viewer::new $title]
-  # Only the terse case is the classic status format
+  set commandline "git status $flags"
   if {$cvscfg(rdetail) == "terse"} {
     $stat_cmd\::do "$commandline" 0 status_colortags
-  } else {
+  } elseif {$cvscfg(rdetail) == "summary"} {
     $stat_cmd\::do "$commandline"
+  } elseif {$cvscfg(rdetail) == "verbose"} {
+    $stat_cmd\::do "$commandline" 0 patch_colortags
   }
 
   busy_done .workdir.main
@@ -204,7 +213,9 @@ proc git_check {} {
 
   busy_start .workdir.main
   set title "GIT Directory Check"
-  set flags "--short"
+  # I know we use a short report for other VCSs, but for Git you really
+  # need the full report to know what's staged and what's not
+  set flags ""
   # Show unknown files if desired
   if {$cvscfg(status_filter)} {
     append flags " -uno"
@@ -214,6 +225,192 @@ proc git_check {} {
   $check_cmd\::do "$command" 0 status_colortags
 
   busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+
+# dialog for git commit - called from workdir browser
+proc git_commit_dialog {} {
+  global cvsglb
+  global cvscfg
+
+  # If marked files, commit these.  If no marked files, then
+  # commit any files selected via listbox selection mechanism.
+  # The cvsglb(commit_list) list remembers the list of files
+  # to be committed.
+  set cvsglb(commit_list) [workdir_list_files]
+  # If we want to use an external editor, just do it
+  if {$cvscfg(use_cvseditor)} {
+    git_commit "" "" $cvsglb(commit_list)
+    return
+  }
+
+  if {[winfo exists .commit]} {
+    destroy .commit
+  }
+
+  toplevel .commit
+  #grab set .commit
+
+  frame .commit.top -border 8
+  frame .commit.down -relief groove -border 2
+
+  pack .commit.top -side top -fill x
+  pack .commit.down -side bottom -fill x
+  frame .commit.comment
+  pack .commit.comment -side top -fill both -expand 1
+  label .commit.comment.lcomment -text "Your log message" -anchor w
+  button .commit.comment.history -text "Log History" \
+    -command history_browser
+  text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
+    -bg $cvsglb(textbg) -exportselection 1 \
+    -wrap word -border 2 -setgrid yes
+
+
+  # Explain what it means to "commit" files
+  message .commit.message -justify left -aspect 800 \
+    -text "This will commit changes from your \
+           local, working directory into the repository, recursively."
+
+  pack .commit.message -in .commit.top -padx 2 -pady 5
+
+  button .commit.ok -text "OK" \
+    -command {
+      #grab release .commit
+      wm withdraw .commit
+      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
+      git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+      commit_history $cvsglb(commit_comment)
+    }
+  button .commit.apply -text "Apply" \
+    -command {
+      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
+      git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+      commit_history $cvsglb(commit_comment)
+    }
+  button .commit.clear -text "ClearAll" \
+    -command {
+      set version ""
+      .commit.comment.tcomment delete 1.0 end
+    }
+  button .commit.quit \
+    -command {
+      #grab release .commit
+      wm withdraw .commit
+    }
+
+  .commit.ok configure -text "OK"
+  .commit.quit configure -text "Close"
+
+  grid columnconf .commit.comment 1 -weight 1
+  grid rowconf .commit.comment 1 -weight 1
+  grid .commit.comment.lcomment -column 0 -row 0
+  grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
+  grid .commit.comment.history  -column 0 -row 1
+
+  pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
+    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  # Fill in the most recent commit message
+  .commit.comment.tcomment insert end $cvsglb(commit_comment)
+
+  wm title .commit "Commit Changes"
+  wm minsize .commit 1 1
+
+  gen_log:log T "LEAVE"
+}
+
+# git commit - called from commit dialog
+proc git_commit {comment args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($comment $args)"
+
+  set filelist [join $args]
+
+  set commit_output ""
+  if {$filelist == ""} {
+    set mess "This will commit your changes to ** ALL ** files in"
+    append mess " and under this directory."
+  } else {
+    foreach file $filelist {
+      append commit_output "\n$file"
+    }
+    set mess "This will commit your changes to:$commit_output"
+  }
+  append mess "\n\nAre you sure?"
+  set commit_output ""
+
+  if {[cvsconfirm $mess .workdir] != "ok"} {
+    return 1
+  }
+
+  if {$cvscfg(use_cvseditor)} {
+    # Starts text editor of your choice to enter the log message.
+    update idletasks
+    set command \
+      "$cvscfg(terminal) git commit $filelist"
+    gen_log:log C "$command"
+    set ret [catch {eval "exec $command"} view_this]
+    if {$ret} {
+      cvsfail $view_this .workdir
+      gen_log:log T "LEAVE ERROR ($view_this)"
+      return
+    }
+  } else {
+    if {$comment == ""} {
+      cvsfail "You must enter a comment!" .commit
+      return 1
+    }
+    set v [viewer::new "SVN Commit"]
+    regsub -all "\"" $comment "\\\"" comment
+    $v\::do "git commit -m \"$comment\" $filelist" 1
+    $v\::wait
+  }
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+  gen_log:log T "LEAVE"
+}
+
+# git checkout - called from workdir browser
+proc git_checkout {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+
+  set filelist [join $args]
+
+  if {$filelist == ""} {
+    append mess "\nThis will download from"
+    append mess " the repository to your local"
+    append mess " filespace ** ALL ** files which"
+    append mess " have changed in it."
+  } else {
+    append mess "\nThis will download from"
+    append mess " the repository to your local"
+    append mess " filespace these files which"
+    append mess " have changed:\n"
+  }
+  foreach file $filelist {
+    append mess "\n\t$file"
+  }
+  append mess "\n\nAre you sure?"
+
+  set command "git checkout"
+
+  if {[cvsconfirm $mess .workdir] == "ok"} {
+    foreach file $filelist {
+      append command " \"$file\""
+    }
+  } else {
+    return;
+  }
+
+  set co_cmd [viewer::new "GIT Update"]
+  $co_cmd\::do "$command" 1 status_colortags
+  auto_setup_dir $co_cmd
+
   gen_log:log T "LEAVE"
 }
 
