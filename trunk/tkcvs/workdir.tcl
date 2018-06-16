@@ -1143,15 +1143,19 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { git_log [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
+      -command { git_commit_dialog }
+    .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
+      -command { git_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     # Reports menu for GIT
     # Check Directory (git status --short)
     .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
        -command { git_check }
-    # Status (git status <filelist>
+    # Status (git status -v)
     .workdir.menubar.reports entryconfigure "Status" -state normal \
-       -command { git_status [workdir_list_files] }
+       -command { git_status }
     # Log (git log)
     .workdir.menubar.reports entryconfigure "Log" -state normal \
        -command { git_log [workdir_list_files] }
