@@ -1448,6 +1448,7 @@ proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
 
   toplevel .reminder
   wm title .reminder "Tag and Commit"
+  frame .reminder.top
   label .reminder.m1 -text \
     "Now, you must examine the merged files and resolve any conflicts.\
     \nLeave this dialog up, and when you are ready to commit,\
@@ -1481,12 +1482,13 @@ proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
   pack .reminder.bottom -side bottom -fill x
   pack .reminder.bottom.ok -side left -expand yes
   pack .reminder.bottom.cancel -side right -expand yes
-  pack .reminder.m1 -side top
-  pack .reminder.ready -side top
-  pack .reminder.m2 -side top
-  pack .reminder.autotag -side top
-  pack .reminder.fromtag -side top -padx 2
-  pack .reminder.totag -side top -padx 2
+  pack .reminder.top -side top -expand yes -fill both
+  pack .reminder.m1 -in .reminder.top -side top
+  pack .reminder.ready -in .reminder.top -side top
+  pack .reminder.m2 -in .reminder.top -side top
+  pack .reminder.autotag -in .reminder.top -side top
+  pack .reminder.fromtag -in .reminder.top -side top -padx 2
+  pack .reminder.totag -in .reminder.top -side top -padx 2
   foreach w {m2 totag fromtag bottom.ok} {
     .reminder.$w configure -state disabled
   }

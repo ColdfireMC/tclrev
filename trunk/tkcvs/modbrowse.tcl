@@ -226,72 +226,78 @@ proc modbrowse_menus {} {
 
   #gen_log:log T "ENTER"
 
-  menu .modbrowse.modmenu
-  .modbrowse configure -menu .modbrowse.modmenu
+  menu .modbrowse.menubar
 
   #
   # Create the Menu bar
-  #
-  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.file] -label "File" -underline 0
-  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.cvs] -label "CVS" -underline 0
-  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.svn] -label "SVN" -underline 0
-  .modbrowse.modmenu add cascade -menu [menu .modbrowse.modmenu.options] -label "Options" -underline 0
+  if {[tk windowingsystem] == "aqua"} {
+    # There's an extra menu in the first postion on apple, whether you like it or not.
+    # So you have to configure it.
+    .modbrowse.menubar add cascade -label "TkCVS" -menu [menu .modbrowse.menubar.apple]
+  }
+  .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.file] -label "File" -underline 0
+  .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.cvs] -label "CVS" -underline 0
+  .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.svn] -label "SVN" -underline 0
+  .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.options] -label "Options" -underline 0
+
+  # Have to do this after the .apple menu
+  .modbrowse configure -menu .modbrowse.menubar
 
   #
   # Create the menus
   #
-  .modbrowse.modmenu.file add command -label "Browse Working Directory" -underline 0 \
+  .modbrowse.menubar.file add command -label "Browse Working Directory" -underline 0 \
      -command workdir_setup
-  .modbrowse.modmenu.file add separator
-  .modbrowse.modmenu.file add command -label "Close" -underline 1 \
+  .modbrowse.menubar.file add separator
+  .modbrowse.menubar.file add command -label "Close" -underline 1 \
      -command {.modbrowse.bottom.buttons.close invoke}
-  .modbrowse.modmenu.file add command -label "Exit" -underline 1 \
+  .modbrowse.menubar.file add command -label "Exit" -underline 1 \
      -command { module_exit; exit_cleanup 1 }
 
-  .modbrowse.modmenu.cvs add command -label "CVS Checkout" \
+  .modbrowse.menubar.cvs add command -label "CVS Checkout" \
       -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module}
-  .modbrowse.modmenu.cvs add command -label "CVS Export" \
+  .modbrowse.menubar.cvs add command -label "CVS Export" \
       -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module}
-  .modbrowse.modmenu.cvs add command -label "Tag Module" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Tag Module" -underline 0 \
      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
-  .modbrowse.modmenu.cvs add command -label "Branch Tag Module" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Branch Tag Module" -underline 0 \
      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
-  .modbrowse.modmenu.cvs add command -label "Make Patch File" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Make Patch File" -underline 0 \
      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
-  .modbrowse.modmenu.cvs add command -label "View Patch Summary" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "View Patch Summary" -underline 0 \
      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
-  .modbrowse.modmenu.cvs add separator
-  .modbrowse.modmenu.cvs add command -label "Import CWD to A New Module" -underline 0 \
+  .modbrowse.menubar.cvs add separator
+  .modbrowse.menubar.cvs add command -label "Import CWD to A New Module" -underline 0 \
      -command { import_run }
-  .modbrowse.modmenu.cvs add command -label "Import CWD to An Existing Module" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Import CWD to An Existing Module" -underline 0 \
      -command { import2_run }
-  .modbrowse.modmenu.cvs add command -label "Vendor Merge" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Vendor Merge" -underline 0 \
      -command {merge_run $modbrowse_module}
-  .modbrowse.modmenu.cvs add separator
-  .modbrowse.modmenu.cvs add command -label "Show My Checkouts" -underline 0 \
+  .modbrowse.menubar.cvs add separator
+  .modbrowse.menubar.cvs add command -label "Show My Checkouts" -underline 0 \
      -command {cvs_history me ""}
-  .modbrowse.modmenu.cvs add command -label "Show Checkouts of Selected Module" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Show Checkouts of Selected Module" -underline 0 \
      -command {cvs_history all $modbrowse_module}
-  .modbrowse.modmenu.cvs add command -label "Show All Checkouts" -underline 0 \
+  .modbrowse.menubar.cvs add command -label "Show All Checkouts" -underline 0 \
      -command {cvs_history all ""}
 
-  .modbrowse.modmenu.svn add command -label "SVN Checkout" \
+  .modbrowse.menubar.svn add command -label "SVN Checkout" \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
-  .modbrowse.modmenu.svn add command -label "SVN Export" \
+  .modbrowse.menubar.svn add command -label "SVN Export" \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
-  .modbrowse.modmenu.svn add command -label "Tag Module" -underline 0 \
+  .modbrowse.menubar.svn add command -label "Tag Module" -underline 0 \
      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "tags" }
-  .modbrowse.modmenu.svn add command -label "Branch Module" -underline 0 \
+  .modbrowse.menubar.svn add command -label "Branch Module" -underline 0 \
      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
-  .modbrowse.modmenu.svn add command -label "Make Patch File" -underline 0 \
+  .modbrowse.menubar.svn add command -label "Make Patch File" -underline 0 \
      -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 0 }
-  .modbrowse.modmenu.svn add command -label "View Patch Summary" -underline 0 \
+  .modbrowse.menubar.svn add command -label "View Patch Summary" -underline 0 \
      -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 1 }
-  .modbrowse.modmenu.svn add separator
-  .modbrowse.modmenu.svn add command -label "Import CWD into Repository" \
+  .modbrowse.menubar.svn add separator
+  .modbrowse.menubar.svn add command -label "Import CWD into Repository" \
      -command svn_import_run
 
-  .modbrowse.modmenu.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
+  .modbrowse.menubar.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
      -variable cvscfg(aliasfolder) -onvalue true -offvalue false \
      -command {
         ModTree:delitem .modbrowse.treeframe /
@@ -301,12 +307,12 @@ proc modbrowse_menus {} {
         pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
         modbrowse_tree [lsort [array names modval]] "/"
      }
-  .modbrowse.modmenu.options add separator
-  .modbrowse.modmenu.options add checkbutton -label "Tracing On/Off" \
+  .modbrowse.menubar.options add separator
+  .modbrowse.menubar.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
      -command log_toggle
 
-  menu_std_help .modbrowse.modmenu
+  menu_std_help .modbrowse.menubar
 
   #gen_log:log T "LEAVE"
 }
@@ -450,8 +456,8 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
     .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
     .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
-    .modbrowse.modmenu entryconfigure "CVS" -state disabled
-    .modbrowse.modmenu entryconfigure "SVN" -state normal
+    .modbrowse.menubar entryconfigure "CVS" -state disabled
+    .modbrowse.menubar entryconfigure "SVN" -state normal
   } else {
     .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
       -command { browse_files $modbrowse_module }
@@ -474,8 +480,8 @@ proc modbrowse_run { {CVSorSVN {}} } {
     .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
     .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
     .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
-    .modbrowse.modmenu entryconfigure "CVS" -state normal
-    .modbrowse.modmenu entryconfigure "SVN" -state disabled
+    .modbrowse.menubar entryconfigure "CVS" -state normal
+    .modbrowse.menubar entryconfigure "SVN" -state disabled
   }
   if {$insvn || $incvs || $inrcs} {
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
