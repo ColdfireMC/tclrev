@@ -1472,8 +1472,15 @@ gen_log:log D " $pattern MATCHED $text"
       }
       toplevel $logcanvas
       wm title $logcanvas "$sys Log $filename"
-      $logcanvas configure -menu $logcanvas.menubar
       menu $logcanvas.menubar
+
+      if {[tk windowingsystem] == "aqua"} {
+      # There's an extra menu in the first postion on apple, whether you like it or not.
+      # So you have to configure it.
+        $logcanvas.menubar add cascade -label "TkCVS" -menu [menu $logcanvas.menubar.apple]
+      }
+      # Have to do this after the .apple menu
+      $logcanvas configure -menu $logcanvas.menubar
   
       $logcanvas.menubar add cascade -label "File"\
          -menu [menu $logcanvas.menubar.file] -underline 0
