@@ -3,27 +3,6 @@ proc svn_version {} {
 
   gen_log:log T "ENTER"
 
-  # We don't need the version.  We just need to know if mergeinfo is
-  # going to work in this server/client combination.  But let's not forget
-  # how to get the version.
-
-  #set cvsglb(svn_version) ""
-  #set commandline "svn --version"
-  #gen_log:log C "$commandline"
-  #set ret [catch {eval "exec $commandline"} output]
-  #if {$ret} {
-  #  cvsfail $output
-  #  return
-  #}
-  #foreach infoline [split $output "\n"] {
-  #  if {[string match "svn,*" $infoline]} {
-  #    set lr [split $infoline]
-  #    set version [lindex $lr 2]
-  #    gen_log:log D "version $version"
-  #  }
-  #}
-  #set cvsglb(svn_version) $version
-
   set commandline "svn log -g -l 1"
   gen_log:log C $commandline"
   set ret [catch {eval "exec $commandline"} output]
@@ -701,10 +680,8 @@ proc svn_jit_listdir { tf into } {
 
   gen_log:log T "ENTER ($tf $into)"
   set cvscfg(svnroot) $cvsglb(root)
-  #puts "\nEntering svn_jit_listdir ($into)"
   set dir [string trimleft $into / ]
   set command "svn list -v \"$cvscfg(svnroot)/$dir\""
-  #puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [split [$cmd(svnlist)\::output] "\n"]
@@ -743,7 +720,6 @@ proc svn_jit_listdir { tf into } {
   gen_log:log D "ModTree:open $tf /$dir"
   ModTree:open $tf /$dir
 
-  #puts "\nLeaving svn_jit_listdir"
   busy_done $tf
   gen_log:log T "LEAVE"
 }
@@ -757,7 +733,6 @@ proc svn_jit_dircmd { tf dir } {
   # Here we are just figuring out if the top level directory is empty or not.
   # We don't have to collect any other information, so no -v flag
   set command "svn list \"$cvscfg(svnroot)/$dir\""
-  #puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
@@ -814,7 +789,6 @@ proc parse_svnmodules {tf svnroot} {
 
   set cvscfg(svnroot) $svnroot
   set command "svn list -v $svnroot"
-  #puts "$command"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
@@ -1086,7 +1060,8 @@ proc svn_tag {tagname b_or_t update args} {
 
 proc svn_rcopy {from_path b_or_t newtag} {
 #
-# makes a tag or branch.  Called from the module browser
+# makes a tag or branch.  Called from the workdir, module or branch
+# browser
 #
   global cvscfg
   global cvsglb
@@ -1142,8 +1117,6 @@ proc svn_rcopy {from_path b_or_t newtag} {
       $v\::wait
     }
   }
-  # Update with what we've done
-  modbrowse_run svn
   gen_log:log T "LEAVE"
 }
 
@@ -1590,8 +1563,7 @@ namespace eval ::svn_branchlog {
             set highest_revision [lrange $infoline 1 end]
             gen_log:log D "$highest_revision"
           }
-        }
-
+        } 
         # The trunk
         set branchrevs(trunk) {}
         # There's nothing especially privileged about the trunk except that one
@@ -1599,12 +1571,19 @@ namespace eval ::svn_branchlog {
         # or maybe it isn't on the trunk anymore but it once was.  We'll have
         # to use a range from r1 that case, to find it
         set range "${highest_revision}:1"
-        set command "svn log -r $range $path"
+        set command "svn log "
+        if {$cvsglb(svn_mergeinfo_works)} {
+          # The -g option causes revs that aren't on a branch but are merged
+          # with it to appear in the list, which is bad
+          append command "-g "
+        }
+        append command "-r $range $path"
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
         set trunk_lines [split $log_output "\n"]
         set rr [parse_svnlog $trunk_lines trunk]
+
         # See if the current revision is on the trunk
         set curr 0
         set brevs $branchrevs(trunk)
@@ -1656,7 +1635,11 @@ namespace eval ::svn_branchlog {
             set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
           }
           # Do stop-on-copy to find the base of the branch
-          set command "svn log --stop-on-copy $path"
+          set command "svn log "
+          if {$cvsglb(svn_mergeinfo_works)} {
+            append command "-g "
+          }
+          append command "--stop-on-copy $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
           $cmd_log\::destroy
@@ -1804,84 +1787,6 @@ namespace eval ::svn_branchlog {
           }
         }
 
-        # This is better than it used to be but there are still more propgets than there
-        # could be, I think.  We could match all the properties from one query instead of
-        # just the one we're looking for
-        # FIXME is that what svn mergeinfo is for? given two paths, it prints a funky ascii
-        # branch diagram.
-        if {$cvsglb(svn_mergeinfo_works) && $show_merges} {
-          gen_log:log D "Finding all mergeprops"
-          set bdirs {}
-          lappend bdirs $cvscfg(svn_trunkdir)
-          foreach b $branches {
-            set b [string trimright $b "/"]
-            lappend bdirs $cvscfg(svn_branchdir)/$b
-          }
-          gen_log:log D $bdirs
-          set mergeprops {}
-          foreach b $bdirs {
-            gen_log:log D "$b"
-            set cmd "svn propget svn:mergeinfo -r HEAD $cvscfg(svnroot)/$b/$relpath/$safe_filename"
-            set cmd_prop [exec::new $cmd {} 0 {} 1]
-            set propget_out [string trim [$cmd_prop\::output] "\n"]
-            $cmd_prop\::destroy
-            foreach mp $propget_out {
-              if {[lsearch -exact $mergeprops $mp] < 0} {
-                lappend mergeprops $mp
-              }
-            }
-          }
-          gen_log:log D "All merge properties: $mergeprops"
-          #puts "All merge properties: $mergeprops\n"
-          #puts "$bdirs"
-          # Figure out where each property first appeared
-          foreach mp $mergeprops {
-            gen_log:log D "----------------"
-            #puts "looking for $mp"
-            gen_log:log D "looking for $mp"
-            set found($mp) 0
-            foreach b $bdirs {
-            #puts "looking for $mp in $b"
-              set bt [file tail $b]
-              # We don't need to look for merges from BranchB in BranchB do we?
-              #puts "Searching /$b for $mp"
-              if {[string match "/$b*" $mp]} {
-                #puts " don't need to look in $b for $mp"
-                continue
-              }
-              foreach br [lsort -dictionary $branchrevs($bt)] {
-                regsub {^r} $br {} br
-                if {$br eq "current" || $br == 1} continue
-                set cmd "svn propget svn:mergeinfo -r $br $cvscfg(svnroot)/$b/$relpath/$safe_filename"
-                set cmd_prop [exec::new $cmd {} 0 {} 1]
-                set propget_out [string trim [$cmd_prop\::output] "\n"]
-                $cmd_prop\::destroy
-                if {$propget_out != ""} {
-                  #puts " $propget_out found in $br"
-                  foreach mr $propget_out {
-                    if {$mr eq $mp} {
-                       gen_log:log D "  $mp found on rev $br of $b"
-                       #puts " == $mp found"
-                       set found($mp) 1
-                       set spl [split $mp ":"]
-                       set fromrevs [lindex $spl 1]
-                       gen_log:log D "  to r$br  fromrevs $fromrevs"
-                       regsub {^.*-} $fromrevs {} lastfromrev
-                       # I don't understand something like /trunk/File1:3-10 when those revs aren't
-                       # on the trunk
-                       if {[lsearch -exact $branchrevs($bt) "r$lastfromrev"] > -1} continue
-                       set revmergefrom(r$br) "r$lastfromrev"
-                       gen_log:log D "  revmergefrom(r$br) $revmergefrom(r$br)"
-                    }
-                  }
-                }
-                if {$found($mp)} break
-              }
-              if {$found($mp)} break
-            }
-          }
-        }
-
         # sort the list in rev number order
         set brlist [lsort -dictionary $branchlist]
         gen_log:log D "init branches $brlist"
@@ -1970,6 +1875,7 @@ namespace eval ::svn_branchlog {
         variable revtime
         variable revcomment
         variable branchrevs
+        variable revmergefrom
 
         gen_log:log T "ENTER (<...> $r)"
         set revnum ""
@@ -1986,7 +1892,7 @@ namespace eval ::svn_branchlog {
             set line [lindex $lines $i]
             set splitline [split $line "|"]
             set revnum [string trim [lindex $splitline 0]]
-            lappend branchrevs($r) $revnum
+            #lappend branchrevs($r) $revnum
             set revwho($revnum) [string trim [lindex $splitline 1]]
             set date_and_time [string trim [lindex $splitline 2]]
             set revdate($revnum) [lindex $date_and_time 0]
@@ -1998,7 +1904,17 @@ namespace eval ::svn_branchlog {
             gen_log:log D "revtime($revnum) $revtime($revnum)"
             gen_log:log D "notelen $notelen"
 
-            incr i 2
+            # See if there's merge info
+            incr i 1
+            set line [lindex $lines $i]
+            if { [string match "Merged via:*" $line] } {
+              set splitline [split $line " "]
+              set mergedvia [string trim [lindex $splitline end]]
+              lappend revmergefrom($mergedvia) $revnum
+            } else {
+              lappend branchrevs($r) $revnum
+            }
+            incr i 1
             set revcomment($revnum) ""
             set c 0
             while {$c < $notelen} {
@@ -2083,6 +1999,8 @@ namespace eval ::svn_branchlog {
         }
         gen_log:log D ""
            foreach a [lsort -dictionary [array names revmergefrom]] {
+           # Only take the highest rev of the messsy list that you might have here
+           set revmergefrom($a) [lindex [lsort -dictionary $revmergefrom($a)] end]
            gen_log:log D "revmergefrom($a) $revmergefrom($a)"
         }
         # We only needed these to place the you-are-here box.
