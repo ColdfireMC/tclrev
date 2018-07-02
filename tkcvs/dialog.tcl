@@ -1446,6 +1446,9 @@ proc assemble_mergetags {from} {
 proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
   global cvscfg
 
+  if {[winfo exists .reminder]} {
+    destroy .reminder
+  }
   toplevel .reminder
   wm title .reminder "Tag and Commit"
   frame .reminder.top

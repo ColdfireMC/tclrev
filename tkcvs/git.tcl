@@ -8,7 +8,7 @@ proc git_workdir_status {} {
   set cmd(git_branch) [exec::new "git branch"]
   set branch_lines [split [$cmd(git_branch)\::output] "\n"]
   foreach line $branch_lines {
-    if [string match "\* *" $line] {
+    if [string match {\* *} $line] {
       set current_tagname [lindex $line 1]
       gen_log:log D "current_tagname=$current_tagname"
     }
@@ -122,6 +122,9 @@ proc git_log {args} {
     }
     summary {
       append commandline " --pretty=oneline"
+    }
+    verbose {
+      append commandline " --graph --all"
     }
   }
   append commandline " -- $filelist"
