@@ -16,7 +16,22 @@ proc cleanup_old {root} {
   puts "==============================="
 }
 
-proc repository {Root topdir} {
+proc clone {Root Clone} {
+  puts "==============================="
+  puts "CLONING"
+  #set exec_cmd "git clone --bare $Root $Clone"
+  set exec_cmd "git clone $Root $Clone"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  # For some reason catch returns 1 even though it succeeded
+  puts $out
+  if {! [file exists $Clone/.git] && ! [file exists $Clone/config]} {
+    puts "COULD NOT CLONE REPOSITORY $Root to $Clone"
+    exit 1
+  }
+}
+
+proc repository {Root} {
   global WD
 
   puts "==============================="
@@ -24,18 +39,18 @@ proc repository {Root topdir} {
 
   # Create the repository
   #file mkdir $Root
-  set exec_cmd "git init --separate-git-dir $Root git_test_master"
+  set exec_cmd "git init $Root"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
   if {$ret} {
-    puts $out
     puts "COULD NOT CREATE REPOSITORY $Root"
     exit 1
   }
   puts "CREATED $Root"
 
   # Git needs to know our email or else it won't commit
-  cd $topdir
+  cd $Root
   set exec_cmd "whoami"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} myname]
@@ -64,15 +79,15 @@ proc repository {Root topdir} {
   puts "==============================="
   puts "IMPORTING FILETREE"
   # Import it
-  set wd [pwd]
-  foreach dir {. Dir1 "Dir 2"} {
-    cd $dir
+  #set wd [pwd]
+  #foreach dir {. Dir1 "Dir 2"} {
+    #cd $dir
     set exec_cmd "git add --verbose ."
     puts "$exec_cmd"
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
-    cd $wd
-  }
+    #cd $wd
+  #}
   # See what we did
   set exec_cmd "git status"
   puts "$exec_cmd"
@@ -82,32 +97,31 @@ proc repository {Root topdir} {
   cd $WD
 }
 
-proc checkout_branch {proj tag} {
-  global Root
-  puts "==============================="
-  puts "CHECKING OUT $tag"
-  # Check out 
-  #if {$tag eq "master"} {
-    set exec_cmd "git clone -v $Root git_test_$tag"
-  #} else {
-    #set exec_cmd "git clone $Root co -d git_test_$tag $proj"
-  #}
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
-  puts "CHECKOUT FINISHED"
-}
+proc newbranch {oldtag newtag} {
+  global WD
 
-proc newbranch {proj oldtag newtag} {
-  set exec_cmd "cvs -d $Root rtag -r $oldtag -b $newtag $proj"
+  set exec_cmd "git clone -v $WD/$Root git_test_$newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
+
+  cd git_test_$newtag
+  set exec_cmd "git branch $newtag"
+  cd $WD
+
+  commit "commit for branchA"
 
   puts "CHECKING OUT BRANCH"
-  set exec_cmd "cvs -d $Root co -r $newtag -d ${proj}_$newtag git_test"
+  cd git_test_$newtag
+  set exec_cmd "git checkout $newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  if {$ret} {
+    exit 1
+  }
+  puts "CHECKOUT FINISHED"
+  cd $WD
 }
 
 proc writefile {filename wn} {
@@ -120,10 +134,6 @@ proc writefile {filename wn} {
   set fp [open "$filename" a]
   puts $fp $word
   close $fp
-  #set exec_cmd "git add $filename"
-  #puts "$exec_cmd"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #puts $out
 }
 
 proc addfile {filename branch} {
@@ -149,6 +159,20 @@ proc delfile {filename branch} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
+}
+
+proc push {branch} {
+  #global WD
+
+  #cd git_test_$branch
+  set exec_cmd "git push --set-upstream origin master"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  if {$ret} {
+    puts "PUSH FAILED"
+    exit 1
+  }
 }
 
 proc commit {comment} {
@@ -235,7 +259,7 @@ proc modfiles {} {
 }
 
 ##############################################
-# Branching isn't implemented yet
+# Branching isn't working yet
 set branching_desired 0
 
 for {set i 0} {$i < [llength $argv]} {incr i} {
@@ -248,47 +272,54 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
   }
 }
 
-if [file isdirectory .git] {
+if [file exists .git] {
   puts "Please don't do that here.  There's already a .git directory."
   exit 1
 }
 
 set WD [pwd]
 set Root [file join $WD "GIT_REPOSITORY"]
+set Clone "git_test_master"
 
 cleanup_old $Root
 
-mkfiles "git_test_master"
-repository $Root "git_test_master"
+mkfiles $Root
+repository $Root
 
 # So far so good
-cd git_test_master
-commit "Commit the staged tree"
+cd $Root
+commit "Commit the imported files"
 cd $WD
 
+# Clone it
+clone $Root $Clone
+
+# Make some changes
 puts "==============================="
 puts "First revision on trunk"
-cd git_test_master
+cd $Clone
 modfiles
 writefile Ftrunk.txt 2
-addfile Ftrunk.txt trunk
+addfile Ftrunk.txt master
 commit "First revision on trunk"
 cd $WD
 
-if {$branching_desired} {
+exit
+
 puts "==============================="
 puts "MAKING BRANCH A"
-newbranch git_test HEAD branchA
+newbranch clone_master branchA
 cd $WD/git_test_branchA
 writefile FbranchA.txt 2
 addfile FbranchA.txt branchA
 commit "Add file FbranchA.txt on branchA"
 cd $WD
-}
+
+exit
 
 puts "==============================="
 puts "Second revision on trunk"
-cd $WD/git_test_master
+cd $WD/$Clone
 modfiles
 stage .
 cd $WD
@@ -305,7 +336,7 @@ cd $WD
 puts "==============================="
 # Make another modification on each
 puts "Third revision on trunk"
-cd $WD/git_test_master
+cd $WD/$Clone
 modfiles
 commit "Third revision on trunk"
 cd $WD
@@ -345,7 +376,7 @@ cd $WD
 # Leave the trunk with uncommitted changes
 puts "==============================="
 puts "Uncommitted changes on trunk"
-cd $WD/git_test_master
+cd $WD/$Clone
 # Local only
 writefile FileLocal.txt 1
 # Newly added
@@ -358,5 +389,4 @@ writefile File2.txt 2
 # Conflict
 #conflict Ftrunk.txt
 cd $WD
-
 
