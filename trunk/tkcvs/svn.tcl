@@ -1027,6 +1027,8 @@ proc svn_tag {tagname b_or_t update args} {
   set comment "${b_or_t}_copy_by_TkSVN"
   set v [viewer::new "SVN Copy $tagname"]
   set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
+  # FIXME: this assumes top of current branch, even if you have an older rev checked out
+  # svn status -u [--xml]
   if { $filelist == {} } {
     set command "svn copy -m\"$comment\" $cvscfg(url) $to_url"
     $v\::log "$command"
@@ -1241,7 +1243,7 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   $v\::do "svn commit -m \"Merge from $from\" $filelist" 1
   $v\::wait
 
-  # Tag if desired (no means not a branch
+  # Tag if desired (no means not a branch)
   if {$cvscfg(auto_tag) && $fromtag != ""} {
     if {$frombranch == "trunk"} {
       set from_path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$cvsglb(relpath)"
@@ -1249,6 +1251,8 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
       set from_path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$frombranch/$cvsglb(relpath)"
     }
     # tag the current (mergedto) branch
+    # FIXME: this assumes top of current branch, even if you have an older rev checked out
+    # svn status -u [--xml]
     svn_tag $fromtag tags false $args ;# opens its own viewer
     # Tag the mergedfrom branch
     set filelist [join $args]
