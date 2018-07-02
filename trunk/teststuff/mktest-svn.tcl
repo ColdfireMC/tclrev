@@ -69,9 +69,9 @@ proc newbranch {Root oldtag newtag} {
   global taghead
 
   if {$oldtag eq $taghead(trunk)} {
-    set exec_cmd "svn copy file:///$Root/$oldtag file:///$Root/$taghead(branch)/$newtag  -m \"Branch $newtag\""
+    set exec_cmd "svn copy file:///$Root/$oldtag file:///$Root/$taghead(branch)/$newtag -m \"Branch $newtag\""
   } else {
-    set exec_cmd "svn copy file:///$Root/$taghead(branch)/$oldtag file:///$Root/$taghead(branch)/$newtag  -m \"Branch $newtag\""
+    set exec_cmd "svn copy file:///$Root/$taghead(branch)/$oldtag file:///$Root/$taghead(branch)/$newtag -m \"Branch $newtag\""
   }
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -80,6 +80,22 @@ proc newbranch {Root oldtag newtag} {
   set exec_cmd "svn co file:///$Root/$taghead(branch)/$newtag svn_test_$newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
+}
+
+proc merge {fromtag totag} {
+  global WD
+
+  cd svn_test_$totag
+  set exec_cmd "svn update"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # This puts mergeinfo only into .
+  # --- Recording mergeinfo for merge between repository URLs into '.'
+  set exec_cmd "svn merge --reintegrate ^/branches/$fromtag"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  commit "Merge branchA to trunk"
+  cd $WD
 }
 
 proc writefile {filename wn} {
@@ -173,21 +189,26 @@ proc modfiles {} {
   file delete -force $tmpfile
 }
 
-proc conflict {filename} {
-  # Create a conflict
-
+proc getrev {filename} {
   # Find out current revision
+
   set exec_cmd "svn log -q $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   foreach logline [split $out "\n"] {
     if {[string match "r*" $logline]} {
-      set previous [lindex $logline 0]
+      set latest [lindex $logline 0]
       break
     }
   }
+  return $latest
+}
 
+proc conflict {filename} {
+  # Create a conflict
+
+  set latest [getrev $filename]
   # Save a copy
   file copy $filename Ftmp.txt
   # Make a change
@@ -196,8 +217,8 @@ proc conflict {filename} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  # Check out previous revision
-  set exec_cmd "svn update -r $previous $filename"
+  # Check out latest revision
+  set exec_cmd "svn update -r $latest $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -242,30 +263,46 @@ mkfiles "svn_test"
 repository $SVNROOT "svn_test"
 checkout_branch "$SVNROOT" "$taghead(trunk)"
 
-
 puts "==============================="
 puts "First revision on $taghead(trunk)"
 cd svn_test_$taghead(trunk)
 modfiles
 writefile Ftrunk.txt 2
 addfile Ftrunk.txt $taghead(trunk)
-# When commit, get "svn: '/home/dorothyr/tksvn/teststuff' has no ancestry information"
-# This is because tkstuff itself is in a (different) .svn root.  It doesn't happen if
-# you put the repository outside this tree.
 commit "First revision on $taghead(trunk)"
 cd $WD
 
 if {$branching_desired} {
-puts "==============================="
-puts "MAKING BRANCH A"
-newbranch $SVNROOT $taghead(trunk) branchA
-cd $WD/svn_test_branchA
-writefile FbranchA.txt 2
-addfile FbranchA.txt branchA
-commit "Add file FbranchA.txt on branchA"
-cd $WD
+  puts "==============================="
+  puts "MAKING BRANCH A"
+  newbranch $SVNROOT $taghead(trunk) branchA
+  cd $WD/svn_test_branchA
+  writefile FbranchA.txt 2
+  addfile FbranchA.txt branchA
+  commit "Add file FbranchA.txt on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "First revision on Branch A"
+  cd $WD/svn_test_branchA
+  modfiles
+  commit "First revision on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "Second revision on Branch A"
+  cd $WD/svn_test_branchA
+  modfiles
+  commit "Second revision on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "Merging BranchA to trunk"
+  merge branchA trunk
+  cd $WD
 }
 
+# Make more modifications on trunk
 puts "==============================="
 puts "Second revision on $taghead(trunk)"
 cd $WD/svn_test_trunk
@@ -273,17 +310,7 @@ modfiles
 commit "Second revision on $taghead(trunk)"
 cd $WD
 
-if {$branching_desired} {
 puts "==============================="
-puts "First revision on Branch A"
-cd $WD/svn_test_branchA
-modfiles
-commit "First revision on branchA"
-cd $WD
-}
-
-puts "==============================="
-# Make another modification on each
 puts "Third revision on $taghead(trunk)"
 cd $WD/svn_test_trunk
 modfiles
@@ -291,34 +318,27 @@ commit "Third revision on $taghead(trunk)"
 cd $WD
 
 if {$branching_desired} {
-puts "==============================="
-puts "Second revision on Branch A"
-cd $WD/svn_test_branchA
-modfiles
-commit "Second revision on branchA"
-cd $WD
+  # Branch off of the branch
+  puts "==============================="
+  puts "MAKING BRANCH AA"
+  newbranch $SVNROOT branchA branchAA
+  cd $WD/svn_test_branchAA
+  modfiles
+  writefile FbranchAA.txt 2
+  addfile FbranchAA.txt branchAA
+  delfile Ftrunk.txt branchAA
+  commit "Changes on Branch AA"
+  cd $WD
 
-# Branch off of the branch
-puts "==============================="
-puts "MAKING BRANCH AA"
-newbranch $SVNROOT branchA branchAA
-cd $WD/svn_test_branchAA
-modfiles
-writefile FbranchAA.txt 2
-addfile FbranchAA.txt branchAA
-delfile Ftrunk.txt branchAA
-commit "Changes on Branch AA"
-cd $WD
-
-# Branch B
-puts "==============================="
-puts "MAKING BRANCH B"
-newbranch $SVNROOT $taghead(trunk) branchB
-cd $WD/svn_test_branchB
-modfiles
-writefile FbranchB.txt 1
-addfile FbranchB.txt branchB
-commit "Add file FB on BranchB"
+  # Branch B
+  puts "==============================="
+  puts "MAKING BRANCH B"
+  newbranch $SVNROOT $taghead(trunk) branchB
+  cd $WD/svn_test_branchB
+  modfiles
+  writefile FbranchB.txt 1
+  addfile FbranchB.txt branchB
+  commit "Add file FB on BranchB"
 }
 
 # Leave the trunk with uncommitted changes
