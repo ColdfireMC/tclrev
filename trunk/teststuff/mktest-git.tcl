@@ -19,7 +19,6 @@ proc cleanup_old {root} {
 proc clone {Root Clone} {
   puts "==============================="
   puts "CLONING"
-  #set exec_cmd "git clone --bare $Root $Clone"
   set exec_cmd "git clone $Root $Clone"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -32,14 +31,12 @@ proc clone {Root Clone} {
 }
 
 proc repository {Root} {
-  global WD
-
   puts "==============================="
   puts "MAKING REPOSITORY $Root"
 
   # Create the repository
   #file mkdir $Root
-  set exec_cmd "git init $Root"
+  set exec_cmd "git init --bare $Root"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -48,9 +45,14 @@ proc repository {Root} {
     exit 1
   }
   puts "CREATED $Root"
+}
 
+proc populate {clone} {
+  global WD
+
+  mkfiles $clone
   # Git needs to know our email or else it won't commit
-  cd $Root
+  cd $clone
   set exec_cmd "whoami"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} myname]
@@ -78,16 +80,10 @@ proc repository {Root} {
   }
   puts "==============================="
   puts "IMPORTING FILETREE"
-  # Import it
-  #set wd [pwd]
-  #foreach dir {. Dir1 "Dir 2"} {
-    #cd $dir
-    set exec_cmd "git add --verbose ."
-    puts "$exec_cmd"
-    set ret [catch {eval "exec $exec_cmd"} out]
-    puts $out
-    #cd $wd
-  #}
+  set exec_cmd "git add --verbose ."
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
   # See what we did
   set exec_cmd "git status"
   puts "$exec_cmd"
@@ -100,27 +96,21 @@ proc repository {Root} {
 proc newbranch {oldtag newtag} {
   global WD
 
-  set exec_cmd "git clone -v $WD/$Root git_test_$newtag"
+  puts "Creating branch $newtag"
+  set exec_cmd "git clone git_test_$oldtag git_test_$newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-
   cd git_test_$newtag
   set exec_cmd "git branch $newtag"
-  cd $WD
-
-  commit "commit for branchA"
-
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
   puts "CHECKING OUT BRANCH"
-  cd git_test_$newtag
   set exec_cmd "git checkout $newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  if {$ret} {
-    exit 1
-  }
-  puts "CHECKOUT FINISHED"
   cd $WD
 }
 
@@ -162,17 +152,18 @@ proc delfile {filename branch} {
 }
 
 proc push {branch} {
-  #global WD
-
-  #cd git_test_$branch
-  set exec_cmd "git push --set-upstream origin master"
+  puts "Pushing to origin"
+  set exec_cmd "git push --set-upstream origin $branch"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  if {$ret} {
-    puts "PUSH FAILED"
-    exit 1
-  }
+}
+
+proc fetch {} {
+  puts "Fetching from origin"
+  set exec_cmd "git fetch"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
 }
 
 proc commit {comment} {
@@ -259,8 +250,7 @@ proc modfiles {} {
 }
 
 ##############################################
-# Branching isn't working yet
-set branching_desired 0
+set branching_desired 1
 
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
@@ -278,105 +268,112 @@ if [file exists .git] {
 }
 
 set WD [pwd]
-set Root [file join $WD "GIT_REPOSITORY"]
-set Clone "git_test_master"
+set Root [file join $WD "GIT_REPOSITORY.git"]
+set Master "git_test_master"
 
 cleanup_old $Root
 
-mkfiles $Root
 repository $Root
-
-# So far so good
-cd $Root
+clone $Root $Master
+populate $Master
+cd $Master
 commit "Commit the imported files"
+push $Root
 cd $WD
+newbranch master branchA
 
-# Clone it
-clone $Root $Clone
+cd git_test_branchA
+push branchA
+cd $WD
 
 # Make some changes
 puts "==============================="
 puts "First revision on trunk"
-cd $Clone
+cd $Master
 modfiles
 writefile Ftrunk.txt 2
 addfile Ftrunk.txt master
+stage .
 commit "First revision on trunk"
 cd $WD
 
-exit
-
-puts "==============================="
-puts "MAKING BRANCH A"
-newbranch clone_master branchA
-cd $WD/git_test_branchA
-writefile FbranchA.txt 2
-addfile FbranchA.txt branchA
-commit "Add file FbranchA.txt on branchA"
-cd $WD
-
-exit
-
-puts "==============================="
-puts "Second revision on trunk"
-cd $WD/$Clone
-modfiles
-stage .
-cd $WD
-
 if {$branching_desired} {
-puts "==============================="
-puts "First revision on Branch A"
-cd $WD/git_test_branchA
-modfiles
-commit "First revision on branchA"
-cd $WD
+  puts "==============================="
+  puts "MAKING BRANCH A"
+  newbranch master branchA
+  cd $WD/git_test_branchA
+  writefile FbranchA.txt 2
+  addfile FbranchA.txt branchA
+  stage .
+  commit "Add file FbranchA.txt on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "First revision on Branch A"
+  cd $WD/git_test_branchA
+  modfiles
+  stage .
+  commit "First revision on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "Second revision on Branch A"
+  cd $WD/git_test_branchA
+  modfiles
+  stage .
+  commit "Second revision on branchA"
+  push branchA
+  fetch
+  cd $WD
 }
 
+# Make more modifications on trunk
 puts "==============================="
-# Make another modification on each
+puts "Second revision on trunk"
+cd $WD/$Master
+modfiles
+stage .
+commit "Second revision on trunk"
+cd $WD
+
+puts "==============================="
 puts "Third revision on trunk"
-cd $WD/$Clone
+cd $WD/$Master
 modfiles
 commit "Third revision on trunk"
+push master
+fetch
 cd $WD
 
-if {$branching_desired} {
-puts "==============================="
-puts "Second revision on Branch A"
-cd $WD/git_test_branchA
-modfiles
-commit "Second revision on branchA"
-cd $WD
-
+if {0} {
 # Branch off of the branch
-puts "==============================="
-puts "MAKING BRANCH AA"
-newbranch git_test branchA branchAA
-cd $WD/git_test_branchAA
-modfiles
-writefile FbranchAA.txt 2
-addfile FbranchAA.txt branchAA
-delfile Ftrunk.txt branchAA
-commit "Changes on Branch AA"
-cd $WD
+  puts "==============================="
+  puts "MAKING BRANCH AA"
+  newbranch git_test branchA branchAA
+  cd $WD/git_test_branchAA
+  modfiles
+  writefile FbranchAA.txt 2
+  addfile FbranchAA.txt branchAA
+  delfile Ftrunk.txt branchAA
+  commit "Changes on Branch AA"
+  cd $WD
 
-# Branch B
-puts "==============================="
-puts "MAKING BRANCH B"
-newbranch git_test HEAD branchB
-cd $WD/git_test_branchB
-modfiles
-writefile FbranchB.txt 1
-addfile FbranchB.txt branchB
-commit "Add file FB on BranchB"
-cd $WD
+  # Branch B
+  puts "==============================="
+  puts "MAKING BRANCH B"
+  newbranch git_test HEAD branchB
+  cd $WD/git_test_branchB
+  modfiles
+  writefile FbranchB.txt 1
+  addfile FbranchB.txt branchB
+  commit "Add file FB on BranchB"
+  cd $WD
 }
 
 # Leave the trunk with uncommitted changes
 puts "==============================="
 puts "Uncommitted changes on trunk"
-cd $WD/$Clone
+cd $WD/$Master
 # Local only
 writefile FileLocal.txt 1
 # Newly added
