@@ -4,8 +4,6 @@ exec tclsh "$0" -- ${1+"$@"}
 
 
 proc cleanup_old {root} {
-  global env
-
   if {[ file isdirectory $root ]} {
     puts "Deleting $root"
     file delete -force $root
@@ -80,6 +78,33 @@ proc newbranch {proj oldtag newtag} {
   set ret [catch {eval "exec $exec_cmd"} out]
 }
 
+proc merge {fromtag totag} {
+  global WD
+
+  cd cvs_test_$totag
+  # This will fail if there are conflicts
+  set exec_cmd "cvs update -d -j$fromtag ."
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  commit "Merge branchA to trunk"
+  set date  [clock format [clock seconds] -format "%H-%M-%S"]
+  # First, the "from" file that's not in this branch (needs -r)
+  set exec_cmd "cvs tag -F -r$fromtag mergeto_${totag}_$date ."
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Now, the version that's in the current branch
+  set exec_cmd "cvs tag -F mergefrom_${fromtag}_$date ."
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Clean up the merge files
+  file delete [glob -nocomplain -- .#* */.#*]
+
+  cd $WD
+}
+
 proc writefile {filename wn} {
   set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
   set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
@@ -93,8 +118,6 @@ proc writefile {filename wn} {
 }
 
 proc addfile {filename branch} {
-  global env
-
   puts "Add $filename on $branch"
   set exec_cmd "cvs add $filename"
   puts "$exec_cmd"
@@ -103,8 +126,6 @@ proc addfile {filename branch} {
 }
 
 proc delfile {filename branch} {
-  global env
-
   puts "Delete $filename on $branch"
   file delete $filename
   set exec_cmd "cvs delete $filename"
@@ -168,21 +189,26 @@ proc modfiles {} {
   file delete -force $tmpfile
 }
 
-proc conflict {filename} {
-  # Create a conflict
-
+proc getrev {filename} {
   # Find out current revision
+
   set exec_cmd "cvs log -b $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   foreach logline [split $out "\n"] {
     if {[string match "revision *" $logline]} {
-      set previous [lindex $logline 1]
+      set latest [lindex $logline 1]
       break
     }
   }
+  return $latest
+}
 
+proc conflict {filename} {
+  # Create a conflict
+
+  set latest [getrev $filename]
   # Save a copy
   file copy $filename Ftmp.txt
   # Make a change
@@ -191,8 +217,8 @@ proc conflict {filename} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  # Check out previous revision
-  set exec_cmd "cvs update -r $previous $filename"
+  # Check out latest revision
+  set exec_cmd "cvs update -r $latest $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -221,7 +247,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
 }
 
 if [file isdirectory CVS] {
-  puts "Please don't do that here.  There's already a CVS directory."
+  puts "Please don't do that here. There's already a CVS directory."
   exit 1
 }
 
@@ -245,16 +271,36 @@ commit "First revision on trunk"
 cd $WD
 
 if {$branching_desired} {
-puts "==============================="
-puts "MAKING BRANCH A"
-newbranch cvs_test HEAD branchA
-cd $WD/cvs_test_branchA
-writefile FbranchA.txt 2
-addfile FbranchA.txt branchA
-commit "Add file FbranchA.txt on branchA"
-cd $WD
+  puts "==============================="
+  puts "MAKING BRANCH A"
+  newbranch cvs_test HEAD branchA
+  cd $WD/cvs_test_branchA
+  writefile FbranchA.txt 2
+  addfile FbranchA.txt branchA
+  commit "Add file FbranchA.txt on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "First revision on Branch A"
+  cd $WD/cvs_test_branchA
+  modfiles
+  commit "First revision on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "Second revision on Branch A"
+  cd $WD/cvs_test_branchA
+  modfiles
+  commit "Second revision on branchA"
+  cd $WD
+
+  puts "==============================="
+  puts "Merging BranchA to trunk"
+  merge branchA trunk
+  cd $WD
 }
 
+# Make more modifications on trunk
 puts "==============================="
 puts "Second revision on trunk"
 cd $WD/cvs_test_trunk
@@ -262,17 +308,7 @@ modfiles
 commit "Second revision on trunk"
 cd $WD
 
-if {$branching_desired} {
 puts "==============================="
-puts "First revision on Branch A"
-cd $WD/cvs_test_branchA
-modfiles
-commit "First revision on branchA"
-cd $WD
-}
-
-puts "==============================="
-# Make another modification on each
 puts "Third revision on trunk"
 cd $WD/cvs_test_trunk
 modfiles
@@ -280,35 +316,28 @@ commit "Third revision on trunk"
 cd $WD
 
 if {$branching_desired} {
-puts "==============================="
-puts "Second revision on Branch A"
-cd $WD/cvs_test_branchA
-modfiles
-commit "Second revision on branchA"
-cd $WD
+  # Branch off of the branch
+  puts "==============================="
+  puts "MAKING BRANCH AA"
+  newbranch cvs_test branchA branchAA
+  cd $WD/cvs_test_branchAA
+  modfiles
+  writefile FbranchAA.txt 2
+  addfile FbranchAA.txt branchAA
+  delfile Ftrunk.txt branchAA
+  commit "Changes on Branch AA"
+  cd $WD
 
-# Branch off of the branch
-puts "==============================="
-puts "MAKING BRANCH AA"
-newbranch cvs_test branchA branchAA
-cd $WD/cvs_test_branchAA
-modfiles
-writefile FbranchAA.txt 2
-addfile FbranchAA.txt branchAA
-delfile Ftrunk.txt branchAA
-commit "Changes on Branch AA"
-cd $WD
-
-# Branch B
-puts "==============================="
-puts "MAKING BRANCH B"
-newbranch cvs_test HEAD branchB
-cd $WD/cvs_test_branchB
-modfiles
-writefile FbranchB.txt 1
-addfile FbranchB.txt branchB
-commit "Add file FB on BranchB"
-cd $WD
+  # Branch B
+  puts "==============================="
+  puts "MAKING BRANCH B"
+  newbranch cvs_test HEAD branchB
+  cd $WD/cvs_test_branchB
+  modfiles
+  writefile FbranchB.txt 1
+  addfile FbranchB.txt branchB
+  commit "Add file FB on BranchB"
+  cd $WD
 }
 # Leave the trunk with uncommitted changes
 puts "==============================="
