@@ -274,6 +274,8 @@ namespace eval ::exec {
         set procid [pid $procout]
         # Dont ever do this.  The whole thing depends on procout blocking
         #fconfigure $procout -blocking false -buffering line
+        # Preserve control and unicode characters?
+        #fconfigure $procout -encoding binary
 
         fileevent $procout readable [list [namespace current]::out_handler $viewer $filter]
         flush $procerr
@@ -381,8 +383,8 @@ namespace eval ::viewer {
   }
 }
 
-# Filters output lines from CVS
-# returns the name of the tag to use when printing
+# A filter for output lines from CVS/SVN.
+# Returns the name of the tag to use when printing
 # the line in the text widget
 # This filter doesn't need its exec argument, but filters
 # must have it because some do need it
@@ -391,21 +393,78 @@ proc status_colortags {exec line} {
 
   #gen_log:log T "ENTER ($exec \"$line\")"
   set tag default
-  # Return the type of the line being output
-  set mode [lindex $line 0]
+  # First column: Says if item was added, deleted, or otherwise changed
+  # Both CVS and SVN:
+  #   ' ' no modifications
+  #   'A' Added
+  #   'C' Conflicted
+  #   'M' Modified
+  #   '?' item is not under version control
+  # CVS:
+  #   'P' Patched
+  #   'U' Updated
+  #   'R' Removed
+  # SVN:
+  #   'D' Deleted
+  #   'I' Ignored
+  #   'R' Replaced
+  #   'X' an unversioned directory created by an externals definition
+  #   '!' item is missing (removed by non-svn command) or incomplete
+  #   '~' versioned item obstructed by some item of a different kind
+  set mode [string index $line 0]
   set file [lrange $line 1 end]
     gen_log:log D "$line"
     gen_log:log D "mode \"$mode\" file $file"
     switch -exact -- $mode {
-      "U" { set tag updated }
       "A" { set tag added }
-      "R" { set tag removed }
+      "C" { set tag conflict }
       "D" { set tag removed }
       "M" { set tag modified }
-      "C" { set tag conflict }
-      "P" { set tag patched }
+      "P" { set tag updated }
+      "R" { set tag removed }
+      "U" { set tag updated }
       "!" { set tag warning }
+      "~" { set tag warning }
       "?" { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
+      default { set tag default }
+    }
+  #gen_log:log T "LEAVE: $tag"
+  return [list $tag $line]
+}
+
+# A filter for output lines from GIT status
+# Returns the name of the tag to use when printing
+# the line in the text widget
+proc status_colortags_git {exec line} {
+  global cvscfg
+
+  #gen_log:log T "ENTER ($exec \"$line\")"
+  set tag default
+  # mode is a two-character field where
+  # X is the modification state of the index and
+  # Y is the state of the work tree
+  #    ' ' = unmodified
+  #    M = modified
+  #    A = added
+  #    D = deleted
+  #    R = renamed
+  #    C = copied
+  #    U = updated but unmerged
+
+  set mode1 [string index $line 0]
+  set mode2 [string index $line 1]
+  set file [lrange $line 1 end]
+  set mode "$mode1$mode2"
+    gen_log:log D "$line"
+    gen_log:log D "mode \"$mode\" file $file"
+    switch -glob -- $mode {
+      "M " { set tag updated }
+      " M" { set tag modified }
+      "A*" { set tag added }
+      "D*" { set tag removed }
+      "R*" { set tag renamed }
+      "C*" { set tag copied }
+      "U*" { set tag updated }
       "??" { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
       default { set tag default }
     }
@@ -413,11 +472,11 @@ proc status_colortags {exec line} {
   return [list $tag $line]
 }
 
+# A filter to colorize diff (patch) output
 proc patch_colortags {exec line} {
   global cvscfg
 
   #gen_log:log T "ENTER ($exec \"$line\")"
-
   set tag default
   # Return the type of the line being output
   switch -regexp -- $line {
@@ -429,11 +488,11 @@ proc patch_colortags {exec line} {
     {^Index}         { set tag modified }
     default          { set tag default }
   }
-
   #gen_log:log T "LEAVE: $tag"
   return [list $tag $line]
 }
 
+# A filter to colorize an RCS log
 proc hilight_rcslog {exec line} {
   set tag default
   if {[string match "=============*" $line]} {
@@ -445,6 +504,61 @@ proc hilight_rcslog {exec line} {
   }
 
   return [list $tag $line]
+}
+
+# A filter that detects ANSI color codes and changes them to tags
+# doesn't work for a couple of reasons.
+proc ansi_colortags {exec line} {
+  # ANSI colors
+  set ansi(30m) black
+  set ansi(31m) red
+  set ansi(32m) green
+  set ansi(33m) yellow
+  set ansi(34m) blue
+  set ansi(35m) magenta
+  set ansi(36m) cyan
+  set ansi(37m) white
+  set ansi(m) none
+
+  gen_log:log T "ENTER: $line"
+  set newline ""
+  set tags {}
+  set idx 0
+  while {$idx < [string length $line]} {
+    set char [string index $line $idx]
+    binary scan [encoding convertto ascii $char] c* x
+    # If x=27, that's the escape
+    if {$x == 27} {
+      set char "^"
+      incr idx
+      set seq $idx
+      set nextchar [string index $line $seq]
+      binary scan [encoding convertto ascii $nextchar] c* y
+      # If the next char isn't [, I don't know what this is
+      if {$y != 91} {
+        gen_log:log D "UNKNOWN ESCAPE $y ($nextchar)"
+        continue
+      }
+      set code ""
+      while {($y != 109) && ([expr {$idx - $seq}] < 5)} {
+        set nextchar [string index $line $idx]
+        binary scan [encoding convertto ascii $nextchar] c* y
+        append code [string index $line $idx]
+        incr idx
+      }
+      set code [string range $code 1 end]
+      gen_log:log D "TAG=$ansi($code)"
+      lappend tags $ansi($code)
+    } else {
+      append newline $char
+      incr idx
+    }
+    gen_log:log D "$idx|$x| $char"
+  }
+  # FIXME: this colors the whole line by the first tag, not
+  # really what we want
+  set tag [lindex $tags 0]
+  return [list $tag $newline]
 }
 
 # This is a plain viewer that prints whatever text is sent to it

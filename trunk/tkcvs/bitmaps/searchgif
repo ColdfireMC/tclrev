@@ -1,0 +1,11 @@
+#!/bin/sh
+
+for gif in `ls *.gif`
+do
+  #echo $gif
+  grep -q $gif ../*.tcl
+  if [[ $? != 0 ]]; then
+    echo "$gif is not used"
+  fi
+done
+

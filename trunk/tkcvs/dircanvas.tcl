@@ -321,10 +321,14 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) stat_modml.gif]
   image create photo stat_modol \
     -format gif -file [file join $cvscfg(bitmapdir) stat_modol.gif]
-  image create photo stat_mod_bang \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_mod_bang.gif]
+  image create photo stat_mod_red \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_mod_red.gif]
+  image create photo stat_mod_green \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_mod_green.gif]
   image create photo stat_plus \
     -format gif -file [file join $cvscfg(bitmapdir) stat_plus.gif]
+  image create photo stat_ques \
+    -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
   image create photo stat_minus \
     -format gif -file [file join $cvscfg(bitmapdir) stat_minus.gif]
   image create photo stat_conf \
@@ -874,8 +878,14 @@ proc DirCanvas:build {w} {
           }
         }
       }
-      "Modified, not staged" {
-       set DirList($w:$f:icon) stat_mod_bang
+      "Added, missing" {
+       set DirList($w:$f:icon) stat_ques
+      }
+      "Modified, unstaged" {
+       set DirList($w:$f:icon) stat_mod_red
+      }
+      "Modified, staged" {
+       set DirList($w:$f:icon) stat_mod_green
       }
       "Locally Removed" {
        set DirList($w:$f:icon) stat_minus
