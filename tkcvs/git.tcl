@@ -30,6 +30,7 @@ proc git_workdir_status {} {
   # If they're up-to-date, git status is mute about them
   set cmd(git_status) [exec::new "git status -u --porcelain ."]
   foreach statline [split [$cmd(git_status)\::output] "\n" ] {
+    gen_log:log D "$statline"
     if {[string length $statline] < 1} {
       continue
     }
@@ -110,8 +111,10 @@ proc git_workdir_status {} {
       if {[string length $log_out] > 0} {
         # git log returned something, but git status didn't, so
         # I guess it must be up-to-date
-        set Filelist($f:status) "Up-to-date"
-        gen_log:log D "$Filelist($f:status)"
+        if {! [info exists Filelist($f:status)] || ($Filelist($f:status) eq "<file>")} {
+          set Filelist($f:status) "Up-to-date"
+          gen_log:log D "$Filelist($f:status)"
+        }
       }
       foreach log_line [split $log_out "\n"] {
         if {[string length $log_line] > 0} {
