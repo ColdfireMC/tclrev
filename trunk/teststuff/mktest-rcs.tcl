@@ -278,7 +278,7 @@ modfiles
 commit "Second revision"
 
 puts "==============================="
-puts "Uncommitted changes"
+puts "Making Uncommitted changes"
 #Local only
 writefile FileLocal.txt 1
 # Deleted
