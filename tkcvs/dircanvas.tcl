@@ -878,6 +878,9 @@ proc DirCanvas:build {w} {
           }
         }
       }
+      "Added" {
+       set DirList($w:$f:icon) stat_plus
+      }
       "Added, missing" {
        set DirList($w:$f:icon) stat_ques
       }
