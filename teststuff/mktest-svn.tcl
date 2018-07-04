@@ -343,7 +343,7 @@ if {$branching_desired} {
 
 # Leave the trunk with uncommitted changes
 puts "==============================="
-puts "Uncommitted changes on trunk"
+puts "Making Uncommitted changes on trunk"
 cd $WD/svn_test_trunk
 # Local only
 writefile FileLocal.txt 1

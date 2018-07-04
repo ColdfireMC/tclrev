@@ -13,7 +13,6 @@ proc cleanup_old {root} {
     puts "Deleting $od"
     file delete -force $od
   }
-  puts "==============================="
 }
 
 proc clone {Root Clone} {
@@ -96,18 +95,38 @@ proc populate {clone} {
 proc newbranch {oldtag newtag} {
   global WD
 
-  puts "Creating branch $newtag"
+  puts "==============================="
+  puts "Creating new $newtag"
+  puts "In [pwd]"
+  cd git_test_$oldtag
+  puts "In [pwd]"
+  set exec_cmd "git branch $newtag"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+  }
+  set exec_cmd "git checkout $newtag"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+
+  cd $WD
+  puts "\nIn [pwd]"
+  puts "Cloning $oldtag to a new directory for $newtag"
   set exec_cmd "git clone git_test_$oldtag git_test_$newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  cd git_test_$newtag
-  set exec_cmd "git branch $newtag"
+
+  puts "Restoring git_test_$oldtag to $oldtag"
+  cd git_test_$oldtag
+  puts "In [pwd]"
+  set exec_cmd "git branch --unset-upstream master"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  puts "CHECKING OUT BRANCH"
-  set exec_cmd "git checkout $newtag"
+  set exec_cmd "git checkout $oldtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -151,12 +170,17 @@ proc delfile {filename branch} {
   puts $out
 }
 
-proc push {branch} {
-  puts "Pushing to origin"
-  set exec_cmd "git push --set-upstream origin $branch"
+proc push {origin} {
+  puts "==============================="
+  set exec_cmd "git push $origin"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
+  if {$ret} {
+    if {[string match {fatal*} $out]} {
+      exit 1
+    }
+  }
 }
 
 proc fetch {} {
@@ -273,18 +297,18 @@ set Master "git_test_master"
 
 cleanup_old $Root
 
+# Create the bare "server" repo
 repository $Root
+# Clone it to one we can work in
 clone $Root $Master
+# Import some files
 populate $Master
 cd $Master
 commit "Commit the imported files"
 push $Root
 cd $WD
-newbranch master branchA
-
-cd git_test_branchA
-push branchA
-cd $WD
+# Branch before we do anything on the trunk
+#newbranch master branchA
 
 # Make some changes
 puts "==============================="
@@ -295,6 +319,7 @@ writefile Ftrunk.txt 2
 addfile Ftrunk.txt master
 stage .
 commit "First revision on trunk"
+push $Root
 cd $WD
 
 if {$branching_desired} {
@@ -322,7 +347,7 @@ if {$branching_desired} {
   modfiles
   stage .
   commit "Second revision on branchA"
-  push branchA
+  push $WD/$Master
   fetch
   cd $WD
 }
@@ -331,17 +356,20 @@ if {$branching_desired} {
 puts "==============================="
 puts "Second revision on trunk"
 cd $WD/$Master
+fetch
 modfiles
 stage .
 commit "Second revision on trunk"
+push $Root
 cd $WD
 
 puts "==============================="
 puts "Third revision on trunk"
 cd $WD/$Master
 modfiles
+stage .
 commit "Third revision on trunk"
-push master
+push $Root
 fetch
 cd $WD
 
@@ -372,7 +400,7 @@ if {0} {
 
 # Leave the trunk with uncommitted changes
 puts "==============================="
-puts "Uncommitted changes on trunk"
+puts "Making Uncommitted changes on trunk"
 cd $WD/$Master
 # Local only
 writefile FileLocal.txt 1
