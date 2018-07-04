@@ -882,13 +882,16 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:icon) stat_plus
       }
       "Added, missing" {
-       set DirList($w:$f:icon) stat_ques
+       set DirList($w:$f:icon) stat_ex
       }
       "Modified, unstaged" {
        set DirList($w:$f:icon) stat_mod_red
       }
       "Modified, staged" {
        set DirList($w:$f:icon) stat_mod_green
+      }
+      "Removed" {
+       set DirList($w:$f:icon) stat_minus
       }
       "Locally Removed" {
        set DirList($w:$f:icon) stat_minus
@@ -906,7 +909,7 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:popup) stat_conf_pop
       }
       "Not managed*" {
-       set DirList($w:$f:icon) paper
+       set DirList($w:$f:icon) stat_ques
        set DirList($w:$f:popup) paper_pop
       }
       "RCS Up-to-date" {
