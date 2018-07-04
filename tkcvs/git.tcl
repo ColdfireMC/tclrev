@@ -5,6 +5,7 @@ proc git_workdir_status {} {
   global module_dir
 
   gen_log:log T "ENTER"
+  # See what branch we're on
   set cmd(git_branch) [exec::new "git branch"]
   set branch_lines [split [$cmd(git_branch)\::output] "\n"]
   foreach line $branch_lines {
@@ -14,18 +15,105 @@ proc git_workdir_status {} {
     }
   }
 
-  # Get the status of the files (top level only)
-  foreach f [glob -nocomplain *] {
-    set cmd(git_status) [exec::new "git status -u --porcelain -- \"$f\""]
-    set statline [lindex [split [$cmd(git_status)\::output] "\n"] 0]
+  # What's the top level, and where are we relative to it?
+  set cmd(find_top) [exec::new "git rev-parse --show-toplevel"]
+  set repos_top [lindex [$cmd(find_top)\::output] 0]
+  set wd [pwd]
+  set l [string length $repos_top]
+  set relpath [string range $wd [expr {$l+1}] end]
+  set module_dir $relpath
+  gen_log:log D "Relative path: $relpath"
+  
+
+  set statfiles {}
+  # Get the status of the files that git reports (current level only)
+  # If they're up-to-date, git status is mute about them
+  set cmd(git_status) [exec::new "git status -u --porcelain ."]
+  foreach statline [split [$cmd(git_status)\::output] "\n" ] {
+    if {[string length $statline] < 1} {
+      continue
+    }
+    set status [string range $statline 0 1]
+    set f [lindex $statline 1]
+    if {[regexp {/} $f]} {
+      #set dir [lindex [file split $f] 0]
+      #set Filelist($dir:status) "<directory:GIT>"
+      continue
+    }
+    lappend statfiles "$f"
+    switch -glob -- $status {
+        {M } {
+         set Filelist($f:status) "Modified, staged"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        { M} {
+         set Filelist($f:status) "Modified, unstaged"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {MM} {
+         set Filelist($f:status) "Modified, unstaged"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {A } {
+         set Filelist($f:status) "Added"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {AD} {
+         set Filelist($f:status) "Added, missing"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {D } {
+         set Filelist($f:status) "Removed"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {R*} {
+         set Filelist($f:status) "Renamed"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {C*} {
+         set Filelist($f:status) "Copied"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {U*} {
+         set Filelist($f:status) "Updated"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        {??} {
+         set Filelist($f:status) "Not managed by Git"
+         gen_log:log D "$Filelist($f:status)"
+        }
+        default {
+         set Filelist($f:status) "Up-to-date"
+         gen_log:log D "$Filelist($f:status)"
+       }
+    }
+    # So they're not undefined
+    set Filelist($f:date) ""
+    set Filelist($f:stickytag) ""
+    set Filelist($f:editors) ""
+  }
+
+  set globfiles [glob -nocomplain *]
+  set allfiles [lsort -unique -dictionary [concat $statfiles $globfiles]]
+  foreach f $allfiles {
+    # --porcelain=1 out: XY <filename>, where X is the modification state of the index
+    #   and Y is the state of the work tree.  ' ' = unmodified.
+    # --porcelain=2 out has an extra interger field before the status and 6 extra
+    # fields before the filename.
+    # XY, now the second field, has "." for unmodified.
     if {![file isdirectory $f]} {
-      set status [string range $statline 0 1]
-      set filepath [lindex $statline 1]
       set good_line ""
       # Format: short hash, commit time, committer
-      set command "git log -n 1 --pretty=format:\"%h|%ct|%cn\" -- $f"
+      set command "git log -n 1 --pretty=format:\"%h|%ct|%cn\" -- \"$f\""
       set cmd(git_log) [exec::new "$command"]
-      foreach log_line [split [$cmd(git_log)\::output] "\n"] {
+      set log_out [$cmd(git_log)\::output]
+      if {[string length $log_out] > 0} {
+        # git log returned something, but git status didn't, so
+        # I guess it must be up-to-date
+        set Filelist($f:status) "Up-to-date"
+        gen_log:log D "$Filelist($f:status)"
+      }
+      foreach log_line [split $log_out "\n"] {
         if {[string length $log_line] > 0} {
           set good_line $log_line
         }
@@ -43,52 +131,18 @@ proc git_workdir_status {} {
       gen_log:log D "$Filelist($f:stickytag)"
       gen_log:log D "$Filelist($f:date)"
       gen_log:log D "$Filelist($f:editors)"
-
-      switch -exact -- $status {
-        "M " {
-         set Filelist($f:status) "Locally Modified"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        " M" {
-         set Filelist($f:status) "Modified, not staged"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        "A " {
-         set Filelist($f:status) "Locally Added"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        "D " {
-         set Filelist($f:status) "Locally Removed"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        "R " {
-         set Filelist($f:status) "Renamed"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        "C " {
-         set Filelist($f:status) "Copied"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        "U " {
-         set Filelist($f:status) "Updated"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        "??" {
-         set Filelist($f:status) "Not managed by Git"
-         gen_log:log D "$Filelist($f:status)"
-        }
-        default {
-         set Filelist($f:status) "Up-to-date"
-         gen_log:log D "$Filelist($f:status)"
-       }
-      }
     } else {
-      set Filelist($f:status) "<directory:GIT>"
+      set command "git log -n 1 -- \"$f\""
+      set cmd(dircheck) [exec::new "$command"]
+      set len [$cmd(dircheck)\::output]
+      $cmd(dircheck)\::destroy
+      if {$len > 0} {
+        set Filelist($f:status) "<directory:GIT>"
+      } else {
+        set Filelist($f:status) "<directory>"
+      }
       gen_log:log D "$Filelist($f:status)"
     }
-  }
-  if [info exists filepath] {
-    set module_dir [file dirname $filepath]
   }
 
   gen_log:log T "LEAVE"
@@ -130,7 +184,7 @@ proc git_log {args} {
   append commandline " -- $filelist"
 
   set logcmd [viewer::new "Git log ($cvscfg(ldetail))"]
-  $logcmd\::do "$commandline"
+  $logcmd\::do "$commandline" 1 ansi_colortags
   busy_done .workdir.main
 
   gen_log:log T "LEAVE"
@@ -187,7 +241,7 @@ proc git_status {} {
     append flags " -uno"
   }
   if {$cvscfg(rdetail) == "terse"} {
-    append flags " --porcelain"
+    append flags " --porcelain=2"
   } elseif {$cvscfg(rdetail) == "summary"} {
     append flags " --long"
   } elseif {$cvscfg(rdetail) == "verbose"} {
@@ -197,11 +251,11 @@ proc git_status {} {
   set stat_cmd [viewer::new $title]
   set commandline "git status $flags"
   if {$cvscfg(rdetail) == "terse"} {
-    $stat_cmd\::do "$commandline" 0 status_colortags
+    $stat_cmd\::do "$commandline" 0 ansi_colortags
   } elseif {$cvscfg(rdetail) == "summary"} {
-    $stat_cmd\::do "$commandline"
+    $stat_cmd\::do "$commandline" 1 ansi_colortags
   } elseif {$cvscfg(rdetail) == "verbose"} {
-    $stat_cmd\::do "$commandline" 0 patch_colortags
+    $stat_cmd\::do "$commandline" 0 ansi_colortags
   }
 
   busy_done .workdir.main
@@ -225,7 +279,7 @@ proc git_check {} {
   }
   set command "git status $flags"
   set check_cmd [viewer::new $title]
-  $check_cmd\::do "$command" 0 status_colortags
+  $check_cmd\::do "$command" 0 ansi_colortags
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"
