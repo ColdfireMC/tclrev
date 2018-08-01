@@ -183,9 +183,12 @@ proc push {origin} {
   }
 }
 
-proc fetch {} {
-  puts "Fetching from origin"
-  set exec_cmd "git fetch"
+proc fetch {{origin {}}} {
+  puts "Fetching from $origin"
+  set exec_cmd "git fetch "
+  if {$origin != ""} {
+    append exec_cmd " $origin"
+  }
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
 }
@@ -347,8 +350,9 @@ if {$branching_desired} {
   modfiles
   stage .
   commit "Second revision on branchA"
-  push $WD/$Master
-  fetch
+  # update all branches in Root, so branch diagram in master shows the branch
+  push {--all}
+  fetch $Root
   cd $WD
 }
 
@@ -356,7 +360,7 @@ if {$branching_desired} {
 puts "==============================="
 puts "Second revision on trunk"
 cd $WD/$Master
-fetch
+fetch {--all}
 modfiles
 stage .
 commit "Second revision on trunk"
@@ -369,34 +373,14 @@ cd $WD/$Master
 modfiles
 stage .
 commit "Third revision on trunk"
-push $Root
+push {--all}
 fetch
-cd $WD
-
-if {0} {
-# Branch off of the branch
-  puts "==============================="
-  puts "MAKING BRANCH AA"
-  newbranch git_test branchA branchAA
-  cd $WD/git_test_branchAA
-  modfiles
-  writefile FbranchAA.txt 2
-  addfile FbranchAA.txt branchAA
-  delfile Ftrunk.txt branchAA
-  commit "Changes on Branch AA"
-  cd $WD
-
-  # Branch B
-  puts "==============================="
-  puts "MAKING BRANCH B"
-  newbranch git_test HEAD branchB
-  cd $WD/git_test_branchB
-  modfiles
-  writefile FbranchB.txt 1
-  addfile FbranchB.txt branchB
-  commit "Add file FB on BranchB"
-  cd $WD
+if {$branching_desired} {
+  # update in branch so diagram is complete
+  cd $WD/git_test_branchA
+  fetch {--all}
 }
+cd $WD
 
 # Leave the trunk with uncommitted changes
 puts "==============================="
