@@ -140,6 +140,7 @@ namespace eval ::exec {
           return
         }
 
+        # FIXME: can we do it by word, not line?
         if {$filter != ""} {
           set filtered_line [$filter [namespace current] $line]
           set texttag [lindex $filtered_line 0]
@@ -507,7 +508,6 @@ proc hilight_rcslog {exec line} {
 }
 
 # A filter that detects ANSI color codes and changes them to tags
-# doesn't work for a couple of reasons.
 proc ansi_colortags {exec line} {
   # ANSI colors
   set ansi(30m) black
@@ -519,6 +519,8 @@ proc ansi_colortags {exec line} {
   set ansi(36m) cyan
   set ansi(37m) white
   set ansi(m) none
+  # Bold, which let's not do
+  set ansi(1m) ""
 
   gen_log:log T "ENTER: $line"
   set newline ""
@@ -547,17 +549,17 @@ proc ansi_colortags {exec line} {
         incr idx
       }
       set code [string range $code 1 end]
-      gen_log:log D "TAG=$ansi($code)"
+      #gen_log:log D "TAG=$ansi($code)"
       lappend tags $ansi($code)
     } else {
       append newline $char
       incr idx
     }
-    gen_log:log D "$idx|$x| $char"
+    #gen_log:log D "$idx|$x| $char"
   }
-  # FIXME: this colors the whole line by the first tag, not
-  # really what we want
+  # FIXME: it colors the whole line by the first tag, not really what we want
   set tag [lindex $tags 0]
+  gen_log:log T "LEAVE: $tag $newline"
   return [list $tag $newline]
 }
 

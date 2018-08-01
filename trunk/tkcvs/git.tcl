@@ -172,7 +172,7 @@ proc git_log {args} {
   gen_log:log D "detail $cvscfg(ldetail)"
   gen_log:log D "$filelist"
 
-  set commandline "git log "
+  set commandline "git log --color"
   switch -- $cvscfg(ldetail) {
     latest {
       append commandline " --pretty=oneline --max-count=1"
