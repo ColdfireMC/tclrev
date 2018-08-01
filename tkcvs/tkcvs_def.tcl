@@ -316,15 +316,24 @@ set cvscfg(trace_savelines) 5000
 set cvscfg(aliasfolder) true
 
 # Set colours for tagging cvs output
-set cvscfg(outputColor,patched) blue3
-set cvscfg(outputColor,modified) purple
-set cvscfg(outputColor,conflict) red
-set cvscfg(outputColor,updated) darkgoldenrod
 set cvscfg(outputColor,added)   darkgreen
+set cvscfg(outputColor,conflict) red
+set cvscfg(outputColor,modified) purple
+set cvscfg(outputColor,patched) blue3
 set cvscfg(outputColor,removed) maroon
+set cvscfg(outputColor,stderr) red4
+set cvscfg(outputColor,updated) darkgoldenrod
 set cvscfg(outputColor,warning) orange
 set cvscfg(outputColor,unknown) gray30
-set cvscfg(outputColor,stderr) red4
+set cvscfg(outputColor,black) black
+set cvscfg(outputColor,red) red
+set cvscfg(outputColor,green) darkgreen
+set cvscfg(outputColor,yellow) darkgoldenrod
+set cvscfg(outputColor,blue) blue
+set cvscfg(outputColor,magenta) magenta
+set cvscfg(outputColor,cyan) cyan
+set cvscfg(outputColor,white) gray30
+set cvscfg(outputColor,none) black
 
 # Print setup. Removed in v7.1
 #set cvscfg(papersize) "A4"
