@@ -331,7 +331,7 @@ set cvscfg(outputColor,green) darkgreen
 set cvscfg(outputColor,yellow) darkgoldenrod
 set cvscfg(outputColor,blue) blue
 set cvscfg(outputColor,magenta) magenta
-set cvscfg(outputColor,cyan) cyan
+set cvscfg(outputColor,cyan) turquoise
 set cvscfg(outputColor,white) gray30
 set cvscfg(outputColor,none) black
 
