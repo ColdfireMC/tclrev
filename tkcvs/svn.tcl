@@ -286,8 +286,8 @@ proc svn_remove {args} {
 }
 
 # does a status report on the files in the current directory. Called from
-# "Status" in the Reports menu. Uses the rdetail and recurse settings.
-proc svn_status {args} {
+# "Status" in the Reports menu. Uses the recurse and status_filter settings.
+proc svn_status {detail args} {
   global cvscfg
  
   gen_log:log T "ENTER ($args)"
@@ -295,7 +295,7 @@ proc svn_status {args} {
   busy_start .workdir.main
   set filelist [join $args]
   set flags ""
-  set title "SVN Status ($cvscfg(rdetail))"
+  set title "SVN Status ($detail)"
 
   if {$cvscfg(status_filter)} {
     append flags " -q"
@@ -303,10 +303,13 @@ proc svn_status {args} {
   if {! $cvscfg(recurse)} {
     append flags " --depth=files"
   }
-  if {$cvscfg(rdetail) == "verbose"} {
-    append flags " -v"
-  } elseif {$cvscfg(rdetail) == "summary"} {
-    append flags " -u"
+  switch -- $detail {
+    summary {
+      append flags " -u"
+    }
+    verbose {
+      append flags " -v"
+    }
   }
   set command "svn status $flags $filelist"
   set check_cmd [viewer::new "$title"]
@@ -823,37 +826,56 @@ proc parse_svnmodules {tf svnroot} {
   gen_log:log T "LEAVE"
 }
 
-# called from workdir Reports menu
-proc svn_log {args} {
+# called from workdir Reports menu. Uses recurse setting
+proc svn_log {detail args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($args)"
+  gen_log:log T "ENTER ($detail $args)"
 
-  set svncommand "svn log "
+  busy_start .workdir.main
+  set filelist [join $args]
+  set flags ""
+  if {! $cvscfg(recurse)} {
+    set flags "--depth=files "
+  }
+
+  if {[llength $filelist] == 0} {
+    set filelist {{}}
+  }
+  if {[llength $filelist] > 1} {
+    set title "SVN Log ($detail)"
+  } else {
+    set title "SVN Log $filelist ($detail)"
+  }
+  
+  switch -- $detail {
+     latest {
+       append flags "-r COMMITTED "
+     }
+     summary {
+       append flags "-q "
+     }
+  }
   # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
   # as well as the client, so we can't go by version number.  we
   # just have to see if it works.
   # Do we want to do -g for all detail levels?  Probably not for summary.
   if {$cvsglb(svn_mergeinfo_works)} {
-    if {$cvscfg(ldetail) ne "summary"} {
-      append svncommand "-g "
+    if {$detail ne "summary"} {
+      append flags "-g "
     }
   }
-  set filelist [join $args]
-  foreach file $filelist {
-    set command $svncommand
-    if {$cvscfg(ldetail) == "latest"} {
-      append command "-r COMMITTED "
-    }
-    if {$cvscfg(ldetail) == "summary"} {
-      append command "-q "
-    }
-    append command "\"$file\""
 
-    set logcmd [viewer::new "SVN Log $file ($cvscfg(ldetail))"]
-    $logcmd\::do "$command"
+  set v [viewer::new "$title"]
+  foreach file $filelist {
+    $v\::log "$file\n"
+    set command "svn log $flags \"$file\""
+    $v\::do "$command" 0
+    $v\::wait
   }
+
+  busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 
@@ -893,7 +915,7 @@ proc svn_info {args} {
   set command "svn info "
   append command $urllist
 
-  set logcmd [viewer::new "SVN Info ($cvscfg(ldetail))"]
+  set logcmd [viewer::new "SVN Info"]
   $logcmd\::do "$command"
   gen_log:log T "LEAVE"
 }

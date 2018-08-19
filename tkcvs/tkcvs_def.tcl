@@ -261,19 +261,6 @@ if {$tcl_platform(platform) == "windows"} {
 # browser (including hidden files) by default.
 set cvscfg(allfiles)           false
 
-# set the default log file detail to be reported; one of
-#   "latest"     latest log message on the current branch
-#   "summary"    version number and comment string for all check-ins
-#   "verbose"    all logfile detail possible, including symbolic tags
-set cvscfg(ldetail)            "summary"
-
-# set the default detail for repository and workdir reports; one of
-#   "terse"      report "status" only and only on those files which
-#                are not "up-to-date"
-#   "summary"    report the "status" and include "up-to-date"
-#   "verbose"    provide the report as it would appear unmodified
-set cvscfg(rdetail)            "summary"
-
 # set the default pattern to be used by the filter.  Use any valid
 # pattern that can be used for a pattern for 'ls'. An empty string
 # is equivalent to the entire directory (minus hidden files);

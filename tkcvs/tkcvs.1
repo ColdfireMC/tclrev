@@ -529,9 +529,6 @@ String pairs giving the editor-command and string-match-pattern, for deciding wh
 .B cvscfg(editorargs)
 Command-line arguments to send to the default editing program.
 .TP
-.B cvscfg(ldetail)
-Detail level for status reports (latest, summary, verbose)
-.TP
 .B cvscfg(mergetoformat)
 .TP
 .B cvscfg(mergefromformat)
@@ -539,9 +536,6 @@ Format for mergeto- and mergefrom- tags.  The _BRANCH_ part must be
 left as-is, but you can change the prefix and the date format, for
 example "mergeto_BRANCH_%d%b%y".  The date format must be the same
 for both.  CVS rule: a tag must not contain the characters `$,.:;@'
-.TP
-.B cvscfg(rdetail)
-Detail for repository and workdir reports (terse, summary, verbose)
 .TP
 .B cvscfg(recurse)
 Whether reports are recursive (true or false)

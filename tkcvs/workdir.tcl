@@ -532,8 +532,19 @@ proc workdir_menus {} {
   # These commands will vary according to revision system.  Does it still make
   # sense to keep them in their own menu?
   .workdir.menubar.reports add command -label "Check Directory" -underline 0
-  .workdir.menubar.reports add command -label "Status" -underline 0
-  .workdir.menubar.reports add command -label "Log" -underline 0
+  .workdir.menubar.reports add cascade -label "Status" -underline 0 \
+     -menu .workdir.menubar.reports.status_detail
+  menu .workdir.menubar.reports.status_detail
+  menu .workdir.menubar.reports.log_detail
+  .workdir.menubar.reports.status_detail add command -label "Terse"
+  .workdir.menubar.reports.status_detail add command -label "Summary"
+  .workdir.menubar.reports.status_detail add command -label "Verbose"
+  .workdir.menubar.reports add cascade -label "Log" -underline 0 \
+     -menu .workdir.menubar.reports.log_detail
+  .workdir.menubar.reports.log_detail add command -label "Latest"
+  .workdir.menubar.reports.log_detail add command -label "Summary"
+  .workdir.menubar.reports.log_detail add command -label "Verbose"
+   
   .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
   .workdir.menubar.reports add command -label "Info" -underline 0
   .workdir.menubar.reports add separator
@@ -541,24 +552,6 @@ proc workdir_menus {} {
      -variable cvscfg(status_filter) -onvalue false -offvalue true
   .workdir.menubar.reports add checkbutton -label "Report Recursively" \
      -variable cvscfg(recurse) -onvalue true -offvalue false
-  .workdir.menubar.reports add cascade -label "Status Detail" \
-     -menu .workdir.menubar.reports.report_detail
-  .workdir.menubar.reports add cascade -label "Log Detail" \
-     -menu .workdir.menubar.reports.logfile_detail
-  menu .workdir.menubar.reports.report_detail
-  .workdir.menubar.reports.report_detail add radiobutton -label "Terse" \
-     -variable cvscfg(rdetail) -value "terse"
-  .workdir.menubar.reports.report_detail add radiobutton -label "Summary" \
-     -variable cvscfg(rdetail) -value "summary"
-  .workdir.menubar.reports.report_detail add radiobutton -label "Verbose" \
-     -variable cvscfg(rdetail) -value "verbose"
-  menu .workdir.menubar.reports.logfile_detail
-  .workdir.menubar.reports.logfile_detail add radiobutton -label "Latest" \
-     -variable cvscfg(ldetail) -value "latest"
-  .workdir.menubar.reports.logfile_detail add radiobutton -label "Summary" \
-     -variable cvscfg(ldetail) -value "summary"
-  .workdir.menubar.reports.logfile_detail add radiobutton -label "Verbose" \
-     -variable cvscfg(ldetail) -value "verbose"
 
   .workdir.menubar.options add checkbutton -label "Show hidden files" \
      -variable cvscfg(allfiles) -onvalue true -offvalue false \
@@ -988,15 +981,19 @@ proc setup_dir { } {
        -command { rcs_check }
     .workdir.menubar.reports entryconfigure "Status" -state disabled
     # Log (rlog)
-    .workdir.menubar.reports entryconfigure "Log" -state normal \
-       -command { rcs_log [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Log" -state normal
+    .workdir.menubar.reports.log_detail entryconfigure "Latest" \
+       -command { rcs_log "latest" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Summary" \
+       -command { rcs_log "summary" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
+       -command { rcs_log "verbose" [workdir_list_files] }
+
     .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
     .workdir.menubar.reports entryconfigure "Info" -state disabled
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state disabled
     .workdir.menubar.reports entryconfigure "Report Recursively" -state disabled
-    .workdir.menubar.reports entryconfigure "Status Detail" -state disabled
-    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   } elseif {$insvn} {
     # Top
     gen_log:log D "CONFIGURE SVN MENUS"
@@ -1043,11 +1040,23 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
        -command { svn_check }
     # Status (svn status <filelist>)
-    .workdir.menubar.reports entryconfigure "Status" -state normal \
-       -command { svn_status [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Status" -state normal
+    .workdir.menubar.reports.status_detail entryconfigure "Terse" \
+       -command { svn_status "terse" [workdir_list_files] }
+    .workdir.menubar.reports.status_detail entryconfigure "Summary" \
+       -command { svn_status "summary" [workdir_list_files] }
+    .workdir.menubar.reports.status_detail entryconfigure "Verbose" \
+       -command { svn_status "verbose" [workdir_list_files] }
     # Log (svn log)
-    .workdir.menubar.reports entryconfigure "Log" -state normal \
-       -command { svn_log [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Log" -state normal
+    .workdir.menubar.reports.log_detail entryconfigure "Latest" \
+       -command { svn_log "latest" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Summary" \
+       -command { svn_log "summary" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
+       -command { svn_log "verbose" [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
+    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
     # Annotate/Blame (svn blame)
     .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
        -command { svn_annotate BASE [workdir_list_files] }
@@ -1057,8 +1066,6 @@ proc setup_dir { } {
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
     .workdir.menubar.reports entryconfigure "Report Recursively" -state normal
-    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
-    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   } elseif {$incvs} {
     # Top
     gen_log:log D "CONFIGURE CVS MENUS"
@@ -1079,7 +1086,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
-      -command { cvs_log [workdir_list_files] }
+      -command { cvs_log "latest" [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
       -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
@@ -1097,8 +1104,6 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { cvs_branches [workdir_list_files] }
-    .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
-      -command { cvs_log [workdir_list_files] }
     if {$cvscfg(econtrol)} {
       .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
       .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal
@@ -1114,11 +1119,21 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
        -command { cvs_check }
     # Status (cvs -Q status)
-    .workdir.menubar.reports entryconfigure "Status" -state normal \
-       -command { cvs_status [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Status" -state normal
+    .workdir.menubar.reports.status_detail entryconfigure "Terse" \
+       -command { cvs_status "terse" [workdir_list_files] }
+    .workdir.disabledmenubar.reports.status_detail entryconfigure "Summary" \
+       -command { cvs_status "summary" [workdir_list_files] }
+    .workdir.menubar.reports.status_detail entryconfigure "Verbose" \
+       -command { cvs_status "verbose" [workdir_list_files] }
     # Log (cvs log)
-    .workdir.menubar.reports entryconfigure "Log" -state normal \
-       -command { cvs_log [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Log" -state normal
+    .workdir.menubar.reports.log_detail entryconfigure "Latest" \
+       -command { cvs_log "latest" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Summary" \
+       -command { cvs_log "summary" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
+       -command { cvs_log "verbose" [workdir_list_files] }
     # Annotate/Blame (cvs annotate)
     .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
        -command { cvs_annotate $current_tagname [workdir_list_files] }
@@ -1126,8 +1141,6 @@ proc setup_dir { } {
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
     .workdir.menubar.reports entryconfigure "Report Recursively" -state normal
-    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
-    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   } elseif {$ingit} {
     # Top
     gen_log:log D "CONFIGURE GIT MENUS"
@@ -1154,19 +1167,27 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
        -command { git_check }
     # Status (git status -v)
-    .workdir.menubar.reports entryconfigure "Status" -state normal \
-       -command { git_status }
+    .workdir.menubar.reports entryconfigure "Status" -state normal
+    .workdir.menubar.reports.status_detail entryconfigure "Terse" \
+       -command { git_status "terse" [workdir_list_files] }
+    .workdir.menubar.reports.status_detail entryconfigure "Summary" \
+       -command { git_status "summary" [workdir_list_files] }
+    .workdir.menubar.reports.status_detail entryconfigure "Verbose" \
+       -command { git_status "verbose" [workdir_list_files] }
     # Log (git log)
-    .workdir.menubar.reports entryconfigure "Log" -state normal \
-       -command { git_log [workdir_list_files] }
+    .workdir.menubar.reports entryconfigure "Log" -state normal
+    .workdir.menubar.reports.log_detail entryconfigure "Latest" \
+       -command { git_log "latest" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Summary" \
+       -command { git_log "summary" [workdir_list_files] }
+    .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
+       -command { git_log "verbose" [workdir_list_files] }
     # Annotate/Blame
     .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
     .workdir.menubar.reports entryconfigure "Info" -state disabled
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
     .workdir.menubar.reports entryconfigure "Report Recursively" -state disabled
-    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
-    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
   }
 
   DirCanvas:create .workdir.main
@@ -1642,10 +1663,10 @@ proc save_options { } {
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
                  showstatcol showdatecol showeditcol auto_tag \
-                 status_filter recurse logging blame_linenums}
+                 status_filter recurse logging blame_linenums }
   set STRGopts { file_filter ignore_file_filter clean_these \
-                 printer rdetail ldetail log_classes lastdir sort_pref \
-                 workgeom modgeom loggeom tracgeom editor editorargs}
+                 printer log_classes lastdir sort_pref editor editorargs \
+                 workgeom modgeom loggeom tracgeom }
 
   # Plus the logcanvas options
   set LOGopts [concat [array names logcfg show_*] scale]
