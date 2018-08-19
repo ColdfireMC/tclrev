@@ -906,7 +906,14 @@ proc DirCanvas:build {w} {
       }
       "*onflict*" {
        set DirList($w:$f:icon) stat_conf
-       set DirList($w:$f:popup) stat_conf_pop
+       switch -- $rtype {
+          "CVS" {
+            set DirList($w:$f:popup) cvs_conf_pop
+          }
+          "SVN" {
+            set DirList($w:$f:popup) svn_conf_pop
+          }
+        }
       }
       "Not managed*" {
        set DirList($w:$f:icon) stat_ques
@@ -1338,14 +1345,12 @@ proc DirCanvas:makepopup {w} {
     -command { cvs_commit_dialog }
 
   # For CVS files with conflicts
-  menu $w.stat_conf_pop
-  $w.stat_conf_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
-  $w.stat_conf_pop add command -label "Merge Conflict" \
+  menu $w.cvs_conf_pop
+  $w.cvs_conf_pop add command -label "Merge Conflict" \
     -command { cvs_merge_conflict [workdir_list_files] }
-  $w.stat_conf_pop add command -label "CVS Annotate/Blame" \
+  $w.cvs_conf_pop add command -label "CVS Annotate/Blame" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
-  $w.stat_conf_pop add command -label "Browse the Log Diagram" \
+  $w.cvs_conf_pop add command -label "Browse the Log Diagram" \
     -command { cvs_branches [workdir_list_files] }
 
   # For RCS files
@@ -1404,6 +1409,17 @@ proc DirCanvas:makepopup {w} {
     -command { svn_commit_dialog }
   $w.stat_svnmod_pop add command -label "SVN Revert" \
     -command { svn_revert [workdir_list_files] }
+
+  # For SVN files with conflicts
+  menu $w.svn_conf_pop
+  $w.svn_conf_pop add command -label "Merge Conflict" \
+    -command { svn_merge_conflict [workdir_list_files] }
+  $w.svn_conf_pop add command -label "Resolve Conflict" \
+    -command { svn_resolve [workdir_list_files] }
+  $w.svn_conf_pop add command -label "CVS Annotate/Blame" \
+    -command { svn_annotate $current_tagname [workdir_list_files] }
+  $w.svn_conf_pop add command -label "Browse the Log Diagram" \
+    -command { svn_branches [workdir_list_files] }
 
   # For SVN directories
   menu $w.svnfolder_pop
