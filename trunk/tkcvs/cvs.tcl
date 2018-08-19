@@ -1457,9 +1457,9 @@ proc cvs_merge_conflict {args} {
       continue
     }
     # Invoke tkdiff with the proper option for a conflict file
-    set commandline "$cvscfg(tkdiff) -conflict \"$filename\""
-    gen_log:log C "$commandline"
-    catch {eval "exec $commandline &"} view_this
+    set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$filename\" \"$filename\""
+    gen_log:log C "$tkdiff_command"
+    catch {eval "exec $tkdiff_command &"} view_this
   }
   
   gen_log:log T "LEAVE"

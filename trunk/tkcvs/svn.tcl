@@ -950,28 +950,16 @@ proc svn_merge_conflict {args} {
       cvsfail "$file does not appear to have a conflict." .workdir
       continue
     }
-    # FIXME: we don't want to tie up the whole UI with tkdiff, but
-    # if we don't wait, we have no way to know if we can mark resolved
-    # Invoke tkdiff with the proper option for a conflict file
-    # and have it write to the original file
-    set command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
-    gen_log:log C "$command"
-    set ret [catch {eval "exec $command"} view_this]
-    if {$ret == 0} {
-      set mess "Mark $file resolved?"
-      if {[cvsconfirm $mess .workdir] != "ok"} {
-        continue
-      }
-      set command "svn resolved \"$file\""
-      exec::new $command
-    } else {
-      cvsfail "$view_this" .workdir
-    }
+    # We don't want to tie up the whole UI with tkdiff, but if we don't wait,
+    # we don't know if we can mark it resolved.  The context popup for a
+    # conflict file in SVN has a "resolve" pick which calls svn_resolve. That
+    # function checks whether there are still conflict markers in the file and
+    # won't let you resolve it if so.
+    set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
+    gen_log:log C "$tkdiff_command"
+    set ret [catch {eval "exec $tkdiff_command &"} view_this]
   }
 
-  if {$cvscfg(auto_status)} {
-    setup_dir
-  }
   gen_log:log T "LEAVE"
 }
 
