@@ -641,34 +641,39 @@ proc cvs_fileview_checkout {revision filename} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_log {args} {
-#
-# This looks at a log from the repository.
-# Called by Workdir menu Reports->"CVS log ..."
-#
+# cvs log. Called from "Log" in the Reports menu.
+# Uses cvscfg(recurse)
+proc cvs_log {detail args} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($args)"
+  gen_log:log T "ENTER ($detail $args)"
 
+  if {$args == "."} {
+    set args ""
+  }
+
+  busy_start .workdir.main
   set filelist [join $args]
+  set flags ""
+  if {! $cvscfg(recurse)} {
+    set flags "-l"
+  }
 
-  # Don't recurse
-  set commandline "$cvs log -l "
-  switch -- $cvscfg(ldetail) {
+  switch -- $detail {
     latest {
       # -N means don't list tags
-      append commandline "-Nr "
+      append flags "-Nr "
     }
     summary {
-      append commandline "-Nt "
+      append flags "-Nt "
     }
   }
-  append commandline "$filelist"
 
-  set logcmd [viewer::new "CVS log ($cvscfg(ldetail))"]
-  $logcmd\::do "$commandline" 0 hilight_rcslog
+  set logcmd [viewer::new "CVS log ($detail)"]
+  $logcmd\::do "$cvs log $flags $filelist" 0 hilight_rcslog
 
+  busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 
@@ -1115,52 +1120,39 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   }
 }
 
-# does a status report on the files in the current directory. Called from
-# "Status" in the Reports menu. Uses the rdetail and recurse settings.
-proc cvs_status {args} {
+# cvs status. Called from "Status" in the Reports menu.
+# Uses cvscfg(recurse)
+proc cvs_status {detail args} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($args)"
+  gen_log:log T "ENTER ($detail $args)"
 
   if {$args == "."} {
     set args ""
   }
-  # if there are selected files, I want verbose output for those files
-  # so I'm going to save the current setting here
-  # - added by Jo
-  set verbosity_setting ""
 
   busy_start .workdir.main
   set filelist [join $args]
-  # if recurse option is true or there are no selected files, recurse
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
   }
-  # if there are selected files, use verbose output
-  # but save the current setting so it can be reset
-  # - added by Jo
-  if {[llength $filelist] > 0 || \
-      ([llength $filelist] == 1  && ! [file isdir $filelist])} {
-    set verbosity_setting $cvscfg(rdetail)
-    set cvscfg(rdetail) "verbose"
-  }
 
-  # support verious levels of verboseness. Ideas derived from GIC
+  # support verious levels of verboseness.
   set statcmd [exec::new "$cvs -Q status $flags $filelist"]
   set raw_status [$statcmd\::output]
   $statcmd\::destroy
 
-  if {$cvscfg(rdetail) == "verbose"} {
-    view_output::new "CVS Status ($cvscfg(rdetail))" $raw_status
+  if {$detail == "verbose"} {
+    view_output::new "CVS Status ($detail)" $raw_status
   } else {
     set cooked_status ""
     set stat_lines [split $raw_status "\n"]
     foreach statline $stat_lines {
       if {[string match "*Status:*" $statline]} {
         gen_log:log D "$statline"
-        if {$cvscfg(rdetail) == "terse" && \
+        if {$detail == "terse" && \
             [string match "*Up-to-date*" $statline]} {
           continue
         } else {
@@ -1174,13 +1166,9 @@ proc cvs_status {args} {
         }
       }
     }
-    view_output::new "CVS Status ($cvscfg(rdetail))" $cooked_status
+    view_output::new "CVS Status ($detail)" $cooked_status
   }
 
-  # reset the verbosity setting if necessary
-  if { $verbosity_setting != "" } {
-    set cvscfg(rdetail) $verbosity_setting
-  }
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -1469,15 +1457,11 @@ proc cvs_merge_conflict {args} {
       continue
     }
     # Invoke tkdiff with the proper option for a conflict file
-    # and have it write to the original file
-    set commandline "$cvscfg(tkdiff) -conflict -o \"$filename\" \"$filename\""
+    set commandline "$cvscfg(tkdiff) -conflict \"$filename\""
     gen_log:log C "$commandline"
-    catch {eval "exec $commandline"} view_this
+    catch {eval "exec $commandline &"} view_this
   }
   
-  if {$cvscfg(auto_status)} {
-    setup_dir
-  }
   gen_log:log T "LEAVE"
 }
 

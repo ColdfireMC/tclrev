@@ -164,32 +164,47 @@ proc find_git_remote {dirname} {
   gen_log:log T "LEAVE"
 }
 
-proc git_log {args} {
+# Called from "Log" in Reports menu
+proc git_log {detail args} {
  global cvscfg
-  gen_log:log T "ENTER"
+  gen_log:log T "ENTER ($detail $args)"
 
+  busy_start .workdir.main
   set filelist [join $args]
-  gen_log:log D "detail $cvscfg(ldetail)"
-  gen_log:log D "$filelist"
+  set flags ""
+
+  if {[llength $filelist] == 0} {
+    set filelist {.}
+  }
+  if {[llength $filelist] > 1} {
+    set title "Git Log ($detail)"
+  } else {
+    set title "Git Log $filelist ($detail)"
+  }
 
   set commandline "git log --color"
-  switch -- $cvscfg(ldetail) {
+  switch -- $detail {
     latest {
-      append commandline " --pretty=oneline --max-count=1"
+      append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      append commandline " --pretty=oneline"
+      append flags " --pretty=oneline"
     }
     verbose {
-      append commandline " --graph --all"
+      append flags " --graph --all"
     }
   }
-  append commandline " -- $filelist"
 
-  set logcmd [viewer::new "Git log ($cvscfg(ldetail))"]
-  $logcmd\::do "$commandline" 1 ansi_colortags
+  set v [viewer::new "$title"]
+  foreach file $filelist {
+    set command "git log $flags -- \"$file\""
+    $v\::log "----------------------------------------\n"
+    $v\::log "$file\n"
+    $v\::do "$command" 1 ansi_colortags
+    $v\::wait
+  }
+
   busy_done .workdir.main
-
   gen_log:log T "LEAVE"
 }
 
@@ -230,36 +245,35 @@ proc git_add {args} {
   gen_log:log T "LEAVE"
 }
 
-# called by "Status" in the Reports menu. Uses the rdetail and recurse settings
-proc git_status {} {
+# called by "Status" in the Reports menu. Uses status_filter.
+proc git_status {detail args} {
   global cvscfg
  
-  gen_log:log T "ENTER ()"
+  gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
+  set filelist [join $args]
   set flags ""
-  set title "GIT Status ($cvscfg(rdetail))"
+  set title "GIT Status ($detail)"
   # Hide unknown files if desired
   if {$cvscfg(status_filter)} {
     append flags " -uno"
   }
-  if {$cvscfg(rdetail) == "terse"} {
-    append flags " --porcelain=2"
-  } elseif {$cvscfg(rdetail) == "summary"} {
-    append flags " --long"
-  } elseif {$cvscfg(rdetail) == "verbose"} {
-    append flags " --verbose"
+  switch -- $detail {
+    terse {
+      append flags " --short"
+    }
+    summary {
+      append flags " --long"
+    }
+    verbose {
+      append flags " --verbose"
+    }
   }
-  # do some highlighting
+  # enable some color highlighting
   set stat_cmd [viewer::new $title]
-  set commandline "git status $flags"
-  if {$cvscfg(rdetail) == "terse"} {
-    $stat_cmd\::do "$commandline" 0 ansi_colortags
-  } elseif {$cvscfg(rdetail) == "summary"} {
-    $stat_cmd\::do "$commandline" 1 ansi_colortags
-  } elseif {$cvscfg(rdetail) == "verbose"} {
-    $stat_cmd\::do "$commandline" 0 ansi_colortags
-  }
+  set commandline "git status $flags $filelist"
+  $stat_cmd\::do "$commandline" 0 ansi_colortags
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"

@@ -229,7 +229,7 @@ proc rcs_check {} {
 }
 
 # for Log in Reports Menu
-proc rcs_log {args} {
+proc rcs_log {detail args} {
   global cvscfg
   gen_log:log T "ENTER"
 
@@ -237,13 +237,13 @@ proc rcs_log {args} {
   if {$filelist == ""} {
     set filelist [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   }
-  gen_log:log D "detail $cvscfg(ldetail)"
+  gen_log:log D "detail $detail"
   gen_log:log D "$filelist"
 
   set commandline "rlog "
-  switch -- $cvscfg(ldetail) {
+  switch -- $detail {
     latest {
-      append commandline "-r "
+      append commandline "-R "
     }
     summary {
       append commandline "-t "
@@ -251,8 +251,8 @@ proc rcs_log {args} {
   }
   append commandline "$filelist"
 
-  set logcmd [viewer::new "RCS log ($cvscfg(ldetail))"]
-  $logcmd\::do "$commandline" 0 hilight_rcslog
+  set v [viewer::new "RCS log ($detail)"]
+  $v\::do "$commandline" 0 hilight_rcslog
   busy_done .workdir.main
 
   gen_log:log T "LEAVE"

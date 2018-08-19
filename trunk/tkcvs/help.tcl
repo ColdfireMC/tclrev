@@ -865,16 +865,12 @@ Preferred default editor
 String pairs giving the editor-command and string-match-pattern, for deciding which editor to use
 <h3>cvscfg(editorargs)</h3>
 Command-line arguments to send to the default editing program.
-<h3>cvscfg(ldetail)</h3>
-Detail level for status reports (latest, summary, verbose)
 <h3>cvscfg(mergetoformat)</h3>
 <h3>cvscfg(mergefromformat)</h3>
 Format for mergeto- and mergefrom- tags.  The _BRANCH_ part must be
 left as-is, but you can change the prefix and the date format, for
 example "mergeto_BRANCH_%d%b%y".  The date format must be the same
 for both.  CVS rule: a tag must not contain the characters `$,.:;@'
-<h3>cvscfg(rdetail)</h3>
-Detail for repository and workdir reports (terse, summary, verbose)
 <h3>cvscfg(recurse)</h3>
 Whether reports are recursive (true or false)
 <h3>cvscfg(savelines)</h3>
