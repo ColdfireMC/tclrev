@@ -1055,8 +1055,6 @@ proc setup_dir { } {
        -command { svn_log "summary" [workdir_list_files] }
     .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
        -command { svn_log "verbose" [workdir_list_files] }
-    .workdir.menubar.reports entryconfigure "Status Detail" -state normal
-    .workdir.menubar.reports entryconfigure "Log Detail" -state normal
     # Annotate/Blame (svn blame)
     .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
        -command { svn_annotate BASE [workdir_list_files] }
@@ -1122,7 +1120,7 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure "Status" -state normal
     .workdir.menubar.reports.status_detail entryconfigure "Terse" \
        -command { cvs_status "terse" [workdir_list_files] }
-    .workdir.disabledmenubar.reports.status_detail entryconfigure "Summary" \
+    .workdir.menubar.reports.status_detail entryconfigure "Summary" \
        -command { cvs_status "summary" [workdir_list_files] }
     .workdir.menubar.reports.status_detail entryconfigure "Verbose" \
        -command { cvs_status "verbose" [workdir_list_files] }
