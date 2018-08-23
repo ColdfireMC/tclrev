@@ -100,8 +100,7 @@ proc ModTree:newitem {w v name title args} {
   if {![info exists Tree($w:$dir:open)]} {
     cvsfail "parent item \"$dir\" is missing" .modbrowse
   }
-  set i [lsearch -exact $Tree($w:$dir:children) $n]
-  if {$i>=0} {
+  if {$n in $Tree($w:$dir:children} {
     #cvsfail "item \"$v\" already exists" .modbrowse
     return
   }

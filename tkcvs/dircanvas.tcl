@@ -163,7 +163,7 @@ proc DirCanvas:map_column {w column} {
   set mapped_columns [$w.pw panes]
   #gen_log:log D "mapped columns: $mapped_columns"
 
-  if {[lsearch -exact $mapped_columns "$w.statcol"] > -1} {
+  if {"$w.statcol" in $mapped_columns} {
     set leftcol "$w.statcol"
   } else {
     set leftcol "$w.filecol"
@@ -494,7 +494,7 @@ proc DirCanvas:addrange {w y f} {
         gen_log:log D "$j y=$jy"
         DirCanvas:setTextHBox $w $w.filecol.list.tx$jy
         set DirList($w:$j:selected) 1
-        if {[lsearch -exact $DirList($w:selection) $j] == -1} {
+        if {$j ni $DirList($w:selection)} {
           lappend DirList($w:selection) "$j"
         }
       }
@@ -507,7 +507,7 @@ proc DirCanvas:addrange {w y f} {
         gen_log:log D "$j y=$jy"
         DirCanvas:setTextHBox $w $w.filecol.list.tx$jy
         set DirList($w:$j:selected) 1
-        if {[lsearch -exact $DirList($w:selection) $j] == -1} {
+        if {$j ni $DirList($w:selection)} {
           lappend DirList($w:selection) "$j"
         }
       }
@@ -516,7 +516,7 @@ proc DirCanvas:addrange {w y f} {
 
   DirCanvas:setTextHBox $w $w.filecol.list.tx$y
   set DirList($w:$f:selected) 1
-  if {[lsearch -exact $DirList($w:selection) $f] == -1} {
+  if {$f ni $DirList($w:selection)} {
     lappend DirList($w:selection) "$f"
   }
 

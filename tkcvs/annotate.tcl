@@ -286,7 +286,7 @@ namespace eval ::annotate {
         set line [split [string trimleft $logline]]
         set revnum [lindex $line 0]
         if {$revnum == ""} {continue}
-        if {[lsearch -exact $revlist $revnum] == -1} {
+        if {$revnum ni $revlist} {
           lappend revlist $revnum
           set l [string length $revnum]
           if {$l > $maxrevlen} {
