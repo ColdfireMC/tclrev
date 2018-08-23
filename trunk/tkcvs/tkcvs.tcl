@@ -477,7 +477,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     exit 1
   }
   wm withdraw .
-  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+  foreach {incvs insvn inrcs ingit} [cvsroot_check [pwd]] { break }
   if {$incvs} {
     cvs_branches \"$lcfile"\
   } elseif {$inrcs} {
@@ -486,8 +486,10 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     rcs_branches \"$lcfile\"
   } elseif {$insvn} {
     svn_branches \"$lcfile\"
+  } elseif {$ingit} {
+    git_branches \"$lcfile\"
   } else {
-    puts "File doesn't seem to be in CVS, SVN, or RCS"
+    puts "File doesn't seem to be in CVS, SVN, RCS, or GIT"
   }
 # Start with Annotation Browser
 } elseif {$cvscfg(startwindow) == "blame"} {
@@ -496,13 +498,15 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     exit 1
   }
   wm withdraw .
-  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+  foreach {incvs insvn ingit} [cvsroot_check [pwd]] { break }
   if {$incvs} {
     cvs_annotate "" \"$lcfile"\
   } elseif {$insvn} {
     svn_annotate "" \"$lcfile\"
+  } elseif {$ingit} {
+    git_annotate "" \"$lcfile\"
   } else {
-    puts "File doesn't seem to be in CVS or SVN"
+    puts "File doesn't seem to be in CVS, SVN, or GIT"
   }
 # Start with Directory Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {

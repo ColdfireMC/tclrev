@@ -424,13 +424,13 @@ proc get_rv_tags { mcode r_tag_list v_tag_list } {
     unpack_tag_word $tag type tag_message
     gen_log:log D "$tag is type $type message $tag_message"
     if {$type == 0 } {
-      if {[lsearch -exact $rlist $tag_message] < 0} {
+      if {$tag_message ni $rlist} {
         gen_log:log D "New Release tag found: $tag_message"
         lappend rlist $tag_message
       }
     }
     if {$type == 1 } {
-      if {[lsearch -exact $rlist $tag_message] < 0} {
+      if {$tag_message ni $rlist} {
         gen_log:log D "New Vendor tag found: $tag_message"
         lappend vlist $tag_message
       }

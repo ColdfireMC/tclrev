@@ -21,7 +21,7 @@ proc browse_files {module} {
     return
   }
   #gen_log:log D "[array names modval]"
-  if {[lsearch -exact [array names modval] $module] < 0} {
+  if {$module ni [array names modval]} {
     cvsfail "$module is not a CVS module" .modbrowse
     return
   }

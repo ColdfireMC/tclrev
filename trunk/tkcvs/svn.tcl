@@ -17,7 +17,7 @@ proc svn_version {} {
   gen_log:log T "LEAVE"
 }
 
-# Find SVN URL
+# Find SVN URL and where we are in path
 proc read_svn_dir {dirname} {
   global cvscfg
   global cvsglb
@@ -1411,8 +1411,8 @@ proc svn_branches {files} {
 }
 
 proc safe_url { url } {
-  # Replacement is done in an ordered manner, so the  key  appearing
-  # first  in  the list will be checked first, and so on.  string is
+  # Replacement is done in an ordered manner, so the key appearing
+  # first in the list will be checked first, and so on. The string is
   # only iterated over once.
   set url [string map {
     "%20" "%20"
@@ -1422,12 +1422,6 @@ proc safe_url { url } {
     "&" "%26"
     " " "%20"
   } $url]
-  #regsub -all {%} $url {%25} url
-  #regsub -all {&} $url {%26} url
-  #regsub -all { } $url {%20} url
-  # These don't seem to be necessary
-  #regsub -all {\+} $url {%2B} url
-  #regsub -all {\-} $url {%2D} url
   return $url
 }
 
@@ -1895,6 +1889,7 @@ namespace eval ::svn_branchlog {
         set revnum ""
         set i 0
         set l [llength $lines]
+        # in svn_log output, line zero is a separator and can be ignored
         while {$i < $l} {
 	  if { $i > 0 } { incr i -1 }
 	  set last [lindex $lines $i]
@@ -1902,11 +1897,14 @@ namespace eval ::svn_branchlog {
           set line [lindex $lines $i]
           gen_log:log D "$i of $l:  $line"
           if { [ regexp {^[-]+$} $last ] && [ regexp {^r[0-9]+ \| .*line[s]?$} $line] } {
+            # ^ The last line was dashes and this one starts with a revnum
             if {[expr {$l - $i}] <= 1} {break}
+            # ^ we came to the last line!
+            # else deal with the line. We know it's formatted like this:
+            # r4 | dorothyr | 2018-08-18 18:45:36 -0700 (Sat, 18 Aug 2018) | 1 line
             set line [lindex $lines $i]
             set splitline [split $line "|"]
             set revnum [string trim [lindex $splitline 0]]
-            #lappend branchrevs($r) $revnum
             set revwho($revnum) [string trim [lindex $splitline 1]]
             set date_and_time [string trim [lindex $splitline 2]]
             set revdate($revnum) [lindex $date_and_time 0]

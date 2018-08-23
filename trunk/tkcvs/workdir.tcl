@@ -1152,6 +1152,10 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
+      -command { foreach f [workdir_list_files] {git_merge_conflict \"$f\"} }
+    .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
+      -command { git_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { git_log [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
@@ -1575,12 +1579,12 @@ proc getFiles { } {
   }
 
   # make sure "." is always in the list for 'cd' purposes
-  if { ( [ lsearch -exact $filelist "." ] == -1 ) } {
+  if { "." ni $filelist} {
     set filelist [ concat "." $filelist ]
   }
 
   # make sure ".." is always in the list for 'cd' purposes
-  if { ( [ lsearch -exact $filelist ".." ] == -1 ) } {
+  if { ".." ni $filelist} {
     set filelist [ concat ".." $filelist ]
   }
 
@@ -1589,8 +1593,7 @@ proc getFiles { } {
 
   # if this directory is under CVS and CVS is not in the list, add it. Its
   # presence is needed for later processing
-  if { ( [ file exists "CVS" ] ) &&
-       ( [ lsearch -exact $filelist "CVS" ] == -1 ) } {
+  if { ( [ file exists "CVS" ] ) && ("CVS" ni $filelist) } {
     #puts "********* added CVS"
     catch { set filelist [ concat "CVS" $filelist ] }
   }

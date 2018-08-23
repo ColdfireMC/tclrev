@@ -142,7 +142,7 @@ proc do_import {} {
       lappend knowndirs [lindex $idx 0]
     }
     gen_log:log D "looking for $pathname in known directories ($knowndirs)"
-    if {[lsearch -exact $knowndirs $pathname] == -1} {
+    if {$pathname ni $knowndirs} {
       set need_Dir 1
     }
   }

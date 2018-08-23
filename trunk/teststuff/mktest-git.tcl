@@ -276,6 +276,60 @@ proc modfiles {} {
   file delete -force $tmpfile
 }
 
+proc getrev {filename} {
+  # Get hash of current revision
+
+  set exec_cmd "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$filename\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  set latest [lindex $out 0]
+  return $latest
+}
+
+proc conflict {filename} {
+  # Create a conflict. In Git, this is done with a temporary branch.
+ 
+  # Save a copy
+  #file copy $filename Ftmp.txt
+  # Make a change
+  #writefile $filename 1
+  #set exec_cmd "git add $filename"
+  #puts "$exec_cmd"
+  #set ret [catch {eval "exec $exec_cmd"} out]
+  #puts $out
+  #set exec_cmd "git commit -m \"change on master\" $filename"
+  #puts "$exec_cmd"
+  #set ret [catch {eval "exec $exec_cmd"} out]
+  #puts $out
+
+  # Check out a new branch
+  set exec_cmd "git checkout -b temp_branch"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  writefile $filename 1
+  set exec_cmd "git commit -m \"change on temp_branch\" $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Check out head, which now conflicts with our change
+  set exec_cmd "git checkout master"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  # Make a different change to same line
+  writefile $filename 1
+  set exec_cmd "git commit -m \"change on master\" $filename"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  set exec_cmd "git merge temp_branch"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+}
+
 ##############################################
 set branching_desired 1
 
@@ -388,6 +442,9 @@ puts "Making Uncommitted changes on trunk"
 cd $WD/$Master
 # Local only
 writefile FileLocal.txt 1
+# Conflict. Have to do thise before the add and delete,
+# or the merge will fail before you get to the conflicted file
+conflict Ftrunk.txt
 # Newly added
 writefile FileAdd.txt 2
 addfile FileAdd.txt trunk
@@ -395,7 +452,5 @@ addfile FileAdd.txt trunk
 delfile File3.txt trunk
 # Modify
 writefile File2.txt 2
-# Conflict
-#conflict Ftrunk.txt
 cd $WD
 

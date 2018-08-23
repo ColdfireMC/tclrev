@@ -139,7 +139,7 @@ proc do_import2 {} {
       lappend knowndirs [lindex $idx 0]
     }
     gen_log:log D "looking for $pathname in known directories ($knowndirs)"
-    if {[lsearch -exact $knowndirs $pathname] == -1} {
+    if {$pathname ni $knowndirs} {
       set need_Dir 1
     }
   }
@@ -234,7 +234,7 @@ proc import_wait {} {
     set module [lindex [split $tmp "\t"] 0]
     if {$importselect == $module} {
       # Make sure that $importselect is not a directory
-      if {[lsearch -exact $dirlist $importselect] == -1} {
+      if {$importselect ni $dirlist} {
         incr module_in_root
       }
     }

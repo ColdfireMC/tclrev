@@ -243,7 +243,7 @@ namespace eval joincanvas {
         # Get rid of duplicates
         set revlist ""
         foreach t $tagrevlist {
-          if {[lsearch -exact $revlist $t] < 0} {
+          if {$t ni $revlist} {
             lappend revlist $t
           }
         }
@@ -276,8 +276,7 @@ namespace eval joincanvas {
             lappend children($parent($rev)) $rev
           }
           # Add to new list of nodes
-          if {[lsearch -exact $revlist $parent($rev)] < 0 && \
-              [lsearch -exact $treelist $parent($rev)] < 0 } {
+          if { ($parent($rev) ni $revlist) && ($parent($rev) ni $treelist) } {
             lappend treelist $parent($rev)
             gen_log:log D " add parent $parent($rev) of $rev"
           }
