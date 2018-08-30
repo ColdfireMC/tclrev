@@ -1590,7 +1590,7 @@ namespace eval ::svn_branchlog {
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
         set trunk_lines [split $log_output "\n"]
-        set rr [parse_svnlog $trunk_lines trunk]
+        set rootrev [parse_svnlog $trunk_lines trunk]
 
         # See if the current revision is on the trunk
         set curr 0
@@ -1613,15 +1613,15 @@ namespace eval ::svn_branchlog {
           set revkind($r) "revision"
           set revpath($r) $path
         }
-        set branchrevs($rr) $branchrevs(trunk)
-        set revkind($rr) "root"
-        set revname($rr) "trunk"
-        set revbtags($rr) "trunk"
-        set revpath($rr) $path
+        set branchrevs($rootrev) $branchrevs(trunk)
+        set revkind($rootrev) "root"
+        set revname($rootrev) "trunk"
+        set revbtags($rootrev) "trunk"
+        set revpath($rootrev) $path
 
         # if root is not empty added it to the branchlist
-        if { $rr ne "" } {
-          lappend branchlist $rr
+        if { $rootrev ne "" } {
+          lappend branchlist $rootrev
         }
         # Branches
         # Get a list of the branches from the repository
@@ -1939,6 +1939,7 @@ namespace eval ::svn_branchlog {
           incr i
         }
         gen_log:log T "LEAVE \"$revnum\""
+        # Return the base revnum of the branch
         return $revnum
       }
 
