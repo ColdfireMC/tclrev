@@ -179,7 +179,8 @@ proc find_git_remote {dirname} {
 
 # Called from "Log" in Reports menu
 proc git_log {detail args} {
- global cvscfg
+  global cvscfg
+
   gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
@@ -195,25 +196,29 @@ proc git_log {detail args} {
     set title "Git Log $filelist ($detail)"
   }
 
-  set commandline "git log --color"
+  set commandline "git log --no-color"
   switch -- $detail {
     latest {
       append flags " --pretty=oneline --max-count=1"
+      set filter ""
     }
     summary {
       append flags " --pretty=oneline"
+      set filter ""
     }
     verbose {
       append flags " --graph --all"
+      set filter log_colortags_git
     }
   }
 
   set v [viewer::new "$title"]
   foreach file $filelist {
+    if {[llength $filelist] > 1} {
+      $v\::log "-- $file -------------------------------\n"
+    }
     set command "git log $flags -- \"$file\""
-    $v\::log "----------------------------------------\n"
-    $v\::log "$file\n"
-    $v\::do "$command" 1 ansi_colortags
+    $v\::do "$command" 1 $filter
     $v\::wait
   }
 
@@ -258,10 +263,59 @@ proc git_add {args} {
   gen_log:log T "LEAVE"
 }
 
+proc list_comm {listA listB} {
+  # Compare two lists like unix comm
+
+  gen_log:log T "ENTER\n\t$listA\n\t$listB"
+
+  set inA ""
+  set inB ""
+  set inBoth ""
+  # Shortcut if lists are identical
+  if { $listA == $listB } {
+    set inB $listA
+    set inA $listB
+    set inBoth $listA
+  } else {
+    # Go through both lists by index. For our purpose, we can't
+    # change the order of items. We can assume they are unique
+    # in their respective list and that both lists have been sorted
+    # in the same way
+    set i 0
+    foreach itemInA $listA {
+      # Search listB for item in listA
+      if {[set idxB [lsearch [lrange $listB $i end] $itemInA]] == -1} {
+        # We didn't find it in listB
+        lappend inA $itemInA
+      } else {
+        if {$idxB > 0 } {
+          # reset the pointer into ListB
+          set j [expr {$i + $idxB - 1}]
+          foreach itemInB [lrange $listB $i $j] {
+            lappend inB $itemInB
+          }
+        }
+        incr i
+        lappend inBoth $itemInA
+      }
+    }
+    # listA is exhausted, so just put the leftover listB items on the end
+    foreach itemInB [lrange $listB $i end] {
+      lappend inB $itemInB
+    }
+  }
+
+  gen_log:log D "in A only: $inA"
+  gen_log:log D "in B only: $inB"
+  gen_log:log D "in Both:   $inBoth"
+
+  return [list $inA $inB $inBoth]
+}
+
 # called by "Status" in the Reports menu. Uses status_filter.
 proc git_status {detail args} {
   global cvscfg
- 
+
   gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
@@ -286,7 +340,8 @@ proc git_status {detail args} {
   # enable some color highlighting
   set stat_cmd [viewer::new $title]
   set commandline "git status $flags $filelist"
-  $stat_cmd\::do "$commandline" 0 ansi_colortags
+  #$stat_cmd\::do "$commandline" 0 ansi_colortags
+  $stat_cmd\::do "$commandline" 0
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"
@@ -707,37 +762,78 @@ namespace eval ::git_branchlog {
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
         set log_lines [split $log_output "\n"]
-        set log_data [parse_gitlog $log_lines]
+        set rootrev [parse_gitlog $log_lines]
 
-        # Trick to find the base of a branch is to list all the revs in the
+        # Trick to find the parent of a branch is to list all the revs in the
         # branch and in its parent, and exclude those that aren't exclusive
         # to that branch.
 
-        # First make a list of all the revision hashes
-        set command "git rev-list --all --abbrev-commit --no-merges --reverse --topo-order origin/master -- $filename"
+        # First make a list of the revisions on master
+        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order origin/master -- $filename"
         set cmd_revlist [exec::new $command {} 0 {} 1]
         set revlist_output [$cmd_revlist\::output]
         $cmd_revlist\::destroy
-        foreach ro [split $revlist_output "\n"] {
+        foreach ro [lreverse [split $revlist_output "\n"]] {
           if {[string length $ro] > 0} {
-            lappend allrevs $ro
+            lappend branchrevs(master) $ro
           }
         }
-        # Compare this list with the branches, including master
+        # Compare this list with the branches
         foreach branch $branches {
-          set branchrevs($branch) [isolate_branchrevs $branch $filename]
+          if {$branch eq "master"} {continue}
+          set long_branchrevlist ""
+          set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order origin/$branch -- $filename"
+          set cmd_revlist [exec::new $command {} 0 {} 1]
+          set revlist_output [$cmd_revlist\::output]
+          $cmd_revlist\::destroy
+          foreach ro [lreverse [split $revlist_output "\n"]] {
+            if {[string length $ro] > 0} {
+              lappend long_branchrevlist $ro
+            }
+          }
+          gen_log:log D "IN == $branch ==============="
+          if {! [llength $long_branchrevlist]} {
+           gen_log:log D "$branch is EMPTY"
+            continue
+          }
+          gen_log:log D "master: $branchrevs(master)"
+          gen_log:log D "$branch: $long_branchrevlist"
+          if {[llength long_branchrevlist]} {
+            set comparisons [list_comm $long_branchrevlist $branchrevs(master)]
+            set branch_only [lindex $comparisons 0]
+            set master_only [lindex $comparisons 1]
+            set inboth [lindex $comparisons 2]
+            set branchrevs($branch) [lindex $comparisons 0]
+            # The last of the ones that appear in both lists is the parent
+            set parent [lindex $inboth 0]
+            set revbranches($parent) $branch
+            set base [lindex $branch_only 0]
+            set branchrevs($base) $branchrevs($branch)
+            set revbtags($base) $branch
+            gen_log:log D "OUT ========================="
+            gen_log:log D "in $branch only: $branch_only"
+            gen_log:log D "in master only: $master_only"
+            gen_log:log D "in both:   $inboth"
+            gen_log:log D "$branch BASE: $base"
+            gen_log:log D "$branch PARENT: $parent"
+            foreach br $branch_only {
+              set revkind($br) "branch"
+            }
+          }
         }
 
-        # See if the current revision is on the trunk
+        # See if the current revision is on the master
         set curr 0
-        set brevs $branchrevs(trunk)
-        set tip [lindex $brevs 0]
+        set brevs $branchrevs(master)
+        set tip [lindex $brevs end]
+gen_log:log D "tip $tip"
         set revpath($tip) $path
         set revkind($tip) "revision"
         set brevs [lreplace $brevs 0 0]
         if {$tip == $revnum_current} {
-          # If current is at end of trunk do this.
-          set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
+          # If current is at end of master do this.
+gen_log:log D "Currently at top of master"
+          set branchrevs(master) [linsert $branchrevs(master) 0 {current}]
           set curr 1
         }
         foreach r $brevs {
@@ -749,20 +845,24 @@ namespace eval ::git_branchlog {
           set revkind($r) "revision"
           set revpath($r) $path
         }
-        set branchrevs($rr) $branchrevs(trunk)
-        set revkind($rr) "root"
-        set revname($rr) "trunk"
-        set revbtags($rr) "trunk"
-        set revpath($rr) $path
+gen_log:log D "rootrev = $rootrev"
+        set branchrevs($rootrev) $branchrevs(master)
+gen_log:log D "branchrevs(master) $branchrevs(master)"
+        set revkind($rootrev) "root"
+        set revname($rootrev) "master"
+        # revbtags is for DrawTree
+        set revbtags($rootrev) "trunk"
+        set revpath($rootrev) $path
 
         # if root is not empty added it to the branchlist
-        if { $rr ne "" } {
-          lappend branchlist $rr
+        if { $rootrev ne "" } {
+          lappend branchlist $rootrev
         }
         if {$branch eq "master"} {continue}
         gen_log:log D "$branch"
         set branch [string trimright $branch "/"]
 
+        [namespace current]::git_sort_it_all_out
         gen_log:log T "LEAVE"
         return
       }
@@ -833,39 +933,6 @@ namespace eval ::git_branchlog {
         return $revnum
       }
 
-      # Find which revs are on which branches
-      proc isolate_branchrevs {branch file} {
-        variable allrevs
-
-        gen_log:log T "ENTER ($branch $file)"
-
-        # List the revisions accessible from this branch. The list may go all the way back
-        # to the master root.
-        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order origin/$branch -- $file"
-        set cmd_revlist [exec::new $command {} 0 {} 1]
-        set revlist_output [$cmd_revlist\::output]
-        $cmd_revlist\::destroy
-        foreach ro [split $revlist_output "\n"] {
-          if {[string length $ro] > 0} {
-            lappend long_branchrevs $ro
-          }
-        }
-        puts "===== $branch ====="
-        puts "All revs:        $allrevs"
-        puts "long_branchrevs: $long_branchrevs"
-        # Find the revs that appear only in the allrevs list, not in branch
-        puts -nonewline "not  branchrevs: "
-        foreach arev $allrevs {
-          if {$arev in $long_branchrevs} {
-             puts -nonewline "        "
-          } else {
-             puts -nonewline "$arev "
-          }
-        }
-        puts ""
-        gen_log:log T "LEAVE "
-      }
-
       proc git_sort_it_all_out {} {
         global cvscfg
         global current_tagname
@@ -896,10 +963,10 @@ namespace eval ::git_branchlog {
           gen_log:log D "revkind($r) $revkind($r)"
           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
-        foreach r [lsort -dictionary [array names revpath]] {
-          gen_log:log D "revpath($r) $revpath($r)"
+        #foreach r [lsort -dictionary [array names revpath]] {
+          #gen_log:log D "revpath($r) $revpath($r)"
           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
-        }
+        #}
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
           gen_log:log D "branchrevs($a) $branchrevs($a)"

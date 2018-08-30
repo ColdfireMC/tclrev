@@ -7,13 +7,13 @@
 #
 
 proc svn_import_run {} {
-  global incvs insvn
   global cvsglb
   global cvscfg
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER"
   
-  cvsroot_check [pwd]
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$insvn} {
     cvsok "This directory is already in Subversion.\nCan\'t import here!" .svn_import
     gen_log:log T "LEAVE"

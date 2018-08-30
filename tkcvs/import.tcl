@@ -14,7 +14,7 @@ proc import_run {} {
 
   gen_log:log T "ENTER"
   
-  cvsroot_check [pwd]
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     cvsok "This directory is already in CVS.\nCan\'t import here!" .import
     gen_log:log T "LEAVE"

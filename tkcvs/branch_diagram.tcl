@@ -517,8 +517,7 @@ namespace eval ::logcanvas {
         variable revbtags
         variable tlist
 
-        #gen_log:log T "ENTER ($root_rev)"
-        gen_log:log D "CalcRoot ($root_rev)"
+        gen_log:log T "ENTER ($root_rev)"
         set height $box_height
         set tag_width 0
         set box_width 0
@@ -630,7 +629,7 @@ namespace eval ::logcanvas {
         variable revtags
         variable tlist
 
-        #gen_log:log T "ENTER ($revision)"
+        gen_log:log T "ENTER ($revision)"
         set height $box_height
         set tag_width 0
         set box_width 0
@@ -832,9 +831,9 @@ namespace eval ::logcanvas {
         set rdata {}
         if {$branch == {current}} {
           set rtw 0
-          foreach {box_width root_height} [CalcCurrent $branch] { break }
+          lassign [CalcCurrent $branch] box_width root_height
         } else {
-          foreach {rtw box_width root_height} [CalcRoot $branch] { break }
+          lassign [CalcRoot $branch] rtw box_width root_height
         }
         if {$rtw > $tag_width} {
           set tag_width $rtw
@@ -843,9 +842,9 @@ namespace eval ::logcanvas {
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
-            foreach {rbw rh} [CalcCurrent $revision] { break }
+            lassign [CalcCurrent $revision] rbw rh
           } else {
-            foreach {rtw rbw rh} [CalcRevision $revision] { break }
+            lassign [CalcRevision $revision] rtw rbw rh
           }
           lappend rdata $rtw $rh
           if {$rtw > $tag_width} {
@@ -986,7 +985,7 @@ namespace eval ::logcanvas {
 
         #gen_log:log T "ENTER"
 
-        foreach {x1 y1 x2 y2} [$logcanvas.canvas bbox all] { break }
+        lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
         $logcanvas.canvas configure \
           -scrollregion [list \
             [expr {$x1 - 5}] [expr {$y1 - 5}] \
@@ -1245,7 +1244,7 @@ namespace eval ::logcanvas {
               -arrow last -arrowshape $curr(arrowshape) \
               -width $curr(width)
 
-            foreach {rtw box_width root_height} [CalcRoot $trunkrev] { break }
+            lassign [CalcRoot $trunkrev] rtw box_width root_height
             DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
             UpdateBndBox
           } elseif {[info exists basebranch]} {
@@ -1263,7 +1262,7 @@ namespace eval ::logcanvas {
               -arrow last -arrowshape $curr(arrowshape) \
               -width $curr(width)
 
-            foreach {rtw box_width root_height} [CalcRoot $basebranch] { break }
+            lassign [CalcRoot $basebranch] rtw box_width root_height
             DrawRoot $lx $y2 $lbw $rh $basebranch $basebranch
             UpdateBndBox
           }

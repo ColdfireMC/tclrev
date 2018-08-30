@@ -6,10 +6,7 @@ proc DirCanvas:create {w} {
   global cvscfg
   global cvsglb
   global arr
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($w)"
 
@@ -97,10 +94,7 @@ proc DirCanvas:headtext {w column lbltext} {
 
 proc DirCanvas:column {w column headtext} {
   global cvscfg
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
+  global incvs insvn inrcs ingit
   global arr
 
   gen_log:log T "ENTER ($w $column headtext)"
@@ -551,10 +545,7 @@ proc DirCanvas:build {w} {
   global Filelist
   global cvscfg
   global cvsglb
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($w)"
   foreach b [winfo children $w.filecol.list] {
@@ -1127,10 +1118,7 @@ proc DirCanvas:yview_windows {w yview} {
 
 proc DirCanvas:scroll_windows {w args} {
   global cvscfg
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
+  global incvs insvn inrcs ingit
 
   #gen_log:log T "ENTER ($w $args)"
   set way [lindex $args 1]
@@ -1156,12 +1144,9 @@ proc DirCanvas:scroll_windows {w args} {
 
 proc DirCanvas:drag_windows {w W y} {
 #Scrolling caused by dragging
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
   global cvscfg
   global cvsglb
+  global incvs insvn inrcs ingit
 
   set height [$W cget -height]
   #gen_log:log D "$w %y $height"

@@ -320,7 +320,7 @@ proc modbrowse_menus {} {
 proc modbrowse_run { {CVSorSVN {}} } {
   global env
   global svnurl
-  global insvn incvs inrcs
+  global incvs insvn inrcs ingit
   global modval
   global cvscfg
   global cvsglb
@@ -683,7 +683,7 @@ proc module_changedir {new_dir} {
     set cwd $new_dir
     gen_log:log F "CD [pwd]"
 
-    foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
+    lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
 
     # If this directory has a different cvsroot, redo the tree
     if {$incvs} {
@@ -697,11 +697,6 @@ proc module_changedir {new_dir} {
         modbrowse_run svn
       }
     }
-    #if {$insvn || $incvs || $inrcs} {
-      #.modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
-    #} else {
-      #.modbrowse.bottom.buttons.cvsfuncs.import configure -state normal
-    #}
 
     if {[winfo exists .workdir]} {
       ::picklist::used directory [pwd]

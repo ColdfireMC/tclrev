@@ -875,10 +875,7 @@ proc setup_dir { } {
   #
   global cwd
   global module_dir
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
+  global incvs insvn inrcs ingit
   global cvscfg
   global current_tagname
   global cvsglb
@@ -910,8 +907,8 @@ proc setup_dir { } {
   set current_tagname ""
   ::picklist::used directory [pwd]
 
-  foreach {incvs insvn inrcs ingit} [cvsroot_check [pwd]] { break }
-  gen_log:log D "incvs $incvs  inrcs $inrcs  insvn $insvn  ingit $ingit"
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
+  gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
 
   .workdir.top.bmodbrowse configure -image Modules
   .workdir.top.lmodule configure -text "Path"
@@ -1144,8 +1141,8 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE GIT MENUS"
     .workdir.menubar insert $rptmenu_idx cascade -label "GIT" \
       -menu .workdir.menubar.git
-    .workdir.top.lmodule configure -text "Path"
-    .workdir.top.ltagname configure -text "Branch"
+    .workdir.top.lmodule configure -text "path"
+    .workdir.top.ltagname configure -text "branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
     # Buttons
@@ -1233,10 +1230,7 @@ proc setup_dir { } {
 
 proc directory_list { filenames } {
   global module_dir
-  global incvs
-  global insvn
-  global inrcs
-  global ingit
+  global incvs inrcs insvn ingit
   global cvs
   global cwd
   global cvscfg
@@ -1454,10 +1448,11 @@ proc workdir_print_file {args} {
 proc cvsroot_check { dir } {
   global cvscfg
   global cvsglb
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($dir)"
 
-  foreach {incvs insvn inrcs ingit} {0 0 0 0} {break}
+  lassign {0 0 0 0} incvs insvn inrcs ingit
 
   if {[file isfile [file join $dir CVS Root]]} {
     set incvs [ read_cvs_dir [file join $dir CVS] ]

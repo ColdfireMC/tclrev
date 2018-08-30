@@ -1203,10 +1203,11 @@ proc cvs_checkout { dir cvsroot prune kflag revtag date target mtag1 mtag2 modul
   #
   global cvs
   global cvscfg
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($dir $cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
 
-  foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     set mess "This is already a CVS controlled directory.  Are you\
               sure that you want to check out another module in\
@@ -1289,10 +1290,11 @@ proc cvs_export { dir cvsroot kflag revtag date target module } {
 #
   global cvs
   global cvscfg 
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($dir $cvsroot $kflag $revtag $date $target $module)"
     
-  foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} { 
     set mess "This is already a CVS controlled directory.  Are you\
               sure that you want to export a module in to this directory?"
@@ -1335,7 +1337,7 @@ proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outf
  
   gen_log:log T "ENTER ($cvsroot $module $difffmt $revtagA $dateA $revtagB $dateB $outmode $outfile)"
 
-  foreach {rev1 rev2} {{} {}} { break }
+  lassign {{} {}} {rev1 rev2}
   if {$revtagA != {}} {
     set rev1 "-r \"$revtagA\""
   } elseif {$dateA != {}} {
