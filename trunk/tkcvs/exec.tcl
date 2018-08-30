@@ -134,7 +134,7 @@ namespace eval ::exec {
           catch {close $procerr}
           if {$viewer != {}} {
             pack forget $v_w.stop
-            pack $v_w.close -in $v_w.bottom -side right -ipadx 15
+            pack $v_w.close -in $v_w.bottom -side right -ipadx 15 -padx 25
             $v_w.close configure -state normal
           }
           return
@@ -206,7 +206,7 @@ namespace eval ::exec {
         err_handler
         if {$viewer != {}} {
           pack forget $v_w.stop
-          pack $v_w.close -in $v_w.bottom -side right -ipadx 15
+          pack $v_w.close -in $v_w.bottom -side right -ipadx 15 -padx 25
           $v_w.close configure -state normal
         }
 
@@ -679,7 +679,7 @@ proc viewer_window {w title parent} {
   pack $w.bottom.srchbtn -side left
   pack $w.bottom.entry -side left
   pack $w.save -in $w.bottom -side left -padx 25
-  pack $w.close -in $w.bottom -side right -ipadx 15
+  pack $w.close -in $w.bottom -side right -ipadx 15 -padx 25
 
   # Focus to activate text bindings
   focus $w
