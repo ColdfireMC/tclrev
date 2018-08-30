@@ -215,7 +215,7 @@ proc git_log {detail args} {
   set v [viewer::new "$title"]
   foreach file $filelist {
     if {[llength $filelist] > 1} {
-      $v\::log "-- $file -------------------------------\n"
+      $v\::log "-- $file -------------------------------\n" blue
     }
     set command "git log $flags -- \"$file\""
     $v\::do "$command" 1 $filter
