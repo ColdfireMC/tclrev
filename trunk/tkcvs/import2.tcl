@@ -16,7 +16,7 @@ proc import2_run {} {
 
   gen_log:log T "ENTER"
 
-  cvsroot_check [pwd]
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
 
   if {[winfo exists .import2]} {
     wm deiconify .import2

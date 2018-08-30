@@ -607,7 +607,7 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
   gen_log:log T "ENTER ($pathA $pathB $revA $dateA $revB $dateB $outmode $outfile)"
   global cvs
 
-  foreach {rev1 rev2} {{} {}} { break }
+  lassign {{} {}} rev1 rev2
   if {$revA != {}} {
     set rev1 $revA
   } elseif {$dateA != {}} {
@@ -1283,9 +1283,11 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
 
 # SVN Checkout or Export.  Called from Repository Browser
 proc svn_checkout {dir url path rev target cmd} {
+  global incvs insvn inrcs ingit
+
   gen_log:log T "ENTER ($dir $url $path $rev $target $cmd)"
 
-  foreach {incvs insvn inrcs} [cvsroot_check $dir] { break }
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$insvn} {
     set mess "This is already a SVN controlled directory.  Are you\
               sure that you want to export into this directory?"

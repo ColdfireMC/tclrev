@@ -452,16 +452,12 @@ image create photo Mergediff \
 image create photo Man \
   -format gif -file [file join $cvscfg(bitmapdir) man.gif]
 
-set incvs 0
-set insvn 0
-set inrcs 0
-set ingit 0
+lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
 
 # Create a window
 # Start with Module Browser
 if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
-  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
 
   if {$insvn} {
     set cvsglb(root) $cvscfg(svnroot)
@@ -477,7 +473,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     exit 1
   }
   wm withdraw .
-  foreach {incvs insvn inrcs ingit} [cvsroot_check [pwd]] { break }
   if {$incvs} {
     cvs_branches \"$lcfile"\
   } elseif {$inrcs} {
@@ -498,7 +493,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     exit 1
   }
   wm withdraw .
-  foreach {incvs insvn ingit} [cvsroot_check [pwd]] { break }
   if {$incvs} {
     cvs_annotate "" \"$lcfile"\
   } elseif {$insvn} {
@@ -511,7 +505,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 # Start with Directory Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
-  foreach {incvs insvn inrcs} [cvsroot_check [pwd]] { break }
   if {$incvs} {
     cvs_joincanvas
   } elseif {$insvn} {

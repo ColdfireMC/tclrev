@@ -134,7 +134,7 @@ namespace eval ::exec {
           catch {close $procerr}
           if {$viewer != {}} {
             pack forget $v_w.stop
-            pack $v_w.close -in $v_w.bottom -side right -ipadx 15 -padx 25
+            pack $v_w.close -in $v_w.bottom -side right -ipadx 15 -padx 20
             $v_w.close configure -state normal
           }
           return
@@ -206,7 +206,7 @@ namespace eval ::exec {
         err_handler
         if {$viewer != {}} {
           pack forget $v_w.stop
-          pack $v_w.close -in $v_w.bottom -side right -ipadx 15 -padx 25
+          pack $v_w.close -in $v_w.bottom -side right -ipadx 15 -padx 20
           $v_w.close configure -state normal
         }
 
@@ -325,7 +325,7 @@ namespace eval ::viewer {
         gen_log:log T "ENTER (\"$command\" \"$show_stderr\" \"$filter\")"
 
         pack forget $w.close
-        pack $w.stop -in $w.bottom -side right -ipadx 15
+        pack $w.stop -in $w.bottom -side right -ipadx 15 -padx 20
 
         # Send the command to the execution module
         set v_e [::exec::new $command [namespace current] $show_stderr $filter]
@@ -465,11 +465,21 @@ proc status_colortags_git {exec line} {
       "D*" { set tag removed }
       "R*" { set tag renamed }
       "C*" { set tag copied }
-      "U*" { set tag updated }
+      "U*" { set tag conflict }
       "??" { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
       default { set tag default }
     }
   #gen_log:log T "LEAVE: $tag"
+  return [list $tag $line]
+}
+
+proc log_colortags_git {exec line} {
+  gen_log:log T "ENTER ($exec \"$line\")"
+  set tag default
+  if {[regexp {\* commit } $line]} {
+    set tag yellow
+  }
+  gen_log:log T "LEAVE: $tag"
   return [list $tag $line]
 }
 
@@ -673,13 +683,13 @@ proc viewer_window {w title parent} {
       -activebackground red4 -activeforeground white \
       -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
       -command "$parent\::abort"
-  pack $w.bottom -side bottom -fill x ;#-padx 25
+  pack $w.bottom -side bottom -fill x
   pack $w.scroll -side right -fill y
   pack $w.text -fill both -expand 1
   pack $w.bottom.srchbtn -side left
   pack $w.bottom.entry -side left
   pack $w.save -in $w.bottom -side left -padx 25
-  pack $w.close -in $w.bottom -side right -ipadx 15 -padx 25
+  pack $w.close -in $w.bottom -side right -ipadx 15 -padx 20
 
   # Focus to activate text bindings
   focus $w
