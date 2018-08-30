@@ -421,10 +421,7 @@ proc dialog_svn_patch { cvsroot pathA pathB summary } {
 proc add_dialog {args} {
   global cvs
   global cvsglb
-  global incvs
-  global insvn
-  global ingit
-
+  global incvs insvn inrcs ingit 
   gen_log:log T "ENTER ($args)"
 
   set binflag ""
@@ -486,7 +483,7 @@ proc add_dialog {args} {
 }
 
 proc file_tag_dialog {branch} {
-  global incvs insvn inrcs
+  global incvs insvn inrcs ingit
   global cvscfg
   global cvsglb
   global branchflag
@@ -655,9 +652,7 @@ proc rtag_dialog { cvsroot module b_or_t } {
 
 proc subtract_dialog {args} {
   global cvsglb
-  global incvs
-  global insvn
-  global ingit
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($args)"
 
@@ -724,8 +719,8 @@ proc subtract_dialog {args} {
 }
 
 proc edit_dialog {args} {
-  global incvs
   global cvsglb
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -773,8 +768,8 @@ proc edit_dialog {args} {
 }
 
 proc unedit_dialog {args} {
-  global incvs
   global cvsglb
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -1088,7 +1083,7 @@ proc update_with_options {} {
 
 proc addir_dialog {args} {
   global cvs
-  global incvs
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
@@ -1145,7 +1140,7 @@ proc addir_dialog {args} {
 
 proc subtractdir_dialog {args} {
   global cvs
-  global incvs
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
