@@ -100,11 +100,12 @@ proc newbranch {oldtag newtag} {
   puts "In [pwd]"
   cd git_test_$oldtag
   puts "In [pwd]"
-  set exec_cmd "git branch $newtag"
+  set exec_cmd "git branch --track $newtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   if {$ret} {
     puts $out
+    exit
   }
   set exec_cmd "git checkout $newtag"
   puts "$exec_cmd"
@@ -122,14 +123,11 @@ proc newbranch {oldtag newtag} {
   puts "Restoring git_test_$oldtag to $oldtag"
   cd git_test_$oldtag
   puts "In [pwd]"
-  set exec_cmd "git branch --unset-upstream master"
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
   set exec_cmd "git checkout $oldtag"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
+
   cd $WD
 }
 
@@ -153,9 +151,9 @@ proc addfile {filename branch} {
   puts $out
 }
 
-proc stage {filename} {
-  puts "Stage $filename"
-  set exec_cmd "git add --verbose $filename"
+proc stage {} {
+  puts "Stage [pwd]"
+  set exec_cmd "git add --verbose *"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -252,8 +250,6 @@ proc mkfiles {topdir} {
 }
 
 proc modfiles {} {
-  global env
-
   set tmpfile "list.tmp"
 
   file delete -force $tmpfile
@@ -261,7 +257,7 @@ proc modfiles {} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
-    set ret [catch {eval "exec find . -name F*.txt -o -name CVS -prune -a -type f > $tmpfile"} out]
+    set ret [catch {eval "exec find . -name F*.txt -o -name .git -a -type f > $tmpfile"} out]
   }
   if {$ret} {
     puts "Find failed"
@@ -276,33 +272,9 @@ proc modfiles {} {
   file delete -force $tmpfile
 }
 
-proc getrev {filename} {
-  # Get hash of current revision
-
-  set exec_cmd "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$filename\""
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
-  set latest [lindex $out 0]
-  return $latest
-}
-
 proc conflict {filename} {
   # Create a conflict. In Git, this is done with a temporary branch.
  
-  # Save a copy
-  #file copy $filename Ftmp.txt
-  # Make a change
-  #writefile $filename 1
-  #set exec_cmd "git add $filename"
-  #puts "$exec_cmd"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #puts $out
-  #set exec_cmd "git commit -m \"change on master\" $filename"
-  #puts "$exec_cmd"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #puts $out
-
   # Check out a new branch
   set exec_cmd "git checkout -b temp_branch"
   puts "$exec_cmd"
@@ -362,10 +334,8 @@ clone $Root $Master
 populate $Master
 cd $Master
 commit "Commit the imported files"
-push $Root
+push ""
 cd $WD
-# Branch before we do anything on the trunk
-#newbranch master branchA
 
 # Make some changes
 puts "==============================="
@@ -374,9 +344,9 @@ cd $Master
 modfiles
 writefile Ftrunk.txt 2
 addfile Ftrunk.txt master
-stage .
+stage
 commit "First revision on trunk"
-push $Root
+push ""
 cd $WD
 
 if {$branching_desired} {
@@ -386,27 +356,21 @@ if {$branching_desired} {
   cd $WD/git_test_branchA
   writefile FbranchA.txt 2
   addfile FbranchA.txt branchA
-  stage .
+  stage
   commit "Add file FbranchA.txt on branchA"
-  cd $WD
 
   puts "==============================="
   puts "First revision on Branch A"
-  cd $WD/git_test_branchA
   modfiles
-  stage .
+  stage
   commit "First revision on branchA"
-  cd $WD
 
   puts "==============================="
   puts "Second revision on Branch A"
-  cd $WD/git_test_branchA
   modfiles
-  stage .
+  stage
   commit "Second revision on branchA"
-  # update all branches in Root, so branch diagram in master shows the branch
-  push {--all}
-  fetch $Root
+  push ""
   cd $WD
 }
 
@@ -416,25 +380,67 @@ puts "Second revision on trunk"
 cd $WD/$Master
 fetch {--all}
 modfiles
-stage .
+stage
 commit "Second revision on trunk"
-push $Root
-cd $WD
 
 puts "==============================="
 puts "Third revision on trunk"
-cd $WD/$Master
 modfiles
-stage .
+stage
 commit "Third revision on trunk"
-push {--all}
-fetch
-if {$branching_desired} {
-  # update in branch so diagram is complete
-  cd $WD/git_test_branchA
-  fetch {--all}
-}
+push ""
 cd $WD
+
+if {$branching_desired} {
+
+  # Branch off of the branch
+  puts "==============================="
+  puts "MAKING BRANCH AA"
+  newbranch branchA branchAA
+  cd $WD/git_test_branchAA
+  modfiles
+  writefile FbranchAA.txt 2
+  addfile FbranchAA.txt branchAA
+  delfile Ftrunk.txt branchAA
+  stage
+  commit "First changes on Branch AA"
+
+  puts "==============================="
+  puts "Revision on Branch AA"
+  modfiles
+  stage
+  commit "Second changes on Branch AA"
+  push ""
+  push $Root
+  cd $WD
+
+  # Branch B
+  puts "==============================="
+  puts "MAKING BRANCH B"
+  newbranch master branchB
+  cd $WD/git_test_branchB
+  modfiles
+  writefile FbranchB.txt 1
+  addfile FbranchB.txt branchB
+  stage
+  commit "First changes on BranchB"
+
+  puts "==============================="
+  puts "Revision on Branch B"
+  modfiles
+  stage
+  commit "Second changes on Branch B"
+  push ""
+  push $Root
+  cd $WD
+
+  # Update all the directories
+  foreach branch {branchA branchAA branchB master} {
+    cd $WD/git_test_$branch
+    fetch {--all}
+    cd $WD
+  }
+}
 
 # Leave the trunk with uncommitted changes
 puts "==============================="
@@ -442,7 +448,7 @@ puts "Making Uncommitted changes on trunk"
 cd $WD/$Master
 # Local only
 writefile FileLocal.txt 1
-# Conflict. Have to do thise before the add and delete,
+# Conflict. Have to do this before the add and delete,
 # or the merge will fail before you get to the conflicted file
 conflict Ftrunk.txt
 # Newly added

@@ -24,13 +24,17 @@ foreach od $oldirs {
   file delete -force $od
 }
 
+set RcsRoot [file join $WD "RCS_REPOSITORY"]
+if {[ file isdirectory $RcsRoot ]} {
+  file delete -force $RcsRoot
+}
 set oldirs [glob -nocomplain -- rcs_test*]
 foreach od $oldirs {
   puts "Deleting $od"
   file delete -force $od
 }
 
-set GitRoot [file join $WD "GIT_REPOSITORY"]
+set GitRoot [file join $WD "GIT_REPOSITORY.git"]
 if {[ file isdirectory $GitRoot ]} {
   file delete -force $GitRoot
 }
@@ -39,4 +43,3 @@ foreach od $oldirs {
   puts "Deleting $od"
   file delete -force $od
 }
-
