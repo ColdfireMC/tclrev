@@ -210,6 +210,9 @@ proc git_log {detail args} {
       append flags " --graph --all"
       set filter log_colortags_git
     }
+    default {
+      set filter ""
+    }
   }
 
   set v [viewer::new "$title"]
@@ -344,6 +347,25 @@ proc git_status {detail args} {
   $stat_cmd\::do "$commandline" 0
 
   busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+
+# called from the branch browser
+proc git_log_rev {rev file} {
+  gen_log:log T "ENTER ($rev $file)"
+
+  set title "Git log"
+  set commandline "git log --no-color"
+  if {$rev ne ""} {
+    append commandline " $rev"
+    append title " $rev"
+  }
+  append commandline " $file"
+  append title " $file"
+
+  set logcmd [viewer::new "$title"]
+  $logcmd\::do "$commandline" 0 hilight_rcslog
+
   gen_log:log T "LEAVE"
 }
 
@@ -684,6 +706,7 @@ namespace eval ::git_branchlog {
       proc reloadLog { } {
         global cvscfg
         global cvsglb
+        global current_tagname
         variable filename
         variable cmd_log
         variable lc
@@ -694,7 +717,6 @@ namespace eval ::git_branchlog {
         variable revtime
         variable revcomment
         variable revkind
-        variable revpath
         variable revname
         variable revtags
         variable revbtags
@@ -721,7 +743,6 @@ namespace eval ::git_branchlog {
         catch { unset branchrevs }
         catch { unset revbranches }
         catch { unset revkind }
-        catch { unset revpath }
         catch { unset revname }
 
         pack forget $lc.close
@@ -730,6 +751,14 @@ namespace eval ::git_branchlog {
 
         # gets sys, loc, revnum_current
         $ln\::ConfigureButtons $filename
+        # in case we got here straight from the command line
+        if {! [info exists current_tagname]} {
+          set command "git rev-parse --abbrev-ref HEAD"
+          set cmd_curbranch [exec::new $command {} 0 {} 1]
+          set branch_output [$cmd_curbranch\::output]
+          $cmd_curbranch\::destroy
+          set current_tagname [string trim $branch_output "\n"]
+        }
 
         #set show_merges [set $ln\::opt(show_merges)]
         #set show_tags [set $ln\::opt(show_tags)]
@@ -740,19 +769,58 @@ namespace eval ::git_branchlog {
 
         # Find out where to put the working revision icon (if anywhere)
         set revnum_current [set $ln\::revnum_current]
-        #set highest_revision $revnum_current
 
         # Get a list of the branches from the repository
+        # This gives you the local branches
         set command "git branch --format=\'%(refname:short)\'"
-        set cmd_branch [exec::new $command {} 0 {} 1]
-        set branch_output [$cmd_branch\::output]
-        $cmd_branch\::destroy
-        set blines [split $branch_output "\n"]
-        foreach bl $blines {
+        set cmd_lbranch [exec::new $command {} 0 {} 1]
+        set lbranch_output [$cmd_lbranch\::output]
+        $cmd_lbranch\::destroy
+        set lblines [split $lbranch_output "\n"]
+        foreach bl $lblines {
           if {[string length $bl] > 0} {
-            lappend branches [string trim $bl "'"]
+            lappend local_branches [string trim $bl "'"]
           }
         }
+        # This one gives remote branches.
+        set command "git branch -r --format=\'%(refname:short)\'"
+        set cmd_rbranch [exec::new $command {} 0 {} 1]
+        set rbranch_output [$cmd_rbranch\::output]
+        $cmd_rbranch\::destroy
+        set rblines [split $rbranch_output "\n"]
+        foreach bl $rblines {
+          if {[string length $bl] > 0} {
+            lappend remote_branches [string trim $bl "'"]
+          }
+        }
+        # Now we combine them. If there's a locally visible branch we prefer it
+        # because it may have changes that haven't been pushed to remote
+        gen_log:log D "local branches: $local_branches"
+        gen_log:log D "remote branches: $remote_branches"
+        set idx 0
+        foreach r $remote_branches {
+          regsub {.*/} $r {} rtail
+          if {$rtail eq "HEAD"} {
+            set remote_branches [lreplace $remote_branches $idx $idx]
+          }
+          incr idx
+        }
+        gen_log:log D "local_branches $local_branches"
+        gen_log:log D "remote_branches $remote_branches"
+        set idx 0
+        foreach r $remote_branches {
+          regsub {.*/} $r {} rtail
+          foreach l $local_branches {
+            if {$l eq $rtail} {
+              lappend branches $l
+              set needed_remotes [lreplace $remote_branches $idx $idx]
+            }
+          }
+          incr idx
+        }
+        gen_log:log D "needed remotes $needed_remotes"
+        gen_log:log D "needed remotes: $needed_remotes"
+        set branches [concat $local_branches $needed_remotes]
         gen_log:log D "branches: $branches"
 
         # Get all the date, comment, etc data at once. In Git it's not so
@@ -764,25 +832,68 @@ namespace eval ::git_branchlog {
         set log_lines [split $log_output "\n"]
         set rootrev [parse_gitlog $log_lines]
 
-        # Trick to find the parent of a branch is to list all the revs in the
-        # branch and in its parent, and exclude those that aren't exclusive
-        # to that branch.
+        # "master" may or may not be in our list of branches. If it is, we'll
+        # use it as trunk.
+        set trunk_found 0
+        if { "master" in $branches } {
+          set trunk "master"
+          set trunk_found 1
+          gen_log:log D "master is reachable locally, trunk=$trunk"
+        } else {
+          set m [lsearch -glob $branches {*/master}]
+          if {$m > -1} {
+            set trunk [lindex $branches $m]
+            gen_log:log D "master is reachable remotely, trunk=$trunk"
+            set trunk_found 1
+          }
+        }
+        if {! $trunk_found} {
+          gen_log:log D "master not found, looking in the log for an ancestor"
+          # Otherwise, try to find something else to use as trunk.
+          # Maybe we can pull a parent out of the "decorated" log.
+          set command "git log --graph --oneline --abbrev-commit --decorate --format=\'%h%d\'"
+          set cmd_log [exec::new $command {} 0 {} 1]
+          set revlog_output [$cmd_log\::output]
+          $cmd_log\::destroy
+          foreach rl [split $revlog_output "\n"] {
+            if {[string match {*HEAD*} $rl]} {continue}
+            if {[regexp {\(.*\)} $rl ref]} {
+              regsub -all {[()]} $ref {} trunk
+              set trunk_found 1
+              break
+            }
+          }
+          if {$trunk_found} {
+            gen_log:log D "candidate for trunk=$trunk"
+          }
+        }
+        if {! $trunk_found} {
+          # Give up and use the current branch
+          set trunk $current_tagname
+          gen_log:log D "Using current branch for trunk=$trunk"
+        }
 
-        # First make a list of the revisions on master
-        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order origin/master -- $filename"
+        # First make a list of the revisions on trunk
+        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $trunk -- $filename"
         set cmd_revlist [exec::new $command {} 0 {} 1]
         set revlist_output [$cmd_revlist\::output]
         $cmd_revlist\::destroy
         foreach ro [lreverse [split $revlist_output "\n"]] {
           if {[string length $ro] > 0} {
-            lappend branchrevs(master) $ro
+            lappend branchrevs(trunk) $ro
           }
         }
+
         # Compare this list with the branches
+        # Trick to find the parent of a branch is to list all the revs in the
+        # branch and in its parent, and exclude those that aren't exclusive
+        # to that branch.
+        gen_log:log D "Now comparing trunk revs with other branch revs"
         foreach branch $branches {
-          if {$branch eq "master"} {continue}
+          gen_log:log D " branch=$branch"
+          if {$branch eq $trunk} {continue}
           set long_branchrevlist ""
-          set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order origin/$branch -- $filename"
+          set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $branch -- $filename"
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy
@@ -793,26 +904,30 @@ namespace eval ::git_branchlog {
           }
           gen_log:log D "IN == $branch ==============="
           if {! [llength $long_branchrevlist]} {
-           gen_log:log D "$branch is EMPTY"
+            gen_log:log D "$branch is EMPTY"
             continue
           }
-          gen_log:log D "master: $branchrevs(master)"
+          gen_log:log D "trunk: $branchrevs(trunk)"
           gen_log:log D "$branch: $long_branchrevlist"
           if {[llength long_branchrevlist]} {
-            set comparisons [list_comm $long_branchrevlist $branchrevs(master)]
+           gen_log:log D "BRANCH $branch"
+            set comparisons [list_comm $long_branchrevlist $branchrevs(trunk)]
             set branch_only [lindex $comparisons 0]
-            set master_only [lindex $comparisons 1]
+            set trunk_only [lindex $comparisons 1]
             set inboth [lindex $comparisons 2]
             set branchrevs($branch) [lindex $comparisons 0]
             # The last of the ones that appear in both lists is the parent
             set parent [lindex $inboth 0]
-            set revbranches($parent) $branch
-            set base [lindex $branch_only 0]
+            gen_log:log D "parent $parent"
+            gen_log:log D "branch_only $branch_only"
+            set base [lindex $branch_only end]
+            gen_log:log D "base $base"
+            set revbranches($parent) $base
             set branchrevs($base) $branchrevs($branch)
             set revbtags($base) $branch
             gen_log:log D "OUT ========================="
             gen_log:log D "in $branch only: $branch_only"
-            gen_log:log D "in master only: $master_only"
+            gen_log:log D "in trunk only: $trunk_only"
             gen_log:log D "in both:   $inboth"
             gen_log:log D "$branch BASE: $base"
             gen_log:log D "$branch PARENT: $parent"
@@ -822,18 +937,17 @@ namespace eval ::git_branchlog {
           }
         }
 
-        # See if the current revision is on the master
+        # See if the current revision is on the trunk
         set curr 0
-        set brevs $branchrevs(master)
-        set tip [lindex $brevs end]
-gen_log:log D "tip $tip"
-        set revpath($tip) $path
+        set brevs $branchrevs(trunk)
+        set tip [lindex $brevs 0]
+        gen_log:log D "tip $tip"
         set revkind($tip) "revision"
         set brevs [lreplace $brevs 0 0]
         if {$tip == $revnum_current} {
-          # If current is at end of master do this.
-gen_log:log D "Currently at top of master"
-          set branchrevs(master) [linsert $branchrevs(master) 0 {current}]
+          # If current is at end of trunk do this.
+          gen_log:log D "Currently at top of trunk"
+          set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
           set curr 1
         }
         foreach r $brevs {
@@ -843,24 +957,45 @@ gen_log:log D "Currently at top of master"
           }
           gen_log:log D " $r $revdate($r) ($revcomment($r))"
           set revkind($r) "revision"
-          set revpath($r) $path
         }
-gen_log:log D "rootrev = $rootrev"
-        set branchrevs($rootrev) $branchrevs(master)
-gen_log:log D "branchrevs(master) $branchrevs(master)"
+        gen_log:log D "rootrev = $rootrev"
+        set branchrevs($rootrev) $branchrevs(trunk)
+        gen_log:log D "branchrevs(trunk) $branchrevs(trunk)"
         set revkind($rootrev) "root"
-        set revname($rootrev) "master"
+        set revname($rootrev) "$current_tagname"
         # revbtags is for DrawTree
-        set revbtags($rootrev) "trunk"
-        set revpath($rootrev) $path
+        set revbtags($rootrev) $trunk
+
+        foreach branch $branches {
+          if {$branch eq $trunk} {continue}
+          # See if the current revision is on this branch
+          set curr 0
+          set brevs $branchrevs($branch)
+          set tip [lindex $brevs 0]
+          #set revkind($tip) "revision"
+          set brevs [lreplace $brevs 0 0]
+          if {$tip == $revnum_current} {
+            # If current is at end of the branch do this.
+            set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
+            set curr 1
+          }
+          foreach r $brevs {
+            if {$r == $revnum_current} {
+              # We need to make a new artificial branch off of $r
+              lappend revbranches($r) {current}
+            }
+            gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+          }
+        }
 
         # if root is not empty added it to the branchlist
         if { $rootrev ne "" } {
           lappend branchlist $rootrev
         }
-        if {$branch eq "master"} {continue}
-        gen_log:log D "$branch"
-        set branch [string trimright $branch "/"]
+        if {$branch ne $trunk} {
+          gen_log:log D "$branch"
+          set branch [string trimright $branch "/"]
+        }
 
         [namespace current]::git_sort_it_all_out
         gen_log:log T "LEAVE"
@@ -944,7 +1079,6 @@ gen_log:log D "branchrevs(master) $branchrevs(master)"
         variable revtime
         variable revcomment
         variable revkind
-        variable revpath
         variable revname
         variable revtags
         variable revbtags
@@ -963,10 +1097,6 @@ gen_log:log D "branchrevs(master) $branchrevs(master)"
           gen_log:log D "revkind($r) $revkind($r)"
           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
-        #foreach r [lsort -dictionary [array names revpath]] {
-          #gen_log:log D "revpath($r) $revpath($r)"
-          #if {![info exists revbranches($r)]} {set revbranches($r) {} }
-        #}
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
           gen_log:log D "branchrevs($a) $branchrevs($a)"
