@@ -4,8 +4,6 @@ exec tclsh "$0" -- ${1+"$@"}
 
 
 proc cleanup_old {root} {
-  global env
-
   if {[ file isdirectory $root ]} {
     puts "Deleting $root"
     file delete -force $root
@@ -111,8 +109,6 @@ proc writefile {filename wn} {
 }
 
 proc addfile {filename branch} {
-  global env
-
   puts "Add $filename on $branch"
   set exec_cmd "svn add $filename"
   puts "$exec_cmd"
@@ -121,8 +117,6 @@ proc addfile {filename branch} {
 }
 
 proc delfile {filename branch} {
-  global env
-
   puts "Delete $filename on $branch"
   file delete $filename
   set exec_cmd "svn delete $filename"
@@ -165,8 +159,6 @@ proc mkfiles {topdir} {
 }
 
 proc modfiles {} {
-  global env
-
   set tmpfile "list.tmp"
 
   file delete -force $tmpfile
