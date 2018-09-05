@@ -673,23 +673,23 @@ proc DirCanvas:build {w} {
       }
      "<dir> " {
        set DirList($w:$f:icon) folder
-       set DirList($w:$f:popup) svnfolder_pop
+       set DirList($w:$f:popup) svndir_pop
      }
      "<dir> Up-to-date" {
        set DirList($w:$f:icon) dir_ok
-       set DirList($w:$f:popup) svnfolder_pop
+       set DirList($w:$f:popup) svndir_pop
      }
      "<dir> Not managed*" {
        set DirList($w:$f:icon) dir
-       set DirList($w:$f:popup) svnfolder_pop
+       set DirList($w:$f:popup) svndir_pop
      }
      "<dir> Locally Added" {
        set DirList($w:$f:icon) dir_plus
-       set DirList($w:$f:popup) svnfolder_pop
+       set DirList($w:$f:popup) svndir_pop
      }
      "<dir> Locally Removed" {
        set DirList($w:$f:icon) dir_minus
-       set DirList($w:$f:popup) svnfolder_pop
+       set DirList($w:$f:popup) svndir_pop
      }
      "<link> " {
 	 set DirList($w:$f:icon) link
@@ -1358,7 +1358,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_svnok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Log" \
-    -command { svn_log [workdir_list_files] }
+    -command { svn_log $cvscfg(ldetail) [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Info" \
     -command { svn_info [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
@@ -1407,26 +1407,17 @@ proc DirCanvas:makepopup {w} {
     -command { svn_branches [workdir_list_files] }
 
   # For SVN directories
-  menu $w.svnfolder_pop
-  $w.svnfolder_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
-  $w.svnfolder_pop add command -label "SVN Log" \
-    -command { svn_log [workdir_list_files] }
-  $w.svnfolder_pop add command -label "SVN Info" \
-    -command { svn_info [workdir_list_files] }
-  $w.svnfolder_pop add command -label "Browse the Log Diagram" \
-    -command { svn_branches [workdir_list_files] }
-  $w.svnfolder_pop add command -label "SVN Remove" \
-    -command { subtract_dialog [workdir_list_files] }
-
-  # For SVN directories
   menu $w.svndir_pop
   $w.svndir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Log" \
-    -command { svn_log [workdir_list_files] }
+    -command { svn_log $cvscfg(ldetail) [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Info" \
     -command { svn_info [workdir_list_files] }
+  $w.svndir_pop add command -label "Browse the Log Diagram" \
+    -command { svn_branches [workdir_list_files] }
+  $w.svndir_pop add command -label "SVN Remove" \
+    -command { subtract_dialog [workdir_list_files] }
 
   gen_log:log T "LEAVE"
 }

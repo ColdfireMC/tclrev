@@ -334,6 +334,45 @@ namespace eval ::logcanvas {
            if {! [info exists revnum_current]} {
              gen_log:log E "Warning: couldn't find current revision number!"
            }
+           if {$loc == "rep"} {
+             # Working on repository files, not checked out
+             # can we implement this?
+           } else {
+             # We have a checked-out local file
+             $logcanvas.log configure \
+                  -command [namespace code {
+                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    if {$rev == ""} {
+                      git_log_rev "" $filename
+                    } else {
+                      git_log_rev $rev $filename
+                    }
+                  }]
+             $logcanvas.view configure \
+               -command [namespace code {
+                  git_fileview_update [$logcanvas.up.revA_rvers cget -text] \
+                  $filename
+               }]
+             $logcanvas.annotate configure \
+               -command [namespace code {
+                 git_annotate [$logcanvas.up.revA_rvers cget -text] \
+                 $filename
+               }]
+             $logcanvas.delta configure \
+               -command [namespace code {
+                 set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 set fromtag ""
+                 set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
+                 if {[info exists revbtags($fromrev_root)]} {
+                   set fromtag [lindex $revbtags($fromrev_root) 0]
+                 } else {
+                   # Just a rev number will do
+                   set fromtag $fromrev_root
+                 }
+                 git_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
+                }]
+            }
          }
          "RCS" {
            $logcanvas.up.bmodbrowse configure -state disabled -image {}
@@ -1067,6 +1106,7 @@ namespace eval ::logcanvas {
         variable font_norm_h
         variable font_bold
         variable font_bold_h
+        variable sys
 
         variable revwho
         variable revdate
@@ -1156,8 +1196,8 @@ namespace eval ::logcanvas {
           if {$opt(show_root_tags)} {
             append root_info {$revbtags($root_rev) }
           }
-          if {$opt(show_root_rev)} {
-            append root_info {$root_rev }
+          if {$sys eq "CVS" || $sys eq "RCS"} {
+            append root_info {$root_rev}
           }
           set rev_info {}
           if {$opt(show_box_revtime)} {
@@ -1201,13 +1241,11 @@ namespace eval ::logcanvas {
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
 
-          # Find the root. (needed for SVN).  If there's a trunk, of course use that
-          foreach a [array names revbtags] {
-            foreach tag $revbtags($a) {
-              if {$tag == "trunk"} {
-                set trunkrev $a
-                break
-              }
+          # Find the root. (needed for SVN and GIT). If there's a trunk, of course use that
+          foreach a [array names revkind] {
+            if {$revkind($a) == "root"} {
+              set trunkrev $a
+              break
             }
           }
           # If there's no trunk, find the beginning of a branch
@@ -1236,7 +1274,6 @@ namespace eval ::logcanvas {
             }
             set x2 [expr {$lx + $lbw + $curr(spcx)}]
             set mx [expr {$lx + $lbw/2}]
-            #set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
             set ry [expr {$y2 - $rh/4 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
             $logcanvas.canvas create line \
@@ -1538,19 +1575,15 @@ gen_log:log D " $pattern MATCHED $text"
       menu $logcanvas.menubar.view.branch
       $logcanvas.menubar.view.branch add command -label "Turn all options on" \
         -command [namespace code {
-          set opt(show_root_rev) [set opt(show_root_tags) 1]
+          set opt(show_root_tags) 1
           DrawTree
         }]
       $logcanvas.menubar.view.branch add command -label "Turn all options off" \
         -command [namespace code {
-          set opt(show_root_rev) [set opt(show_root_tags) 0]
+          set opt(show_root_tags) 0
           DrawTree
         }]
       $logcanvas.menubar.view.branch add separator
-      $logcanvas.menubar.view.branch add checkbutton -label "Show revision" \
-        -variable [namespace current]::opt(show_root_rev) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.branch add checkbutton -label "Show label" \
         -variable [namespace current]::opt(show_root_tags) \
         -onvalue 1 -offvalue 0 \

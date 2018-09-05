@@ -150,14 +150,14 @@ proc workdir_setup {} {
 
   button .workdir.bottom.buttons.dirfuncs.brefresh -image Refresh \
      -command { setup_dir }
-  button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check
-
+  button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check \
+     -command { cvs_check }
   button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches \
      -command { cvs_branches [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate \
      -command { cvs_annotate $current_tagname [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bfilelog -image Log \
-    -command { cvs_log [workdir_list_files] }
+    -command { cvs_log $cvscfg(ldetail) [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bdiff -image Diff \
      -command { comparediff [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict \
@@ -523,9 +523,9 @@ proc workdir_menus {} {
   # GIT
   menu .workdir.menubar.git
   .workdir.menubar.git add command -label "Log" -underline 0 \
-     -command {git_log [workdir_list_files] }
+     -command { git_log $cvscfg(ldetail) [workdir_list_files] }
   .workdir.menubar.git add command -label "Add Files" -underline 0 \
-     -command {add_dialog [workdir_list_files] }
+     -command { add_dialog [workdir_list_files] }
   .workdir.menubar.git add command -label "Remove Files" -underline 0 \
      -command { subtract_dialog [workdir_list_files] }
 
@@ -961,7 +961,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { rcs_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
-      -command { rcs_log [workdir_list_files] }
+      -command { rcs_log $cvscfg(ldetail) [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { rcs_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
@@ -1011,7 +1011,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
-      -command { svn_log [workdir_list_files] }
+      -command { svn_log $cvscfg(ldetail) [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
       -command { svn_annotate BASE [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
@@ -1081,7 +1081,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
-      -command { cvs_log "latest" [workdir_list_files] }
+      -command { cvs_log $cvscfg(ldetail) [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
       -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
@@ -1154,7 +1154,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { git_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
-      -command { git_log [workdir_list_files] }
+      -command { git_log $cvscfg(ldetail) [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command { git_commit_dialog }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \

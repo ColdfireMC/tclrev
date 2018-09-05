@@ -155,7 +155,6 @@ set logcfg(show_merges) 1
 set logcfg(show_empty_branches) 1
 set logcfg(show_inter_revs) 1
 set logcfg(show_root_tags) 1
-set logcfg(show_root_rev) 0
 set logcfg(show_box_rev) 1
 set logcfg(show_box_revwho) 1
 set logcfg(show_box_revdate) 1
@@ -260,6 +259,12 @@ if {$tcl_platform(platform) == "windows"} {
 # Set this to 1 to see all files displayed in the directory
 # browser (including hidden files) by default.
 set cvscfg(allfiles)           false
+
+# set the log file detail for the button: one of
+#   "latest"     latest log message on the current branch
+#   "summary"    version number and comment string for all check-ins
+#   "verbose"    all logfile detail possible, including symbolic tags
+set cvscfg(ldetail)            "summary"
 
 # set the default pattern to be used by the filter.  Use any valid
 # pattern that can be used for a pattern for 'ls'. An empty string
