@@ -1618,6 +1618,7 @@ namespace eval ::svn_branchlog {
         set branchrevs($rootrev) $branchrevs(trunk)
         set revkind($rootrev) "root"
         set revname($rootrev) "trunk"
+        # revbtags is for DrawTree
         set revbtags($rootrev) "trunk"
         set revpath($rootrev) $path
 
@@ -1988,11 +1989,9 @@ namespace eval ::svn_branchlog {
         # Sort the revision and branch lists and remove duplicates
         foreach r [lsort -dictionary [array names revkind]] {
            gen_log:log D "revkind($r) $revkind($r)"
-           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
         foreach r [lsort -dictionary [array names revpath]] {
            gen_log:log D "revpath($r) $revpath($r)"
-           #if {![info exists revbranches($r)]} {set revbranches($r) {} }
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {

@@ -340,10 +340,8 @@ proc git_status {detail args} {
       append flags " --verbose"
     }
   }
-  # enable some color highlighting
   set stat_cmd [viewer::new $title]
   set commandline "git status $flags $filelist"
-  #$stat_cmd\::do "$commandline" 0 ansi_colortags
   $stat_cmd\::do "$commandline" 0
 
   busy_done .workdir.main
@@ -360,11 +358,11 @@ proc git_log_rev {rev file} {
     append commandline " $rev"
     append title " $rev"
   }
-  append commandline " $file"
+  append commandline " \"$file\""
   append title " $file"
 
   set logcmd [viewer::new "$title"]
-  $logcmd\::do "$commandline" 0 hilight_rcslog
+  $logcmd\::do "$commandline" 0 log_colortags_git
 
   gen_log:log T "LEAVE"
 }
@@ -717,6 +715,7 @@ namespace eval ::git_branchlog {
         variable revtime
         variable revcomment
         variable revkind
+        variable revpath
         variable revname
         variable revtags
         variable revbtags
@@ -743,6 +742,7 @@ namespace eval ::git_branchlog {
         catch { unset branchrevs }
         catch { unset revbranches }
         catch { unset revkind }
+        catch { unset revpath }
         catch { unset revname }
 
         pack forget $lc.close
@@ -874,7 +874,7 @@ namespace eval ::git_branchlog {
         }
 
         # First make a list of the revisions on trunk
-        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $trunk -- $filename"
+        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $trunk -- \"$filename\""
         set cmd_revlist [exec::new $command {} 0 {} 1]
         set revlist_output [$cmd_revlist\::output]
         $cmd_revlist\::destroy
@@ -893,7 +893,7 @@ namespace eval ::git_branchlog {
           gen_log:log D " branch=$branch"
           if {$branch eq $trunk} {continue}
           set long_branchrevlist ""
-          set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $branch -- $filename"
+          set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $branch -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy
@@ -941,7 +941,7 @@ namespace eval ::git_branchlog {
         set curr 0
         set brevs $branchrevs(trunk)
         set tip [lindex $brevs 0]
-        gen_log:log D "tip $tip"
+        set revpath($tip) $path
         set revkind($tip) "revision"
         set brevs [lreplace $brevs 0 0]
         if {$tip == $revnum_current} {
@@ -957,6 +957,7 @@ namespace eval ::git_branchlog {
           }
           gen_log:log D " $r $revdate($r) ($revcomment($r))"
           set revkind($r) "revision"
+          set revpath($r) $path
         }
         gen_log:log D "rootrev = $rootrev"
         set branchrevs($rootrev) $branchrevs(trunk)
@@ -965,6 +966,7 @@ namespace eval ::git_branchlog {
         set revname($rootrev) "$current_tagname"
         # revbtags is for DrawTree
         set revbtags($rootrev) $trunk
+        set revpath($rootrev) $path
 
         foreach branch $branches {
           if {$branch eq $trunk} {continue}
@@ -972,7 +974,7 @@ namespace eval ::git_branchlog {
           set curr 0
           set brevs $branchrevs($branch)
           set tip [lindex $brevs 0]
-          #set revkind($tip) "revision"
+          set revpath($tip) $path
           set brevs [lreplace $brevs 0 0]
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
@@ -985,6 +987,7 @@ namespace eval ::git_branchlog {
               lappend revbranches($r) {current}
             }
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+            set revpath($r) $path
           }
         }
 
@@ -996,6 +999,10 @@ namespace eval ::git_branchlog {
           gen_log:log D "$branch"
           set branch [string trimright $branch "/"]
         }
+
+        pack forget $lc.stop
+        pack $lc.close -in $lc.down.closefm -side right
+        $lc.close configure -state normal
 
         [namespace current]::git_sort_it_all_out
         gen_log:log T "LEAVE"
@@ -1079,6 +1086,7 @@ namespace eval ::git_branchlog {
         variable revtime
         variable revcomment
         variable revkind
+        variable revpath
         variable revname
         variable revtags
         variable revbtags
@@ -1095,18 +1103,20 @@ namespace eval ::git_branchlog {
         # Sort the revision and branch lists and remove duplicates
         foreach r [lsort -dictionary [array names revkind]] {
           gen_log:log D "revkind($r) $revkind($r)"
-          #if {![info exists revbranches($r)]} {set revbranches($r) {} }
+        }
+        foreach r [lsort -dictionary [array names revpath]] {
+           gen_log:log D "revpath($r) $revpath($r)"
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
           gen_log:log D "branchrevs($a) $branchrevs($a)"
         }
         gen_log:log D ""
-        foreach a [lsort -dictionary [array names revbranches]] {
+        #foreach a [lsort -dictionary [array names revbranches]] {
           # sort the rev branches to they will be displayed in increasing order
-          set revbranches($a) [lsort -dictionary $revbranches($a)]
-          gen_log:log D "revbranches($a) $revbranches($a)"
-        }
+          #set revbranches($a) [lsort -dictionary $revbranches($a)]
+          #gen_log:log D "revbranches($a) $revbranches($a)"
+        #}
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revbtags]] {
          gen_log:log D "revbtags($a) $revbtags($a)"
@@ -1116,11 +1126,11 @@ namespace eval ::git_branchlog {
           gen_log:log D "revtags($a) $revtags($a)"
         }
         gen_log:log D ""
-        foreach a [lsort -dictionary [array names revmergefrom]] {
+        #foreach a [lsort -dictionary [array names revmergefrom]] {
           # Only take the highest rev of the messsy list that you might have here
-          set revmergefrom($a) [lindex [lsort -dictionary $revmergefrom($a)] end]
-          gen_log:log D "revmergefrom($a) $revmergefrom($a)"
-        }
+          #set revmergefrom($a) [lindex [lsort -dictionary $revmergefrom($a)] end]
+          #gen_log:log D "revmergefrom($a) $revmergefrom($a)"
+        #}
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         $ln\::DrawTree now

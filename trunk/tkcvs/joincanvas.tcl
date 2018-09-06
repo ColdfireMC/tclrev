@@ -660,7 +660,7 @@ namespace eval joincanvas {
       #
       wm minsize $joincanvas 1 1
 
-      scrollbindings Canvas
+      scrollbindings $joincanvas.canvas
       focus $joincanvas.canvas
 
       fillcanvas $localfile $filelog
