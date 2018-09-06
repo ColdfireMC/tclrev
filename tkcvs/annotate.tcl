@@ -333,7 +333,6 @@ namespace eval ::annotate {
       $w.bottom.linum configure -command [namespace code {redo $w}]
       # Focus in the text widget to activate the text bindings
       focus $w.text
-      #bind_show $w.text -verbose
       busy_done $w
       return [namespace current]
     }

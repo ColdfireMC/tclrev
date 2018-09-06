@@ -348,30 +348,30 @@ namespace eval ::logcanvas {
                       git_log_rev $rev $filename
                     }
                   }]
-             $logcanvas.view configure \
-               -command [namespace code {
-                  git_fileview_update [$logcanvas.up.revA_rvers cget -text] \
-                  $filename
-               }]
-             $logcanvas.annotate configure \
-               -command [namespace code {
-                 git_annotate [$logcanvas.up.revA_rvers cget -text] \
-                 $filename
-               }]
-             $logcanvas.delta configure \
-               -command [namespace code {
-                 set fromrev [$logcanvas.up.revA_rvers cget -text]
-                 set sincerev [$logcanvas.up.revB_rvers cget -text]
-                 set fromtag ""
-                 set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
-                 if {[info exists revbtags($fromrev_root)]} {
-                   set fromtag [lindex $revbtags($fromrev_root) 0]
-                 } else {
-                   # Just a rev number will do
-                   set fromtag $fromrev_root
-                 }
-                 git_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
-                }]
+             $logcanvas.view configure -state disabled
+               #-command [namespace code {
+                  #git_fileview_update [$logcanvas.up.revA_rvers cget -text] \
+                  #$filename
+               #}]
+             $logcanvas.annotate configure -state disabled
+               #-command [namespace code {
+                 #git_annotate [$logcanvas.up.revA_rvers cget -text] \
+                 #$filename
+               #}]
+             $logcanvas.delta configure -state disabled
+               #-command [namespace code {
+                 #set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 #set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 #set fromtag ""
+                 #set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
+                 #if {[info exists revbtags($fromrev_root)]} {
+                   #set fromtag [lindex $revbtags($fromrev_root) 0]
+                 #} else {
+                   ## Just a rev number will do
+                   #set fromtag $fromrev_root
+                 #}
+                 #git_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
+                #}]
             }
          }
          "RCS" {
@@ -394,7 +394,7 @@ namespace eval ::logcanvas {
 
       proc PopupTags { x y } {
       #
-      # Pop up a transient window with a listbox of the tags for a specific\
+      # Pop up a transient window with a listbox of the tags for a specific
       # revision
       #
         global cvscfg
@@ -1196,8 +1196,10 @@ namespace eval ::logcanvas {
           if {$opt(show_root_tags)} {
             append root_info {$revbtags($root_rev) }
           }
-          if {$sys eq "CVS" || $sys eq "RCS"} {
-            append root_info {$root_rev}
+          if {$opt(show_box_rev)} {
+            if {$sys eq "CVS" || $sys eq "RCS"} {
+              append root_info {$root_rev}
+            }
           }
           set rev_info {}
           if {$opt(show_box_revtime)} {
@@ -1241,7 +1243,7 @@ namespace eval ::logcanvas {
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
 
-          # Find the root. (needed for SVN and GIT). If there's a trunk, of course use that
+          # Find the root. (needed for SVN and GIT). If there's a trunk, use that
           foreach a [array names revkind] {
             if {$revkind($a) == "root"} {
               set trunkrev $a
@@ -1802,10 +1804,9 @@ gen_log:log D " $pattern MATCHED $text"
            $logcanvas.viewtags \
         -in $logcanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
-      pack $logcanvas.down.closefm -side right -expand yes
+      pack $logcanvas.down.closefm -side right -expand yes -fill x
       pack $logcanvas.close \
-        -in $logcanvas.down.closefm -side right \
-        -fill both -expand yes
+        -in $logcanvas.down.closefm -side right -padx 15
 
       set_tooltips $logcanvas.refresh \
         {"Re-read the log information"}

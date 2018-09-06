@@ -21,7 +21,8 @@ proc gen_log:init {} {
   set logcolor(D) red
 
   text .trace.text -setgrid yes -relief sunken -border 2 \
-      -exportselection 1 -yscroll ".trace.scroll set"
+      -insertwidth 0 -exportselection 1 \
+      -yscroll ".trace.scroll set"
   scrollbar .trace.scroll -relief sunken \
       -command ".trace.text yview"
   frame .trace.bottom
@@ -73,7 +74,6 @@ proc gen_log:init {} {
   pack .trace.bottom.save -side left
   pack .trace.close -in .trace.bottom -side right
 
-
   #.trace.text configure -background gray92
   .trace.text tag configure tagC -foreground $logcolor(C)
   .trace.text tag configure tagE -foreground $logcolor(E)
@@ -81,9 +81,11 @@ proc gen_log:init {} {
   .trace.text tag configure tagT -foreground $logcolor(T)
   .trace.text tag configure tagD -foreground $logcolor(D)
 
+  # Disable key presses and make a popup for mouse Copy
+  ro_textbindings .trace.text
+
   # Focus in the text widget to activate the text bindings
   focus .trace.text
-  #bind_show .trace.text
 
   wm title .trace "TkCVS Trace"
   if {$tcl_platform(platform) != "windows"} {

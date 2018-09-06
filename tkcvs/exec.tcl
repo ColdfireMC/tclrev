@@ -476,7 +476,7 @@ proc status_colortags_git {exec line} {
 proc log_colortags_git {exec line} {
   gen_log:log T "ENTER ($exec \"$line\")"
   set tag default
-  if {[regexp {\* commit } $line]} {
+  if {[regexp {^[\s\*]*commit } $line]} {
     set tag yellow
   }
   gen_log:log T "LEAVE: $tag"
@@ -638,29 +638,7 @@ proc viewer_window {w title parent} {
       -bg white -fg black \
       -exportselection 1 -height 30 \
       -yscroll "$w.scroll set"
-  bind $w.text <KeyPress> {
-    switch -- %K {
-      "Up" -
-      "Left" -
-      "Right" -
-      "Down" -
-      "Next" -
-      "Prior" -
-      "Home" -
-      "End" {}
-      "c" -
-      "C" {
-          if {(%s & 0x04) == 0} {
-            break
-          }
-        }
-      default {
-          break
-        }
-    }
-  }
-  bind $w.text <<Paste>> {break}
-  bind $w.text <<Cut>> {break}
+  ro_textbindings $w.text 
 
   # Configure the various tags
   foreach outputcolor [array names cvscfg outputColor,*] {
@@ -694,115 +672,5 @@ proc viewer_window {w title parent} {
   # Focus to activate text bindings
   focus $w
   wm title $w "$title"
-}
-
-proc save_viewcontents {w} {
-  set types  { {{All Files} *} }
-  set savfile [ \
-    tk_getSaveFile -title "Save Results Summary" \
-       -initialdir "." \
-       -filetypes $types \
-       -parent $w \
-  ]  
-  if {$savfile == ""} {
-    return
-  } 
-  if {[catch {set fo [open $savfile w]}]} {
-    puts "Cannot open $savfile for writing"
-    return
-  }
-  puts $fo [$w.text get 1.0 end]
-  close $fo
-}
-
-#
-# Search functionality for text widgets
-#
-proc search_textwidget_init {} {
-# Initialize the globals for general text searches
-  global cvsglb
-
-  if {! [info exists cvsglb(searchstr)] } {
-    set cvsglb(searchstr) ""
-    set cvsglb(last_searchstr) ""
-  }
-  set cvsglb(searchidx) "1.0"
-}
-
-proc search_textwidget { wtx } {
-# Search the text widget
-  global cvsglb
-  global cvscfg
-
-  #gen_log:log T "ENTER ($wtx)"
-
-  if {$cvsglb(searchstr) != $cvsglb(last_searchstr)} {
-    $wtx tag delete match
-    set cvsglb(searchidx) "1.0"
-  }
-
-  $wtx tag configure sel -background gray -foreground black
-  $wtx tag raise sel
-  $wtx tag configure match -background gray -foreground black \
-     -relief groove -borderwidth 2
-  $wtx tag raise match
-  set searchstr $cvsglb(searchstr)
-
-  set match [$wtx search -- $searchstr $cvsglb(searchidx)]
-  if {[string length $match] > 0} {
-    set length [string length $searchstr]
-    $wtx mark set insert $match
-    $wtx tag add match $match "$match + ${length}c"
-    $wtx see $match
-    set cvsglb(searchidx) "$match + ${length}c"
-  }
-  set cvsglb(last_searchstr) $cvsglb(searchstr)
-}
-
-proc search_listbox_init {} {
-# Initialize the globals for searches
-  global cvsglb
-
-  if {! [info exists cvsglb(searchstr)] } {
-    set cvsglb(searchstr) ""
-    set cvsglb(last_searchstr) ""
-  }
-  set cvsglb(lsearchidx) 0
-}
-
-proc search_listbox { lbx } {
-# Search a listbox
-  global cvsglb
-
-  gen_log:log T "ENTER ($lbx)"
-
-  gen_log:log D "search string = \"$cvsglb(searchstr)\""
-  gen_log:log D "search index = \"$cvsglb(lsearchidx)\""
-
-  set ndx [$lbx index end]
-  if {$cvsglb(searchstr) != $cvsglb(last_searchstr)} {
-    set cvsglb(lsearchidx) 0
-    for {set i 0} {$i < $ndx} {incr i} {
-      $lbx itemconfigure $i -background $cvsglb(bg)
-    }
-  }
-  if {$cvsglb(lsearchidx) > $ndx} {
-    gen_log:log D "No more matches"
-    return
-  }
-  for {set i $cvsglb(lsearchidx)} {$i < $ndx} {incr i} {
-    set str [$lbx get $i]
-    if {[string match "*$cvsglb(searchstr)*" $str]} {
-      gen_log:log D "MATCH $str $cvsglb(searchstr)"
-      set cvsglb(lsearchidx) $i
-      $lbx itemconfigure $i -background $cvsglb(hlbg)
-      $lbx see $i
-      break
-    } else {
-      $lbx itemconfigure $i -background $cvsglb(bg)
-    }
-  }
-  set cvsglb(last_searchstr) $cvsglb(searchstr)
-  incr cvsglb(lsearchidx)
 }
 
