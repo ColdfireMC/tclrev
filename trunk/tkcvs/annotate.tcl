@@ -9,7 +9,7 @@ namespace eval ::annotate {
     set my_idx $instance
     incr instance
 
-    gen_log:log T "ENTER ($revision $file local)"
+    gen_log:log T "ENTER ($revision $file $local)"
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       variable revision [uplevel {concat $revision}]
@@ -90,6 +90,49 @@ namespace eval ::annotate {
         $w insert end "$line\n" $revnum
       }
 
+      proc git_annotate_color {w now logline ln} {
+        global cvscfg
+        variable revcolors
+        variable agecolors
+        variable revlist
+        variable nrevs
+        variable revspercolor
+        variable maxrevlen
+        variable ll
+
+        set line [split $logline]
+        gen_log:log D $line
+        set revnum [lindex $line 0]
+        regexp {\(.*\)} $line middle
+        regsub -all {[()]} $middle {} middle
+        gen_log:log D $middle
+        set line [string range $logline [string length $revnum] end]
+        set line [string trimleft $line]
+
+        # Beginning of a revision
+        if {! [info exists revcolors($revnum)]} {
+          # determine the number of revisions
+          # between this commit and the now, then set color accordingly
+          set revticks [lsearch -exact $revlist $revnum]
+          set revticks [expr {$nrevs - $revticks}]
+          set revindex [expr {$revticks / $revspercolor}]
+          set ncolors [expr {[array size agecolors] - 1}]
+          if {$revindex > $ncolors} {set revindex $ncolors}
+          if {$revindex < 0} {set revindex 0}
+
+          set revcolors($revnum) $agecolors($revindex)
+
+          $w tag configure $revnum \
+            -background $revcolors($revnum) -foreground black
+        }
+
+        if {$cvscfg(blame_linenums)} {
+          $w insert end [format "%${ll}d  " $ln]
+        }
+        $w insert end [format "%-${maxrevlen}s  " $revnum] $revnum
+        $w insert end "$line\n" $revnum
+      }
+
       proc svn_annotate_color {w now logline ln} {
         global cvscfg
         global cvsglb
@@ -140,23 +183,25 @@ namespace eval ::annotate {
 
       regsub {^-} $revision {} revlabel
       regsub -all {\$} $file {\$} file
-
-      if {$local == "svn"} {
-        set info_cmd [exec::new "svn info \"$file\""]
-        set info_lines [split [$info_cmd\::output] "\n"]
-        foreach infoline $info_lines {
-          if {[string match "Revision:*" $infoline]} {
-            gen_log:log D "$infoline"
-            set now [lrange $infoline 1 end]
-          }
-        }
-        set blameproc svn_annotate_color
-        set commandline "svn blame $revision \"$file\""
-      } elseif {$local == "svn_r"} {
+      switch $local {
+       "svn" {
+         set info_cmd [exec::new "svn info \"$file\""]
+         set info_lines [split [$info_cmd\::output] "\n"]
+         foreach infoline $info_lines {
+           if {[string match "Revision:*" $infoline]} {
+             gen_log:log D "$infoline"
+             set now [lrange $infoline 1 end]
+           }
+         }
+         set blameproc svn_annotate_color
+         set commandline "svn blame $revision \"$file\""
+       }
+       "svn_r" {
         set blameproc svn_annotate_color
         set now $revision
         set commandline "svn blame $revision \"$file\""
-      } elseif {$local == "cvs"} {
+       }
+       "cvs" {
         set info_cmd [exec::new "$cvs status \"$file\""]
         set info_lines [split [$info_cmd\::output] "\n"]
         foreach infoline $info_lines {
@@ -167,7 +212,8 @@ namespace eval ::annotate {
         }
         set blameproc cvs_annotate_color
         set commandline "$cvs annotate $revision \"$file\""
-      } elseif {$local == "cvs_r"} {
+       }
+       "cvs_r" {
         # First see if we can do this
         # rannotate appeared in 1.11.1
         set versionsplit [split $cvsglb(cvs_version) {.}]
@@ -187,9 +233,16 @@ namespace eval ::annotate {
         set blameproc cvs_annotate_color
         set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
         set now $revlabel
-      } else {
+      }
+      "git" {
+        set blameproc git_annotate_color
+        set commandline "git annotate $revision \"$file\""
+        set now $revlabel
+      }
+      default {
         cvsfail "I don't understand flag \"$local\""
         return
+       }
       }
 
       # Initialize searching
@@ -201,7 +254,6 @@ namespace eval ::annotate {
         -relief sunken -border 2 -height 40 -width 122 \
         -yscroll "$w.scroll set"
       scrollbar $w.scroll -relief sunken -command "$w.text yview"
-
 
       frame $w.bottom
       button $w.bottom.close -text "Close" \
@@ -267,11 +319,10 @@ namespace eval ::annotate {
         23 #4B4B4B4BFFFF
       }
 
-      #gen_log:log C "$commandline"
+      gen_log:log C "$commandline"
       busy_start $w
       set exec_cmd [exec::new "$commandline"]
       set log [$exec_cmd\::output]
-
 
       # Read the log lines.  Assign a color to each unique revision.
       catch {unset revcolors}
@@ -294,10 +345,12 @@ namespace eval ::annotate {
           }
         }
       }
-      # Sort the revisions, using the "sortrevs" proc we wrote for
-      # cvs/rcs revision numbers (and which is unneeded but harmless
-      # for svn numbers
-      set revlist [lsort -command sortrevs $revlist]
+      # Sort the revisions (not needed for svn, and deadly for git)
+      switch $local {
+       "cvs" {
+         set revlist [lsort -command sortrevs $revlist]
+       }
+      }
       set nrevs [llength $revlist]
       gen_log:log D "$revlist"
       set ncolors [expr {[array size agecolors] - 1}]
@@ -331,6 +384,10 @@ namespace eval ::annotate {
       $w.bottom.redo configure -command [namespace code {redo $w}]
       $w.bottom.redo configure -command [namespace code {redo $w}]
       $w.bottom.linum configure -command [namespace code {redo $w}]
+
+      # Disable key presses and make a popup for mouse Copy
+      ro_textbindings $w.text
+
       # Focus in the text widget to activate the text bindings
       focus $w.text
       busy_done $w
