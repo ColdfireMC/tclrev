@@ -62,6 +62,7 @@ proc ro_textbindings {txtw} {
   bind $txtw <<Paste>> "break"
   bind $txtw <<Cut>> "break"
   bind $txtw <2> "copy_paste_popup $txtw %X %Y"
+  bind $txtw <3> "copy_paste_popup $txtw %X %Y"
 }
 
 proc save_viewcontents {w} {
