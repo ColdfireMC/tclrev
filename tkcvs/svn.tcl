@@ -274,7 +274,6 @@ proc svn_add {args} {
 
 # does svn remove from workdir browser
 proc svn_remove {args} {
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
@@ -344,7 +343,6 @@ proc svn_check {} {
 
 # svn update - called from workdir browser
 proc svn_update {args} {
-  global cvscfg
 
   gen_log:log T "ENTER ($args)"
 
@@ -558,7 +556,6 @@ proc svn_commit {comment args} {
 
 # Called from workdir browser annotate button
 proc svn_annotate {revision args} {
-  global cvscfg
 
   gen_log:log T "ENTER ($revision $args)"
   if {$revision != ""} {
@@ -582,7 +579,6 @@ proc svn_annotate {revision args} {
 
 # Called from branch browser annotate button
 proc svn_annotate_r {revision filepath} {
-  global cvscfg
 
   gen_log:log T "ENTER ($revision $filepath)"
   if {$revision != ""} {
@@ -596,16 +592,12 @@ proc svn_annotate_r {revision filepath} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
-#
 # This creates a patch file between two revisions of a module.  If the
 # second revision is null, it creates a patch to the head revision.
 # If both are null the top two revisions of the file are diffed.
-#
-  global cvscfg
+proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
 
   gen_log:log T "ENTER ($pathA $pathB $revA $dateA $revB $dateB $outmode $outfile)"
-  global cvs
 
   lassign {{} {}} rev1 rev2
   if {$revA != {}} {

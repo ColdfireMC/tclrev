@@ -14,13 +14,11 @@ proc cvs_incvs {} {
   cvsfail "You can\'t do that here because this directory is already in CVS." .workdir
 }
 
-#
 #  Create a temporary directory
 #  cd to that directory
 #  run the CVS command in that directory
 #
 #  returns: the current wd (ERROR) or the sandbox directory (OK)
-#
 proc cvs_sandbox_runcmd {command output_var} {
   global cvscfg
   global cwd
@@ -689,7 +687,7 @@ proc cvs_log_rev {rev file} {
     append commandline " -r$rev"
     append title " -r$rev"
   }
-  append commandline " $file"
+  append commandline " \"$file\""
   append title " $file"
 
   set logcmd [viewer::new "$title"]
@@ -715,14 +713,14 @@ proc cvs_annotate {revision args} {
     set revflag ""
   }
 
-  set filelist [join $args]
+  set filelist $args
   if {$filelist == ""} {
     cvsfail "Annotate:\nPlease select one or more files !" .workdir
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
   foreach file $filelist {
-    annotate::new $revflag $file "cvs"
+    annotate::new $revflag "$file" "cvs"
   }
   gen_log:log T "LEAVE"
 }
@@ -744,7 +742,7 @@ proc cvs_annotate_r {revision file} {
     set revflag ""
   }
 
-  annotate::new $revflag $file "cvs_r"
+  annotate::new $revflag "$file" "cvs_r"
   gen_log:log T "LEAVE"
 }
 

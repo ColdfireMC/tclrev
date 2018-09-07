@@ -235,6 +235,16 @@ namespace eval ::annotate {
         set now $revlabel
       }
       "git" {
+        set info_cmd [exec::new "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$file\""]
+        set infoline [$info_cmd\::output]
+        gen_log:log D "$infoline"
+        set now [lindex $infoline 0]
+
+        set blameproc git_annotate_color
+        set commandline "git annotate $revision \"$file\""
+        set now $revlabel
+      }
+      "git_r" {
         set blameproc git_annotate_color
         set commandline "git annotate $revision \"$file\""
         set now $revlabel
