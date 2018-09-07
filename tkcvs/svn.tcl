@@ -828,7 +828,6 @@ proc parse_svnmodules {tf svnroot} {
 
 # called from workdir Reports menu. Uses recurse setting
 proc svn_log {detail args} {
-  global cvscfg
   global cvsglb
 
   gen_log:log T "ENTER ($detail $args)"
@@ -836,9 +835,7 @@ proc svn_log {detail args} {
   busy_start .workdir.main
   set filelist [join $args]
   set flags ""
-  if {! $cvscfg(recurse)} {
-    set flags "--depth=files "
-  }
+  # svn log is always recursive
 
   if {[llength $filelist] == 0} {
     set filelist {{}}

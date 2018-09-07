@@ -1155,6 +1155,8 @@ proc setup_dir { } {
       -command { git_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { git_log $cvscfg(ldetail) [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
+      -command { git_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -command { git_commit_dialog }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \

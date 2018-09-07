@@ -698,11 +698,8 @@ proc cvs_log_rev {rev file} {
   gen_log:log T "LEAVE"
 }
 
+# annotate/blame. Called from workdir.
 proc cvs_annotate {revision args} {
-#
-# This looks at a log from the repository.
-# Called by Workdir menu Reports->"CVS log ..."
-#
   global cvs
   global cvscfg
 

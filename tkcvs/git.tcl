@@ -613,6 +613,28 @@ proc git_merge_conflict {args} {
   gen_log:log T "LEAVE"
 }
 
+# annotate/blame. Called from workdir.
+proc git_annotate {revision args} {
+  gen_log:log T "ENTER ($revision $args)"
+  if {$revision != ""} {
+    # We were given a revision
+    set revflag "$revision"
+  } else {
+    set revflag ""
+  }
+
+  set filelist [join $args]
+  if {$filelist == ""} {
+    cvsfail "Annotate:\nPlease select one or more files !" .workdir
+    gen_log:log T "LEAVE (Unselected files)"
+    return
+  }
+  foreach file $filelist {
+    annotate::new $revflag $file "git"
+  }
+  gen_log:log T "LEAVE"
+}
+
 # View a specific revision of a file.
 # Called from branch browser
 proc git_fileview {revision path filename} {
