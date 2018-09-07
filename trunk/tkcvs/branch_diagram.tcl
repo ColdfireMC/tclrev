@@ -359,11 +359,15 @@ namespace eval ::logcanvas {
                     if {$rev ==""} { set rev "r$revnum_current" }
                     git_fileview $rev $revpath($rev) $filename
                }]
-             $logcanvas.annotate configure -state disabled
-               #-command [namespace code {
-                 #git_annotate [$logcanvas.up.revA_rvers cget -text] \
-                 #$filename
-               #}]
+             $logcanvas.annotate configure -state normal \
+               -command [namespace code {
+                   set rev [$logcanvas.up.revA_rvers cget -text]
+                   if {$rev == ""} {
+                     git_annotate_r "" $filename
+                   } else {
+                     git_annotate_r $rev $revpath($rev) $filename
+                   }
+               }]
              $logcanvas.delta configure -state disabled
                #-command [namespace code {
                  #set fromrev [$logcanvas.up.revA_rvers cget -text]

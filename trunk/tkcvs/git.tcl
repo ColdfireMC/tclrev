@@ -635,6 +635,21 @@ proc git_annotate {revision args} {
   gen_log:log T "LEAVE"
 }
 
+# Called from branch browser annotate button
+proc git_annotate_r {revision filepath} {
+
+  gen_log:log T "ENTER ($revision $filepath)"
+  if {$revision != ""} {
+    # We were given a revision
+    set revflag "$revision"
+  } else {
+    set revflag ""
+  }
+
+  annotate::new $revflag $filepath "git_r"
+  gen_log:log T "LEAVE"
+}
+
 # View a specific revision of a file.
 # Called from branch browser
 proc git_fileview {revision path filename} {
