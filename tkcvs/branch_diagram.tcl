@@ -146,6 +146,7 @@ namespace eval ::logcanvas {
 
       proc ConfigureButtons {fname} {
         global cvsglb
+        global module_dir
         variable logcanvas
         variable sys
         variable loc
@@ -174,7 +175,7 @@ namespace eval ::logcanvas {
             $logcanvas.up.lfname configure -text "SVN Path"
             $logcanvas.up.rfname configure -state normal
             $logcanvas.up.rfname delete 0 end
-            $logcanvas.up.rfname insert end "$fname"
+            $logcanvas.up.rfname insert end "$module_dir/$fname"
             $logcanvas.up.rfname configure -state readonly
             $logcanvas.log configure \
                 -command [namespace code {
@@ -324,8 +325,12 @@ namespace eval ::logcanvas {
             }
          }
          "GIT" {
-           $logcanvas.up.bmodbrowse configure -state disabled -image {}
-           $logcanvas.up.lfname configure -text "GIT File"
+            $logcanvas.up.bmodbrowse configure -state disabled -image {}
+            $logcanvas.up.lfname configure -text "GIT Path"
+            $logcanvas.up.rfname configure -state normal
+            $logcanvas.up.rfname delete 0 end
+            $logcanvas.up.rfname insert end "$cvsglb(relpath)/$fname"
+            $logcanvas.up.rfname configure -state readonly
            set info_cmd [exec::new "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$fname\""]
            set infoline [$info_cmd\::output]
            gen_log:log D "$infoline"
@@ -348,11 +353,12 @@ namespace eval ::logcanvas {
                       git_log_rev $rev $filename
                     }
                   }]
-             $logcanvas.view configure -state disabled
-               #-command [namespace code {
-                  #git_fileview_update [$logcanvas.up.revA_rvers cget -text] \
-                  #$filename
-               #}]
+             $logcanvas.view configure -state normal \
+               -command [namespace code {
+                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    if {$rev ==""} { set rev "r$revnum_current" }
+                    git_fileview $rev $revpath($rev) $filename
+               }]
              $logcanvas.annotate configure -state disabled
                #-command [namespace code {
                  #git_annotate [$logcanvas.up.revA_rvers cget -text] \
