@@ -1355,10 +1355,9 @@ proc svn_filelog {root path title} {
   $v\::do "$command"
 }
 
-proc svn_fileview {revision filename kind} {
 # This views a specific revision of a file in the repository.
 # For files checked out in the current sandbox.
-  global cvscfg
+proc svn_fileview {revision filename kind} {
 
   gen_log:log T "ENTER ($revision $filename $kind)"
   set command "cat"

@@ -613,6 +613,16 @@ proc git_merge_conflict {args} {
   gen_log:log T "LEAVE"
 }
 
+# View a specific revision of a file.
+# Called from branch browser
+proc git_fileview {revision path filename} {
+  gen_log:log T "ENTER ($revision $path $filename)"
+
+  set command "git show \"$revision:$path/$filename\""
+  set v [viewer::new "$filename Revision $revision"]
+  $v\::do "$command"
+}
+
 # Sends files to the branch browser one at a time
 proc git_branches {files} {
   global cvscfg
