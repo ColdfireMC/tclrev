@@ -14,11 +14,11 @@ proc cvs_incvs {} {
   cvsfail "You can\'t do that here because this directory is already in CVS." .workdir
 }
 
-#  Create a temporary directory
-#  cd to that directory
-#  run the CVS command in that directory
+# Create a temporary directory
+# cd to that directory
+# run the CVS command in that directory
 #
-#  returns: the current wd (ERROR) or the sandbox directory (OK)
+# returns: the current wd (ERROR) or the sandbox directory (OK)
 proc cvs_sandbox_runcmd {command output_var} {
   global cvscfg
   global cwd
@@ -51,11 +51,9 @@ proc cvs_sandbox_runcmd {command output_var} {
   return $cvscfg(tmpdir)/cvstmpdir.$pid
 }
 
-#
-#  cvs_sandbox_filetags
+# cvs_sandbox_filetags
 #   assume that the sandbox contains the checked out files
 #   return a list of all the tags in the files
-#
 proc cvs_sandbox_filetags {mcode filenames} {
   global cvscfg
   global cvs
@@ -240,11 +238,9 @@ proc cvs_workdir_status {} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_remove {args} {
-#
 # This deletes a file from the directory and the repository,
 # asking for confirmation first.
-#
+proc cvs_remove {args} {
   global cvs
   global incvs
   global cvscfg
@@ -277,8 +273,8 @@ proc cvs_remove {args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_remove_dir {args} {
 # This removes files recursively.
+proc cvs_remove_dir {args} {
   global cvs
   global incvs
   global cvscfg
@@ -324,11 +320,8 @@ proc cvs_remove_dir {args} {
   gen_log:log T "LEAVE"
 }
 
+# This sets the edit flag for a file asking for confirmation first.
 proc cvs_edit {args} {
-#
-# This sets the edit flag for a file
-# asking for confirmation first.
-#
   global cvs
   global incvs
   global cvscfg
@@ -355,12 +348,9 @@ proc cvs_edit {args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_unedit {args} {
-#
-# This resets the edit flag for a file.
 # Needs stdin as there is sometimes a dialog if file is modified
 # (defaults to no)
-#
+proc cvs_unedit {args} {
   global cvs
   global incvs
   global cvscfg
@@ -419,10 +409,8 @@ proc cvs_history {allflag mcode} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_add {binflag args} {
-#
 # This adds a file to the repository.
-#
+proc cvs_add {binflag args} {
   global cvs
   global cvscfg
   global incvs
@@ -451,8 +439,8 @@ proc cvs_add {binflag args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_add_dir {binflag args} {
 # This starts adding recursively at the directory level
+proc cvs_add_dir {binflag args} {
   global cvs
   global cvscfg
   global incvs
@@ -596,11 +584,9 @@ proc rem_subdirs { v } {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_fileview_update {revision filename} {
-#
 # This views a specific revision of a file in the repository.
 # For files checked out in the current sandbox.
-#
+proc cvs_fileview_update {revision filename} {
   global cvs
   global cvscfg
 
@@ -617,12 +603,10 @@ proc cvs_fileview_update {revision filename} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_fileview_checkout {revision filename} {
-#
 # This looks at a revision of a file from the repository.
 # Called from Repository Browser -> File Browse -> View
 # For files not currently checked out
-#
+proc cvs_fileview_checkout {revision filename} {
   global cvs
   global cvscfg
 
@@ -746,14 +730,11 @@ proc cvs_annotate_r {revision file} {
   gen_log:log T "LEAVE"
 }
 
+# Commit changes to the repository.
+#  The parameters work differently here -- args is a list. The first
+#  element of args is a list of file names.  This is because I can't
+#  use eval on the parameters, because comment contains spaces.
 proc cvs_commit {revision comment args} {
-#
-# This commits changes to the repository.
-#
-# The parameters work differently here -- args is a list.  The first
-# element of args is a list of file names.  This is because I can't
-# use eval on the parameters, because comment contains spaces.
-#
   global cvs
   global cvscfg
   global incvs
@@ -820,10 +801,8 @@ proc cvs_commit {revision comment args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_tag {tagname force b_or_t update args} {
-#
 # This tags a file in a directory.
-#
+proc cvs_tag {tagname force b_or_t update args} {
   global cvs
   global cvscfg
   global cvsglb
@@ -887,10 +866,8 @@ proc cvs_tag {tagname force b_or_t update args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_update {tagname k no_tag recurse prune d dir args} {
-#
 # This updates the files in the current directory.
-#
+proc cvs_update {tagname k no_tag recurse prune d dir args} {
   global cvs
   global cvscfg
   global incvs
@@ -898,7 +875,6 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   gen_log:log T "ENTER (tagname=$tagname k=$k no_tag=$no_tag recurse=$recurse prune=$prune d=$d dir=$dir args=$args)"
 
   set filelist [join $args]
-
   #
   # cvs update [-APCdflRp] [-k kopt] [-r rev] [-D date] [-j rev]
   #
@@ -989,11 +965,9 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_merge {parent from since frombranch args} {
-#
 # This does a join (merge) of a chosen revision of localfile to the
 # current revision.
-#
+proc cvs_merge {parent from since frombranch args} {
   global cvs
   global cvscfg
   global cvsglb
@@ -1242,11 +1216,9 @@ proc cvs_checkout { dir cvsroot prune kflag revtag date target mtag1 mtag2 modul
   return
 }
 
-proc cvs_filelog {filename parent {graphic {0}} } {
-#
 # This looks at the revision log of a file.  It's called from filebrowse.tcl, 
 # so we can't do operations such as merges.
-#
+proc cvs_filelog {filename parent {graphic {0}} } {
   global cvs
   global cvscfg
   global cwd
@@ -1278,11 +1250,9 @@ proc cvs_filelog {filename parent {graphic {0}} } {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_export { dir cvsroot kflag revtag date target module } {
-#
 # This exports a new module (see man cvs and read about export) into
 # the current directory.
-#
+proc cvs_export { dir cvsroot kflag revtag date target module } {
   global cvs
   global cvscfg 
   global incvs insvn inrcs ingit
@@ -1321,12 +1291,10 @@ proc cvs_export { dir cvsroot kflag revtag date target module } {
   return
 }
 
-proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outfile } {
-#
 # This creates a patch file between two revisions of a module.  If the
 # second revision is null, it creates a patch to the head revision.
 # If both are null the top two revisions of the file are diffed.
-#
+proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outfile } {
   global cvs
   global cvscfg
  
@@ -1368,10 +1336,8 @@ proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outf
   return
 }
 
-proc cvs_version {} {
-#
 # This finds the current CVS version number.
-#
+proc cvs_version {} {
   global cvs
   global cvscfg
   global cvsglb
@@ -1637,7 +1603,7 @@ proc cvs_commit_dialog {} {
 
   pack .commit.top -side top -fill x
   pack .commit.down -side bottom -fill x
-  pack .commit.vers -side top -fill y
+  pack .commit.vers -side top -fill x
 
   label .commit.lvers -text "Specify Revision (-r) (usually ignore)" \
      -anchor w
@@ -1723,8 +1689,8 @@ proc cvs_commit_dialog {} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_ascii { args } {
 # This converts a binary file to ASCII
+proc cvs_ascii { args } {
   global cvs
   global cvscfg
   global incvs
@@ -1745,8 +1711,8 @@ proc cvs_ascii { args } {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_binary { args } {
 # This converts an ASCII file to binary
+proc cvs_binary { args } {
   global cvs
   global cvscfg
   global incvs
@@ -1809,10 +1775,8 @@ proc cvs_revert {args} {
   gen_log:log T "LEAVE"
 }
 
-proc read_cvs_dir {dirname} {
-#
 # Reads a CVS "bookkeeping" directory
-#
+proc read_cvs_dir {dirname} {
   global module_dir
   global cvscfg
   global cvsglb
@@ -2492,9 +2456,9 @@ namespace eval ::cvs_branchlog {
   }
 }
 
+# Proc for lsort -command, to sort revision numbers
+# Return -1 if a<b, 0 if a=b, and 1 if a>b
 proc sortrevs {a b} {
-    # Proc for lsort -command, to sort revision numbers
-    # Return -1 if a<b, 0 if a=b, and 1 if a>b
     foreach ax [split $a {.}] bx [split $b {.}] {
 	if {$ax < $bx} {
 	    return -1
