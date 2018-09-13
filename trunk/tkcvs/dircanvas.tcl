@@ -155,7 +155,6 @@ proc DirCanvas:map_column {w column} {
 
   gen_log:log T "ENTER ($w $column)"
   set mapped_columns [$w.pw panes]
-  #gen_log:log D "mapped columns: $mapped_columns"
 
   if {"$w.statcol" in $mapped_columns} {
     set leftcol "$w.statcol"
@@ -164,16 +163,16 @@ proc DirCanvas:map_column {w column} {
   }
 
   if {$column == "datecol"} {
-    $w.pw add $w.$column -after $leftcol -minsize 50
+    $w.pw add $w.$column -after $leftcol -minsize 80
     gen_log:log D "ADD $w.$column"
   } elseif {$column == "statcol"} {
-    $w.pw add $w.$column -after $w.filecol -minsize 50
+    $w.pw add $w.$column -after $w.filecol -minsize 80
     gen_log:log D "ADD $w.$column"
   } elseif {$column == "editcol"} {
-    $w.pw add $w.$column -after $w.wrevcol -minsize 50
+    $w.pw add $w.$column -after $w.wrevcol -minsize 80
     gen_log:log D "ADD $w.$column"
   } else {
-    $w.pw add $w.$column -minsize 50
+    $w.pw add $w.$column -minsize 80
     gen_log:log D "ADD $w.$column"
   }
   pack $w.$column.head -side top -fill x -expand no
@@ -182,16 +181,18 @@ proc DirCanvas:map_column {w column} {
   pack $w.$column.list -side top -fill both -ipadx 2 -expand yes
 
   set winwid [winfo width $w]
-  gen_log:log D "WIDTH $winwid"
   set mapped_columns [$w.pw panes]
   set num_columns [llength $mapped_columns]
   gen_log:log D "mapped_columns: $mapped_columns"
   set newwid [expr {$winwid / $num_columns}]
-  update idletasks
   for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
     set coords [$w.pw sash coord $i]
-    $w.pw sash place $i [expr {($i+1) * $newwid}] [lindex $coords 1]
-    #gen_log:log D "$column: moving sash $i from  $coords to [expr {($i+1) * $newwid}] [lindex $coords 1]"
+    set ypos [lindex $coords 1]
+    set new_xpos [expr {($i+1) * $newwid}]
+    gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
+    $w.$column configure -width $newwid
+    $w.pw sash place $i $new_xpos $ypos
+    set real_pos [$w.pw sash coord $i]
   }
   update idletasks
 
@@ -210,8 +211,11 @@ proc DirCanvas:unmap_column {w column} {
   set newwid [expr {$winwid /$num_columns}]
   for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
     set coords [$w.pw sash coord $i]
-    $w.pw sash place $i [expr {($i+1) * $newwid}] [lindex $coords 1]
-    gen_log:log D "$column: moving sash $i from  $coords to [expr {($i+1) * $newwid}] [lindex $coords 1]"
+    set ypos [lindex $coords 1]
+    set new_xpos [expr {($i+1) * $newwid}]
+    gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
+    $w.pw sash place $i $new_xpos $ypos
+    set real_pos [$w.pw sash coord $i]
   }
   gen_log:log T "LEAVE"
 }
@@ -578,7 +582,7 @@ proc DirCanvas:build {w} {
 
   set sortcol [lindex $cvscfg(sort_pref) 0]
   set sortsense [lindex $cvscfg(sort_pref) 1]
-  if { (!($incvs || $inrcs || $insvn || $ingit))  && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
+  if { (!($incvs || $inrcs || $insvn || $ingit)) && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set sortcol "filecol"
     set sortsense "-decreasing"
@@ -1023,19 +1027,6 @@ proc DirCanvas:build {w} {
       set maxed $edlen
       set longed $editors
     }
-  }
-
-  # See which optional columns we need to draw
-  if {$incvs || $insvn || $inrcs || $ingit} {
-    if {$cvscfg(showstatcol)} {
-      DirCanvas:map_column $w statcol
-    }
-    if {$cvscfg(showeditcol)} {
-      DirCanvas:map_column $w editcol
-    }
-  }
-  if {$cvscfg(showdatecol)} {
-    DirCanvas:map_column $w datecol
   }
 
   # Set a minimum width for the labels.  Otherwise ".." can be hard to select.
