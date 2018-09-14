@@ -53,6 +53,7 @@ proc rcs_lock {do files} {
     lock { set commandline "rcs -l $files"}
     unlock { set commandline "rcs -u $files"}
   }
+  gen_log:log C "$commandline"
   set rcscmd [::exec::new "$commandline"]
   
   if {$cvscfg(auto_status)} {
@@ -63,21 +64,58 @@ proc rcs_lock {do files} {
 
 # RCS checkin.  Have to use terminal, because ci -m won't take
 # a message with a newline
-proc rcs_checkin {args} {
+proc rcs_checkin {revision comment args} {
   global cvscfg
+  global inrcs
 
   gen_log:log T "ENTER ($args)"
-  set filelist [lindex $args 0]
-  
-  update idletasks
-  set commandline "$cvscfg(terminal) ci -u $filelist"
-  gen_log:log C "$commandline"
 
-  set ret [catch {eval "exec $commandline"} view_this]
-  if {$ret} {
-    cvsfail $view_this .workdir
-    gen_log:log T "LEAVE ERROR ($view_this)"
-    return
+  set filelist [lindex $args 0]
+  if {$filelist == ""} {
+    cvsfail "Please select some files!"
+    return 1
+  }
+
+  set commit_output ""
+  foreach file $filelist {
+    append commit_output "\n$file"
+  }
+  set mess "This will commit your changes to:$commit_output"
+  append mess "\n\nAre you sure?"
+  set commit_output ""
+
+  if {[cvsconfirm $mess .workdir] != "ok"} {
+    return 1
+  }
+
+  set revflag ""
+  if {$revision != ""} {
+    set revflag "-r $revision"
+  }
+
+  if {$cvscfg(use_cvseditor)} {
+    # Starts text editor of your choice to enter the log message.
+    # This way a template in CVSROOT can be used.
+    update idletasks
+    set commandline \
+      "$cvscfg(terminal) ci $revflag $filelist"
+    gen_log:log C "$commandline"
+    set ret [catch {eval "exec $commandline"} view_this]
+    if {$ret} {
+      cvsfail $view_this .workdir
+      gen_log:log T "LEAVE ERROR ($view_this)"
+      return
+    }
+  } else {
+    if {$comment == ""} {
+      cvsfail "You must enter a comment!" .commit
+      return 1
+    }
+    set v [viewer::new "RCS Checkin"]
+    regsub -all "\"" $comment "\\\"" comment
+    set commandline "ci $revflag -m\"$comment\" $filelist"
+    $v\::do "$commandline" 1
+    $v\::wait
   }
 
   if {$cvscfg(auto_status)} {
@@ -86,13 +124,8 @@ proc rcs_checkin {args} {
   gen_log:log T "LEAVE"
 }
 
-proc rcs_commit_dialog {} {
-# RCS checkin.  Have to use terminal, because ci -m won't take
-# a message with a newline
-# But some day, investigate this:
-
-# % set ms "this has a \
-# CR"
+proc rcs_commit_dialog {filelist} {
+# ci -m won't take newline
 # % puts $ms
 # this has a
 # CR
@@ -104,6 +137,101 @@ proc rcs_commit_dialog {} {
 # puts "this has a\nCR"
 # this has a
 # CR
+  global cvsglb
+  global cvscfg
+
+  gen_log:log T "ENTER"
+
+  # commit any files selected via listbox selection mechanism.
+  set cvsglb(commit_list) $filelist
+
+  # If we want to use an external editor, just do it
+  if {$cvscfg(use_cvseditor)} {
+    rcs_checkin "" "" $cvsglb(commit_list)
+    return
+  }
+
+  if {[winfo exists .commit]} {
+    destroy .commit
+  }
+
+  toplevel .commit
+
+  frame .commit.top -border 8
+  frame .commit.vers
+  frame .commit.down -relief groove -border 2
+
+  pack .commit.top -side top -fill x
+  pack .commit.down -side bottom -fill x
+  pack .commit.vers -side top -fill x
+
+  label .commit.lvers -text "Specify Revision (-r) (usually ignore)" \
+     -anchor w
+  entry .commit.tvers -relief sunken -textvariable version
+
+  pack .commit.lvers .commit.tvers -in .commit.vers \
+    -side left -fill x -pady 3
+
+  frame .commit.comment
+  pack .commit.comment -side top -fill both -expand 1
+  label .commit.comment.lcomment -text "Your log message" -anchor w
+  button .commit.comment.history -text "Log History" \
+    -command history_browser
+  text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
+    -bg $cvsglb(textbg) -exportselection 1 \
+    -wrap word -border 2 -setgrid yes
+
+  # Explain what it means to "commit" files
+  message .commit.message -justify left -aspect 500 -relief groove -bd 2 \
+    -text "This will commit changes from your \
+           local, working directory into the repository."
+
+  pack .commit.message -in .commit.top -padx 2 -pady 5
+
+  button .commit.ok -text "OK" \
+    -command {
+      #grab release .commit
+      wm withdraw .commit
+      set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
+      rcs_checkin $version $cvsglb(commit_comment) $cvsglb(commit_list)
+      commit_history $cvsglb(commit_comment)
+    }
+  button .commit.apply -text "Apply" \
+    -command {
+      set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
+      rcs_checkin $version $cvsglb(commit_comment) $cvsglb(commit_list)
+      commit_history $cvsglb(commit_comment)
+    }
+  button .commit.clear -text "ClearAll" \
+    -command {
+      set version ""
+      .commit.comment.tcomment delete 1.0 end
+    }
+  button .commit.quit \
+    -command {
+      #grab release .commit
+      wm withdraw .commit
+    }
+ 
+  .commit.ok configure -text "OK"
+  .commit.quit configure -text "Close"
+
+  grid columnconf .commit.comment 1 -weight 1
+  grid rowconf .commit.comment 1 -weight 1
+  grid .commit.comment.lcomment -column 0 -row 0
+  grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
+  grid .commit.comment.history  -column 0 -row 1
+
+  pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
+    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  # Fill in the most recent commit message
+  .commit.comment.tcomment insert end [string trimright $cvsglb(commit_comment)]
+
+  wm title .commit "Commit Changes"
+  wm minsize .commit 1 1
+
+  gen_log:log T "LEAVE"
 }
 
 # Get an rcs status for files in working directory, for the dircanvas
@@ -117,18 +245,19 @@ proc rcs_workdir_status {} {
   set command "rlog -h $rcsfiles"
   gen_log:log C "$command"
   set ret [catch {eval "exec $command"} raw_rcs_log]
-  #gen_log:log D "$raw_rcs_log"
+  gen_log:log F "$raw_rcs_log"
 
   # The older version (pre-5.x or something) of RCS is a lot different from
   # the newer versions, explaining some of the ugliness here
   set rlog_lines [split $raw_rcs_log "\n"]
   set lockers ""
+  set filenames ""
   foreach rlogline $rlog_lines {
-    gen_log:log D "$rlogline"
     # Found one!
     if {[string match "*Working file:*" $rlogline]} {
       regsub {^.*Working file:\s+} $rlogline "" filename
       regsub {\s*$} $filename "" filename
+      lappend filenames $filename
       gen_log:log D "RCS file $filename"
       set Filelist($filename:wrev) ""
       set Filelist($filename:stickytag) ""
@@ -136,11 +265,10 @@ proc rcs_workdir_status {} {
       if {[file exists $filename]} {
         set Filelist($filename:status) "RCS Up-to-date"
         # Do rcsdiff to see if it's changed
-        #set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
         set command "rcsdiff \"$filename\""
         gen_log:log C "$command"
         set ret [catch {eval "exec $command"} output]
-        gen_log:log D "$output"
+        gen_log:log F "$output"
         set splitline [split $output "\n"]
         if [string match {====*} [lindex $splitline 0]] {
            set splitline [lrange $splitline 1 end]
@@ -160,7 +288,7 @@ proc rcs_workdir_status {} {
       regsub {head:\s+} $rlogline "" revnum
       set Filelist($filename:wrev) "$revnum"
       set Filelist($filename:stickytag) "$revnum on trunk"
-      #gen_log:log D "  Rev \"$revnum\""
+      gen_log:log D "  Rev \"$revnum\""
       continue
     } 
     if {[string match "branch:*" $rlogline]} {
@@ -168,25 +296,32 @@ proc rcs_workdir_status {} {
       if {[string length $revnum] > 0} {
         set Filelist($filename:wrev) "$revnum"
         set Filelist($filename:stickytag) "$revnum on branch"
-        #gen_log:log D "  Branch rev \"$revnum\""
+        gen_log:log D "  Branch rev \"$revnum\""
       }
       continue
     }
     if { [string index $rlogline 0] == "\t" } {
        set splitline [split $rlogline]
-       #gen_log:log D "\"[lindex $splitline 1]\""
-       #gen_log:log D "\"[lindex $splitline 2]\""
        set who [lindex $splitline 1]
        set who [string trimright $who ":"]
-       #gen_log:log D " who $who"
        append lockers ",$who"
-       #gen_log:log D " lockers $lockers"
+       gen_log:log D " lockers $lockers"
     } else {
       if {[string match "access list:*" $rlogline]} {
         set lockers [string trimleft $lockers ","]
         set Filelist($filename:editors) $lockers
         # No more tags after this point
         continue
+      }
+    }
+  }
+  foreach f $filenames {
+    set lockers $Filelist($f:editors)
+    if { $lockers ne "" } {
+      if {$cvscfg(user) in $lockers} {
+        append Filelist($f:status) "/HaveLock"
+      } else {
+        append Filelist($f:status) "/Locked"
       }
     }
   }
@@ -204,7 +339,7 @@ proc rcs_check {} {
   set command "rlog -h $rcsfiles"
   gen_log:log C "$command"
   set ret [catch {eval "exec $command"} raw_rcs_log]
-  #gen_log:log D "$raw_rcs_log"
+  gen_log:log F "$raw_rcs_log"
 
   set rlog_lines [split $raw_rcs_log "\n"]
   foreach rlogline $rlog_lines {
@@ -288,6 +423,7 @@ proc rcs_revert {args} {
   gen_log:log D "Reverting $filelist"
   gen_log:log F "DELETE $filelist"
   file delete $filelist
+  gen_log:log C "co $filelist"
   set rcscmd [exec::new "co $filelist"]
         
   if {$cvscfg(auto_status)} {

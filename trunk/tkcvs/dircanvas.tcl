@@ -244,9 +244,6 @@ proc DirCanvas:newitem {w f} {
   } else {
     set DirList($w:$f:option) ""
   }
-  #gen_log:log D "Newitem $f option $Filelist($f:option)"
-  # Why did I do this?
-  #set DirList($w:$f:option) ""
   if { [info exists Filelist($f:editors)]} {
     set DirList($w:$f:editors) $Filelist($f:editors)
   } else {
@@ -918,8 +915,24 @@ proc DirCanvas:build {w} {
        set DirList($w:$f:icon) stat_ok
        set DirList($w:$f:popup) rcs_pop
       }
+      "RCS Up-to-date/HaveLock" {
+       set DirList($w:$f:icon) stat_okml
+       set DirList($w:$f:popup) rcs_pop
+      }
+      "RCS Up-to-date/Locked" {
+       set DirList($w:$f:icon) stat_okol
+       set DirList($w:$f:popup) rcs_pop
+      }
       "RCS Modified" {
        set DirList($w:$f:icon) stat_mod
+       set DirList($w:$f:popup) rcs_pop
+      }
+      "RCS Modified/HaveLock" {
+       set DirList($w:$f:icon) stat_modml
+       set DirList($w:$f:popup) rcs_pop
+      }
+      "RCS Modified/Locked" {
+       set DirList($w:$f:icon) stat_modol
        set DirList($w:$f:popup) rcs_pop
       }
       "RCS Needs Checkout" {
