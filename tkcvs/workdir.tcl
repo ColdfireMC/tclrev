@@ -16,6 +16,7 @@ proc workdir_setup {} {
   global current_tagname
   global logclass
   global tcl_platform
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER"
   set cwd [pwd]
@@ -187,6 +188,8 @@ proc workdir_setup {} {
      -command { cvs_unedit [workdir_list_files] }
   button .workdir.bottom.buttons.oddfuncs.block -image Lock
   button .workdir.bottom.buttons.oddfuncs.bunlock -image UnLock
+  button .workdir.bottom.buttons.oddfuncs.bpush -image Checkin
+  button .workdir.bottom.buttons.oddfuncs.bpull -image Checkout
   button .workdir.close -text "Close" \
       -command {
         global cvscfg
@@ -237,8 +240,6 @@ proc workdir_setup {} {
     -ipadx 4
   grid .workdir.bottom.buttons.cvsfuncs.bbranchtag    -column 6 -row 1 \
     -ipadx 4
-
-  # These are specialized an not always available
   grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
   grid .workdir.bottom.buttons.oddfuncs.bunlock        -column 0 -row 1
   grid .workdir.bottom.buttons.oddfuncs.bcvsedit_files -column 1 -row 0
@@ -272,21 +273,14 @@ proc workdir_setup {} {
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bannotate \
      {"Revision where each line was modified (annotate/blame)"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bdiff \
-     {"Compare the selected files with the repository version"}
+     {"Compare the selected files with the committed version"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bconflict \
      {"Merge Conflicts using TkDiff"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
-     {"Add the selected files to the repository"}
+
   set_tooltips .workdir.bottom.buttons.cvsfuncs.btag \
      {"Tag the selected files"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bbranchtag \
      {"Branch the selected files"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bremove \
-     {"Remove the selected files from the repository"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bcheckin \
-     {"Check in (commit) the selected files to the repository"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdate \
-     {"Update (checkout, patch) the selected files from the repository"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.brevert \
      {"Revert the selected files, discarding local edits"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdateopts \
@@ -299,7 +293,11 @@ proc workdir_setup {} {
   set_tooltips .workdir.bottom.buttons.oddfuncs.bcvsedit_files \
      {"Set the Edit flag on the selected files"}
   set_tooltips .workdir.bottom.buttons.oddfuncs.bunedit_files \
-     {"Reset the Edit flag on the selected files"}
+     {"Unset the Edit flag on the selected files"}
+  set_tooltips .workdir.bottom.buttons.oddfuncs.bpush \
+     {"Push the selected files to origin"}
+  set_tooltips .workdir.bottom.buttons.oddfuncs.bpull \
+     {"Pull the selected files from origin"}
 
   set_tooltips .workdir.top.bmodbrowse \
      {"Open the Repository Browser"}
@@ -385,6 +383,10 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) newmerge.gif]
   image create photo Conflict \
     -format gif -file [file join $cvscfg(bitmapdir) conflict.gif]
+  image create photo GitCheckin \
+    -format gif -file [file join $cvscfg(bitmapdir) git_checkin.gif]
+  image create photo GitCheckout \
+    -format gif -file [file join $cvscfg(bitmapdir) git_checkout.gif]
 
   image create photo Man \
     -format gif -file [file join $cvscfg(bitmapdir) man.gif]
@@ -516,7 +518,7 @@ proc workdir_menus {} {
   .workdir.menubar.rcs add command -label "Checkout" -underline 0 \
      -command { rcs_checkout [workdir_list_files] }
   .workdir.menubar.rcs add command -label "Checkin" -underline 0 \
-     -command { rcs_checkin [workdir_list_files] }
+     -command { rcs_commit_dialog [workdir_list_files] }
   .workdir.menubar.rcs add command -label "Browse the Log Diagram" \
      -command { rcs_branches [workdir_list_files] }
 
@@ -529,8 +531,7 @@ proc workdir_menus {} {
   .workdir.menubar.git add command -label "Remove Files" -underline 0 \
      -command { subtract_dialog [workdir_list_files] }
 
-  # These commands will vary according to revision system.  Does it still make
-  # sense to keep them in their own menu?
+  # Status and log
   .workdir.menubar.reports add command -label "Check Directory" -underline 0
   .workdir.menubar.reports add cascade -label "Status" -underline 0 \
      -menu .workdir.menubar.reports.status_detail
@@ -943,8 +944,23 @@ proc setup_dir { } {
     $widget configure -state disabled
   }
   foreach widget [grid slaves .workdir.bottom.buttons.oddfuncs ] {
-    $widget configure -state disabled
+    #$widget configure -state disabled
+    grid forget $widget 
   }
+
+  # Default for these, only Git is different
+  .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
+    -image Checkin
+  .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
+    -image Checkout
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
+     {"Add the selected files to the repository"}
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.bremove \
+     {"Remove the selected files from the repository"}
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.bcheckin \
+     {"Check in (commit) the selected files to the repository"}
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdate \
+     {"Update (checkout, patch) the selected files from the repository"}
 
   # Now enable them depending on where we are
   if {$inrcs} {
@@ -965,9 +981,11 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -command { rcs_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
-      -command { rcs_checkin [workdir_list_files] }
+      -command { rcs_commit_dialog [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
       -command { rcs_revert [workdir_list_files] }
+    grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
+    grid .workdir.bottom.buttons.oddfuncs.bunlock        -column 0 -row 1
     .workdir.bottom.buttons.oddfuncs.block configure -state normal \
       -command { rcs_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
@@ -1028,6 +1046,8 @@ proc setup_dir { } {
       -command { svn_revert [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
+    grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
+    grid .workdir.bottom.buttons.oddfuncs.bunlock        -column 0 -row 1
     .workdir.bottom.buttons.oddfuncs.block configure -state normal \
       -command { svn_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
@@ -1099,15 +1119,27 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { cvs_branches [workdir_list_files] }
+    grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
+    grid .workdir.bottom.buttons.oddfuncs.bunlock        -column 0 -row 1
+    grid .workdir.bottom.buttons.oddfuncs.bcvsedit_files -column 1 -row 0
+    grid .workdir.bottom.buttons.oddfuncs.bunedit_files  -column 1 -row 1
     if {$cvscfg(econtrol)} {
-      .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
-      .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal
+      .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal \
+        -command { cvs_edit [workdir_list_files] }
+      .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal \
+        -command { cvs_edit [workdir_list_files] }
+    } else {
+      .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state disabled
+      .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state disabled
     }
     if {$cvscfg(cvslock)} {
       .workdir.bottom.buttons.oddfuncs.block configure -state normal \
         -command { cvs_lock lock [workdir_list_files] }
       .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
         -command { cvs_lock unlock [workdir_list_files] }
+    } else {
+      .workdir.bottom.buttons.oddfuncs.block configure -state disabled
+      .workdir.bottom.buttons.oddfuncs.bunlock configure -state disabled
     }
     # Reports menu for CVS
     # Check Directory (cvs -n -q update)
@@ -1158,11 +1190,25 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
       -command { git_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
-      -command { git_commit_dialog }
+      -image GitCheckin -command { git_commit_dialog }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
-      -command { git_checkout [workdir_list_files] }
+      -image GitCheckout -command { git_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
+    grid .workdir.bottom.buttons.oddfuncs.bpush  -column 0 -row 0
+    grid .workdir.bottom.buttons.oddfuncs.bpull  -column 0 -row 1
+    .workdir.bottom.buttons.oddfuncs.block configure -state normal \
+      -command { rcs_lock lock [workdir_list_files] }
+    .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
+      -command { rcs_lock unlock [workdir_list_files] }
+    set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
+       {"Add the selected files to the staging area"}
+    set_tooltips .workdir.bottom.buttons.cvsfuncs.bremove \
+       {"Remove the selected files from the staging area"}
+    set_tooltips .workdir.bottom.buttons.cvsfuncs.bcheckin \
+       {"Check in (commit) the selected files to the staging area"}
+    set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdate \
+       {"Update (checkout, patch) the selected files from the staging area"}
     # Reports menu for GIT
     # Check Directory (git status --short)
     .workdir.menubar.reports entryconfigure "Check Directory" -state normal \
@@ -1212,8 +1258,9 @@ proc setup_dir { } {
       gen_log:log C "$command"
       set ret [catch {eval "exec $command"} output]
       if {$ret} {
-        gen_log:log E "$ret"
+        gen_log:log E "$output"
       } else {
+        gen_log:log F "$output"
         foreach infoline [split $output "\n"] {
           append cvscfg(ignore_file_filter) " $infoline"
         }
@@ -1470,6 +1517,7 @@ proc cvsroot_check { dir } {
   if {$svnret} {
     gen_log:log E $svnout
   } else {
+    gen_log:log F $svnout
     set insvn [ read_svn_dir $dir ]
     if {$insvn} {
       gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
@@ -1493,8 +1541,8 @@ proc cvsroot_check { dir } {
     set command "rcs --version"
     gen_log:log C "$command"
     set ret [catch {eval "exec $command"} raw_rcs_log]
+    gen_log:log F "$raw_rcs_log"
     if {$ret} {
-       gen_log:log D "$raw_rcs_log"
        if [string match {rcs*} $raw_rcs_log] {
          # An old version of RCS, but it's here
          set inrcs 1
@@ -1506,11 +1554,11 @@ proc cvsroot_check { dir } {
 
   gen_log:log C "git rev-parse --is-inside-work-tree"
   set gitret [catch {eval "exec git rev-parse --is-inside-work-tree"} gitout]
-  gen_log:log D "gitret $gitret"
-  gen_log:log D "gitout $gitout"
   if {$gitret} {
+    gen_log:log E "gitout $gitout"
     set ingit 0
   } else {
+    gen_log:log F "gitout $gitout"
     set ingit 1
     find_git_remote $dir
   }

@@ -180,7 +180,6 @@ if {$tcl_platform(platform) == "windows"} {
     #set cvs "cvs -T $cvscfg(tmpdir)"
     set cvs "cvs"
     set cvscfg(editor) "notepad"
-
     # set temp directory
     set cvscfg(tmpdir) "c:/temp"
     #set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
@@ -189,22 +188,36 @@ if {$tcl_platform(platform) == "windows"} {
     set cvscfg(shell)  ""
     set cvscfg(allow_abort)  "no"
 } else {
+    if {[tk windowingsystem] eq "aqua"} {
+      set cvscfg(terminal) "open -a Terminal -n"
+      set cvscfg(editor) "open -e"
+      #set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
+      # If you invoke vim this way, -psn_ tells it to run in its own window
+      #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
+      set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+      #set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
+    } else {
+      set cvscfg(terminal) "xterm -e"
+      # What do you want to happen when you ask for a shell?
+      set cvscfg(shell) {xterm -name tkcvsxterm -n {TkCVS xterm}}
+      # Terminal program
+      # To override the default editor (setup when tkcvs is configured and
+      # installed) a user can set the cvscfg(editor) variable to the editor
+      # of choice in their .tkcvs file
+      set cvscfg(editor) {xterm -e vi}
+      #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
+      set cvscfg(print_cmd)          "lpr"
+    }
     set cvscfg(tmpdir) "/tmp"
     set cvscfg(aster) "*"
     set cvscfg(null) "/dev/null"
-    # Terminal program
-    set cvscfg(terminal) "xterm -e"
     #
     # Other defaults
     #
     # Full path to the CVS program if you want to give it,
     # otherwise the PATH environment variable will be searched.
     set cvs "cvs"
-    # To override the default editor (setup when tkcvs is configured and
-    # installed) a user can set the cvscfg(editor) variable to the editor
-    # of choice in their .tkcvs file (if they have one).
-    #set cvscfg(editor) "dtpad"
-    set cvscfg(editor) {xterm -e vi}
+    set cvscfg(tkdiff) "tkdiff"
     # The file editor to be used may also be identified by pattern-matching the
     # filename by setting the cvscfg(editors) variable.  This contains a series
     # of string pairs giving the editor-command and string-match-pattern.  The
@@ -220,21 +233,7 @@ if {$tcl_platform(platform) == "windows"} {
     #    gimp *.gif
     #    {calibredrv -m} *.gds
     #}
-    set cvscfg(tkdiff) "tkdiff"
-    #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
-    set cvscfg(print_cmd)          "lpr"
     set cvscfg(allow_abort)  "yes"
-    # What do you want to happen when you ask for a shell?
-    set cvscfg(shell) {xterm -name tkcvsxterm -n {TkCVS xterm}}
-
-    # Some special stuff for MacOSX "native" Tk
-    if {! [catch {set windowingsystem [tk windowingsystem]}] && $windowingsystem == "aqua"} {
-      set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
-      # If you invoke vim this way, -psn_ tells it to run in its own window
-      #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
-      set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
-      set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
-    }
 }
 
 #
@@ -248,7 +247,6 @@ if {$tcl_platform(platform) == "windows"} {
 #   set usermenu(show_makevars) "gmake -pn | grep '='"
 # Set these to standalone programs
 #   set execmenu(tkman_cvs) "tkman cvs"
-
 
 #
 # --------------------

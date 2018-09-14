@@ -91,10 +91,19 @@ set maxdirs 15
 set dirlist {}
 set totaldirs 0
 
+# Orient ourselves
 if { [info exists env(HOME)] } {
   set cvscfg(home) $env(HOME)
 } else {
   set cvscfg(home) "~"
+}
+if { [info exists env(USER)] } {
+  set cvscfg(user) $env(USER)
+} elseif { [info exists env(USERNAME)] } {
+  # Windows
+  set cvscfg(user) $env(USERNAME)
+} else {
+  set cvscfg(user) ""
 }
 
 # Read in defaults
@@ -452,12 +461,11 @@ image create photo Mergediff \
 image create photo Man \
   -format gif -file [file join $cvscfg(bitmapdir) man.gif]
 
-lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
-
 # Create a window
 # Start with Module Browser
 if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
 
   if {$insvn} {
     set cvsglb(root) $cvscfg(svnroot)
@@ -473,6 +481,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     exit 1
   }
   wm withdraw .
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     cvs_branches \"$lcfile"\
   } elseif {$inrcs} {
@@ -492,6 +501,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     puts "ERROR: $lcfile doesn't exist!"
     exit 1
   }
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   wm withdraw .
   if {$incvs} {
     cvs_annotate "" \"$lcfile"\
@@ -505,6 +515,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 # Start with Directory Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
+  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     cvs_joincanvas
   } elseif {$insvn} {
@@ -514,6 +525,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
 # The usual way, with the Workdir Browser
 } else {
-  workdir_setup
+  setup_dir
+  #workdir_setup
 }
 
