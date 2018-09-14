@@ -27,7 +27,7 @@ proc checkin_files {topdir} {
     # Escape the spaces in filenames
     regsub -all { } $filename {\ } filename
     regsub -all { } $rcsfile {\ } rcsfile
-    set exec_cmd "ci -u -t-small_text_file -mInitial_checkin $filename $rcsfile"
+    set exec_cmd "ci -u -t-small_text_file -m\"Initial\\\ checkin\" $filename $rcsfile"
     puts "$exec_cmd"
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
@@ -41,7 +41,7 @@ proc checkin_files {topdir} {
       # Escape the spaces in filenames
       regsub -all { } F$n.txt {\ } F$n.txt
       regsub -all { } $rcsfile {\ } rcsfile
-      set exec_cmd "ci -u -t-small_text_file -mInitial_checkin F$n.txt $rcsfile"
+      set exec_cmd "ci -u -t-small_text_file -m\"Initial\\\ checkin\" F$n.txt $rcsfile"
       puts "$exec_cmd"
       set ret [catch {eval "exec $exec_cmd"} out]
       puts $out
@@ -53,12 +53,13 @@ proc checkin_files {topdir} {
 proc checkout_files {topdir} {
   global WD
 
+  cd $topdir
   puts "==============================="
   puts "CHECKING OUT"
 
   set globpat "RCS/*,v"
   regsub -all { } $globpat {\ } globpat
-  set exec_cmd "co -l [glob $globpat]"
+  set exec_cmd "co -f -l [glob $globpat]"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -67,7 +68,7 @@ proc checkout_files {topdir} {
     cd $D
     set globpat "RCS/*,v"
     regsub -all { } $globpat {\ } globpat
-    set exec_cmd "co -l [glob $globpat]"
+    set exec_cmd "co -f -l [glob $globpat]"
     puts "$exec_cmd"
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
@@ -92,7 +93,7 @@ proc writefile {filename wn} {
 proc addfile {filename} {
 
   puts "Add $filename"
-  set exec_cmd "ci -u -t-small_text_file -mInitial_checkin $filename"
+  set exec_cmd "ci -u -t-small_text_file -m\"Initial\\\ checkin\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -107,6 +108,14 @@ proc delfile {filename} {
   puts "Delete $filename"
   file delete $filename
   file delete RCS/$filename,v
+}
+
+proc lock {filename} {
+
+  puts "Lock $filename"
+  set exec_cmd "rcs -l $filename"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
 }
 
 proc getrev {filename} {
@@ -154,7 +163,7 @@ proc conflict {filename} {
   writefile $filename 2
   # When we check in a conflicting version, it creates
   # a branch
-  set exec_cmd "ci -m\"change2_conflicting\" $filename"
+  set exec_cmd "ci -m\"change2\\\ conflicting\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -188,7 +197,8 @@ proc commit {comment} {
   set fl [open $tmpfile r]
   while { [gets $fl item] >= 0} {
     regsub -all { } $item {\ } filename
-    set exec_cmd "ci -u -t-small_text_file -m$comment $filename"
+    regsub -all { } $comment {\\\ } comment
+    set exec_cmd "ci -u -t-small_text_file -m\"$comment\" $filename"
     puts $exec_cmd
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
@@ -274,6 +284,7 @@ addfile Fnew.txt
 
 puts "==============================="
 puts "Second revision"
+checkout_files $testdir
 modfiles
 commit "Second revision"
 
@@ -284,7 +295,9 @@ writefile FileLocal.txt 1
 # Deleted
 delfile File3.txt
 # Modify
+file attributes File2.txt -permissions u+w
 writefile File2.txt 2
+lock File2.txt
 # Conflict
 puts "** conflict"
 conflict Fnew.txt
