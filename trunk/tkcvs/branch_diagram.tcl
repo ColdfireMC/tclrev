@@ -337,7 +337,7 @@ namespace eval ::logcanvas {
            #FIXME: this infoline breaks lindex because of the x after the quotes
            #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
            #set revnum_current [lindex $infoline 0]
-           set revnum_current [string range $infoline 0 7]
+           set revnum_current [string range $infoline 1 7]
            gen_log:log D "revnum_current $revnum_current"
            if {! [info exists revnum_current]} {
              gen_log:log E "Warning: couldn't find current revision number!"
