@@ -274,37 +274,30 @@ proc list_comm {listA listB} {
   set inA ""
   set inB ""
   set inBoth ""
+
   # Shortcut if lists are identical
   if { $listA == $listB } {
-    set inB $listA
-    set inA $listB
+    gen_log:log D "Lists are identical"
     set inBoth $listA
   } else {
-    # Go through both lists by index. For our purpose, we can't
-    # change the order of items. We can assume they are unique
-    # in their respective list and that both lists have been sorted
-    # in the same way
-    set i 0
+    # We don't want to change the items' sort order, so we can't
+    # simplify by combining the lists with sort -u
+    set allAB [concat $listA $listB]
     foreach itemInA $listA {
-      # Search listB for item in listA
-      if {[set idxB [lsearch [lrange $listB $i end] $itemInA]] == -1} {
-        # We didn't find it in listB
-        lappend inA $itemInA
-      } else {
-        if {$idxB > 0 } {
-          # reset the pointer into ListB
-          set j [expr {$i + $idxB - 1}]
-          foreach itemInB [lrange $listB $i $j] {
-            lappend inB $itemInB
-          }
-        }
-        incr i
+      if {$itemInA in $listB} {
         lappend inBoth $itemInA
+      } else {
+        lappend inA $itemInA
       }
     }
-    # listA is exhausted, so just put the leftover listB items on the end
-    foreach itemInB [lrange $listB $i end] {
-      lappend inB $itemInB
+    foreach itemInB $listB {
+      if {$itemInB in $listA} {
+        if {$itemInB ni $inBoth} {
+          lappend $itemInB inBoth
+        }
+      } else {
+        lappend inB $itemInB
+      }
     }
   }
 
@@ -372,7 +365,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  set commandline "git log --no-color"
+  set commandline "git log --graph --all --no-color"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -835,6 +828,7 @@ namespace eval ::git_branchlog {
 
         # Find out where to put the working revision icon (if anywhere)
         set revnum_current [set $ln\::revnum_current]
+        gen_log:log D "current revnum: $revnum_current"
 
         # Get a list of the branches from the repository
         # This gives you the local branches
@@ -861,8 +855,6 @@ namespace eval ::git_branchlog {
         }
         # Now we combine them. If there's a locally visible branch we prefer it
         # because it may have changes that haven't been pushed to remote
-        gen_log:log D "local branches: $local_branches"
-        gen_log:log D "remote branches: $remote_branches"
         set idx 0
         foreach r $remote_branches {
           regsub {.*/} $r {} rtail
@@ -871,8 +863,8 @@ namespace eval ::git_branchlog {
           }
           incr idx
         }
-        gen_log:log D "local_branches $local_branches"
-        gen_log:log D "remote_branches $remote_branches"
+        gen_log:log D "local_branches: $local_branches"
+        gen_log:log D "remote_branches: $remote_branches"
         set idx 0
         foreach r $remote_branches {
           regsub {.*/} $r {} rtail
@@ -884,10 +876,9 @@ namespace eval ::git_branchlog {
           }
           incr idx
         }
-        gen_log:log D "needed remotes $needed_remotes"
         gen_log:log D "needed remotes: $needed_remotes"
         set branches [concat $local_branches $needed_remotes]
-        gen_log:log D "branches: $branches"
+        gen_log:log D "final branches: $branches"
 
         # Get all the date, comment, etc data at once. In Git it's not so
         # useful to do a branch at a time
@@ -956,7 +947,7 @@ namespace eval ::git_branchlog {
         # to that branch.
         gen_log:log D "Now comparing trunk revs with other branch revs"
         foreach branch $branches {
-          gen_log:log D " branch=$branch"
+          gen_log:log D "========= $branch =========="
           if {$branch eq $trunk} {continue}
           set long_branchrevlist ""
           set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $branch -- \"$filename\""
@@ -968,7 +959,6 @@ namespace eval ::git_branchlog {
               lappend long_branchrevlist $ro
             }
           }
-          gen_log:log D "IN == $branch ==============="
           if {! [llength $long_branchrevlist]} {
             gen_log:log D "$branch is EMPTY"
             continue
@@ -976,7 +966,6 @@ namespace eval ::git_branchlog {
           gen_log:log D "trunk: $branchrevs(trunk)"
           gen_log:log D "$branch: $long_branchrevlist"
           if {[llength long_branchrevlist]} {
-           gen_log:log D "BRANCH $branch"
             set comparisons [list_comm $long_branchrevlist $branchrevs(trunk)]
             set branch_only [lindex $comparisons 0]
             set trunk_only [lindex $comparisons 1]
@@ -984,21 +973,17 @@ namespace eval ::git_branchlog {
             set branchrevs($branch) [lindex $comparisons 0]
             # The last of the ones that appear in both lists is the parent
             set parent [lindex $inboth 0]
-            gen_log:log D "parent $parent"
-            gen_log:log D "branch_only $branch_only"
             set base [lindex $branch_only end]
-            gen_log:log D "base $base"
-            set revbranches($parent) $base
-            set branchrevs($base) $branchrevs($branch)
-            set revbtags($base) $branch
-            gen_log:log D "OUT ========================="
-            gen_log:log D "in $branch only: $branch_only"
-            gen_log:log D "in trunk only: $trunk_only"
-            gen_log:log D "in both:   $inboth"
-            gen_log:log D "$branch BASE: $base"
-            gen_log:log D "$branch PARENT: $parent"
-            foreach br $branch_only {
-              set revkind($br) "branch"
+            if {$base ne ""} {
+              set revbranches($parent) $base
+              set branchrevs($base) $branchrevs($branch)
+              set revbtags($base) $branch
+              gen_log:log D "$branch BASE: $base   PARENT: $parent"
+              foreach br $branch_only {
+                set revkind($br) "branch"
+              }
+            } else {
+              gen_log:log D "$branch is EMPTY"
             }
           }
         }
@@ -1007,6 +992,7 @@ namespace eval ::git_branchlog {
         set curr 0
         set brevs $branchrevs(trunk)
         set tip [lindex $brevs 0]
+        gen_log:log D "tip of trunk: $tip"
         set revpath($tip) $path
         set revkind($tip) "revision"
         set brevs [lreplace $brevs 0 0]
@@ -1036,6 +1022,7 @@ namespace eval ::git_branchlog {
 
         foreach branch $branches {
           if {$branch eq $trunk} {continue}
+          if {[llength $branchrevs($branch)] == 0} {continue}
           # See if the current revision is on this branch
           set curr 0
           set brevs $branchrevs($branch)
@@ -1183,7 +1170,7 @@ namespace eval ::git_branchlog {
           #set revbranches($a) [lsort -dictionary $revbranches($a)]
           #gen_log:log D "revbranches($a) $revbranches($a)"
         #}
-        gen_log:log D ""
+        #gen_log:log D ""
         foreach a [lsort -dictionary [array names revbtags]] {
          gen_log:log D "revbtags($a) $revbtags($a)"
         }

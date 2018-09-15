@@ -476,7 +476,7 @@ proc status_colortags_git {exec line} {
 proc log_colortags_git {exec line} {
   gen_log:log T "ENTER ($exec \"$line\")"
   set tag default
-  if {[regexp {^[\s\*]*commit } $line]} {
+  if {[regexp {[\s\*]*commit } $line]} {
     set tag yellow
   }
   gen_log:log T "LEAVE: $tag"
