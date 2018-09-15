@@ -281,8 +281,6 @@ proc workdir_setup {} {
      {"Tag the selected files"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bbranchtag \
      {"Branch the selected files"}
-  set_tooltips .workdir.bottom.buttons.cvsfuncs.brevert \
-     {"Revert the selected files, discarding local edits"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdateopts \
      {"Update with options (-A, -r, -f, -d, -kb)"}
 
@@ -961,6 +959,8 @@ proc setup_dir { } {
      {"Check in (commit) the selected files to the repository"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdate \
      {"Update (checkout, patch) the selected files from the repository"}
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.brevert \
+     {"Revert the selected files, discarding local edits"}
 
   # Now enable them depending on where we are
   if {$inrcs} {
@@ -1191,6 +1191,8 @@ proc setup_dir { } {
       -command { git_annotate $current_tagname [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
       -image GitCheckin -command { git_commit_dialog }
+    .workdir.bottom.buttons.cvsfuncs.brevert configure -state normal \
+      -command { git_reset [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -image GitCheckout -command { git_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
@@ -1209,6 +1211,8 @@ proc setup_dir { } {
        {"Check in (commit) the selected files to the staging area"}
     set_tooltips .workdir.bottom.buttons.cvsfuncs.bupdate \
        {"Update (checkout, patch) the selected files from the staging area"}
+    set_tooltips .workdir.bottom.buttons.cvsfuncs.brevert \
+       {"Reset, discarding local edits"}
     # Reports menu for GIT
     # Check Directory (git status --short)
     .workdir.menubar.reports entryconfigure "Check Directory" -state normal \

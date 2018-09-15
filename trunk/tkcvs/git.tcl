@@ -315,6 +315,25 @@ proc list_comm {listA listB} {
   return [list $inA $inB $inBoth]
 }
 
+proc git_reset {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+
+  set filelist [join $args]
+  gen_log:log D "Reverting $filelist"
+  set commandline "git reset $filelist"
+  set v [viewer::new "Git Reset"]
+  $v\::do "$commandline"
+  $v\::wait
+  $v\::clean_exec
+  
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+  gen_log:log T "LEAVE"
+}
+
 # called by "Status" in the Reports menu. Uses status_filter.
 proc git_status {detail args} {
   global cvscfg
