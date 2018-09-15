@@ -62,8 +62,7 @@ proc rcs_lock {do files} {
   }
 }
 
-# RCS checkin.  Have to use terminal, because ci -m won't take
-# a message with a newline
+# RCS checkin.
 proc rcs_checkin {revision comment args} {
   global cvscfg
   global inrcs
@@ -112,7 +111,9 @@ proc rcs_checkin {revision comment args} {
       return 1
     }
     set v [viewer::new "RCS Checkin"]
-    regsub -all "\"" $comment "\\\"" comment
+    regsub -all {"} $comment {\"} comment
+    regsub -all { } $comment {\ } comment
+    regsub -all {\n} $comment {\\n} comment
     set commandline "ci $revflag -m\"$comment\" $filelist"
     $v\::do "$commandline" 1
     $v\::wait
@@ -125,18 +126,6 @@ proc rcs_checkin {revision comment args} {
 }
 
 proc rcs_commit_dialog {filelist} {
-# ci -m won't take newline
-# % puts $ms
-# this has a
-# CR
-#
-# % regsub -all {\n} $ms {\n} msg
-# % puts $msg
-# this has a\nCR
-#
-# puts "this has a\nCR"
-# this has a
-# CR
   global cvsglb
   global cvscfg
 
