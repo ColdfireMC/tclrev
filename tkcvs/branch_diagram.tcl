@@ -334,9 +334,8 @@ namespace eval ::logcanvas {
            set info_cmd [exec::new "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$fname\""]
            set infoline [$info_cmd\::output]
            gen_log:log D "$infoline"
-           #FIXME: this infoline breaks lindex because of the x after the quotes
+           # don't split infoline because comments like this break it:
            #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
-           #set revnum_current [lindex $infoline 0]
            set revnum_current [string range $infoline 1 7]
            gen_log:log D "revnum_current $revnum_current"
            if {! [info exists revnum_current]} {
