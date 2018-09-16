@@ -280,9 +280,8 @@ proc list_comm {listA listB} {
     gen_log:log D "Lists are identical"
     set inBoth $listA
   } else {
-    # We don't want to change the items' sort order, so we can't
-    # simplify by combining the lists with sort -u
-    set allAB [concat $listA $listB]
+    # Order in A and B lists matters, but not the combined one
+    set allAB [lsort -unique [concat $listA $listB]]
     foreach itemInA $listA {
       if {$itemInA in $listB} {
         lappend inBoth $itemInA
@@ -882,7 +881,7 @@ namespace eval ::git_branchlog {
 
         # Get all the date, comment, etc data at once. In Git it's not so
         # useful to do a branch at a time
-        set command "git log --all --abbrev-commit --date=iso --no-color -- \"$filename\""
+        set command "git log --all --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1067,6 +1066,7 @@ namespace eval ::git_branchlog {
         variable revdate
         variable revtime
         variable revcomment
+        variable revtags
 
         gen_log:log T "ENTER (<...>)"
         set revnum ""
@@ -1082,6 +1082,23 @@ namespace eval ::git_branchlog {
             # ^ we came to the last line!
             set line [lindex $lines $i]
             set revnum [lindex $line 1]
+            # Line could look like this:
+            # commit 4c5ebde9ca8d3248a2359152eae48fafe27142ae (tag: tag_1, tag: tag_3, branchA)
+            if {[regexp {\(.*\)} $line parenthetical]} {
+              set parenthetical [string range $parenthetical 1 end-1]
+              gen_log:log D "  parenthetical $parenthetical"
+              if {[set tagmatches [regexp -inline -all {tag: (.*?)(,|$)} $parenthetical]] ne ""} {
+                # This will return something like 
+                # {tag: tag_1,} tag_1 , {tag: Tag_3,} Tag_3 ,
+                # if not at end-of-string, or
+                # {tag: tag_2} tag_2 {}
+                # if at end of string
+                for {set idx 1} {$idx < [llength $tagmatches]} {incr idx 3} {
+                  lappend revtags($revnum) [lindex $tagmatches $idx]
+                }
+                gen_log:log D "revtags($revnum) $revtags($revnum)"
+              }
+            }
             incr i
             set line [lindex $lines $i]
             # Author: dorothyr <dorothyr@tadg>
@@ -1165,12 +1182,6 @@ namespace eval ::git_branchlog {
           gen_log:log D "branchrevs($a) $branchrevs($a)"
         }
         gen_log:log D ""
-        #foreach a [lsort -dictionary [array names revbranches]] {
-          # sort the rev branches to they will be displayed in increasing order
-          #set revbranches($a) [lsort -dictionary $revbranches($a)]
-          #gen_log:log D "revbranches($a) $revbranches($a)"
-        #}
-        #gen_log:log D ""
         foreach a [lsort -dictionary [array names revbtags]] {
          gen_log:log D "revbtags($a) $revbtags($a)"
         }

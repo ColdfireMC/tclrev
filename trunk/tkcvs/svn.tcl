@@ -1718,7 +1718,7 @@ namespace eval ::svn_branchlog {
             if {$cvscfg(confirm_prompt)} {
               set mess    "There are $n_tags tags.  It could take a long time "
               append mess "to process them. If you're willing to wait, "
-              append mess " press OK and get a cup of coffee.\n"
+              append mess " press OK.\n"
               append mess "Otherwise, press Cancel and I will draw the "
               append mess "diagram now without showing tags.  "
               append mess "You may wish to turn off\n"
