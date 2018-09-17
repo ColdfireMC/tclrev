@@ -47,6 +47,39 @@ proc repository {Root topdir} {
   cd $WD
 }
 
+# Make something that uses the CVSROOT/modules functionality
+proc module_file {} {
+  global env
+  global WD
+
+  puts "==============================="
+  puts "EDITING MODULE FILE"
+
+  set exec_cmd "cvs -d $env(CVSROOT) co CVSROOT/modules"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+    puts "COULD NOT CHECK OUT CVSROOT/modules"
+    exit 1
+  }
+  cd CVSROOT
+  set mf [open "modules" a]
+  puts $mf "#D\tcvs_test\tSome files under CVS control"
+  puts $mf "cvs_test\tcvs_test"
+  close $mf
+  set exec_cmd "cvs ci -m\"Add\\\ a\\\ module\\\ and\\\ a\\\ #D\\\ line\" modules"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+    puts "COULD NOT CHECK IN CVSROOT/modules"
+    cd $WD
+    exit 1
+  }
+  cd $WD
+}
+
 proc checkout_branch {proj tag} {
   global env
 
@@ -259,6 +292,7 @@ cleanup_old $Root
 
 mkfiles "cvs_test"
 repository $Root "cvs_test"
+module_file
 checkout_branch "cvs_test" "trunk"
 
 puts "==============================="

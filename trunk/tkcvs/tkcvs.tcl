@@ -416,19 +416,6 @@ if {[info exists lcfile]} {
   cd $d
 }
 
-# If CVSROOT envvar is set, use it
-if { ! [info exists cvscfg(cvsroot)] } {
-  if { ! [info exists env(CVSROOT)] } {
-    #puts "warning: your \$CVSROOT environment variable is not set."
-    set cvscfg(cvsroot) ""
-  } else {
-    set cvscfg(cvsroot) $env(CVSROOT)
-  }
-}
-# Find out which of the supported VCSs we can run. Maybe we can use it later.
-# This sets cvscfg(have_cvs) and so on.
-#help_cvs_version 0
-
 # Thought better of saving this
 catch unset cvscfg(svnconform_seen)
 
@@ -461,19 +448,47 @@ image create photo Mergediff \
 image create photo Man \
   -format gif -file [file join $cvscfg(bitmapdir) man.gif]
 
+set cvsglb(root) ""
+set cvsglb(vcs) ""
+
 # Create a window
 # Start with Module Browser
 if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
-
+  # If we're in a version-controlled directory, open that repository
   if {$insvn} {
     set cvsglb(root) $cvscfg(svnroot)
-    modbrowse_run svn
+    set cvsglb(vcs) svn
+  } elseif {$incvs} {
+    set cvsglb(root) $cvscfg(cvsroot)
+    set cvsglb(vcs) cvs
+  } elseif {$ingit} {
+    set cvsglb(root) $cvscfg(url)
+    set cvsglb(vcs) git
   } else {
-    # We still don't know if it's SVN or CVS.  Let modbrowse_run figure out.
-    modbrowse_run
+    # Check the environment. How to decide precedence though?
+    # At least we'll add them to repository dropdown to choose easily
+    # cvscfg(*root) is meant to override the envvar
+    # Having GIT_DIR set is not an option, it destroys everything
+    if {[info exists cvscfg(cvsroot)]} {
+      set cvsglb(root) $cvscfg(cvsroot)
+      set cvsglb(vcs) cvs
+    } elseif {[info exists env(CVSROOT)]} {
+      set cvsglb(root) [set cvscfg(cvsroot) $env(CVSROOT)]
+      set cvsglb(vcs) cvs
+    } elseif {[info exists cvscfg(svnroot)]} {
+      set svnglb(root) $cvscfg(svnroot)
+      set cvsglb(vcs) svn
+    } elseif {[info exists env(SVNROOT)]} {
+      set cvsglb(root) [set cvscfg(cvsroot) $env(SVNROOT)]
+      set cvsglb(vcs) svn
+    } elseif {[info exists cvscfg(gitroot)]} {
+      set cvsglb(root) $cvscfg(cvsroot)
+      set cvsglb(vcs) git
+    }
   }
+  modbrowse_run
 # Start with Branch Browser
 } elseif {$cvscfg(startwindow) == "log"} {
   if {! [file exists $lcfile]} {
@@ -526,6 +541,5 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 # The usual way, with the Workdir Browser
 } else {
   setup_dir
-  #workdir_setup
 }
 

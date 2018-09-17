@@ -166,6 +166,7 @@ proc git_workdir_status {} {
 
 proc find_git_remote {dirname} {
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER ($dirname)"
 
@@ -173,9 +174,58 @@ proc find_git_remote {dirname} {
   set cfgline [lindex [split [$cmd(git_config)\::output] "\n"] 0]
   set cvscfg(origin) [lindex $cfgline 0]
   set cvscfg(url) [lindex $cfgline 1]
-  $cmd(git_config)\::destroy
+  set cvslbg(root) $cvscfg(url)
+  set cvsglb(vcs) git
   gen_log:log T "LEAVE"
 }
+
+# For module browser.
+proc parse_gitlist {tf gitroot} {
+  global cvsglb
+  global modval 
+  global modtitle
+
+  gen_log:log T "ENTER ($tf $gitroot)"
+  # Clear the arrays
+  catch {unset modval}
+  catch {unset modtitle}
+
+  set command "git ls-remote \"$cvsglb(root)\""
+  set git_list_cmd [exec::new "$command"]
+  set remote_output [$git_list_cmd\::output]
+  foreach line [split $remote_output "\n"] {
+    if  {$line eq ""} {continue}
+    set dname [lindex $line 1] 
+    gen_log:log D "dname=$dname"
+    # This is the hash
+    set modval($dname) [lindex $line 0] 
+    gen_log:log D "modval($dname)=$modval($dname)"
+    #set modtitle($dname) $dname
+    #gen_log:log D "modtitle($dname)=$modtitle($dname)"
+    ModList:newitem $tf $dname $modval($dname)
+  }
+
+  # Then you can do something like this to list the files
+  # git ls-tree -r refs/heads/master --name-only
+  gen_log:log T "LEAVE"
+}
+
+proc git_push {} {
+  gen_log:log T "ENTER"
+
+  set cmd(git_push) [exec::new "git push"]
+
+  gen_log:log T "LEAVE"
+}
+
+proc git_fetch {} {
+  gen_log:log T "ENTER"
+
+  set cmd(git_push) [exec::new "git fetch"]
+
+  gen_log:log T "LEAVE"
+}
+
 
 # Called from "Log" in Reports menu
 proc git_log {detail args} {
@@ -733,17 +783,6 @@ namespace eval ::git_branchlog {
         set ln [lindex $newlc 0]
         set lc [lindex $newlc 1]
         set show_tags [set $ln\::opt(show_tags)]
-      }
-
-      # Implementation of Perl-like "grep {/re/} in_list"
-      proc grep_filter { re in_list } {
-        set res ""
-        foreach x $in_list {
-          if {[regexp $re $x]} {
-            lappend res $x
-          }
-        }
-        return $res
       }
 
       proc abortLog { } {

@@ -94,7 +94,6 @@ proc workdir_setup {} {
 
   # Pack the bottom before the middle so it doesnt disappear if
   # the window is resized smaller
-  #frame .workdir.bottom -relief groove -border 2 -height 128
   frame .workdir.bottom
   frame .workdir.bottom.filters -relief raised
   pack .workdir.bottom -side bottom -fill x
@@ -163,7 +162,6 @@ proc workdir_setup {} {
      -command { comparediff [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict \
      -command { cvs_merge_conflict [workdir_list_files] }
-
   button .workdir.bottom.buttons.cvsfuncs.btag -image Tag \
      -command { file_tag_dialog "tag" }
   button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag \
@@ -188,8 +186,10 @@ proc workdir_setup {} {
      -command { cvs_unedit [workdir_list_files] }
   button .workdir.bottom.buttons.oddfuncs.block -image Lock
   button .workdir.bottom.buttons.oddfuncs.bunlock -image UnLock
-  button .workdir.bottom.buttons.oddfuncs.bpush -image Checkin
-  button .workdir.bottom.buttons.oddfuncs.bpull -image Checkout
+  button .workdir.bottom.buttons.oddfuncs.bpush -image Checkin \
+     -command { git_push }
+  button .workdir.bottom.buttons.oddfuncs.bfetch -image Checkout \
+     -command { git_fetch }
   button .workdir.close -text "Close" \
       -command {
         global cvscfg
@@ -293,9 +293,9 @@ proc workdir_setup {} {
   set_tooltips .workdir.bottom.buttons.oddfuncs.bunedit_files \
      {"Unset the Edit flag on the selected files"}
   set_tooltips .workdir.bottom.buttons.oddfuncs.bpush \
-     {"Push the selected files to origin"}
-  set_tooltips .workdir.bottom.buttons.oddfuncs.bpull \
-     {"Pull the selected files from origin"}
+     {"Push to origin"}
+  set_tooltips .workdir.bottom.buttons.oddfuncs.bfetch \
+     {"Fetch from origin"}
 
   set_tooltips .workdir.top.bmodbrowse \
      {"Open the Repository Browser"}
@@ -369,6 +369,8 @@ proc workdir_images {} {
     -format gif -file [file join $cvscfg(bitmapdir) modbrowse_cvs.gif]
   image create photo Modules_svn \
     -format gif -file [file join $cvscfg(bitmapdir) modbrowse_svn.gif]
+  image create photo Modules_git \
+    -format gif -file [file join $cvscfg(bitmapdir) modbrowse_git.gif]
   image create photo Lock \
     -format gif -file [file join $cvscfg(bitmapdir) locked.gif]
   image create photo UnLock \
@@ -914,6 +916,8 @@ proc setup_dir { } {
   .workdir.top.ltagname configure -text "Tag"
   .workdir.top.lcvsroot configure -text "CVSROOT"
   .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
+  set cvsglb(root) $cvscfg(cvsroot)
+  set cvsglb(vcs) cvs
 
   # Start without revision-control menu
   gen_log:log D "CONFIGURE VCS MENUS"
@@ -968,8 +972,10 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE RCS MENUS"
     .workdir.menubar insert $rptmenu_idx cascade -label "RCS" \
       -menu .workdir.menubar.rcs
-    .workdir.top.lcvsroot configure -text "RCS *,v"
+    .workdir.top.lcvsroot configure -text "RCS *,v Path"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
+    set cvsglb(root) $cvscfg(rcsdir)
+    set cvsglb(vcs) rcs
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { rcs_check }
@@ -1015,11 +1021,13 @@ proc setup_dir { } {
     .workdir.menubar insert $rptmenu_idx cascade -label "SVN" \
       -menu .workdir.menubar.svn
     .workdir.top.bmodbrowse configure -image Modules_svn \
-      -command {modbrowse_run svn}
+      -command {modbrowse_run}
     .workdir.top.lmodule configure -text "Path"
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
+    set cvsglb(root) $cvscfg(url)
+    set cvsglb(vcs) svn
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check }
@@ -1087,11 +1095,13 @@ proc setup_dir { } {
     .workdir.menubar insert $rptmenu_idx cascade -label "CVS" \
       -menu .workdir.menubar.cvs
     .workdir.top.bmodbrowse configure -image Modules_cvs \
-      -command {modbrowse_run cvs}
+      -command {modbrowse_run}
     .workdir.top.lmodule configure -text "Module"
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "CVSROOT"
     .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
+    set cvsglb(root) $cvscfg(cvsroot)
+    set cvsglb(vcs) cvs
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check }
@@ -1173,10 +1183,14 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE GIT MENUS"
     .workdir.menubar insert $rptmenu_idx cascade -label "GIT" \
       -menu .workdir.menubar.git
+    .workdir.top.bmodbrowse configure -image Modules_git \
+      -command {modbrowse_run}
     .workdir.top.lmodule configure -text "path"
     .workdir.top.ltagname configure -text "branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
+    set cvsglb(root) $cvscfg(url)
+    set cvsglb(vcs) git
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
@@ -1198,7 +1212,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     grid .workdir.bottom.buttons.oddfuncs.bpush  -column 0 -row 0
-    grid .workdir.bottom.buttons.oddfuncs.bpull  -column 0 -row 1
+    grid .workdir.bottom.buttons.oddfuncs.bfetch  -column 0 -row 1
     .workdir.bottom.buttons.oddfuncs.block configure -state normal \
       -command { rcs_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
@@ -1562,9 +1576,12 @@ proc cvsroot_check { dir } {
     gen_log:log E "gitout $gitout"
     set ingit 0
   } else {
+    # revparse may return "false" 
     gen_log:log F "gitout $gitout"
-    set ingit 1
-    find_git_remote $dir
+    if {$gitout} {
+      set ingit 1
+      find_git_remote $dir
+    }
   }
   gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
   return [list $incvs $insvn $inrcs $ingit]

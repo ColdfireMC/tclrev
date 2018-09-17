@@ -4,15 +4,16 @@
 
 proc modbrowse_setup {} {
   global cwd
-  global repository_root
+  global cvsroot
   global modbrowse_module
   global modbrowse_path
   global modbrowse_title
+  global env
   global cvsglb
   global cvscfg
   global tcl_platform
 
-  #gen_log:log T "ENTER"
+  gen_log:log T "ENTER"
   set cwd [pwd]
 
   # Window manager stuff.
@@ -47,10 +48,28 @@ proc modbrowse_setup {} {
   entry .modbrowse.top.tmcode -textvariable modbrowse_module \
     -font $cvscfg(listboxfont) -border 2
 
-  label .modbrowse.top.lroot -text "CVSROOT"
+  # We have these possibilities
+  foreach VCS {cvs svn} {
+    if [info exists env(${VCS}ROOT)] {
+      gen_log:log D "env(${VCS}ROOT) $env(${VCS}ROOT) $VCS"
+      ::picklist::used cvsroot "$env(${VCS}ROOT) $VCS"
+    }
+  }
+  foreach VCS {cvs svn git} {
+    if [info exists cvscfg(${VCS}root)] {
+      gen_log:log D "cvscfg(${VCS}root) $cvscfg(${VCS}root) $VCS"
+      ::picklist::used cvsroot $cvscfg(${VCS}root)
+    }
+  }
+  # Where do we think we are?
+  gen_log:log D "cvsglb(root) $cvsglb(root) cvsglb(vcs) $cvsglb(vcs)"
+
+  label .modbrowse.top.lroot -text "Repository"
   ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
-  ::picklist::bind .modbrowse.top.troot <Return> \
-    {if {$repository_root != $cvsglb(root)} {modbrowse_run}}
+  # We can't really do this because we can't necessarily guess
+  # the VCS from a path name
+  #::picklist::bind .modbrowse.top.troot <Return> \
+     { modbrowse_run }
 
   button .modbrowse.top.bworkdir -image Workdir \
     -command {workdir_setup}
@@ -195,7 +214,7 @@ proc modbrowse_setup {} {
   wm maxsize .modbrowse $screenWidth $screenHeight
   wm minsize .modbrowse 430 300
 
-  #gen_log:log T "LEAVE"
+  gen_log:log T "LEAVE"
 }
 
 proc modbrowse_images {} {
@@ -305,7 +324,7 @@ proc modbrowse_menus {} {
         busy_start .modbrowse
         ModTree:create .modbrowse.treeframe
         pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-        modbrowse_tree [lsort [array names modval]] "/"
+        cvs_modbrowse_tree [lsort [array names modval]] "/"
      }
   .modbrowse.menubar.options add separator
   .modbrowse.menubar.options add checkbutton -label "Tracing On/Off" \
@@ -317,27 +336,22 @@ proc modbrowse_menus {} {
   #gen_log:log T "LEAVE"
 }
 
-proc modbrowse_run { {CVSorSVN {}} } {
+proc modbrowse_run {} {
   global env
-  global svnurl
   global incvs insvn inrcs ingit
   global modval
   global cvscfg
   global cvsglb
   global cvs
   global cmd
-  global repository_root
+  global cvsroot
 
-  gen_log:log T "ENTER ($CVSorSVN)"
-  # If a checkout is already running, abort it
-  if {[info exists cmd(cvs_co)]} {
-    catch {$cmd(cvs_co)\::abort}
-    catch {unset cmd(cvs_co)}
-  }
 
+  gen_log:log T "ENTER ()"
+  gen_log:log D "cvsglb(root) $cvsglb(root)"
+  gen_log:log D "cvsglb(vcs) $cvsglb(vcs)"
   catch {unset modval}
   catch {unset modtitle}
-
   set modbrowse_module ""
 
   if {! [winfo exists .modbrowse]} {
@@ -350,280 +364,147 @@ proc modbrowse_run { {CVSorSVN {}} } {
   ModTree:delitem .modbrowse.treeframe /
   ModTree:destroy .modbrowse.treeframe
   busy_start .modbrowse
-  switch $CVSorSVN {
+  switch $cvsglb(vcs) {
     svn {
-      set svnurl 1
-      gen_log:log D "svn"
-
-      set cvsglb(root) $cvscfg(svnroot) 
-      if {! [info exists cvscfg(svnroot)] } {
-        read_svn_dir .
-      }
       .modbrowse.top.lroot configure -text "SVN URL"
       .modbrowse.top.lmcode configure -text "Selection"
-      # Call ModTree with the just-in-time level maker
+      # Set up ModTree and tell it to use clbk just-in-time-listdir
       ModTree:create .modbrowse.treeframe svn_jit_listdir
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      parse_svnmodules .modbrowse.treeframe $cvscfg(svnroot)
+      .modbrowse.treeframe.tree.lbl configure -text "File"
+      .modbrowse.treeframe.labl.lbl configure -text "Information"
+      # parse_svnmodules will do "svn list" and post the files and directories
+      parse_svnmodules .modbrowse.treeframe $cvsglb(root)
     }
     cvs {
-      set svnurl 0
-      gen_log:log D "cvs"
-      #gen_log:log D "cvsglb(root) $cvsglb(root)"
-      #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-      #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
-
-      set cvsglb(root) $cvscfg(cvsroot)
-      set cmd(cvs_co) \
-          [exec::new "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"]
       .modbrowse.top.lroot configure -text "CVSROOT"
       .modbrowse.top.lmcode configure -text "Module"
+      # Set up ModTree
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      if {[info exists cmd(cvs_co)]} {
-        parse_cvsmodules [$cmd(cvs_co)\::output]
-      }
-      catch {unset cmd(cvs_co)}
+      .modbrowse.treeframe.tree.lbl configure -text "Module"
+      .modbrowse.treeframe.labl.lbl configure -text "Information"
+      # parse_cvsmodules will check out CVSROOT/modules and post what it finds
+      parse_cvsmodules .modbrowse.treeframe $cvsglb(root)
+    }
+    git {
+      .modbrowse.top.lroot configure -text "Origin"
+      .modbrowse.top.lmcode configure -text "Selection"
+      # Set up ModTree
+      ModTree:create .modbrowse.treeframe
+      pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+      .modbrowse.treeframe.tree.lbl configure -text "Reference"
+      .modbrowse.treeframe.labl.lbl configure -text "Commit ID"
+      # parse_gitlist will do git ls-remote and post what it finds
+      parse_gitlist .modbrowse.treeframe $cvsglb(root)
     }
     default {
-      set svnurl 0
-      # Detect a SVN URL
-      if {[regexp {://} $cvsglb(root)]} {
-        set svnurl 1
-      }
-      if {$svnurl} {
-        gen_log:log D "default,detected svn url"
-        set cvscfg(svnroot) $cvsglb(root)
-
-        .modbrowse.top.lroot configure -text "SVN URL"
-        .modbrowse.top.lmcode configure -text "Selection"
-        # Call ModTree with the just-in-time level maker
-        ModTree:create .modbrowse.treeframe svn_jit_listdir
-        pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-        parse_svnmodules .modbrowse.treeframe $cvscfg(svnroot)
-      } else {
-        gen_log:log D "default"
-        set cvscfg(cvsroot) $cvsglb(root)
-        if {$cvsglb(root) eq ""} {
-          ModTree:create .modbrowse.treeframe
-          pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-          busy_done .modbrowse
-          return
-        }
-        #gen_log:log D "cvsglb(root) $cvsglb(root)"
-        #gen_log:log D "cvscfg(cvsroot) $cvscfg(cvsroot)"
-        #gen_log:log D "cvscfg(svnroot) $cvscfg(svnroot)"
-
-        #set cvsglb(root) $cvscfg(cvsroot)
-        set cmd(cvs_co) \
-            [exec::new "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"]
-        .modbrowse.top.lroot configure -text "CVSROOT"
-        .modbrowse.top.lmcode configure -text "Module"
-        ModTree:create .modbrowse.treeframe
-        pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-        if {[info exists cmd(cvs_co)]} {
-            parse_cvsmodules [$cmd(cvs_co)\::output]
-        }
-        catch {unset cmd(cvs_co)}
-      }
+      # Just make an empty frame
+      ModTree:create .modbrowse.treeframe
+      pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+      busy_done .modbrowse
+      return
     }
   }
-  set repository_root $cvsglb(root)
-  ::picklist::used cvsroot $cvsglb(root)
+  # Maybe this root is new to us?
+  ::picklist::used cvsroot "$cvsglb(root) $cvsglb(vcs)"
 
-  set bstate [expr {$svnurl ? {disabled} : {normal}}]
-  .modbrowse.bottom.buttons.cvsfuncs.import configure -state $bstate
-  .modbrowse.bottom.buttons.cvsfuncs.who configure -state $bstate
-  .modbrowse.bottom.buttons.cvsfuncs.brefresh configure -state normal
-  foreach widget [grid slaves .modbrowse.bottom.buttons.modfuncs ] {
-    $widget configure -state $bstate
+  switch $cvsglb(vcs) {
+    cvs {
+      .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
+        -command { browse_files $modbrowse_module }
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+        -command { cvs_checkout_dialog $cvscfg(cvsroot) $modbrowse_module }
+      .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
+        -command { import_run }
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+        -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
+      .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
+        -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
+      .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
+        -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
+      .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
+        -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
+      .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
+        -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
+      .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
+        -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
+      .modbrowse.bottom.buttons.cvsfuncs.who configure -state normal
+      .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
+      .modbrowse.menubar entryconfigure "CVS" -state normal
+      .modbrowse.menubar entryconfigure "SVN" -state disabled
+    }
+    svn {
+      .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
+        -command { svn_import_run }
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+        -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
+      .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
+        -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
+      .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
+        -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "tags" }
+      .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
+        -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
+      .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
+        -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 1 }
+      .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
+        -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 0 }
+      .modbrowse.bottom.buttons.cvsfuncs.who configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
+      .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
+      .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
+      .modbrowse.menubar entryconfigure "CVS" -state disabled
+      .modbrowse.menubar entryconfigure "SVN" -state normal
+    }
+    default {
+      # Disable 'em all
+      .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state disabled
+      .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.export configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.tag configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.branchtag configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.patchfile configure -state disabled
+      .modbrowse.bottom.buttons.cvsfuncs.who configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
+      .modbrowse.menubar entryconfigure "CVS" -state disabled
+      .modbrowse.menubar entryconfigure "SVN" -state disabled
+    }
   }
-  if {$svnurl} {
-    .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
-      -command { svn_import_run }
-    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
-    .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
-      -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path export}
-    .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
-      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "tags" }
-    .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
-      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
-    .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
-      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 1 }
-    .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
-      -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 0 }
-    .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
-    .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
-    .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
-    .modbrowse.menubar entryconfigure "CVS" -state disabled
-    .modbrowse.menubar entryconfigure "SVN" -state normal
-  } else {
-    .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
-      -command { browse_files $modbrowse_module }
-    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-      -command { cvs_checkout_dialog $cvscfg(cvsroot) $modbrowse_module }
-    .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
-      -command { import_run }
-    .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-      -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
-    .modbrowse.bottom.buttons.modfuncs.export configure -state normal \
-      -command { dialog_cvs_export $cvscfg(cvsroot) $modbrowse_module }
-    .modbrowse.bottom.buttons.modfuncs.tag configure -state normal \
-      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "tag" }
-    .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
-      -command { rtag_dialog $cvscfg(cvsroot) $modbrowse_module "branch" }
-    .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
-      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 1 }
-    .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
-      -command { dialog_cvs_patch $cvscfg(cvsroot) $modbrowse_module 0 }
-    .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
-    .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
-    .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
-    .modbrowse.menubar entryconfigure "CVS" -state normal
-    .modbrowse.menubar entryconfigure "SVN" -state disabled
-  }
-  if {$insvn || $incvs || $inrcs} {
+
+  if {$insvn || $incvs || $inrcs || $ingit} {
+    # Don't allow an attempt to import from a version-controlled directory
     .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
   }
 
   # Populate the tree
-  if {$svnurl} {
-    # Make sure branches and tags names come first, before any of their
-    # contents, so we get the "# tags" and "# branches" labels
-    set newlist ""
-    foreach item [array names modval] {
-      if {! ($item == $cvscfg(svn_branchdir) || $item == $cvscfg(svn_tagdir))} {
-        lappend newlist $item
+  switch $cvsglb(vcs) {
+    svn {
+      # Make sure branches and tags names come first, before any of their
+      # contents, so we get the "# tags" and "# branches" labels
+      set newlist ""
+      foreach item [array names modval] {
+        if {! ($item == $cvscfg(svn_branchdir) || $item == $cvscfg(svn_tagdir))} {
+          lappend newlist $item
+        }
       }
+      set newlist [lsort $newlist]
+      set newlist [concat {$cvscfg(svn_branchdir} {$cvscfg(svn_tagdir)} $newlist]
     }
-    set newlist [lsort $newlist]
-    set newlist [concat {$cvscfg(svn_branchdir} {$cvscfg(svn_tagdir)} $newlist]
-  } else {
-    modbrowse_tree [lsort [array names modval]] "/"
+    cvs {
+      cvs_modbrowse_tree [lsort [array names modval]] "/"
+    }
+    git {
+    }
   }
 
   busy_done .modbrowse
-  gen_log:log T "LEAVE"
-}
-
-proc modbrowse_tree { mnames node } {
-#
-# Do this to update the display of the listbox (body proc).
-#
-  global cvscfg
-  global modval
-  global modtitle
-  global dcontents
-  global Tree
-
-  gen_log:log T "ENTER (... $node)"
-
-  if {! [info exists cvscfg(aliasfolder)]} {
-    set cvscfg(aliasfolder) false
-  }
-
-  set tf ".modbrowse.treeframe"
-  foreach mname $mnames {
-    #gen_log:log D "{$mname} {$modval($mname)}"
-    set dimage "dir"
-    # The descriptive title of the module.  If not specified, modval is used.
-    set title $modval($mname)
-    if {[info exists modtitle($mname)]} {
-      set title $modtitle($mname)
-      #gen_log:log D "* modtitle($mname) {$title}"
-    }
-    if {[string match "-a *" $modval($mname)]} {
-      # Its an alias module
-      regsub {\-a } $modtitle($mname) "Alias for " title
-      if {$cvscfg(aliasfolder)} {
-        #gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
-        if {! [info exists Tree($tf:/Aliases:children)]} {
-          #gen_log:log D "Making Aliases"
-          ModTree:newitem $tf /Aliases Aliases "Aliases" -image "adir"
-        }
-        ModTree:newitem $tf /Aliases/$mname $mname "$title" -image "amod"
-        continue
-      }
-      set dimage amod
-    } elseif {[string match "* *" $modval($mname)]} {
-      # The value isn't a simple path
-      #gen_log:log D "Found spaces in modval($mname) $modval($mname)"
-    } elseif {[string match "*/*" $modval($mname)]} {
-      #gen_log:log D "Set image to dir because $modval($mname) contains a slash"
-      set dimage dir
-      set path $modval($mname)
-      if {[llength $modval($mname)] > 1} {
-        regsub { &\S+} $path {} path
-      }
-      set pathitems [file split $path]
-      set pathdepth [llength $pathitems]
-      set pathtop [lindex [file split $path] 0]
-      set pathroot [file join $node $pathtop]
-      set pathroot "$pathroot"
-      if {[info exists modtitle($pathtop)]} {
-        set title $modtitle($pathtop)
-        #gen_log:log D "* Using pathtop * modtitle($pathtop) {$title}"
-      } elseif {[info exists modtitle($path)]} {
-        set title $modtitle($path)
-        #gen_log:log D "* Using path * modtitle($path) {$title}"
-      } else {
-        #gen_log:log D "* No modtitle($path)"
-      }
-      #gen_log:log D "path=$path pathtop=$pathtop pathroot=$pathroot"
-      if {! [info exists Tree($tf:$pathroot:children)]} {
-        #gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
-        if {[info exists modval($pathtop)]} { set dimage mdir }
-        ModTree:newitem $tf $pathroot $pathtop "$title" -image $dimage
-      }
-      set pathroot ""
-      for {set i 1} {$i < $pathdepth} {incr i} {
-        set newnode [lindex $pathitems $i]
-        set pathroot [file join $pathroot [lindex $pathitems [expr {$i -1} ]]]
-        set newpath [file join "/" $pathroot $newnode]
-        set namepath [string range $newpath 1 end]
-        #gen_log:log D "* * mname=$mname namepath=$namepath pathroot=$pathroot newpath=$newpath newnode=$newnode"
-        if {[info exists modtitle($namepath)]} {
-          set title $modtitle($namepath)
-          #gen_log:log D "* Using namepath * modtitle($namepath) {$title}"
-        } elseif {[info exists modtitle($newnode)]} {
-          set title $modtitle($newnode)
-          #gen_log:log D "* Using newnode * modtitle($newnode) {$title}"
-        } elseif {[info exists modtitle($mname)]} {
-          set title $modtitle($mname)
-          #gen_log:log D "* Using mname * modtitle($mname) {$title}"
-        } else {
-          #gen_log:log D "* * No modtitle($namepath)"
-        }
-        if {! [info exists Tree($tf:$newpath:children)]} {
-          set modvalpath [file join "/" $modval($mname)]
-          regsub { &\S+} $modvalpath {} modvalpath
-          #gen_log:log D "* * mname=$mname modvalpath=$modvalpath newpath=$newpath newnode=$newnode"
-          if {$modvalpath == $newpath} {
-            set newnode $mname
-          }
-          set dimage dir
-          #gen_log:log D "2 Making $newnode for an intermediate node"
-          lappend dcontents($pathroot) $newnode
-          if {[info exists modval($newnode)]} {set dimage mdir}
-          ModTree:newitem $tf $newpath $newnode "$title" -image $dimage
-        }
-      }
-      # If we got here we just did a leaf, so break out and dont put it
-      # at the toplevel too.
-      continue
-    }
-    set treepath [file join $node $mname]
-    if {[info exists Tree($tf:$treepath:children)]} {
-      #gen_log:log D "  Already handled $treepath"
-      continue
-    }
-    #gen_log:log D "3 Making $mname"
-    if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
-    ModTree:newitem $tf $treepath $mname $title -image $dimage
-  }
-  update idletasks
-  gather_mod_index
   gen_log:log T "LEAVE"
 }
 
@@ -673,11 +554,9 @@ proc module_changedir {new_dir} {
   global cwd
   global cvscfg
   global cvsglb
+  global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($new_dir)"
-  #if {! [winfo exists .modbrowse]} {
-    #modbrowse_setup
-  #}
   if {[file exists $new_dir]} {
     cd $new_dir
     set cwd $new_dir
@@ -687,17 +566,19 @@ proc module_changedir {new_dir} {
 
     # If this directory has a different cvsroot, redo the tree
     if {$incvs} {
-      if {$cvscfg(cvsroot) != $cvsglb(root)} {
-        set cvsglb(root) $cvscfg(cvsroot)
-        modbrowse_run cvs
-      }
+      set cvsglb(root) $cvscfg(cvsroot)
+      set cvsglb(vcs) cvs
+      modbrowse_run
     } elseif {$insvn} {
-      if {$cvscfg(svnroot) != $cvsglb(root)} {
-        set cvsglb(root) $cvscfg(svnroot)
-        modbrowse_run svn
-      }
+      set cvsglb(root) $cvscfg(svnroot)
+      set cvsglb(vcs) svn
+      modbrowse_run
+    } elseif {$ingit} {
+      set cvsglb(root) $cvscfg(url)
+      set cvsglb(vcs) git
+      modbrowse_run
     }
-
+    # Add to the directory picklist
     if {[winfo exists .workdir]} {
       ::picklist::used directory [pwd]
       setup_dir

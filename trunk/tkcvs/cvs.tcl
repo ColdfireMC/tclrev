@@ -1822,40 +1822,54 @@ proc read_cvs_dir {dirname} {
     cvsfail "$dirname is not a directory" .workdir
     return 0
   }
+  set cvsglb(vcs) cvs
   set cvsglb(root) $cvscfg(cvsroot)
 
   gen_log:log T "LEAVE (1)"
   return 1
 }
 
-proc parse_cvsmodules {modules_file} {
+# For the module browser. Reads CVSROOT/modules
+proc parse_cvsmodules {tf cvsroot} {
   global cvs
   global modval
   global modtitle
   global cvsglb
   global cvscfg
 
-  gen_log:log T "ENTER"
+  gen_log:log T "ENTER ($tf $cvsroot)"
+
+  if {[catch "image type fileview"]} {
+    workdir_images
+  }
 
   # Clear the arrays
   catch {unset modval}
   catch {unset modtitle}
 
-  # Unescape newlines, compress repeated whitespace, and remove blank lines
-  regsub -all {(\\\n|[ \t])+} $modules_file " " modules_file
-  regsub -all {\n\s*\n+} $modules_file "\n" modules_file
+  # We have to use cvs to access the modules file
+  set command "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"
+  set cmd(cvs_co) [exec::new $command]
+  if {[info exists cmd(cvs_co)]} {
+    set cat_modules_file [$cmd(cvs_co)\::output]
+    $cmd(cvs_co)\::destroy
+    catch {unset cmd(cvs_co)}
+  }
 
-  foreach line [split $modules_file "\n"] {
+  # Unescape newlines, compress repeated whitespace, and remove blank lines
+  regsub -all {(\\\n|[ \t])+} $cat_modules_file " " cat_modules_file
+  regsub -all {\n\s*\n+} $cat_modules_file "\n" cat_modules_file
+
+  foreach line [split $cat_modules_file "\n"] {
     if {[string index $line 0] == {#}} {
-#     gen_log:log D "Comment: $line"
+      #gen_log:log D "Comment: $line"
       if {[string index $line 1] == {D} || [string index $line 1] == {M}} {
         set text [split $line]
         set dname [lindex $text 1]
         set modtitle($dname) [lrange $text 2 end]
-#       gen_log:log D "Directory: {$dname} {$modtitle($dname)}"
+        #gen_log:log D "Directory: {$dname} {$modtitle($dname)}"
       }
     } else {
-#     gen_log:log D "Data: $line"
       set text [split $line]
       set modname [lindex $text 0]
       set modstring [string trim [join [lrange $text 1 end]]]
@@ -1865,12 +1879,10 @@ proc parse_cvsmodules {modules_file} {
       }
       # Remove flags except for -a.  Luckily alias modules can't have
       # any other options.
-#     gen_log:log D "{$modname} {$modstring}"
       regsub -- {^((-l\s*)|(-[ioestud]\s+((\\\s)|\S)+\s*))+} \
         $modstring {} modstring
       if {$modname != ""} {
         set modval($modname) $modstring
-        gen_log:log D "{$modname} {$modstring}"
       }
     }
   }
@@ -1878,6 +1890,116 @@ proc parse_cvsmodules {modules_file} {
   gen_log:log T "LEAVE"
 }
 
+# Organizes cvs modules into parents and children
+proc cvs_modbrowse_tree { mnames node } {
+  global cvscfg
+  global modval
+  global modtitle
+  global dcontents
+  global Tree
+
+  gen_log:log T "ENTER (... $node)"
+
+  if {! [info exists cvscfg(aliasfolder)]} {
+    set cvscfg(aliasfolder) false
+  }
+
+  set tf ".modbrowse.treeframe"
+  foreach mname $mnames {
+    gen_log:log D "{$mname} {$modval($mname)}"
+    set dimage "dir"
+    # The descriptive title of the module.  If not specified, modval is used.
+    set title $modval($mname)
+    if {[info exists modtitle($mname)]} {
+      set title $modtitle($mname)
+      #gen_log:log D "* modtitle($mname) {$title}"
+    }
+    if {[string match "-a *" $modval($mname)]} {
+      # Its an alias module
+      regsub {\-a } $modtitle($mname) "Alias for " title
+      if {$cvscfg(aliasfolder)} {
+        #gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
+        if {! [info exists Tree($tf:/Aliases:children)]} {
+          #gen_log:log D "Making Aliases"
+          ModTree:newitem $tf /Aliases Aliases "Aliases" -image "adir"
+        }
+        ModTree:newitem $tf /Aliases/$mname $mname "$title" -image "amod"
+        continue
+      }
+      set dimage amod
+    } elseif {[string match "* *" $modval($mname)]} {
+      # The value isn't a simple path
+      #gen_log:log D "Found spaces in modval($mname) $modval($mname)"
+    } elseif {[string match "*/*" $modval($mname)]} {
+      #gen_log:log D "Set image to dir because $modval($mname) contains a slash"
+      set dimage dir
+      set path $modval($mname)
+      if {[llength $modval($mname)] > 1} {
+        regsub { &\S+} $path {} path
+      }
+      set pathitems [file split $path]
+      set pathdepth [llength $pathitems]
+      set pathtop [lindex [file split $path] 0]
+      set pathroot [file join $node $pathtop]
+      set pathroot "$pathroot"
+      if {[info exists modtitle($pathtop)]} {
+        set title $modtitle($pathtop)
+        #gen_log:log D "* Using pathtop * modtitle($pathtop) {$title}"
+      } elseif {[info exists modtitle($path)]} {
+        set title $modtitle($path)
+        #gen_log:log D "* Using path * modtitle($path) {$title}"
+      } else {
+        #gen_log:log D "* No modtitle($path)"
+      }
+      #gen_log:log D "path=$path pathtop=$pathtop pathroot=$pathroot"
+      if {! [info exists Tree($tf:$pathroot:children)]} {
+        #gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
+        if {[info exists modval($pathtop)]} { set dimage mdir }
+        ModTree:newitem $tf $pathroot $pathtop "$title" -image $dimage
+      }
+      set pathroot ""
+      for {set i 1} {$i < $pathdepth} {incr i} {
+        set newnode [lindex $pathitems $i]
+        set pathroot [file join $pathroot [lindex $pathitems [expr {$i -1} ]]]
+        set newpath [file join "/" $pathroot $newnode]
+        set namepath [string range $newpath 1 end]
+        if {[info exists modtitle($namepath)]} {
+          set title $modtitle($namepath)
+        } elseif {[info exists modtitle($newnode)]} {
+          set title $modtitle($newnode)
+        } elseif {[info exists modtitle($mname)]} {
+          set title $modtitle($mname)
+        } else {
+        }
+        if {! [info exists Tree($tf:$newpath:children)]} {
+          set modvalpath [file join "/" $modval($mname)]
+          regsub { &\S+} $modvalpath {} modvalpath
+          if {$modvalpath == $newpath} {
+            set newnode $mname
+          }
+          set dimage dir
+          #gen_log:log D "2 Making $newnode for an intermediate node"
+          lappend dcontents($pathroot) $newnode
+          if {[info exists modval($newnode)]} {set dimage mdir}
+          ModTree:newitem $tf $newpath $newnode "$title" -image $dimage
+        }
+      }
+      # If we got here we just did a leaf, so break out and dont put it
+      # at the toplevel too.
+      continue
+    }
+    set treepath [file join $node $mname]
+    if {[info exists Tree($tf:$treepath:children)]} {
+      #gen_log:log D "  Already handled $treepath"
+      continue
+    }
+    if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
+    ModTree:newitem $tf $treepath $mname $title -image $dimage
+  }
+  update idletasks
+  gather_mod_index
+  gen_log:log T "LEAVE"
+}
 proc cvs_lock {do files} {
   global cvscfg
   global cvscfg

@@ -26,6 +26,7 @@ proc read_svn_dir {dirname} {
   global cmd
 
   gen_log:log T "ENTER ($dirname)"
+  set cvsglb(vcs) svn
   # Whether mergeinfo works depends on the server as well as the local svn
   # program, so it may work for us in one repository but not another
   svn_version
@@ -1621,6 +1622,7 @@ namespace eval ::svn_branchlog {
         set branches [$cmd_log\::output]
         $cmd_log\::destroy
         # There can be files such as "README" here that aren't branches
+        # so we look for a trailing slash
         set branches [grep_filter {/$} $branches]
 
         foreach branch $branches {
