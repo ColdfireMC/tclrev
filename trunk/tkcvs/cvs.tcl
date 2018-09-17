@@ -1849,11 +1849,11 @@ proc parse_cvsmodules {tf cvsroot} {
 
   # We have to use cvs to access the modules file
   set command "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"
-  set cmd(cvs_co) [exec::new $command]
-  if {[info exists cmd(cvs_co)]} {
-    set cat_modules_file [$cmd(cvs_co)\::output]
-    $cmd(cvs_co)\::destroy
-    catch {unset cmd(cvs_co)}
+  # Use eval exec because we want a notice if it fails
+  set ret [catch {eval "exec $command"} cat_modules_file]
+  if {$ret} {
+    cvsfail $cat_modules_file .modbrowse
+    return
   }
 
   # Unescape newlines, compress repeated whitespace, and remove blank lines

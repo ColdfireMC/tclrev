@@ -133,7 +133,7 @@ proc ModList:newitem {w name ref} {
   if {! [info exists Tree($w:jitems)] } { set Tree($w:jitems) 0 }
   set x $Tree($w:x)
   set y $Tree($w:y)
-  incr  $Tree($w:jitems)
+  incr  Tree($w:jitems)
   set j $Tree($w:jitems)
 
   $w.tree.list create text $x $y \
@@ -152,7 +152,6 @@ proc ModList:newitem {w name ref} {
       -font $cvscfg(listboxfont) -anchor w
 
   incr Tree($w:y) 20
-  incr Tree($w:jitems)
 }
 
 #
