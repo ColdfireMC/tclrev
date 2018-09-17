@@ -191,9 +191,12 @@ proc parse_gitlist {tf gitroot} {
   catch {unset modtitle}
 
   set command "git ls-remote \"$cvsglb(root)\""
-  set git_list_cmd [exec::new "$command"]
-  set remote_output [$git_list_cmd\::output]
+  gen_log:log C "$command"
+  set rem_cmd [exec::new $command]
+  set remote_output [$rem_cmd\::output]
+
   foreach line [split $remote_output "\n"] {
+    gen_log:log F "$line"
     if  {$line eq ""} {continue}
     set dname [lindex $line 1] 
     gen_log:log D "dname=$dname"
