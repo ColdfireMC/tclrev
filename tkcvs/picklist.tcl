@@ -16,7 +16,6 @@ proc ::picklist::used { name args } {
   } else {
     set data($name) [lrange $args 0 50]
   }
-
   return
 }
 

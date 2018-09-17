@@ -28,7 +28,6 @@ proc DirCanvas:create {w} {
     canvas $w.$column.list -highlightthickness 0 -width $beginwid
     $w.$column configure -bg $cvsglb(canvbg)
     $w.$column.list configure -bg $cvsglb(canvbg)
-    gen_log:log D "$column start width $beginwid"
   }
   scrollbar $w.yscroll -orient vertical -command "DirCanvas:scroll_windows $w" \
     -highlightthickness 0
@@ -39,7 +38,6 @@ proc DirCanvas:create {w} {
   DirCanvas:column $w datecol "date"
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
   if {$incvs || $insvn || $inrcs || $ingit} {
-    gen_log:log D "**** going to make wrevcol ****"
     DirCanvas:column $w wrevcol "revision"
     DirCanvas:column $w editcol "editors"
   }
@@ -60,7 +58,6 @@ proc DirCanvas:create {w} {
   gen_log:log D "sort_pref:  $cvscfg(sort_pref)"
   set col [lindex $cvscfg(sort_pref) 0]
   set sense [lindex $cvscfg(sort_pref) 1]
-  gen_log:log D "$incvs  $col"
   if { (! ($incvs || $inrcs || $insvn || $ingit))  && ( $col == "editcol" || $col == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set col "filecol"
@@ -118,7 +115,6 @@ proc DirCanvas:column {w column headtext} {
   button $w.$column.head.sbut -image arr_dn -relief flat \
     -highlightthickness 0
   set arr($column) $w.$column.head.sbut
-  gen_log:log D "$w.$column.head.sbut"
 
   bind $w.$column.head.sbut <ButtonPress-1> "DirCanvas:toggle_col $w $column"
   bind $w.$column.head.sbut <ButtonPress-2> "DirCanvas:sort_by_col $w $column -decreasing"
@@ -164,16 +160,16 @@ proc DirCanvas:map_column {w column} {
 
   if {$column == "datecol"} {
     $w.pw add $w.$column -after $leftcol -minsize 80
-    gen_log:log D "ADD $w.$column"
+    #gen_log:log D "ADD $w.$column"
   } elseif {$column == "statcol"} {
     $w.pw add $w.$column -after $w.filecol -minsize 80
-    gen_log:log D "ADD $w.$column"
+    #gen_log:log D "ADD $w.$column"
   } elseif {$column == "editcol"} {
     $w.pw add $w.$column -after $w.wrevcol -minsize 80
-    gen_log:log D "ADD $w.$column"
+    #gen_log:log D "ADD $w.$column"
   } else {
     $w.pw add $w.$column -minsize 80
-    gen_log:log D "ADD $w.$column"
+    #gen_log:log D "ADD $w.$column"
   }
   pack $w.$column.head -side top -fill x -expand no
   pack $w.$column.head.sbut -side right
@@ -189,7 +185,7 @@ proc DirCanvas:map_column {w column} {
     set coords [$w.pw sash coord $i]
     set ypos [lindex $coords 1]
     set new_xpos [expr {($i+1) * $newwid}]
-    gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
+    #gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
     $w.$column configure -width $newwid
     $w.pw sash place $i $new_xpos $ypos
     set real_pos [$w.pw sash coord $i]
@@ -213,7 +209,7 @@ proc DirCanvas:unmap_column {w column} {
     set coords [$w.pw sash coord $i]
     set ypos [lindex $coords 1]
     set new_xpos [expr {($i+1) * $newwid}]
-    gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
+    #gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
     $w.pw sash place $i $new_xpos $ypos
     set real_pos [$w.pw sash coord $i]
   }
@@ -565,10 +561,10 @@ proc DirCanvas:build {w} {
   set fy [expr {$fy + 2}]
   if {$imy > $fy} {
     set yincr $imy
-    gen_log:log D "Y spacing: $y set from icon"
+    #gen_log:log D "Y spacing: $y set from icon"
   } else {
     set yincr $fy
-    gen_log:log D "Y spacing: $y set from font"
+    #gen_log:log D "Y spacing: $y set from font"
   }
 
   set maxlbl 0; set longlbl ""
@@ -596,8 +592,7 @@ proc DirCanvas:build {w} {
     set rtype "GIT"
   }
   gen_log:log D "Directory Type: $rtype"
-
-  gen_log:log D "sortcol=$sortcol  sortsense=$sortsense"
+  #gen_log:log D "sortcol=$sortcol  sortsense=$sortsense"
 
   set AllColumns {}
   foreach k [array names DirList $w:*:name] {
@@ -1054,7 +1049,7 @@ proc DirCanvas:build {w} {
 
   # Scroll to the top of the lists
   set fbbox [$w.filecol.list bbox all]
-  gen_log:log D "fbbox   \"$fbbox\""
+  #gen_log:log D "fbbox   \"$fbbox\""
   if {[llength $fbbox] == 4} {
     set ylen [expr {[lindex $fbbox 3] - [lindex $fbbox 1]}]
 
@@ -1196,8 +1191,6 @@ proc DirCanvas:sort_by_col {w col sense} {
   if {$col != "statcol"} {
     $arr(filestatcol) configure -image arr_dn
   }
-
-  gen_log:log D "  $cvscfg(sort_pref)"
 
   DirCanvas:build $w
   gen_log:log T "LEAVE"

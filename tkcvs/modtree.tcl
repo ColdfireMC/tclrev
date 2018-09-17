@@ -89,7 +89,7 @@ proc ModTree:dfltconfig {w v} {
 proc ModTree:newitem {w v name title args} {
   global Tree
 
-  #gen_log:log T "ENTER ($w $v $name \"$title\" $args)"
+  gen_log:log T "ENTER ($w $v $name \"$title\" $args)"
   set dir [file dirname $v]
   set n [file tail $v]
 
@@ -100,7 +100,7 @@ proc ModTree:newitem {w v name title args} {
   if {![info exists Tree($w:$dir:open)]} {
     cvsfail "parent item \"$dir\" is missing" .modbrowse
   }
-  if {$n in $Tree($w:$dir:children} {
+  if {$n in $Tree($w:$dir:children)} {
     #cvsfail "item \"$v\" already exists" .modbrowse
     return
   }
@@ -117,6 +117,42 @@ proc ModTree:newitem {w v name title args} {
   }
   ModTree:buildwhenidle $w
   #gen_log:log T "LEAVE"
+}
+
+# We need a flat one, no children involved
+# to list the output of git ls-remote
+proc ModList:newitem {w name ref} {
+  global Tree
+  global cvsglb
+  global cvscfg
+
+  gen_log:log T "ENTER ($w $name $ref)"
+
+  if {! [info exists Tree($w:x)] } { set Tree($w:x) 2 }
+  if {! [info exists Tree($w:y)] } { set Tree($w:y) 2 }
+  if {! [info exists Tree($w:jitems)] } { set Tree($w:jitems) 0 }
+  set x $Tree($w:x)
+  set y $Tree($w:y)
+  incr  $Tree($w:jitems)
+  set j $Tree($w:jitems)
+
+  $w.tree.list create text $x $y \
+      -text $name \
+      -fill $cvsglb(fg) \
+      -font $cvscfg(listboxfont) -anchor w \
+      -tag $w.tree.list.tx$j
+
+  #$w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$name\""
+  $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w $j"
+  $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w $j"
+
+  $w.labl.list create text [expr {$x - $Tree(vsize) + 15}] $y \
+      -text $ref \
+      -fill $cvsglb(fg) \
+      -font $cvscfg(listboxfont) -anchor w
+
+  incr Tree($w:y) 20
+  incr Tree($w:jitems)
 }
 
 #
@@ -230,7 +266,7 @@ proc ModTree:buildlayer {w v in} {
   global cvscfg
   global cvsglb
 
-  #gen_log:log T "ENTER ($w $v $in)"
+  gen_log:log T "ENTER ($w $v $in)"
   if {$v=="/"} {
     set vx {}
   } else {
@@ -261,7 +297,6 @@ proc ModTree:buildlayer {w v in} {
     }
     # Draw the label
     set lbl $Tree($w:$vx/$c:name)
-
 
     $w.tree.list create text $x $y \
         -text $lbl \
@@ -323,7 +358,7 @@ proc ModTree:buildlayer {w v in} {
   if {![info exists y]} {return}
   set j [$w.tree.list create line $in $start $in [expr {$y+1}] -fill gray50 ]
   $w.tree.list lower $j
-  #gen_log:log T "LEAVE"
+  gen_log:log T "LEAVE"
 }
 
 # Open a branch of a tree
