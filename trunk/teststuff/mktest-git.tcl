@@ -131,6 +131,41 @@ proc newbranch {oldtag newtag} {
   cd $WD
 }
 
+proc merge {fromtag totag} {
+  global WD
+
+  cd git_test_$totag
+  set exec_cmd "git merge --no-ff $fromtag"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  set date [clock format [clock seconds] -format "%H-%M-%S"]
+  # First, tag the "from" file that's not in this branch
+  set exec_cmd "git tag -a mergeto_${totag}_$date -m \"Merge $fromtag to $totag\" $fromtag"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+    exit 1
+  }
+  # Now, the version that's in the current branch
+  set exec_cmd "git tag -a mergefrom_${fromtag}_$date -m \"Merge $fromtag to $totag\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+    exit 1
+  }
+  set exec_cmd "git push origin mergeto_${totag}_$date"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  set exec_cmd "git push origin mergefrom_${fromtag}_$date"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+
+  cd $WD
+}
+
 proc writefile {filename wn} {
   set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
   set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
@@ -371,6 +406,11 @@ if {$branching_desired} {
   stage
   commit "Second revision on branchA"
   push ""
+  cd $WD
+
+  puts "==============================="
+  puts "Merging BranchA to trunk"
+  merge branchA master
   cd $WD
 }
 

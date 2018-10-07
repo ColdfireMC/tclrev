@@ -120,7 +120,7 @@ proc merge {fromtag totag} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  commit "Merge branchA to trunk"
+  commit "Merge $fromtag to $totag"
   set date  [clock format [clock seconds] -format "%H-%M-%S"]
   # First, the "from" file that's not in this branch (needs -r)
   set exec_cmd "cvs tag -F -r$fromtag mergeto_${totag}_$date ."
