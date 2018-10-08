@@ -229,6 +229,17 @@ proc git_fetch {} {
   gen_log:log T "LEAVE"
 }
 
+proc git_list_tags {} {
+  gen_log:log T "ENTER"
+
+  set commandline "git tag --list"
+  set v [viewer::new "Tags"]
+  $v\::do "$commandline"
+  $v\::wait
+  $v\::clean_exec
+
+  gen_log:log T "LEAVE"
+}
 
 # Called from "Log" in Reports menu
 proc git_log {detail args} {
@@ -859,9 +870,10 @@ namespace eval ::git_branchlog {
           $cmd_curbranch\::destroy
           set current_tagname [string trim $branch_output "\n"]
         }
+        gen_log:log D "current_tagname=$current_tagname"
 
         #set show_merges [set $ln\::opt(show_merges)]
-        #set show_tags [set $ln\::opt(show_tags)]
+        set show_tags [set $ln\::opt(show_tags)]
         set show_merges 0
         set show_tags 0
 
@@ -869,7 +881,7 @@ namespace eval ::git_branchlog {
 
         # Find out where to put the working revision icon (if anywhere)
         set revnum_current [set $ln\::revnum_current]
-        gen_log:log D "current revnum: $revnum_current"
+        gen_log:log D "revnum_current: $revnum_current"
 
         # Get a list of the branches from the repository
         # This gives you the local branches
