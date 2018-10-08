@@ -336,7 +336,7 @@ namespace eval ::logcanvas {
            gen_log:log D "$infoline"
            # don't split infoline because comments like this break it:
            #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
-           set revnum_current [string range $infoline 1 7]
+           set revnum_current [string range $infoline 0 6]
            gen_log:log D "revnum_current $revnum_current"
            if {! [info exists revnum_current]} {
              gen_log:log E "Warning: couldn't find current revision number!"
@@ -371,19 +371,8 @@ namespace eval ::logcanvas {
                    }
                }]
              $logcanvas.delta configure -state disabled
-               #-command [namespace code {
-                 #set fromrev [$logcanvas.up.revA_rvers cget -text]
-                 #set sincerev [$logcanvas.up.revB_rvers cget -text]
-                 #set fromtag ""
-                 #set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
-                 #if {[info exists revbtags($fromrev_root)]} {
-                   #set fromtag [lindex $revbtags($fromrev_root) 0]
-                 #} else {
-                   ## Just a rev number will do
-                   #set fromtag $fromrev_root
-                 #}
-                 #git_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
-                #}]
+             $logcanvas.viewtags configure -state normal \
+               -command {git_list_tags}
             }
          }
          "RCS" {
