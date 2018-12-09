@@ -933,8 +933,7 @@ namespace eval ::git_branchlog {
         set branches [concat $local_branches $needed_remotes]
         gen_log:log D "final branches: $branches"
 
-        # Get all the date, comment, etc data at once. In Git it's not so
-        # useful to do a branch at a time
+        # Get all the author, date, comment, etc data at once.
         set command "git log --all --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
@@ -967,8 +966,12 @@ namespace eval ::git_branchlog {
           $cmd_log\::destroy
           foreach rl [split $revlog_output "\n"] {
             if {[string match {*HEAD*} $rl]} {continue}
+            # This searches for a non-HEAD branch decoration, which is in parentheses
             if {[regexp {\(.*\)} $rl ref]} {
-              regsub -all {[()]} $ref {} trunk
+              # Strip off the parentheses
+              regsub -all {[()]} $ref {} ref
+              # It might have tags and so on, so just take the last string
+              regsub {^.* } $ref {} trunk
               set trunk_found 1
               break
             }
