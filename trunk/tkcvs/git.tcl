@@ -1010,35 +1010,40 @@ namespace eval ::git_branchlog {
 
         # See if the current revision is on the trunk
         set curr 0
-        set brevs $branchrevs(trunk)
-        set tip [lindex $brevs 0]
-        gen_log:log D "tip of trunk: $tip"
-        set revpath($tip) $path
-        set revkind($tip) "revision"
-        set brevs [lreplace $brevs 0 0]
-        if {$tip == $revnum_current} {
-          # If current is at end of trunk do this.
-          gen_log:log D "Currently at top of trunk"
-          set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
-          set curr 1
-        }
-        foreach r $brevs {
-          if {$r == $revnum_current} {
-            # We need to make a new artificial branch off of $r
-            lappend revbranches($r) {current}
+        # FIXME trunk isn't always available in git. How do we work without it?
+        if [info exists branchrevs(trunk)] {
+          set brevs $branchrevs(trunk)
+          set tip [lindex $brevs 0]
+          gen_log:log D "tip of trunk: $tip"
+          set revpath($tip) $path
+          set revkind($tip) "revision"
+          set brevs [lreplace $brevs 0 0]
+          if {$tip == $revnum_current} {
+            # If current is at end of trunk do this.
+            gen_log:log D "Currently at top of trunk"
+            set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
+            set curr 1
           }
-          gen_log:log D " $r $revdate($r) ($revcomment($r))"
-          set revkind($r) "revision"
-          set revpath($r) $path
+          foreach r $brevs {
+            if {$r == $revnum_current} {
+              # We need to make a new artificial branch off of $r
+              lappend revbranches($r) {current}
+            }
+            gen_log:log D " $r $revdate($r) ($revcomment($r))"
+            set revkind($r) "revision"
+            set revpath($r) $path
+          }
+          gen_log:log D "rootrev = $rootrev"
+          set branchrevs($rootrev) $branchrevs(trunk)
+          gen_log:log D "branchrevs(trunk) $branchrevs(trunk)"
+          set revkind($rootrev) "root"
+          set revname($rootrev) "$current_tagname"
+          # revbtags is for DrawTree
+          set revbtags($rootrev) $trunk
+          set revpath($rootrev) $path
+        } else {
+          cvsfail "Can't read trunk revisions for this file" $lc
         }
-        gen_log:log D "rootrev = $rootrev"
-        set branchrevs($rootrev) $branchrevs(trunk)
-        gen_log:log D "branchrevs(trunk) $branchrevs(trunk)"
-        set revkind($rootrev) "root"
-        set revname($rootrev) "$current_tagname"
-        # revbtags is for DrawTree
-        set revbtags($rootrev) $trunk
-        set revpath($rootrev) $path
 
         foreach branch $branches {
           if {$branch eq $trunk} {continue}
@@ -1189,7 +1194,6 @@ namespace eval ::git_branchlog {
         set cmd1 [exec::new $command1]
         set cmd1_output [$cmd1\::output]
         $cmd1\::destroy
-
         set capture ""
         set base ""
         set parent ""
@@ -1214,23 +1218,25 @@ namespace eval ::git_branchlog {
           set parent1 [lindex [$cmd_p1\::output] 0]
           gen_log:log D "TRACK Parent hash 1 for $branch = $parent1"
         }
+
         # Second method of finding base of branch
-        # This one seems to work if we're currently at master, otherwise not
         set command2 "git show-branch --reflog $branch"
         set cmd2 [exec::new $command2]
         set cmd2_output [$cmd2\::output]
         $cmd2\::destroy
-        # Again, only catch the last match
         set capture ""
         set base ""
         set parent ""
+        set savlist ""
         foreach ln [split $cmd2_output "\n"] {
           # Look for someting like " + [branchB@{0}^]"
-          # We overwrite "capture" because the last one is what we want
-          if [regexp "^\\\+\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $ln capture] {
+          # This time, we want the next to last match
+          if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $ln capture] {
             gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
+            lappend savlist $capture
           }
         }
+        set capture [lindex $savlist end-1]
         # attempt to get the bit between the braces
         if [regexp {^.*\[(\S+)\].*$} $capture null guess2] {
           gen_log:log D "TRACK Base guess2 for $branch = $guess2"
