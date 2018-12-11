@@ -689,7 +689,11 @@ proc git_annotate_r {revision filepath} {
 proc git_fileview {revision path filename} {
   gen_log:log T "ENTER ($revision $path $filename)"
 
-  set command "git show \"$revision:$path/$filename\""
+  if {$path ne ""} {
+    set command "git show \"$revision:$path/$filename\""
+  } else {
+    set command "git show \"$revision:$filename\""
+  }
   set v [viewer::new "$filename Revision $revision"]
   $v\::do "$command"
 }
