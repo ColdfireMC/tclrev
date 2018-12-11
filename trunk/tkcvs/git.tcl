@@ -330,47 +330,6 @@ proc git_add {args} {
   gen_log:log T "LEAVE"
 }
 
-proc list_comm {listA listB} {
-  # Compare two lists like unix comm
-
-  gen_log:log T "ENTER\n\t$listA\n\t$listB"
-
-  set inA ""
-  set inB ""
-  set inBoth ""
-
-  # Shortcut if lists are identical
-  if { $listA == $listB } {
-    gen_log:log D "Lists are identical"
-    set inBoth $listA
-  } else {
-    # Order in A and B lists matters, but not the combined one
-    set allAB [lsort -unique [concat $listA $listB]]
-    foreach itemInA $listA {
-      if {$itemInA in $listB} {
-        lappend inBoth $itemInA
-      } else {
-        lappend inA $itemInA
-      }
-    }
-    foreach itemInB $listB {
-      if {$itemInB in $listA} {
-        if {$itemInB ni $inBoth} {
-          lappend $itemInB inBoth
-        }
-      } else {
-        lappend inB $itemInB
-      }
-    }
-  }
-
-  gen_log:log D "in A only: $inA"
-  gen_log:log D "in B only: $inB"
-  gen_log:log D "in Both:   $inBoth"
-
-  return [list $inA $inB $inBoth]
-}
-
 proc git_reset {args} {
   global cvscfg
 
@@ -872,7 +831,7 @@ namespace eval ::git_branchlog {
         }
         gen_log:log D "current_tagname=$current_tagname"
 
-        #set show_merges [set $ln\::opt(show_merges)]
+        set show_merges [set $ln\::opt(show_merges)]
         set show_tags [set $ln\::opt(show_tags)]
         set show_merges 0
         set show_tags 0
@@ -919,22 +878,36 @@ namespace eval ::git_branchlog {
         gen_log:log D "local_branches: $local_branches"
         gen_log:log D "remote_branches: $remote_branches"
         set idx 0
-        foreach r $remote_branches {
-          regsub {.*/} $r {} rtail
-          foreach l $local_branches {
-            if {$l eq $rtail} {
-              lappend branches $l
-              set needed_remotes [lreplace $remote_branches $idx $idx]
-            }
+        set match_list ""
+        set branches $local_branches
+        set i 0
+        foreach r_br $remote_branches {
+          incr i
+          regsub {.*/} $r_br {} rtail
+          # We found a remote that we don't need. Add its index to the removal list
+          if {$rtail in $local_branches} {
+            lappend match_list $i
+            continue
           }
-          incr idx
         }
-        gen_log:log D "needed remotes: $needed_remotes"
-        set branches [concat $local_branches $needed_remotes]
+        # Remove the indexed remotes
+        set i 0
+        foreach r_br $remote_branches {
+          incr i
+          set found 0
+          foreach j $match_list {
+            if {$i == $j} { set found 1 }
+          }
+          if {$found == 0} {
+            gen_log:log D "$r_br needed"
+            lappend branches $r_br
+          }
+        }
         gen_log:log D "final branches: $branches"
 
         # Get all the author, date, comment, etc data at once.
-        set command "git log --all --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
+        # Don't supply the filename here, or else we miss things we'll need later
+        set command "git log --all --abbrev-commit --date=iso --tags --decorate=short --no-color"
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -986,56 +959,47 @@ namespace eval ::git_branchlog {
           gen_log:log D "Using current branch for trunk=$trunk"
         }
 
-        # First make a list of the revisions on trunk
-        set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $trunk -- \"$filename\""
-        set cmd_revlist [exec::new $command {} 0 {} 1]
-        set revlist_output [$cmd_revlist\::output]
-        $cmd_revlist\::destroy
-        foreach ro [lreverse [split $revlist_output "\n"]] {
-          if {[string length $ro] > 0} {
-            lappend branchrevs(trunk) $ro
-          }
-        }
-
-        # Compare this list with the branches
-        # Trick to find the parent of a branch is to list all the revs in the
-        # branch and in its parent, and exclude those that aren't exclusive
-        # to that branch.
-        gen_log:log D "Now comparing trunk revs with other branch revs"
+        # Collect the branches
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
-          if {$branch eq $trunk} {continue}
-          set long_branchrevlist ""
-          set command "git rev-list --abbrev-commit --no-merges --reverse --topo-order $branch -- \"$filename\""
-          set cmd_revlist [exec::new $command {} 0 {} 1]
-          set revlist_output [$cmd_revlist\::output]
-          $cmd_revlist\::destroy
-          foreach ro [lreverse [split $revlist_output "\n"]] {
-            if {[string length $ro] > 0} {
-              lappend long_branchrevlist $ro
+          if {$branch eq $trunk} {
+            set command "git rev-list --abbrev-commit --topo-order --first-parent $trunk -- \"$filename\""
+            set cmd_revlist [exec::new $command {} 0 {} 1]
+            set revlist_output [$cmd_revlist\::output]
+            $cmd_revlist\::destroy
+            foreach ro [split $revlist_output "\n"] {
+              if {[string length $ro] > 0} {
+                lappend branchrevs(trunk) $ro
+              }
             }
-          }
-          if {! [llength $long_branchrevlist]} {
-            gen_log:log D "$branch is EMPTY"
-            continue
-          }
-          gen_log:log D "trunk: $branchrevs(trunk)"
-          gen_log:log D "$branch: $long_branchrevlist"
-          if {[llength long_branchrevlist]} {
-            set comparisons [list_comm $long_branchrevlist $branchrevs(trunk)]
-            set branch_only [lindex $comparisons 0]
-            set trunk_only [lindex $comparisons 1]
-            set inboth [lindex $comparisons 2]
-            set branchrevs($branch) [lindex $comparisons 0]
-            # The last of the ones that appear in both lists is the parent
-            set parent [lindex $inboth 0]
-            set base [lindex $branch_only end]
+          } else {
+            set base_and_parent [identify_parent $branch]
+            set base [lindex $base_and_parent 0]
+            set parent [lindex $base_and_parent 1]
+            gen_log:log D "BASE=$base PARENT=$parent"
+            set command "git rev-list --abbrev-commit --topo-order $parent..$branch -- \"$filename\""
+            set cmd_revlist [exec::new $command {} 0 {} 1]
+            set revlist_output [$cmd_revlist\::output]
+            $cmd_revlist\::destroy
+            foreach ro [split $revlist_output "\n"] {
+              if {[string length $ro] > 0} {
+                lappend branchrevs($branch) $ro
+              }
+            }
+            if {! [info exists branchrevs($branch)] } {
+               set branchrevs($branch) ""
+            }
+            if {! [llength $branchrevs($branch)] } {
+              gen_log:log D "$branch is EMPTY"
+              continue
+            }
+
             if {$base ne ""} {
               set revbranches($parent) $base
               set branchrevs($base) $branchrevs($branch)
               set revbtags($base) $branch
               gen_log:log D "$branch BASE: $base   PARENT: $parent"
-              foreach br $branch_only {
+              foreach br $branchrevs($base) {
                 set revkind($br) "branch"
               }
             } else {
@@ -1124,6 +1088,7 @@ namespace eval ::git_branchlog {
         variable revtime
         variable revcomment
         variable revtags
+        variable revmergefrom
 
         gen_log:log T "ENTER (<...>)"
         set revnum ""
@@ -1132,7 +1097,7 @@ namespace eval ::git_branchlog {
         set last ""
         while {$i < $l} {
           set line [lindex $lines $i]
-          gen_log:log D "$i of $l:  $line"
+          gen_log:log D "Line $i of $l:  $line"
           if { [ regexp {^\s*$} $last ] && [ string match {commit *} $line] } {
             # ^ the last line was empty and this one starts with commit
             if {[expr {$l - $i}] < 0} {break}
@@ -1158,11 +1123,17 @@ namespace eval ::git_branchlog {
             }
             incr i
             set line [lindex $lines $i]
+            # a line like "Merge: 7ee40c3 d6b18a7" could be next
+            if { [string match {Merge:*} $line] } {
+              set revmergefrom($revnum) [lindex $line end]
+              incr i
+            }
+            set line [lindex $lines $i]
             # Author: dorothyr <dorothyr@tadg>
             if { [string match {Author:*} $line] } {
               set revwho($revnum) [lindex $line 1]
             }
-            incr i 1
+            incr i
             set line [lindex $lines $i]
             # Date:   2018-08-17 20:10:15 -0700
             if { [string match {Date:*} $line] } {
@@ -1171,7 +1142,7 @@ namespace eval ::git_branchlog {
             }
             set last [lindex $lines $i]
 
-            incr i 1
+            incr i
             set line [lindex $lines $i]
             # Blank line precedes comment
             set revcomment($revnum) ""
@@ -1189,7 +1160,7 @@ namespace eval ::git_branchlog {
               set revcomment($revnum) [join $commentlines "\n"]
               set i [expr {$c - 1}]
             }
-            incr i 1
+            incr i
 
             gen_log:log D "revnum $revnum"
             gen_log:log D "revwho($revnum) $revwho($revnum)"
@@ -1200,6 +1171,98 @@ namespace eval ::git_branchlog {
         }
         gen_log:log T "LEAVE \"$revnum\""
         return $revnum
+      }
+
+      # Use git show-branch to find the first revision on a branch, and then
+      # its parent
+      proc identify_parent {branch} {
+        variable filename
+
+        gen_log:log T "ENTER ($branch)"
+
+        set guess1 [set guess2 ""]
+        set base1_hash [set base2_hash ""]
+        set parent1 [set parent2 ""]
+
+        # First method of finding base of branch
+        set command1 "git show-branch -a"
+        set cmd1 [exec::new $command1]
+        set cmd1_output [$cmd1\::output]
+        $cmd1\::destroy
+
+        set capture ""
+        set base ""
+        set parent ""
+        foreach ln [split $cmd1_output "\n"] {
+          # Look for someting like " + [branchB^]"
+          # We overwrite "capture" because the last one is what we want
+          if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*\\\]" $ln capture] {
+            gen_log:log D "TRACK Base candidate 1 for $branch:  $capture"
+          }
+        }
+        # attempt to get the bit between the braces
+        if [regexp {^.*\[(\S+)\].*$} $capture null guess1] {
+          gen_log:log D "TRACK Base guess1 for $branch = $guess1"
+          # Find the hash of the branch base we just identified
+          set command "git log -n1 --oneline $guess1 -- \"$filename\""
+          set cmd_id1 [exec::new $command]
+          set base1_hash [lindex [$cmd_id1\::output] 0]
+          gen_log:log D "TRACK Base hash 1 for $branch = $base1_hash"
+          # Now find its immediate parent
+          set command "git rev-parse --short $guess1^ -- \"$filename\""
+          set cmd_p1 [exec::new $command]
+          set parent1 [lindex [$cmd_p1\::output] 0]
+          gen_log:log D "TRACK Parent hash 1 for $branch = $parent1"
+        }
+        # Second method of finding base of branch
+        # This one seems to work if we're currently at master, otherwise not
+        set command2 "git show-branch --reflog $branch"
+        set cmd2 [exec::new $command2]
+        set cmd2_output [$cmd2\::output]
+        $cmd2\::destroy
+        # Again, only catch the last match
+        set capture ""
+        set base ""
+        set parent ""
+        foreach ln [split $cmd2_output "\n"] {
+          # Look for someting like " + [branchB@{0}^]"
+          # We overwrite "capture" because the last one is what we want
+          if [regexp "^\\\+\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $ln capture] {
+            gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
+          }
+        }
+        # attempt to get the bit between the braces
+        if [regexp {^.*\[(\S+)\].*$} $capture null guess2] {
+          gen_log:log D "TRACK Base guess2 for $branch = $guess2"
+          # Find the hash of the branch base we just identified
+          set command "git log -n1 --oneline $guess2 -- \"$filename\""
+          set cmd_id2 [exec::new $command]
+          set base2_hash [lindex [$cmd_id2\::output] 0]
+          gen_log:log D "TRACK base2_hash for $branch = $base2_hash"
+          # Now find its immediate parent
+          set command "git rev-parse --short $guess2^ -- \"$filename\""
+          set cmd_p2 [exec::new $command]
+          set parent2 [lindex [$cmd_p2\::output] 0]
+          gen_log:log D "TRACK Parent 2 hash for $branch = $parent2"
+        }
+        if {$base1_hash ne ""} {
+          set base $base1_hash
+          gen_log:log D "TRACK base for $branch is from guess 1"
+        } elseif {$base2_hash ne ""} {
+          set base $base2_hash
+          gen_log:log D "TRACK base $branch is from guess 2"
+        }
+        if {$parent1 ne ""} {
+          set parent $parent1
+          gen_log:log D "TRACK parent $branch is from guess 1"
+        } elseif {$parent2 ne ""} {
+          set parent $parent2
+          gen_log:log D "TRACK parent $branch is from guess 2"
+        }
+
+        gen_log:log D "TRACK returning for $branch BASE $base  PARENT $parent"
+        gen_log:log T "return ($base $parent)"
+        return [list $base $parent]
       }
 
       proc git_sort_it_all_out {} {
@@ -1247,11 +1310,11 @@ namespace eval ::git_branchlog {
           gen_log:log D "revtags($a) $revtags($a)"
         }
         gen_log:log D ""
-        #foreach a [lsort -dictionary [array names revmergefrom]] {
-          # Only take the highest rev of the messsy list that you might have here
-          #set revmergefrom($a) [lindex [lsort -dictionary $revmergefrom($a)] end]
-          #gen_log:log D "revmergefrom($a) $revmergefrom($a)"
-        #}
+        foreach a [lsort -dictionary [array names revmergefrom]] {
+          ## Only take one from the list that you might have here
+          set revmergefrom($a) [lindex $revmergefrom($a) end]
+          gen_log:log D "revmergefrom($a) $revmergefrom($a)"
+        }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         $ln\::DrawTree now
