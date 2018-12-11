@@ -1165,8 +1165,12 @@ namespace eval ::git_branchlog {
                 set line [lindex $lines $c]
                 if {$c > $l} {break}
               }
-              set commentlines [lrange $lines [expr {$j + 1}] [expr {$c - 2}]]
-              set revcomment($revnum) [join $commentlines "\n"]
+              # The comment lines have leading whitespace (4 spaces)
+              foreach commentline [lrange $lines [expr {$j + 1}] [expr {$c - 2}]] {
+                set commentline [string range $commentline 4 end]
+                append revcomment($revnum) $commentline
+                append revcomment($revnum) "\n"
+              }
               set i [expr {$c - 1}]
             }
             incr i

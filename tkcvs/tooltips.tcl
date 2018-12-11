@@ -84,7 +84,10 @@ proc internal_tooltips_PopUp { wid name } {
   }
   # make visible
   wm deiconify .tooltips_wind
-
+  # must explicitly raise windows on Mac
+  if {[tk windowingsystem] eq "aqua"} {
+    raise .tooltips_wind
+  }
   # make tooltip dissappear after 5 sec
   set cvsglb(tooltip_id) [after 5000 { internal_tooltips_PopDown }]
 }
