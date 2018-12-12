@@ -477,6 +477,7 @@ namespace eval ::logcanvas {
         return
       }
 
+      # Calculate size of You are Here box
       proc CalcCurrent { revision } {
         variable curr
         variable font_bold
@@ -500,6 +501,7 @@ namespace eval ::logcanvas {
         return [list $box_width $box_height]
       }
 
+      # Draw You are Here box
       proc DrawCurrent { x y box_width box_height revision } {
         variable curr
         variable revstate
