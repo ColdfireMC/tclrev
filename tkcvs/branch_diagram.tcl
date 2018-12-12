@@ -648,7 +648,7 @@ namespace eval ::logcanvas {
             -text $s \
             -anchor s \
             -font $font_norm -fill navy \
-            -tags [list R$root_rev box active]
+            -tags [list R$root_rev]
           incr ty -$font_norm_h
         }
         #gen_log:log T "LEAVE"
