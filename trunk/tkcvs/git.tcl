@@ -1061,6 +1061,15 @@ namespace eval ::git_branchlog {
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
+            set base [lindex $branchrevs($branch) end]
+            # revbtags(---) = $base  The array name of the matching revbtag is what we want
+            foreach rev [array names revbtags] {
+              if {$branch in $revbtags($rev)} {
+                set parent $rev
+                set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
+                break
+              }
+            }
             set curr 1
           }
           foreach r $brevs {
