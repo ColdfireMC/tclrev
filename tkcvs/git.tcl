@@ -784,6 +784,7 @@ namespace eval ::git_branchlog {
         variable lc
         variable ln
         variable allrevs
+        variable branchparent
         variable revwho
         variable revdate
         variable revtime
@@ -981,6 +982,7 @@ namespace eval ::git_branchlog {
             set base [lindex $base_and_parent 0]
             set parent [lindex $base_and_parent 1]
             gen_log:log D "BASE=$base PARENT=$parent"
+            set branchparent($branch) $parent
             set command "git rev-list --abbrev-commit --topo-order $parent..$branch -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
@@ -1062,14 +1064,8 @@ namespace eval ::git_branchlog {
             # If current is at end of the branch do this.
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
             set base [lindex $branchrevs($branch) end]
-            # revbtags(---) = $base  The array name of the matching revbtag is what we want
-            foreach rev [array names revbtags] {
-              if {$branch in $revbtags($rev)} {
-                set parent $rev
-                set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
-                break
-              }
-            }
+            set parent $branchparent($branch)
+            set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
             set curr 1
           }
           foreach r $brevs {
@@ -1294,6 +1290,7 @@ namespace eval ::git_branchlog {
         variable filename
         variable lc
         variable ln
+        variable branchparent
         variable revwho
         variable revdate
         variable revtime
