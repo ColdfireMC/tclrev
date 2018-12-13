@@ -1,3 +1,21 @@
+Release 9.0
+
+- Git functionality!
+
+- Speeded up branch browsing in Subversion substantially
+
+- Update tkdiff to version 4.3.5
+
+- Update MacOS UI to version 10.x (High Sierra)
+
+- Small user interface tweaks:
+  - Made a Copy/Paste right-mouse-button popup for the text widgets, so
+    you can copy text from them
+  - Re-arranged the Report and Status detail menus for more efficiency
+
+- I'm no longer making stand-alone MacOS or Windows packages. You can
+  still run it from the Tcl/Tk code on those platforms.
+
 Release 8.2.4
 
 - Implicit -dir on invocation.  added use case: tkcvs <dir> 
