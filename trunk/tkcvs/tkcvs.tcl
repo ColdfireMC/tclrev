@@ -22,8 +22,8 @@ if {! [info exists tk_version] } {
    exit 1
 }
 
-if {$tk_version < 8.4} {
-  puts "TkCVS requires Tcl/Tk 8.4 or better!"
+if {$tk_version < 8.5} {
+  puts "TkCVS requires Tcl/Tk 8.5 or better!"
   exit 1
 }
 
@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.0a"
+set cvscfg(version) "9.0"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -160,22 +160,18 @@ if {$WSYS eq "x11"} {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
     }
     # Put the Help menu back on the right
-    if {$tk_version >= 8.5} {
-      tk::classic::restore menu
-    }
+    tk::classic::restore menu
     #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
     set cvsglb(canvbg) $cvsglb(shadow)
   } elseif [get_gtk_params] {
     set theme_system "GTK"
     if { ! [info exists cvscfg(guifont)] } {
-      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      if {$tk_version >= 8.5} {
+    set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
        font configure TkDefaultFont -size 9
        set cvscfg(guifont) TkDefaultFont
        option add *Menu.font $cvscfg(guifont)
        option add *Label.font $cvscfg(guifont)
        option add *Button.font $cvscfg(guifont)
-      }
     }
     # in KDE or Gnome or some such.  It rather rudely sets all the Tk
     # backgrounds the same which I don't like, so I'm going to use the same
@@ -219,24 +215,18 @@ if {$WSYS eq "x11"} {
     option add *Checkbutton.Background $bg
 
     # checkbuttons and radiobuttons
-    if {$tk_version >= 8.5} {
-       option add *Menu.selectColor $fg
-       option add *Checkbutton.selectColor "#ffffff"
-       option add *Radiobutton.selectColor "#ffffff"
-     } else {
-       option add *selectColor $hlbg
-     }
+    option add *Menu.selectColor $fg
+    option add *Checkbutton.selectColor "#ffffff"
+    option add *Radiobutton.selectColor "#ffffff"
 
     if { ! [info exists cvscfg(guifont)] } {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      if {$tk_version >= 8.5} {
-       # This makes it look like tk8.4.  Want?  dunno.
-       font configure TkHeadingFont -size 9
-       set cvscfg(guifont) TkHeadingFont
-       option add *Menu.font $cvscfg(guifont)
-       option add *Label.font $cvscfg(guifont)
-       option add *Button.font $cvscfg(guifont)
-      }
+      # This makes it look more classic
+      font configure TkHeadingFont -size 9
+      set cvscfg(guifont) TkHeadingFont
+      option add *Menu.font $cvscfg(guifont)
+      option add *Label.font $cvscfg(guifont)
+      option add *Button.font $cvscfg(guifont)
     }
   }
   destroy .testlbl

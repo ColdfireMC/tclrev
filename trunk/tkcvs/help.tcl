@@ -57,8 +57,11 @@ proc aboutbox {} {
     [file join $cvscfg(bitmapdir) anglerfish_med.gif]
   label .about.top.gif2 -image Anglerfish
 
-  append string1 "A friendly interface to CVS\n"
-  append string1 " * and Subversion *\n"
+  #append string1 "A friendly interface to CVS\n"
+  #append string1 "   and Subversion\n"
+  append string1 "A friendly graphical interface\n"
+  append string1 "  for CVS and Subversion\n"
+  append string1 "  *** Now with Git! ***\n"
 
   message .about.top.msg2 -width 400 -justify c \
     -text $string1
@@ -66,14 +69,14 @@ proc aboutbox {} {
   append string2 "\nConsult the Help menu to\n"
   append string2 "learn about its features.\n\n"
   append string2 "TkCVS was written by Del.\n"
-  append string2 "The Subversion functionality\n"
-  append string2 "was added by Dorothy.\n"
+  append string2 "The Subversion and Git functionality\n"
+  append string2 "were added by Dorothy.\n"
 
   message .about.top.msg3 -width 400 -justify c \
     -text $string2
 
-  append about_string "Home page: http://www.twobarleycorns.net/tkcvs.html\n"
-  append about_string "Source code: http://sourceforge.net/projects/tkcvs/\n"
+  append about_string "Download: https://sourceforge.net/projects/tkcvs\n"
+  append about_string "Source code: http://tksvn.tigris.org/source/browse/tksvn\n"
 
   message .about.top.msg4 -width 365 -justify c \
     -text $about_string -font $cvscfg(listboxfont)

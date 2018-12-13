@@ -166,17 +166,13 @@ proc get_cde_params { } {
   option add *Text.highlightBackground $bg
 
   # checkbuttons and radiobuttons
-  if {$tk_version >= 8.5} {
-    # This makes it look like the native CDE checkbox
-    option add *Checkbutton.offRelief sunken
-    option add *Checkbutton.selectColor ""
-    option add *Radiobutton.selectColor ""
-    option add *Menu.selectColor $fg
-    option add *Checkbutton.activeBackground $bg
-    option add *Checkbutton.activeForeground $fg
-  } else {
-    option add *selectColor $hlbg
-  }
+  # This makes it look like the native CDE checkbox
+  option add *Checkbutton.offRelief sunken
+  option add *Checkbutton.selectColor ""
+  option add *Radiobutton.selectColor ""
+  option add *Menu.selectColor $fg
+  option add *Checkbutton.activeBackground $bg
+  option add *Checkbutton.activeForeground $fg
 
   return 1
 }
@@ -251,13 +247,9 @@ proc get_gtk_params { } {
   option add *Text.selectForeground $hlfg
 
   # checkbuttons and radiobuttons
-  if {$tk_version >= 8.5} {
-    option add *Menu.selectColor $fg
-    option add *Checkbutton.selectColor ""
-    option add *Radiobutton.selectColor ""
-  } else {
-    option add *selectColor $hlbg
-  }
+  option add *Menu.selectColor $fg
+  option add *Checkbutton.selectColor ""
+  option add *Radiobutton.selectColor ""
 
   return 1
 }
