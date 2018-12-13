@@ -139,29 +139,31 @@ proc merge {fromtag totag} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  set date [clock format [clock seconds] -format "%H-%M-%S"]
+
+  # This works but isn't necessary for an arrow.
+  #set date [clock format [clock seconds] -format "%H-%M-%S"]
   # First, tag the "from" file that's not in this branch
-  set exec_cmd "git tag -a mergeto_${totag}_$date -m \"Merge $fromtag to $totag\" $fromtag"
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  if {$ret} {
-    puts $out
-    exit 1
-  }
+  #set exec_cmd "git tag -a mergeto_${totag}_$date -m \"Merge $fromtag to $totag\" $fromtag"
+  #puts "$exec_cmd"
+  #set ret [catch {eval "exec $exec_cmd"} out]
+  #if {$ret} {
+    #puts $out
+    #exit 1
+  #}
   # Now, the version that's in the current branch
-  set exec_cmd "git tag -a mergefrom_${fromtag}_$date -m \"Merge $fromtag to $totag\""
-  puts "$exec_cmd"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  if {$ret} {
-    puts $out
-    exit 1
-  }
-  set exec_cmd "git push origin mergeto_${totag}_$date"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
-  set exec_cmd "git push origin mergefrom_${fromtag}_$date"
-  set ret [catch {eval "exec $exec_cmd"} out]
-  puts $out
+  #set exec_cmd "git tag -a mergefrom_${fromtag}_$date -m \"Merge $fromtag to $totag\""
+  #puts "$exec_cmd"
+  #set ret [catch {eval "exec $exec_cmd"} out]
+  #if {$ret} {
+    #puts $out
+    #exit 1
+  #}
+  #set exec_cmd "git push origin mergeto_${totag}_$date"
+  #set ret [catch {eval "exec $exec_cmd"} out]
+  #puts $out
+  #set exec_cmd "git push origin mergefrom_${fromtag}_$date"
+  #set ret [catch {eval "exec $exec_cmd"} out]
+  #puts $out
 
   cd $WD
 }
@@ -392,19 +394,19 @@ if {$branching_desired} {
   writefile FbranchA.txt 2
   addfile FbranchA.txt branchA
   stage
-  commit "Add file FbranchA.txt on branchA"
+  commit "Add file FbranchA.txt on branch A"
 
   puts "==============================="
   puts "First revision on Branch A"
   modfiles
   stage
-  commit "First revision on branchA"
+  commit "First revision on branch A"
 
   puts "==============================="
   puts "Second revision on Branch A"
   modfiles
   stage
-  commit "Second revision on branchA"
+  commit "Second revision on branch A"
   push ""
   cd $WD
 
@@ -463,7 +465,7 @@ if {$branching_desired} {
   writefile FbranchB.txt 1
   addfile FbranchB.txt branchB
   stage
-  commit "First changes on BranchB"
+  commit "First changes on Branch B"
 
   puts "==============================="
   puts "Revision on Branch B"
@@ -477,6 +479,7 @@ if {$branching_desired} {
   # Update all the directories
   foreach branch {branchA branchAA branchB master} {
     cd $WD/git_test_$branch
+    push {--all}
     fetch {--all}
     cd $WD
   }

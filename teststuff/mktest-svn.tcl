@@ -92,7 +92,7 @@ proc merge {fromtag totag} {
   set exec_cmd "svn merge --reintegrate ^/branches/$fromtag"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  commit "Merge branchA to trunk"
+  commit "Merge branch A to trunk"
   cd $WD
 }
 
@@ -271,21 +271,21 @@ if {$branching_desired} {
   cd $WD/svn_test_branchA
   writefile FbranchA.txt 2
   addfile FbranchA.txt branchA
-  commit "Add file FbranchA.txt on branchA"
+  commit "Add file FbranchA.txt on branch A"
   cd $WD
 
   puts "==============================="
   puts "First revision on Branch A"
   cd $WD/svn_test_branchA
   modfiles
-  commit "First revision on branchA"
+  commit "First revision on branch A"
   cd $WD
 
   puts "==============================="
   puts "Second revision on Branch A"
   cd $WD/svn_test_branchA
   modfiles
-  commit "Second revision on branchA"
+  commit "Second revision on branch A"
   cd $WD
 
   puts "==============================="
@@ -330,7 +330,7 @@ if {$branching_desired} {
   modfiles
   writefile FbranchB.txt 1
   addfile FbranchB.txt branchB
-  commit "Add file FB on BranchB"
+  commit "Add file FB on Branch B"
 }
 
 # Leave the trunk with uncommitted changes
