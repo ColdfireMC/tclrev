@@ -1,11 +1,21 @@
 What this is:
 
 TkDiff is a Tcl/Tk front-end to diff for Unix/Linux, Windows, and MacOS.
-This version, 4.3, requires Wish 8.5 or higher.
 
 TkDiff knows how to work with several revision control systems:
 CVS, Subversion, Git, SCCS, RCS, PVCS, BitKeeper, Perforce, Accurev, Mercurial
 and ClearCase. It's only tested on the free and open source ones.
+
+================================================================================
+Requirements:
+
+As a 'pure' Tcl implementation, the runtime requirements are limited to an
+appropriate level of Tcl/Tk support:
+
+Versions *Prior* to V4.3 of TkDiff, needs at least V8.0 of Tcl/Tk and Wish
+Versions *At/After* V4.3 of TkDiff, needs at least V8.5 or Tcl/Tk and Wish
+
+Exceeding these requirements (more recent Tcl/Tk releases) is generally harmless
 
 ================================================================================
 Platforms:
@@ -24,17 +34,7 @@ to tkdiff.tcl. Then when you double-click on it, it will open in Wish. You can
 of course make a desktop shortcut for it.
 
 ================================================================================
-Credits:
-
-TkDiff is Copyright (C) 1994-2005 by John M. Klassa.
-
-Many of the toolbar icons were created by Dean S. Jones and used with his
-permission. The icons have the following copyright:
-
-Copyright(C) 1998 by Dean S. Jones
-dean@gallant.com
-http://www.gallant.com/icons.htm
-http://www.javalobby.org/jfa/projects/icons/
+License:
 
 This program is free software; you can redistribute it and/or modify it  under
 the terms of the GNU General Public License as published by the  Free Software
@@ -49,4 +49,17 @@ details.
 You should have received a copy of the GNU General Public License along with
 this program; if not, write to the Free Software Foundation, Inc., 59  Temple
 Place, Suite 330, Boston, MA 02111-1307 USA
+
+================================================================================
+Credits:
+
+TkDiff is Copyright (C) 1994-2005 by John M. Klassa.
+
+Many of the toolbar icons were created by Dean S. Jones and used with his
+permission. The icons have the following copyright:
+
+Copyright(C) 1998 by Dean S. Jones
+dean@gallant.com
+http://www.gallant.com/icons.htm
+http://www.javalobby.org/jfa/projects/icons/
 
