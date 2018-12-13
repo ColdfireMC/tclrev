@@ -27,8 +27,8 @@ A. Did you run doinstall.tcl?
    that's pointing to somewhere other than where it put tkcvs' .tcl
    files.
 
-   If that's not the trouble, do "which tkcvs" or whatever tells you which tkcvs
-   file you're executing.  Look at that file and see what TclRoot is set to.
+   If that's not the trouble, do "command -v tkcvs" to find which tkcvs
+   you're executing.  Look at that file and see what TclRoot is set to.
    Are the .tcl files in $TclRoot/tkcvs?  Is there a tclIndex there? 
 
 -----------------------------------------------------------------
@@ -73,7 +73,6 @@ A. Yes, by changing cvscfg(tkdiff).  You usually have to write a wrapper for
 
    In the contrib directory, there is a gvim-wrapper called "cvsdiff" which can
    be used as-is or as a model for wrapping your favorite diff tool.
-
 
 -----------------------------------------------------------------
 Q5. How do I import a new module?
@@ -167,11 +166,13 @@ A. I put this in my ~/.tkcvs file:
 -----------------------------------------------------------------
 Q11. Why is the Branch Browser so slow in Subversion?
 
-A. It's because SVN doesn't have tags or branches, it only has copies.  The
-   brute-force method I came up with to reconstruct a diagram requires two
-   repository accesses per tag.  Open the trace window and take a look at
-   what tkcvs is doing to build that diagram. It will give you something to
-   watch while it's chugging, at least.
+A. Actually it's a lot faster as of tkcvs version 9.0.
+
+   It's because SVN doesn't have tags or branches, it only has copies.  The
+   brute-force method I came up with to reconstruct a diagram requires a lot of
+   repository accesses for branches and tags.  Open the trace window and take a
+   look at what tkcvs is doing to build that diagram. It will give you something
+   to watch while it's chugging, at least.
 
    If you convert a CVS repository to SVN, my recommendation would be to
    discard non-branch tags. If there are very many, most likely all but the
@@ -196,15 +197,15 @@ A. It depends on how you start the Wish application.  If you double-click on
    set env(CVS_RSH) ssh
 
    My favorite way of running tkcvs on the Mac is simply to install the
-   platform-independent tkcvs in /sw/bin or someplace like that, and invoke it
+   platform-independent tkcvs in /opt/bin or someplace like that, and invoke it
    from the command line.  With the full Mac version of Wish installed, there
    will be a /usr/bin/wish that invokes the Wish.app.  (Install Wish and do
-   "cat `which wish`" to see how that works.) Invoking a Wish app such as TkCVS
+   "command -v wish" to see how that works.) Invoking a Wish app such as TkCVS
    in this way preserves your environment.
 
    Then too, you can just start X11 and use the X11 version of Tk.  In fact,
    your .tcshrc might detect whether it's being sourced in an X11 environment
-   ($TERM == xterm), and put /sw/bin/wish (the X11 version from Fink) in your
+   ($TERM == xterm), and put /opt/bin/wish (the X11 version from Fink) in your
    PATH before /usr/bin/wish (the Aqua version) if it is.  Then any Tk program
    that is invoked on the command line and starts by invoking wish will
    automatically start the correct version of wish.
