@@ -1065,7 +1065,9 @@ namespace eval ::git_branchlog {
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
             set base [lindex $branchrevs($branch) end]
             set parent $branchparent($branch)
-            set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
+            if [info exists branchrevs($parent)] {
+              set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
+            }
             set curr 1
           }
           foreach r $brevs {
