@@ -13,7 +13,7 @@ proc import_run {} {
   global cvsglb
 
   gen_log:log T "ENTER"
-  
+
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     cvsok "This directory is already in CVS.\nCan\'t import here!" .import
@@ -27,7 +27,7 @@ proc import_run {} {
 
   # This is just a default.  The user can change it.
   set cvsglb(newcode) [file tail $cwd]
-  
+
   if {[winfo exists .import]} {
     wm deiconify .import
     raise .import
@@ -54,11 +54,11 @@ proc import_run {} {
   label .import.top.lnewdesc -text "Descriptive Title" -anchor w
   label .import.top.lnewvers  -text "Version Number" -anchor w
 
-  entry .import.top.tnewcode -textvariable cvsglb(newcode) -width 40 
+  entry .import.top.tnewcode -textvariable cvsglb(newcode) -width 40
   entry .import.top.tnewdir -textvariable cvsglb(newdir) -width 40
   entry .import.top.tnewdesc -textvariable cvsglb(newdesc) -width 40
   entry .import.top.tnewvers -textvariable cvsglb(newvers) -width 40
-  
+
 
   grid .import.top.explain -column 0 -row 0 -columnspan 3 -sticky ew
   grid .import.top.lnewcode -column 0 -row 1 -sticky w
@@ -119,10 +119,10 @@ proc do_import {} {
     cvsok "You must type in a new module path directory." .import
     return 1
   }
-  
+
   # We may have gotten here before opening the module browser
   if {! [info exists modlist_sorted]} {
-     modbrowse_run cvs
+     modbrowse_run
   }
   # Make sure it isn't a duplicate key
   foreach {key value} [array get modval] {
@@ -131,7 +131,7 @@ proc do_import {} {
 	return 1
      }
   }
-  
+
   # See if all apropriate Directories in newdirname exist.  CVS import will
   # create them, but we'll want to make a #D entry.
   set cvsglb(newdir) [string trimleft $cvsglb(newdir) "/"]
@@ -193,7 +193,7 @@ proc do_import {} {
   $v\::do "$commandline"
   $v\::wait
 
-  modbrowse_run cvs
+  modbrowse_run
 
   # Now check out the new module
   cd ..
@@ -211,21 +211,21 @@ proc do_import {} {
   $v\::log "\nCVS Checkout\n"
   $v\::do "$commandline"
   $v\::wait
-  
+
   # cd to the checked out module. $cwd is the correct directory to cd to
   # only if the name of the new module is the same as the directory name
   # where the source code is in. Define ckmoddir to be used instead.
-  
+
   set ckmoddir $cwd
   if { $cvsglb(newcode) != [file tail $cwd] } {
      set ckmoddir [file join [file dirname $cwd] $cvsglb(newcode)]
-  }  
+  }
   if { [catch "cd $ckmoddir" err]} {
     cvsok "$err" .import
   } else {
     gen_log:log F "CD [pwd]"
   }
- 
+
   if {$cvscfg(auto_status)} {
     setup_dir
   }

@@ -170,7 +170,7 @@ namespace eval ::logcanvas {
             if {! [info exists revnum_current]} {
               gen_log:log E "Warning: couldn't find current revision number!"
             }
-            $logcanvas.up.bmodbrowse configure -command {modbrowse_run svn} \
+            $logcanvas.up.bmodbrowse configure -command modbrowse_run \
               -image Modules_svn -state normal
             $logcanvas.up.lfname configure -text "SVN Path"
             $logcanvas.up.rfname configure -state normal
@@ -179,7 +179,7 @@ namespace eval ::logcanvas {
             $logcanvas.up.rfname configure -state readonly
             $logcanvas.log configure \
                 -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev == ""} {
                       svn_log_rev $filename
                     } else {
@@ -191,14 +191,14 @@ namespace eval ::logcanvas {
               $logcanvas.annotate configure -state disabled
               $logcanvas.view configure \
                  -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev ==""} { set rev "r$revnum_current" }
                     svn_fileview $rev $revpath($rev) directory
                  }]
             } else {
               $logcanvas.view configure \
                  -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev ==""} { set rev "r$revnum_current" }
                     svn_fileview $rev $revpath($rev) file
                  }]
@@ -257,7 +257,7 @@ namespace eval ::logcanvas {
                }]
           }
          "CVS" {
-           $logcanvas.up.bmodbrowse configure -command {modbrowse_run cvs} \
+           $logcanvas.up.bmodbrowse configure -command modbrowse_run \
               -image Modules_cvs -state normal
            $logcanvas.up.lfname configure -text "RCS file"
            $logcanvas.up.rfname configure -state normal
@@ -290,7 +290,7 @@ namespace eval ::logcanvas {
              # We have a checked-out local file
              $logcanvas.log configure \
                   -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev == ""} {
                       cvs_log_rev "" $filename
                     } else {
@@ -325,7 +325,8 @@ namespace eval ::logcanvas {
             }
          }
          "GIT" {
-            $logcanvas.up.bmodbrowse configure -state disabled -image {}
+            $logcanvas.up.bmodbrowse configure -command modbrowse_run \
+              -image Modules_git -state normal
             $logcanvas.up.lfname configure -text "GIT Path"
             $logcanvas.up.rfname configure -state normal
             $logcanvas.up.rfname delete 0 end
@@ -348,7 +349,7 @@ namespace eval ::logcanvas {
              # We have a checked-out local file
              $logcanvas.log configure \
                   -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev == ""} {
                       git_log_rev "" $filename
                     } else {
@@ -357,7 +358,7 @@ namespace eval ::logcanvas {
                   }]
              $logcanvas.view configure -state normal \
                -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text] 
+                    set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev ==""} { set rev "r$revnum_current" }
                     git_fileview $rev $revpath($rev) $filename
                }]
@@ -1016,7 +1017,7 @@ namespace eval ::logcanvas {
         return [list $x [expr {$y + $root_height + $curr(spcy)}] \
         $box_width $root_height $last_y]
       }
-  
+
       proc UpdateBndBox {} {
         variable logcanvas
         variable font_bold
@@ -1084,7 +1085,7 @@ namespace eval ::logcanvas {
         #gen_log:log T "LEAVE"
         return
       }
-  
+
       proc DrawTree { {now {}} } {
         global cvscfg
         global logcfg
@@ -1406,20 +1407,20 @@ namespace eval ::logcanvas {
       # can enter a glob-style search pattern in the entry field and click the search
       # button. With every click (or pressing enter), the log viewer jumps from one
       # occurrence of the pattern to the next, highlighting it in red.
-      # 
+      #
       # The following special characters are used in the search pattern:
-      # 
+      #
       # *      Matches any sequence of characters in string, including a null string.
-      # 
+      #
       # ?      Matches any single character in string.
-      # 
+      #
       # [chars] Matches any character in the set given by chars. If a sequence of the
       # form x-y appears in chars, then any character between x and y, inclusive, will
       # match.
-      # 
+      #
       # \x      Matches the single character x. This provides a way of avoiding the
       # special interpretation of the characters *?[]\ in pattern.
-      # 
+      #
       # If you only enter "FOO" (without the ") in the entry box, it searches the exact
       # string "FOO". If you want to search all strings starting with "FOO", you have
       # to put "FOO*". For all strings containing "FOO", you must put "*FOO*".
@@ -1535,7 +1536,7 @@ gen_log:log D " $pattern MATCHED $text"
       }
       # Have to do this after the .apple menu
       $logcanvas configure -menu $logcanvas.menubar
-  
+
       $logcanvas.menubar add cascade -label "File"\
          -menu [menu $logcanvas.menubar.file] -underline 0
       $logcanvas.menubar.file add command -label "Shell window" -underline 0 \
@@ -1661,7 +1662,7 @@ gen_log:log D " $pattern MATCHED $text"
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove \
         -bd 1 -relief sunk -state readonly
-        
+
       button $logcanvas.up.bmodbrowse -image Modules \
         -command modbrowse_run
       button $logcanvas.up.bworkdir -image Workdir \
@@ -1671,7 +1672,7 @@ gen_log:log D " $pattern MATCHED $text"
         label $logcanvas.up.rev${fm}_lvers -text "Revision $fm"
         label $logcanvas.up.rev${fm}_rvers -text {} \
            -anchor w -font $textfont
-  
+
         label $logcanvas.up.rev${fm}_ldate -text "Committed"
         label $logcanvas.up.rev${fm}_rdate -text {} \
            -anchor w -font $textfont
@@ -1679,7 +1680,7 @@ gen_log:log D " $pattern MATCHED $text"
         label $logcanvas.up.rev${fm}_rwho -text {} \
            -anchor w -font $textfont
         label $logcanvas.up.log${fm}_lcomment -text "Log $fm"
-         
+
         frame $logcanvas.up.log${fm}_rlogfm -bd 3 -bg $cvscfg(colour$fm)
         text  $logcanvas.up.log${fm}_rlogfm.rcomment -height 5 \
            -fg $cvsglb(textfg) -bg $cvsglb(textbg) -state disabled \
@@ -1753,15 +1754,15 @@ gen_log:log D " $pattern MATCHED $text"
         -command [namespace code {
                  $scope\::reloadLog
                }]
-      button $logcanvas.view -image Fileview 
-      button $logcanvas.log -image Log 
-      button $logcanvas.annotate -image Annotate 
+      button $logcanvas.view -image Fileview
+      button $logcanvas.log -image Log
+      button $logcanvas.annotate -image Annotate
       button $logcanvas.diff -image Diff \
         -command [namespace code {
           comparediff_r [$logcanvas.up.revA_rvers cget -text] \
           [$logcanvas.up.revB_rvers cget -text] $logcanvas $filename
         }]
-      button $logcanvas.delta -image Mergediff 
+      button $logcanvas.delta -image Mergediff
       button $logcanvas.viewtags -image Tags \
         -command [namespace code {
                    variable revtags
@@ -1829,7 +1830,7 @@ gen_log:log D " $pattern MATCHED $text"
         {"Merge to current"}
       set_tooltips $logcanvas.viewtags \
         {"List all the file\'s tags"}
-  
+
       #
       # Put the canvas on to the display.
       #
@@ -1837,7 +1838,7 @@ gen_log:log D " $pattern MATCHED $text"
       pack $logcanvas.yscroll -side right -fill y -padx 1 -pady 1
       pack $logcanvas.canvas -fill both -expand 1
       scrollbindings $logcanvas.canvas
-  
+
       #
       # Window manager stuff.
       #
@@ -1845,12 +1846,12 @@ gen_log:log D " $pattern MATCHED $text"
       if {[info exists cvscfg(loggeom)]} {
         wm geometry $logcanvas $cvscfg(loggeom)
       }
-  
+
       $logcanvas.canvas bind active <Enter> \
         "$logcanvas.canvas config -cursor hand2"
       $logcanvas.canvas bind active <Leave> \
         "$logcanvas.canvas config -cursor {}"
-  
+
 
       $logcanvas.canvas bind tag <Button-1> \
         [namespace code "PopupTags %X %Y"]

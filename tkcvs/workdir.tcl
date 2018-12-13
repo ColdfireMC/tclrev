@@ -70,8 +70,7 @@ proc workdir_setup {} {
      -anchor w -relief groove
 
   # Make the Repository Browser button prominent
-  button .workdir.top.bmodbrowse -image Modules \
-     -command modbrowse_run
+  button .workdir.top.bmodbrowse -image Modules -command modbrowse_run
 
   label .workdir.top.lcvsroot -text "CVSROOT"
   entry .workdir.top.tcvsroot -textvariable cvscfg(cvsroot) \
@@ -172,7 +171,7 @@ proc workdir_setup {} {
      -command { subtract_dialog [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bcheckin -image Checkin \
       -command cvs_commit_dialog
-  button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout 
+  button .workdir.bottom.buttons.cvsfuncs.bupdate -image Checkout
   button .workdir.bottom.buttons.cvsfuncs.bupdateopts -image CheckoutOpts \
      -command { cvs_update_options }
   button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert \
@@ -545,7 +544,7 @@ proc workdir_menus {} {
   .workdir.menubar.reports.log_detail add command -label "Latest"
   .workdir.menubar.reports.log_detail add command -label "Summary"
   .workdir.menubar.reports.log_detail add command -label "Verbose"
-   
+
   .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
   .workdir.menubar.reports add command -label "Info" -underline 0
   .workdir.menubar.reports add separator
@@ -807,7 +806,7 @@ proc delete_bookmark_dialog { } {
    pack $wname.buttons -side top -fill x
    button $wname.delete -text "Delete" \
      -command "delete_bookmark $wname"
-        
+
    button $wname.close -text "Done" \
      -command "
        grab release $wname
@@ -931,7 +930,7 @@ proc setup_dir { } {
   #puts "reports $rptmenu_idx"
   #puts "----------"
 
-  # Disable report menu items 
+  # Disable report menu items
   .workdir.menubar.reports entryconfigure "Check Directory" -state disabled
   .workdir.menubar.reports entryconfigure "Status" -state disabled
   .workdir.menubar.reports entryconfigure "Log" -state disabled
@@ -947,7 +946,7 @@ proc setup_dir { } {
   }
   foreach widget [grid slaves .workdir.bottom.buttons.oddfuncs ] {
     #$widget configure -state disabled
-    grid forget $widget 
+    grid forget $widget
   }
 
   # Default for these, only Git is different
@@ -1020,8 +1019,7 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE SVN MENUS"
     .workdir.menubar insert $rptmenu_idx cascade -label "SVN" \
       -menu .workdir.menubar.svn
-    .workdir.top.bmodbrowse configure -image Modules_svn \
-      -command {modbrowse_run}
+    .workdir.top.bmodbrowse configure -image Modules_svn -command modbrowse_run
     .workdir.top.lmodule configure -text "Path"
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "SVN URL"
@@ -1094,8 +1092,7 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE CVS MENUS"
     .workdir.menubar insert $rptmenu_idx cascade -label "CVS" \
       -menu .workdir.menubar.cvs
-    .workdir.top.bmodbrowse configure -image Modules_cvs \
-      -command {modbrowse_run}
+    .workdir.top.bmodbrowse configure -image Modules_cvs -command modbrowse_run
     .workdir.top.lmodule configure -text "Module"
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "CVSROOT"
@@ -1183,8 +1180,7 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE GIT MENUS"
     .workdir.menubar insert $rptmenu_idx cascade -label "GIT" \
       -menu .workdir.menubar.git
-    .workdir.top.bmodbrowse configure -image Modules_git \
-      -command {modbrowse_run}
+    .workdir.top.bmodbrowse configure -image Modules_git -command modbrowse_run
     .workdir.top.lmodule configure -text "path"
     .workdir.top.ltagname configure -text "branch"
     .workdir.top.lcvsroot configure -text "$cvscfg(origin)"
@@ -1555,7 +1551,7 @@ proc cvsroot_check { dir } {
   }
 
   if {$inrcs} {
-    # Make sure we have rcs, and bag this (silently) if we don't   
+    # Make sure we have rcs, and bag this (silently) if we don't
     set command "rcs --version"
     gen_log:log C "$command"
     set ret [catch {eval "exec $command"} raw_rcs_log]
@@ -1576,7 +1572,7 @@ proc cvsroot_check { dir } {
     gen_log:log E "gitout $gitout"
     set ingit 0
   } else {
-    # revparse may return "false" 
+    # revparse may return "false"
     gen_log:log F "gitout $gitout"
     if {$gitout} {
       set ingit 1

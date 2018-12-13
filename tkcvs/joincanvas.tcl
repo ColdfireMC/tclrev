@@ -135,7 +135,7 @@ namespace eval joincanvas {
         upvar treelist treelist
         upvar ylevel ylevel
         upvar ind ind
-      
+
         gen_log:log T "ENTER ($rev $x $y)"
         $joincanvas.canvas create line \
           $x [expr {$y + $cvscanv(boxy)}] \
@@ -230,7 +230,7 @@ namespace eval joincanvas {
         variable headrev
         variable tags
         variable current_tagname
-       
+
         gen_log:log T "ENTER ($filename <filelog suppressed>)"
 
         catch {unset tags}
@@ -332,7 +332,7 @@ namespace eval joincanvas {
           if {[info exists children($rev)]} {
             foreach r $children($rev) {
               gen_log:log D "\tparent of $r"
-            } 
+            }
             set nchildren($rev) [llength $children($rev)]
             set kids [array names children $rev.*]
             foreach kid $kids {
@@ -545,7 +545,7 @@ namespace eval joincanvas {
       button $joincanvas.up.bworkdir -image Workdir \
        -command { workdir_setup }
       button $joincanvas.up.bmodbrowse -image Modules_cvs \
-       -command { modbrowse_run cvs }
+       -command modbrowse_run
 
       label $joincanvas.up.lfname -text "Representative File" -anchor w
       entry $joincanvas.up.rfname -textvariable [namespace current]::repfile
