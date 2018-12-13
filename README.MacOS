@@ -1,4 +1,0 @@
-Drag the TkCVS and TkDiff apps to your Applications folder.  Then TkCVS
-will know where to look for TkDiff.  If you put TkDiff somewhere else,
-edit your ~/.tkcvs file and change the cvscfg(tkdiff) variable accordingly.
-
