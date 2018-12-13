@@ -843,11 +843,11 @@ namespace eval ::git_branchlog {
 
         set path $relpath
 
-        # Find out where to put the working revision icon (if anywhere)
+        # This will be used to place the You are Here icon
         set revnum_current [set $ln\::revnum_current]
         gen_log:log D "revnum_current: $revnum_current"
 
-        # Get a list of the branches from the repository
+        # Get a list of the branches from the repository.
         # This gives you the local branches
         set command "git branch --format=\'%(refname:short)\'"
         set cmd_lbranch [exec::new $command {} 0 {} 1]
@@ -938,7 +938,7 @@ namespace eval ::git_branchlog {
           gen_log:log D "master not found, looking in the log for an ancestor"
           # Otherwise, try to find something else to use as trunk.
           # Maybe we can pull a parent out of the "decorated" log.
-          set command "git log --graph --oneline --abbrev-commit --decorate --format=\'%h%d\'"
+          set command "git log --graph --oneline --abbrev-commit --decorate --format=\'%h%d\' -- \"$filename\""
           set cmd_log [exec::new $command {} 0 {} 1]
           set revlog_output [$cmd_log\::output]
           $cmd_log\::destroy
@@ -968,7 +968,7 @@ namespace eval ::git_branchlog {
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
           if {$branch eq $trunk} {
-            set command "git rev-list --abbrev-commit --topo-order --first-parent $trunk -- \"$filename\""
+            set command "git rev-list --abbrev-commit --topo-order --sparse --first-parent $trunk -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
             $cmd_revlist\::destroy
@@ -1016,7 +1016,6 @@ namespace eval ::git_branchlog {
 
         # See if the current revision is on the trunk
         set curr 0
-        # FIXME trunk isn't always available in git. How do we work without it?
         if [info exists branchrevs(trunk)] {
           set brevs $branchrevs(trunk)
           set tip [lindex $brevs 0]
@@ -1024,6 +1023,7 @@ namespace eval ::git_branchlog {
           set revpath($tip) $path
           set revkind($tip) "revision"
           set brevs [lreplace $brevs 0 0]
+          # Try to place You are Here
           if {$tip == $revnum_current} {
             # If current is at end of trunk do this.
             gen_log:log D "Currently at top of trunk"
@@ -1060,13 +1060,19 @@ namespace eval ::git_branchlog {
           set tip [lindex $brevs 0]
           set revpath($tip) $path
           set brevs [lreplace $brevs 0 0]
+          # Try to place You are Here
           if {$tip == $revnum_current} {
             # If current is at end of the branch do this.
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
             set base [lindex $branchrevs($branch) end]
-            set parent $branchparent($branch)
-            if [info exists branchrevs($parent)] {
-              set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
+            # See if we managed to save the parent
+            # revbtags(---) = $base  The array name of the matching revbtag is what we want
+            foreach rev [array names revbtags] {
+              if {$branch in $revbtags($rev)} {
+                set parent $rev
+                set branchrevs($parent) [linsert $branchrevs($parent) 0 {current}]
+                break
+              }
             }
             set curr 1
           }
