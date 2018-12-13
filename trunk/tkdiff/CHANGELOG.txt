@@ -1,4 +1,65 @@
-4.3             (2018):
+4.3.5           (08/08/2018):
+     * NewDiff Dialog now allows browsing for files OR directories
+     - with the Ancestor file also permitted to extract from an SCM
+     - additionally it and browsers now stack above each other properly
+     * Tool arguments now permit cross-branch SCM comparison specification
+     * Ability to view Ancestorfile also denotes 3way mode is active
+     * 3way collisions now findable via toolbar dropdown list highlights
+     * Textwin labels now tooltip the name+modtime of any NON-temp file
+     * Builtin editor now provides Line numbers
+     * Fixed recent new color preference settings to "apply" correctly
+     * Crash fixed when 3way diff was active and Lnum+Chgbars are OFF
+     * Pre-startup latency msg feature now OFF (MacOS X only) fixes Crash
+     * Repaired Lnums,etc. to use CDR preference settings when appropriate
+    
+4.3.4           (07/21/2018):
+     * Emergency Re-repair of the (V4.3.3) Merge content corruption issue
+     - previous fix targeted a phantom cause (only fixed SOME cases)
+
+4.3.3           (07/19/2018):
+     * Critical bug that MIGHT corrupt Merge content via Split use fixed
+     * Re-implementation of 3way Diff support now functions properly
+     - merge choices are preset via 3way analysis AHEAD of user preference
+     - resolved collisions (when possible) also removes its display markup
+     * Added status msgs (to a popup), in lieu of a busy cursor, at pgm
+       startup w/SCM use to account for potential network latency delay
+     - new help info for 3way support/strategy plus latency effects
+     * Small bugs/inconsistencies repaired
+     - Collision color in the DiffMap now honors its preference value
+     - DiffMap is redrawn as needed for Split/Combine and/or collisions
+     - Misleading (inactive) filelist per-file 'menu accelerators' removed
+     - Avoids crash (chooses line 1) when no CDR exists and invoking Editor
+     - Report Save-as filename browser lacked the filetypes option setting
+
+4.3.2           (06/28/2018):
+     * Fixed obtuse data-dependant fatal crash caused by inline-diff
+       of IDENTICAL lines (induced by Diff itself).
+     * minor fixes to newDiff dialog (absent V4.3.1 param), resizing
+     * random typos in help info
+
+4.3.1           (06/26/2018):
+     * Repaired crash(v4.3) when using the "-conflict file" option
+     * Supports Diff 'suppresion' options (Empty or RE-matched lines)
+       with ability to enter/manage/save rules, activate from cmdline,
+       and interoperate with any supportable 'diff' engine
+     * Enhanced and expanded preferences coverage
+     - previously hidden settings exposed (map and collision colors)
+     - color used during Split/Combine for boundary movement feedback
+     - provided interactive color chooser for above
+     - added new 'suppression' settings
+     - added new 'default side' choice for merge initialization
+     - redesigned layout of checkboxes for better readability
+     - enhanced feedback for inter-related settings, and or editting
+     * builtin file editor now opens at the current diff region
+     * avoid unneeded display updates when nothing applicable changed
+     * Editorial revisions of online help info (new and old content)
+     - better explanations of 'quoting', interfacing to 'diff', and
+       more uniform typography
+     * minor internal consolidations- dead code removal, upgrade to
+       later version of embedded software, contrib patches, etc.
+
+
+4.3             (06/06/2018):
      * Add ability to create a file-pairs list from a Git diff (by Kevin X),
        then extended (by vampm) facilitating other sources of multi-pairs,
        including local directory-to-directory comparisons and Subversion.
