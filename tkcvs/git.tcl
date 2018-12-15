@@ -358,7 +358,7 @@ proc git_status {detail args} {
   busy_start .workdir.main
   set filelist [join $args]
   set flags ""
-  set title "GIT Status ($detail)"
+  set title "Git Status ($detail)"
   # Hide unknown files if desired
   if {$cvscfg(status_filter)} {
     append flags " -uno"
@@ -408,7 +408,7 @@ proc git_check {} {
   gen_log:log T "ENTER ()"
 
   busy_start .workdir.main
-  set title "GIT Directory Check"
+  set title "Git Directory Check"
   # I know we use a short report for other VCSs, but for Git you really
   # need the full report to know what's staged and what's not
   set flags ""
@@ -464,8 +464,8 @@ proc git_commit_dialog {} {
 
   # Explain what it means to "commit" files
   message .commit.message -justify left -aspect 800 \
-    -text "This will commit changes from your \
-           local, working directory into the repository, recursively."
+    -text "This will commit changes from your local, working directory
+           into the local repository, recursively."
 
   pack .commit.message -in .commit.top -padx 2 -pady 5
 
@@ -557,7 +557,7 @@ proc git_commit {comment args} {
       cvsfail "You must enter a comment!" .commit
       return 1
     }
-    set v [viewer::new "GIT Commit"]
+    set v [viewer::new "Git Commit"]
     regsub -all "\"" $comment "\\\"" comment
     $v\::do "git commit -m \"$comment\" $filelist" 1
     $v\::wait
@@ -566,6 +566,66 @@ proc git_commit {comment args} {
   if {$cvscfg(auto_status)} {
     setup_dir
   }
+  gen_log:log T "LEAVE"
+}
+
+# git tag - called from tag dialog
+proc git_tag {tagname annotate args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($tagname $annotate $args)"
+
+  if {$tagname == ""} {
+    cvsfail "You must enter a tag name!" .workdir
+    return 1
+  }
+  set filelist [join $args]
+
+  set command "git tag "
+  if {$annotate == "yes"} {
+    append command "-a -m tagged_by_TkCVS"
+  }
+  append command " $tagname $filelist"
+
+  set v [viewer::new "Git Tag"]
+  $v\::do "$command" 1
+  $v\::wait
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+
+  gen_log:log T "LEAVE"
+}
+
+# git branch - called from branch dialog
+proc git_branch {branchname updflag args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($branchname $args)"
+
+  if {$branchname == ""} {
+    cvsfail "You must enter a branch name!" .workdir
+    return 1
+  }
+  set filelist [join $args]
+
+  set command "git branch $branchname $filelist"
+  set v [viewer::new "Git Branch"]
+  $v\::do "$command" 1"
+  $v\::wait
+
+  if {$updflag == "yes"} {
+    set command "git checkout $branchname $filelist"
+    $v\::log "$command"
+    $v\::do "$command" 0
+    $v\::wait
+  }
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+
   gen_log:log T "LEAVE"
 }
 
@@ -602,7 +662,7 @@ proc git_checkout {args} {
     return;
   }
 
-  set co_cmd [viewer::new "GIT Update"]
+  set co_cmd [viewer::new "Git Update"]
   $co_cmd\::do "$command" 1 status_colortags
   auto_setup_dir $co_cmd
 

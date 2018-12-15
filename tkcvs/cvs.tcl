@@ -802,13 +802,13 @@ proc cvs_commit {revision comment args} {
 }
 
 # This tags a file in a directory.
-proc cvs_tag {tagname force b_or_t update args} {
+proc cvs_tag {tagname force b_or_t updflag args} {
   global cvs
   global cvscfg
   global cvsglb
   global incvs
 
-  gen_log:log T "ENTER ($tagname $force $b_or_t $update $args)"
+  gen_log:log T "ENTER ($tagname $force $b_or_t $updflag $args)"
 
   if {! $incvs} {
     cvs_notincvs
@@ -830,21 +830,9 @@ proc cvs_tag {tagname force b_or_t update args} {
     append command " -F"
   }
   append command " $tagname $filelist"
-
+  # In new dialog, this isn't supposed to happen, but let's check anyway
   if {$b_or_t == "branch" && $force == "yes"} {
-    set too_new 0
-    # As of 1.11.2, -F won't move branch tags without the -B option
-    set versionsplit [split $cvsglb(cvs_version) {.}]
-    set major [lindex $versionsplit 1]
-    set minor [lindex $versionsplit 2]
-    if {$major > 11} {
-      set too_new 1
-    } elseif {($major == 11) && ($minor >= 2)} {
-      set too_new 1
-    }
-    if {$too_new} {
-      cvsfail "In CVS version >= 1.11.2, you're not allowed to move a branch tag" .workdir
-    }
+    cvsfail "Moving a branch tag isn't allowed" .workdir
     return
   }
 
@@ -853,7 +841,7 @@ proc cvs_tag {tagname force b_or_t update args} {
   $v\::do "$command" 1
   $v\::wait
 
-  if {$update == "yes"} {
+  if {$updflag == "yes"} {
     # update so we're on the branch
     set command "$cvs update -r $tagname $filelist"
     $v\::do "$command" 0 status_colortags

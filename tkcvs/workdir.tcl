@@ -162,9 +162,9 @@ proc workdir_setup {} {
   button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict \
      -command { cvs_merge_conflict [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.btag -image Tag \
-     -command { file_tag_dialog "tag" }
+     -command { tag_dialog }
   button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag \
-     -command { file_tag_dialog "branch" }
+     -command { branch_dialog }
   button .workdir.bottom.buttons.cvsfuncs.badd_files -image Add \
      -command { add_dialog [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bremove -image Remove \
@@ -480,8 +480,10 @@ proc workdir_menus {} {
      -command { cvs_edit [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Unset Edit Flag (Unedit)" -underline 11 \
      -command { cvs_unedit [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Tag Files" -underline 0 \
-     -command { file_tag_dialog "tag" }
+  .workdir.menubar.cvs add command -label "Tag" -underline 0 \
+     -command { tag_dialog }
+  .workdir.menubar.cvs add command -label "Branch" -underline 0 \
+     -command { branch_dialog }
   .workdir.menubar.cvs add command -label "Browse the Log Diagram" \
      -command { cvs_branches [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Resolve Conflicts" \
@@ -1024,7 +1026,7 @@ proc setup_dir { } {
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
-    set cvsglb(root) $cvscfg(url)
+    set cvsglb(root) $cvscfg(svnroot)
     set cvsglb(vcs) svn
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
@@ -1207,6 +1209,8 @@ proc setup_dir { } {
       -image GitCheckout -command { git_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
+    .workdir.bottom.buttons.cvsfuncs.bbranchtag configure -state normal
     grid .workdir.bottom.buttons.oddfuncs.bpush  -column 0 -row 0
     grid .workdir.bottom.buttons.oddfuncs.bfetch  -column 0 -row 1
     .workdir.bottom.buttons.oddfuncs.block configure -state normal \
