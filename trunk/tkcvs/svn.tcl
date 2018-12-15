@@ -387,21 +387,26 @@ proc svn_update {args} {
 proc svn_opt_update {} {
   global cvscfg
   global cvsglb
+  global module_dir
 
   switch -exact -- $cvsglb(tagmode_selection) {
     "Keep" {
        set command "svn update"
      }
     "Trunk" {
-       set command "svn switch $cvscfg(svnroot)/$cvscfg(svn_trunkdir)"
+       set command "svn switch --ignore-ancestry ^/$cvscfg(svn_trunkdir)/$module_dir"
      }
     "Branch" {
-       set command "svn switch $cvscfg(svnroot)/$cvscfg(svn_branchdir)/$cvsglb(branchname)"
+       set command "svn switch --ignore-ancestry ^/$cvscfg(svn_branchdir)/$cvsglb(branchname)/$module_dir"
+     }
+    "Tag" {
+       set command "svn switch --ignore-ancestry ^/$cvscfg(svn_tagdir)/$cvsglb(tagname)/$module_dir"
      }
     "Revision" {
        # Let them get away with saying r3 instead of 3
        set rev [string trimleft $cvsglb(revnumber) {r}]
-       set command "svn update -r $rev"
+       # FIXME: This doesn't work if you're not on the trunk
+       set command "svn switch --ignore-ancestry ^/trunk/$module_dir -r $rev"
      }
   }
   set upd_cmd [viewer::new "SVN Update/Switch"]
@@ -663,7 +668,7 @@ proc svn_delete {root path} {
   }
   set url [safe_url $root/$path]
   set v [viewer::new "SVN delete"]
-  set command "svn delete \"$url\" -m\"Removed_using_TkSVN\""
+  set command "svn delete \"$url\" -m\"Removed_using_TkCVS\""
   $v\::do "$command"
   modbrowse_run
   gen_log:log T "LEAVE"
@@ -1005,14 +1010,12 @@ proc svn_revert {args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_tag {tagname b_or_t update args} {
-#
-# This tags a file or directory in the current sandbox.
-#
+# svn tag or branch - called from tag and branch dialogs
+proc svn_tag {tagname b_or_t updflag args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($tagname $b_or_t $update $args)"
+  gen_log:log T "ENTER ($tagname $b_or_t $updflag $args)"
 
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
@@ -1021,35 +1024,36 @@ proc svn_tag {tagname b_or_t update args} {
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
 
-  if {$b_or_t == "tag" || $b_or_t == "tags"} {set pathelem "$cvscfg(svn_tagdir)"}
+  if {$b_or_t == "tag"} {set pathelem "$cvscfg(svn_tagdir)"}
   if {$b_or_t == "branch"} {set pathelem "$cvscfg(svn_branchdir)"}
 
-  set comment "${b_or_t}_copy_by_TkSVN"
+  set comment "${b_or_t}_copy_by_TkCVS"
   set v [viewer::new "SVN Copy $tagname"]
   set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
-  # FIXME: this assumes top of current branch, even if you have an older rev checked out
-  # svn status -u [--xml]
+
   if { $filelist == {} } {
-    set command "svn copy -m\"$comment\" $cvscfg(url) $to_url"
+    set command "svn copy --parents -m\"comment\" $cvscfg(url) $to_url"
     $v\::log "$command"
     $v\::do "$command"
   } else {
     foreach f $filelist {
       if {$f == "."} {
-        set command "svn copy -m\"comment\" $cvscfg(url) $to_url"
+        set command "svn copy --parents -m\"comment\" $cvscfg(url) $to_url"
       } else {
         svn_pathforcopy $tagname $pathelem $v
         set from_url [safe_url $cvscfg(url)/$f]
-        set command "svn copy -m\"$comment\" $from_url $to_url"
+        set command "svn copy --parents -m\"$comment\" $from_url $to_url"
       }
       $v\::log "$command"
       $v\::do "$command"
     }
   }
 
-  if {$update == "yes"} {
+  if {$updflag == "yes"} {
     # update so we're on the branch
+    set to_path [svn_pathforcopy $tagname $b_or_t $v]
     set command "svn switch $to_path"
+    $v\::log "$command"
     $v\::do "$command" 0 status_colortags
     $v\::wait
   }
@@ -1090,10 +1094,10 @@ proc svn_rcopy {from_path b_or_t newtag} {
       }
     }
   }
-  set comment "${b_or_t}_copy_by_TkSVN"
+  set comment "${b_or_t}_copy_by_TkCVS"
 
   set v [viewer::new "SVN Copy $newtag"]
-  set comment "Copied_using_TkSVN"
+  set comment "Copied_using_TkCVS"
   set to_path [svn_pathforcopy $newtag $b_or_t $v]
 
   if {! $need_list } {
@@ -1133,7 +1137,7 @@ proc svn_pathforcopy {tagname b_or_t viewer} {
   gen_log:log T "ENTER (\"$tagname\" \"$b_or_t\" \"$viewer\")"
   # Can't use file join or it will mess up the URL
   set to_path [safe_url "$cvscfg(svnroot)/$b_or_t/$tagname"]
-  set comment "${b_or_t}_directory_path_by_TkSVN"
+  set comment "${b_or_t}_directory_path_by_TkCVS"
 
   # If no file yet has this tag/branch name, create it
   set ret [catch "eval exec svn list $to_path" err]
@@ -1521,6 +1525,7 @@ namespace eval ::svn_branchlog {
         catch { unset revkind }
         catch { unset revpath }
         catch { unset revname }
+        set branchlist ""
 
         pack forget $lc.close
         pack $lc.stop -in $lc.down.closefm -side right

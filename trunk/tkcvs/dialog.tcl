@@ -482,102 +482,142 @@ proc add_dialog {args} {
   gen_log:log T "LEAVE"
 }
 
-proc file_tag_dialog {branch} {
+# Tag file(s) or directory. Called from the workdir browser.
+proc tag_dialog {} {
   global incvs insvn inrcs ingit
   global cvscfg
   global cvsglb
-  global branchflag
 
-  gen_log:log T "ENTER ($branch)"
-
-  # FIXME: This is too messy and should be split into two dialogs,
-  # one for cvs and one for svn
-  set branchflag $branch
-
+  gen_log:log T "ENTER"
   toplevel .tag
-  #grab set .tag
-
   frame .tag.top
-  pack .tag.top -side top -fill x
-
   set msg ""
+  pack .tag.top -side top -fill x
   if {$incvs} {
-    set msg "Apply a new tag or branch tag \
-             to the marked files, recursively.\
-             Will change the repository.\
-             If a branch, it can also update local directory if desired."
+    set msg "Apply a new tag\
+             to the marked files, or\
+             to the directory, recursively"
   } elseif {$insvn} {
-    set msg "Create a new branch or tag copy \
-             of the files in this directory"
+    set msg "Create a new tag copy\
+             of the marked files or\
+             of the directory, recursively"
+  } elseif {$ingit} {
+    set msg "Apply a new tag\
+             to the marked files or\
+             the directory, recursively"
   }
-
   message .tag.top.msg -justify left -aspect 300 -relief groove \
     -text $msg
   label .tag.top.lbl -text "Tag Name" -anchor w
-  entry .tag.top.entry -relief sunken -textvariable usertagname
-  checkbutton .tag.top.branch -text "Branch tag (-b)" \
-     -variable branchflag -onvalue "branch" -offvalue "tag" \
-     -command { 
-        if {$branchflag == "tag"} {
-           .tag.mid.upd config -state disabled; set updflag "no"
-        } else {
-           .tag.mid.upd config -state normal
-        }
-      }
-  checkbutton .tag.top.force -text "Move existing (-F)" \
+  entry .tag.top.entry -relief sunken -textvariable tagname
+  checkbutton .tag.top.force -text "Move existing tag" \
      -variable forceflag -onvalue "yes" -offvalue "no"
-
-  frame .tag.mid -relief groove -bd 2
-  checkbutton .tag.mid.upd -text "Update current directory to be on the new tag" \
-      -variable updflag -onvalue "yes" -offvalue "no"
-
+  checkbutton .tag.top.annotate -text "Annotate" \
+     -variable annotateflag -onvalue "yes" -offvalue "no"
   grid columnconf .tag.top 1 -weight 1
   grid rowconf .tag.top 3 -weight 1
   grid .tag.top.msg -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
   grid .tag.top.lbl -column 0 -row 1 -sticky nw
   grid .tag.top.entry -column 1 -row 1 -sticky ew
-  grid .tag.top.branch -column 1 -row 2 -sticky w
+  #grid .tag.top.tag -column 1 -row 2 -sticky w
+  # If in CVS, offer -f option (forceflag)
   if {$incvs} {
     grid .tag.top.force -column 1 -row 3 -sticky w
   }
-
-  pack .tag.mid -side top
-  pack .tag.mid.upd
-
+  # If in Git, offer -a option (annotateflag)
+  if {$ingit} {
+    grid .tag.top.annotate -column 1 -row 3 -sticky w
+  }
   frame .tag.down -relief groove -bd 2
   pack .tag.down -side bottom -fill x -expand 1
   button .tag.down.tag -text "Tag" 
-  if {$incvs} {
-    .tag.down.tag configure -command {
-      cvs_tag $usertagname $forceflag $branchflag $updflag \
-          [workdir_list_files]
-      grab release .tag
-      destroy .tag
-    }
-  } elseif {$insvn} {
-    if {$branchflag == "branch"} {set branchtag "branches"}
-    if {$branchflag == "tag"} {set branchtag "tags"}
-    .tag.down.tag configure -command {
-      svn_tag $usertagname $branchflag $updflag [workdir_list_files]
-      grab release .tag
-      destroy .tag
-    }
-  }
   button .tag.down.cancel -text "Cancel" \
     -command { grab release .tag; destroy .tag }
-
   pack .tag.down.tag .tag.down.cancel -in .tag.down -side left \
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-
-  if {$branchflag == "tag"} {
-     .tag.mid.upd config -state disabled
-     set updflag "no"
-  } else {
-     .tag.mid.upd config -state normal
+  if {$incvs} {
+    .tag.down.tag configure -command {
+      cvs_tag $tagname $forceflag "tag" no [workdir_list_files]
+      grab release .tag; destroy .tag
+    }
+  } elseif {$insvn} {
+    .tag.down.tag configure -command {
+      svn_tag $tagname "tag" no [workdir_list_files]
+      grab release .tag; destroy .tag
+    }
+  } elseif {$ingit} {
+    .tag.down.tag configure -command {
+      git_tag $tagname $annotateflag [workdir_list_files]
+      grab release .tag; destroy .tag
+    }
   }
-
-  wm title .tag "tag"
+  wm title .tag "Tag"
   wm minsize .tag 1 1
+  gen_log:log T "LEAVE"
+}
+
+# Branch file(s) or directory. Called from the workdir browser.
+proc branch_dialog {} {
+  global incvs insvn inrcs ingit
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER"
+  toplevel .branch
+  frame .branch.top
+  set msg ""
+  pack .branch.top -side top -fill x
+  if {$incvs} {
+    set msg "Apply a new branch tag\
+             to the marked files, or\
+             to the directory, recursively"
+  } elseif {$insvn} {
+    set msg "Create a new branch copy\
+             of the marked files or\
+             of the directory, recursively"
+  } elseif {$ingit} {
+    set msg "Branch the marked files or\
+             the directory, recursively"
+  }
+  message .branch.top.msg -justify left -aspect 300 -relief groove \
+    -text $msg
+  label .branch.top.lbl -text "Branch Name" -anchor w
+  entry .branch.top.entry -relief sunken -textvariable branchname
+  checkbutton .branch.top.upd -text "Update current directory to be on new branch" \
+    -variable updflag -onvalue "yes" -offvalue "no"
+  grid columnconf .branch.top 1 -weight 1
+  grid rowconf .branch.top 3 -weight 1
+  grid .branch.top.msg -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
+  grid .branch.top.lbl -column 0 -row 1 -sticky nw
+  grid .branch.top.entry -column 1 -row 1 -sticky ew
+  # Offer update option for all VCSs
+  grid .branch.top.upd -column 1 -row 3 -sticky w
+  #
+  frame .branch.down -relief groove -bd 2
+  pack .branch.down -side bottom -fill x -expand 1
+  button .branch.down.branch -text "Branch" 
+  button .branch.down.cancel -text "Cancel" \
+    -command { grab release .branch; destroy .branch }
+  pack .branch.down.branch .branch.down.cancel -in .branch.down -side left \
+    -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+  if {$incvs} {
+    .branch.down.branch configure -command {
+      cvs_tag $branchname "no" "branch" $updflag [workdir_list_files]
+      grab release .branch; destroy .branch
+    }
+  } elseif {$insvn} {
+    .branch.down.branch configure -command {
+      svn_tag $branchname "branch" $updflag [workdir_list_files]
+      grab release .branch; destroy .branch
+    }
+  } elseif {$ingit} {
+    .branch.down.branch configure -command {
+      git_branch $branchname $updflag [workdir_list_files]
+      grab release .branch; destroy .branch
+    }
+  }
+  wm title .branch "Branch"
+  wm minsize .branch 1 1
   gen_log:log T "LEAVE"
 }
 
@@ -1275,6 +1315,7 @@ proc release_dialog { args } {
   gen_log:log T "LEAVE"
 }
 
+# SVN update with options. Called from workdir bupdateopts button
 proc svn_update_options {} {
   global cvsglb
   global cvscfg
@@ -1284,7 +1325,6 @@ proc svn_update_options {} {
   if {[winfo exists .svn_update]} {
     wm deiconify .svn_update
     raise .svn_update
-    grab set .svn_update
     gen_log:log T "LEAVE"
     return
   }
@@ -1294,7 +1334,6 @@ proc svn_update_options {} {
   }
 
   toplevel .svn_update
-  grab set .svn_update
   frame .svn_update.explaintop
   frame .svn_update.options
   frame .svn_update.down
@@ -1302,6 +1341,7 @@ proc svn_update_options {} {
   frame .svn_update.options.keep -relief groove -border 2
   frame .svn_update.options.trunk -relief groove -border 2
   frame .svn_update.options.branch -relief groove -border 2
+  frame .svn_update.options.tag -relief groove -border 2
   frame .svn_update.options.revision -relief groove -border 2
 
   pack .svn_update.down -side bottom -fill x
@@ -1318,12 +1358,13 @@ proc svn_update_options {} {
   pack .svn_update.options.keep -side top -fill x
   pack .svn_update.options.trunk -side top -fill x
   pack .svn_update.options.branch -side top -fill x
+  pack .svn_update.options.tag -side top -fill x
   pack .svn_update.options.revision -side top -fill x
 
   # If the user wants to simply do a normal update
   radiobutton .svn_update.options.keep.select \
     -text "Update to most recent revision on same branch or trunk." \
-    -variable cvsglb(tagmode_selection) -value "Keep" -anchor w
+    -variable cvsglb(tagmode_selection) -value "Keep" -justify left
 
   message .svn_update.options.keep.explain -font $cvscfg(listboxfont) \
     -justify left -width 400 \
@@ -1336,7 +1377,7 @@ If local directory is on a branch, get latest on that branch."
   # If the user wants to update to the head revision
   radiobutton .svn_update.options.trunk.select \
     -text "Switch local files to be on main trunk" \
-    -variable cvsglb(tagmode_selection) -value "Trunk" -anchor w
+    -variable cvsglb(tagmode_selection) -value "Trunk" -justify left
 
   message .svn_update.options.trunk.explain -font $cvscfg(listboxfont) \
     -justify left -width 400 \
@@ -1349,10 +1390,10 @@ you may want to commit any local changes to that branch first."
   # If the user wants to update to a branch
   radiobutton .svn_update.options.branch.select \
     -text "Switch local files to be on a branch" \
-    -variable cvsglb(tagmode_selection) -value "Branch" -anchor w
+    -variable cvsglb(tagmode_selection) -value "Branch" -justify left
 
   frame .svn_update.options.branch.lblentry
-  label .svn_update.lbranch -text "Branch" -anchor w
+  label .svn_update.lbranch -text "Branch" -justify left
   entry .svn_update.tbranch -relief sunken -textvariable cvsglb(branchname)
 
   pack .svn_update.options.branch.select -side top -fill x
@@ -1363,10 +1404,27 @@ you may want to commit any local changes to that branch first."
   pack .svn_update.tbranch -in .svn_update.options.branch.lblentry \
     -side left -fill x -padx 2 -pady 4
 
+  # If the user wants to update to a tag
+  radiobutton .svn_update.options.tag.select \
+    -text "Switch local files to be on a tag" \
+    -variable cvsglb(tagmode_selection) -value "Tag" -justify left
+
+  frame .svn_update.options.tag.lblentry
+  label .svn_update.ltag -text "Tag" -anchor w
+  entry .svn_update.ttag -relief sunken -textvariable cvsglb(tagname)
+
+  pack .svn_update.options.tag.select -side top -fill x
+  pack .svn_update.options.tag.lblentry -side top -fill x \
+    -expand y -pady 1 -ipady 0
+  pack .svn_update.ltag -in .svn_update.options.tag.lblentry \
+    -side left -fill x -pady 4
+  pack .svn_update.ttag -in .svn_update.options.tag.lblentry \
+    -side left -fill x -padx 2 -pady 4
+
   # Where user enters a revision number
   radiobutton .svn_update.options.revision.select \
-    -text "Update (-r) local files to be a specific revision:" \
-    -variable cvsglb(tagmode_selection) -value "Revision" -anchor w
+    -text "Update local files to be a specific revision:" \
+    -variable cvsglb(tagmode_selection) -value "Revision" -justify left
 
   frame .svn_update.options.revision.lblentry
   label .svn_update.lrev -text "Revision" -anchor w
@@ -1382,16 +1440,13 @@ you may want to commit any local changes to that branch first."
 
   # The OK/Cancel buttons
   button .svn_update.ok -text "OK" \
-    -command { grab release .svn_update
-               wm withdraw .svn_update              
-               svn_opt_update }
+    -command { svn_opt_update; wm withdraw .svn_update }
 
   button .svn_update.apply -text "Apply" \
-    -command svn_opt_update
+    -command { svn_opt_update }
 
   button .svn_update.quit -text "Close" \
-    -command { grab release .svn_update
-               wm withdraw .svn_update }
+    -command { wm withdraw .svn_update }
 
   pack .svn_update.ok .svn_update.apply .svn_update.quit -in .svn_update.down \
     -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1

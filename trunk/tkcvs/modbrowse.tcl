@@ -67,7 +67,8 @@ proc modbrowse_setup {} {
   label .modbrowse.top.lroot -text "Repository"
   ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
   # We can't really do this because we can't necessarily guess
-  # the VCS from a path name
+  # the VCS from a path name. We also don't want to do it for
+  # a SVN repository if we're in a CVS one, for example
   #::picklist::bind .modbrowse.top.troot <Return> \
      { modbrowse_run }
 
