@@ -669,6 +669,37 @@ proc git_checkout {args} {
   gen_log:log T "LEAVE"
 }
 
+# git checkout - called from Update with Options in workdir browser
+proc git_checkout_options {args} {
+  global cvscfg
+  global cvsglb
+  global module_dir
+
+  switch -exact -- $cvsglb(tagmode_selection) {
+    "Keep" {
+       set command "git checkout"
+     }
+    "Trunk" {
+       set command "git checkout master"
+     }
+    "Branch" {
+       set command "git checkout $cvsglb(branchname)"
+     }
+    "Tag" {
+       set command "git checkout $cvscfg(svn_tagdir)"
+     }
+    #"Revision" {
+       ## Let them get away with saying r3 instead of 3
+       #set rev [string trimleft $cvsglb(revnumber) {r}]
+       #set command "git checkout --ignore-ancestry ^/trunk/$module_dir -r $rev"
+     }
+  }
+  set upd_cmd [viewer::new "Git Checkout"]
+  $upd_cmd\::do "$command" 0 status_colortags
+
+  auto_setup_dir $upd_cmd
+}
+
 proc git_merge_conflict {args} {
   global cvscfg
 

@@ -453,9 +453,9 @@ proc add_dialog {args} {
       destroy .add
       cvs_add $binflag [workdir_list_files]
     }
-    checkbutton .add.binary -text "-kb (binary)" \
+    checkbutton .add.binary -text "-kb (binary)" -justify left \
        -variable binflag -onvalue "-kb" -offvalue ""
-    pack .add.binary -side top
+    pack .add.binary -side top -fill x -expand 1
   } elseif {$insvn} {
     .add.down.add configure -command {
       grab release .add
@@ -612,7 +612,7 @@ proc branch_dialog {} {
     }
   } elseif {$ingit} {
     .branch.down.branch configure -command {
-      git_branch $branchname $updflag [workdir_list_files]
+      git_branch $branchname $updflag
       grab release .branch; destroy .branch
     }
   }
@@ -883,7 +883,7 @@ proc cvs_update_options {} {
   frame .update.explaintop
   # Provide an explanation of this dialog box
   label .update.explaintop.explain -relief raised -bd 1 \
-    -text "Update files in local directory"
+    -text "Update all files in local directory"
 
   frame .update.options
   frame .update.options.whichrev -relief groove -border 2
@@ -1285,13 +1285,6 @@ proc release_dialog { args } {
            CVS history file.  Optionally, delete the directory."
   pack .release.top -side top -fill x
   
-  #set mess "This will release these directories:\n\n"
-  #foreach file $filelist {
-    #append mess "   $file\n"
-  #}
-  #message .release.middle -text $mess -aspect 200
-  #pack .release.middle -side top -fill x
-
   checkbutton .release.binary -text "delete (-d)" \
      -variable delflag -onvalue "-d" -offvalue ""
   pack .release.binary -side top
@@ -1350,7 +1343,7 @@ proc svn_update_options {} {
 
   # Provide an explanation of this dialog box
   label .svn_update.explain -relief raised -bd 1 \
-    -text "Update files in local directory"
+    -text "Update all files in local directory"
 
   pack .svn_update.explain \
     -in .svn_update.explaintop -side top -fill x
@@ -1616,3 +1609,146 @@ proc history_browser {} {
   wm deiconify .ci_history
   gen_log:log T "LEAVE"
 }
+
+# Git update with options. Called from workdir bupdateopts button
+proc git_update_options {} {
+  global cvsglb
+  global cvscfg
+
+  gen_log:log T "ENTER"
+
+  if {[winfo exists .git_update]} {
+    wm deiconify .git_update
+    raise .git_update
+    gen_log:log T "LEAVE"
+    return
+  }
+
+  if {! [info exists cvsglb(tagmode_selection)]} {
+    set cvsglb(tagmode_selection) "Keep"
+  }
+
+  toplevel .git_update
+  frame .git_update.explaintop
+  frame .git_update.options
+  frame .git_update.down
+
+  frame .git_update.options.keep -relief groove -border 2
+  frame .git_update.options.trunk -relief groove -border 2
+  frame .git_update.options.branch -relief groove -border 2
+  frame .git_update.options.tag -relief groove -border 2
+  frame .git_update.options.revision -relief groove -border 2
+
+  pack .git_update.down -side bottom -fill x
+  pack .git_update.explaintop -side top -fill x -pady 1
+  pack .git_update.options -side top -fill x -pady 1
+
+  # Provide an explanation of this dialog box
+  label .git_update.explain -relief raised -bd 1 \
+    -text "Update all files in local directory"
+
+  pack .git_update.explain \
+    -in .git_update.explaintop -side top -fill x
+
+  pack .git_update.options.keep -side top -fill x
+  pack .git_update.options.trunk -side top -fill x
+  pack .git_update.options.branch -side top -fill x
+  pack .git_update.options.tag -side top -fill x
+  pack .git_update.options.revision -side top -fill x
+
+  # If the user wants to simply do a normal update
+  radiobutton .git_update.options.keep.select \
+    -text "Update to most recent revision on same branch or trunk." \
+    -variable cvsglb(tagmode_selection) -value "Keep" -justify left
+
+  message .git_update.options.keep.explain -font $cvscfg(listboxfont) \
+    -justify left -width 400 \
+    -text "If local directory is on main trunk, get latest on main trunk.
+If local directory is on a branch, get latest on that branch."
+
+  pack .git_update.options.keep.select -side top -fill x
+  pack .git_update.options.keep.explain -side top -fill x -pady 1 -ipady 0
+
+  # If the user wants to update to the head revision
+  radiobutton .git_update.options.trunk.select \
+    -text "Switch local files to be on master" \
+    -variable cvsglb(tagmode_selection) -value "Trunk" -justify left
+
+  message .git_update.options.trunk.explain -font $cvscfg(listboxfont) \
+    -justify left -width 400 \
+    -text "Advice:  If your local directories are currently on a branch, \
+you may want to commit any local changes to that branch first."
+
+  pack .git_update.options.trunk.select -side top -fill x
+  pack .git_update.options.trunk.explain -side top -fill x -pady 1 -ipady 0
+
+  # If the user wants to update to a branch
+  radiobutton .git_update.options.branch.select \
+    -text "Switch local files to be on a branch" \
+    -variable cvsglb(tagmode_selection) -value "Branch" -justify left
+
+  frame .git_update.options.branch.lblentry
+  label .git_update.lbranch -text "Branch" -justify left
+  entry .git_update.tbranch -relief sunken -textvariable cvsglb(branchname)
+
+  pack .git_update.options.branch.select -side top -fill x
+  pack .git_update.options.branch.lblentry -side top -fill x \
+    -expand y -pady 1 -ipady 0
+  pack .git_update.lbranch -in .git_update.options.branch.lblentry \
+    -side left -fill x -pady 4
+  pack .git_update.tbranch -in .git_update.options.branch.lblentry \
+    -side left -fill x -padx 2 -pady 4
+
+  # If the user wants to update to a tag
+  radiobutton .git_update.options.tag.select \
+    -text "Switch local files to be on a tag" \
+    -variable cvsglb(tagmode_selection) -value "Tag" -justify left
+
+  frame .git_update.options.tag.lblentry
+  label .git_update.ltag -text "Tag" -anchor w
+  entry .git_update.ttag -relief sunken -textvariable cvsglb(tagname)
+
+  pack .git_update.options.tag.select -side top -fill x
+  pack .git_update.options.tag.lblentry -side top -fill x \
+    -expand y -pady 1 -ipady 0
+  pack .git_update.ltag -in .git_update.options.tag.lblentry \
+    -side left -fill x -pady 4
+  pack .git_update.ttag -in .git_update.options.tag.lblentry \
+    -side left -fill x -padx 2 -pady 4
+
+  # Where user enters a revision number
+  #radiobutton .git_update.options.revision.select \
+    -text "Update local files to be a specific revision:" \
+    -variable cvsglb(tagmode_selection) -value "Revision" -justify left
+
+  #frame .git_update.options.revision.lblentry
+  #label .git_update.lrev -text "Revision" -anchor w
+  #entry .git_update.trev -relief sunken -textvariable cvsglb(revnumber)
+
+  #pack .git_update.options.revision.select -side top -fill x
+  #pack .git_update.options.revision.lblentry -side top -fill x \
+    -expand y -pady 1 -ipady 0
+  #pack .git_update.lrev -in .git_update.options.revision.lblentry \
+    -side left -fill x -pady 4
+  #pack .git_update.trev -in .git_update.options.revision.lblentry \
+    -side left -fill x -padx 2 -pady 4
+
+  # The OK/Cancel buttons
+  button .git_update.ok -text "OK" \
+    -command { git_checkout_options; wm withdraw .git_update }
+
+  button .git_update.apply -text "Apply" \
+    -command { git_checkout_options }
+
+  button .git_update.quit -text "Close" \
+    -command { wm withdraw .git_update }
+
+  pack .git_update.ok .git_update.apply .git_update.quit -in .git_update.down \
+    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  # Window Manager stuff
+  wm title .git_update "Update from Repository"
+  wm minsize .git_update 1 1
+  gen_log:log T "LEAVE"
+}
+

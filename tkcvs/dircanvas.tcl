@@ -900,6 +900,9 @@ proc DirCanvas:build {w} {
           "SVN" {
             set DirList($w:$f:popup) svn_conf_pop
           }
+          "GIT" {
+            set DirList($w:$f:popup) git_conf_pop
+          }
         }
       }
       "Not managed*" {
@@ -1221,11 +1224,9 @@ proc DirCanvas:toggle_col {w col} {
   gen_log:log T "LEAVE"
 }
 
-proc DirCanvas:makepopup {w} {
-#
 # Context-sensitive popups for list items
 # We build them all at once here, then bind canvas items to them as appropriate
-#
+proc DirCanvas:makepopup {w} {
   gen_log:log T "ENTER ($w)"
 
   # For plain files in an un-versioned directory
@@ -1328,7 +1329,7 @@ proc DirCanvas:makepopup {w} {
 
   # For CVS files with conflicts
   menu $w.cvs_conf_pop
-  $w.cvs_conf_pop add command -label "Merge Conflict" \
+  $w.cvs_conf_pop add command -label "Merge using TkDiff" \
     -command { cvs_merge_conflict [workdir_list_files] }
   $w.cvs_conf_pop add command -label "CVS Annotate/Blame" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
@@ -1394,9 +1395,9 @@ proc DirCanvas:makepopup {w} {
 
   # For SVN files with conflicts
   menu $w.svn_conf_pop
-  $w.svn_conf_pop add command -label "Merge Conflict" \
+  $w.svn_conf_pop add command -label "Merge using TkDiff" \
     -command { svn_merge_conflict [workdir_list_files] }
-  $w.svn_conf_pop add command -label "Resolve Conflict" \
+  $w.svn_conf_pop add command -label "Mark resolved" \
     -command { svn_resolve [workdir_list_files] }
   $w.svn_conf_pop add command -label "CVS Annotate/Blame" \
     -command { svn_annotate $current_tagname [workdir_list_files] }
@@ -1415,6 +1416,13 @@ proc DirCanvas:makepopup {w} {
     -command { svn_branches [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Remove" \
     -command { subtract_dialog [workdir_list_files] }
+
+  # For Git files with conflicts
+  menu $w.git_conf_pop
+  $w.git_conf_pop add command -label "Merge using TkDiff" \
+    -command { git_merge_conflict [workdir_list_files] }
+  $w.git_conf_pop add command -label "Stage resolved conflict" \
+    -command { git_add [workdir_list_files] }
 
   gen_log:log T "LEAVE"
 }
