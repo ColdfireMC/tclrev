@@ -405,7 +405,6 @@ proc svn_opt_update {} {
     "Revision" {
        # Let them get away with saying r3 instead of 3
        set rev [string trimleft $cvsglb(revnumber) {r}]
-       # FIXME: This doesn't work if you're not on the trunk
        set command "svn switch --ignore-ancestry ^/trunk/$module_dir -r $rev"
      }
   }

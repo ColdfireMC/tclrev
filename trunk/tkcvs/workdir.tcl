@@ -1207,6 +1207,8 @@ proc setup_dir { } {
       -command { git_reset [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -image GitCheckout -command { git_checkout [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal \
+     -command { git_update_options }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
