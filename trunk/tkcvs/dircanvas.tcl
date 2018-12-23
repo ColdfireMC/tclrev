@@ -782,7 +782,7 @@ proc DirCanvas:build {w} {
           "SVN" {
             set DirList($w:$f:popup) stat_svnok_pop
           }
-          "SVN" {
+          "GIT" {
             set DirList($w:$f:popup) stat_gitok_pop
           }
           default {
@@ -1381,6 +1381,8 @@ proc DirCanvas:makepopup {w} {
     -command { svn_branches [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Annotate/Blame" \
     -command { svn_annotate "" [workdir_list_files] }
+  $w.stat_svnok_pop add command -label "SVN Rename" \
+    -command { svn_rename_ask [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Remove" \
     -command { subtract_dialog [workdir_list_files] }
 
@@ -1445,6 +1447,10 @@ proc DirCanvas:makepopup {w} {
     -command { git_branches [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Annotate/Blame" \
     -command { git_annotate "" [workdir_list_files] }
+  $w.stat_gitok_pop add command -label "Git Rename" \
+    -command { git_rename_ask [workdir_list_files] }
+  $w.stat_gitok_pop add command -label "Git Remove" \
+    -command { subtract_dialog [workdir_list_files] }
 
   # For Git files with conflicts
   menu $w.git_conf_pop

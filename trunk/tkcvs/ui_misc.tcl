@@ -208,6 +208,16 @@ proc busy_done {w} {
   }
 }
 
+# Position the dialogs relative to the workdir or module browser
+proc dialog_position {dialog parent} {
+  set x [winfo x $parent]
+  set x [winfo x $parent]
+  set X [expr {$x + 60}]
+  set y [winfo y $parent]
+  set Y [expr {$y + 40}]
+  wm geometry $dialog +$X+$Y
+}
+
 # Take a color like $d9d9d9 and darken it
 proc rgb_shadow {color} {
   set rgb_color [winfo rgb . $color]
