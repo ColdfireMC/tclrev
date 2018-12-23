@@ -257,13 +257,13 @@ proc DirCanvas:loadimages { } {
   image create photo paper \
     -format gif -file [file join $cvscfg(bitmapdir) paper.gif]
   image create photo cvsdir \
-    -format gif -file [file join $cvscfg(bitmapdir) cvsdir.gif]
+    -format gif -file [file join $cvscfg(bitmapdir) dir_cvs.gif]
   image create photo svndir \
-    -format gif -file [file join $cvscfg(bitmapdir) svndir.gif]
+    -format gif -file [file join $cvscfg(bitmapdir) dir_svn.gif]
   image create photo rcsdir \
-    -format gif -file [file join $cvscfg(bitmapdir) rcsdir.gif]
+    -format gif -file [file join $cvscfg(bitmapdir) dir_rcs.gif]
   image create photo gitdir \
-    -format gif -file [file join $cvscfg(bitmapdir) gitdir.gif]
+    -format gif -file [file join $cvscfg(bitmapdir) dir_git.gif]
   image create photo folder \
     -format gif -file [file join $cvscfg(bitmapdir) folder.gif]
   image create photo dir_ok \
@@ -734,28 +734,41 @@ proc DirCanvas:build {w} {
           }
         }
       }
-     "<directory:CVS>" {
-       set DirList($w:$f:icon) cvsdir
+     "<directory:???>" {
+       regexp {<directory:(...)>} $DirList($w:$f:status) null vcs
+       set DirList($w:$f:icon) folder
+       set DirList($w:$f:popup) folder_pop
+       # What VCS controls the folder? Determines the icon
+       switch -- $vcs {
+         "CVS" {
+            set DirList($w:$f:icon) cvsdir
+            set DirList($w:$f:popup) cvsdir_pop
+          }
+         "SVN" {
+            set DirList($w:$f:icon) svndir
+          }
+         "GIT" {
+            set DirList($w:$f:icon) gitdir
+          }
+         "RCS" {
+            set DirList($w:$f:icon) rcsdir
+          }
+       }
+       # Are we in that VCS now? Determines the popop menu
        switch -- $rtype {
          "CVS" {
             set DirList($w:$f:popup) cvscvs_pop
           }
-          default {
-            set DirList($w:$f:popup) cvsdir_pop
+         "SVN" {
+            set DirList($w:$f:popup) svndir_pop
+          }
+         "GIT" {
+            set DirList($w:$f:popup) gitdir_pop
+          }
+         "RCS" {
+            set DirList($w:$f:popup) folder_pop
           }
         }
-      }
-     "<directory:SVN>" {
-       set DirList($w:$f:icon) svndir
-       set DirList($w:$f:popup) svndir_pop
-      }
-     "<directory:RCS>" {
-       set DirList($w:$f:icon) rcsdir
-       set DirList($w:$f:popup) folder_pop
-      }
-     "<directory:GIT>" {
-       set DirList($w:$f:icon) gitdir
-       set DirList($w:$f:popup) gitdir_pop
       }
      "Up-to-date" {
        set DirList($w:$f:icon) stat_ok
@@ -768,6 +781,9 @@ proc DirCanvas:build {w} {
           }
           "SVN" {
             set DirList($w:$f:popup) stat_svnok_pop
+          }
+          "SVN" {
+            set DirList($w:$f:popup) stat_gitok_pop
           }
           default {
             set DirList($w:$f:popup) paper_pop
@@ -1233,14 +1249,14 @@ proc DirCanvas:makepopup {w} {
   menu $w.paper_pop
   $w.paper_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
-  $w.paper_pop add command -label "Delete Locally" \
+  $w.paper_pop add command -label "Delete" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For plain directories in an un-versioned directory
   menu $w.folder_pop
   $w.folder_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
-  $w.folder_pop add command -label "Delete Locally" \
+  $w.folder_pop add command -label "Delete" \
     -command { workdir_delete_file [workdir_list_files] }
 
   # For plain directories in CVS
@@ -1252,7 +1268,7 @@ proc DirCanvas:makepopup {w} {
   $w.incvs_folder_pop add command -label "Delete Locally" \
     -command { workdir_delete_file [workdir_list_files] }
 
-  # For CVS directories when cwd is in CVS
+  # For CVS subdirectories
   menu $w.cvscvs_pop
   $w.cvscvs_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
@@ -1266,10 +1282,12 @@ proc DirCanvas:makepopup {w} {
   $w.cvsdir_pop add command -label "CVS Release" \
     -command { release_dialog [workdir_list_files] }
 
-  # For CVS directories when cwd isn't in CVS
+  # For Git subdirectories
   menu $w.gitdir_pop
   $w.gitdir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
+  $w.gitdir_pop add command -label "Git Remove Recursively" \
+    -command { subtractdir_dialog [workdir_list_files] }
 
   # For CVS files
   menu $w.stat_cvsok_pop
@@ -1404,7 +1422,7 @@ proc DirCanvas:makepopup {w} {
   $w.svn_conf_pop add command -label "Browse the Log Diagram" \
     -command { svn_branches [workdir_list_files] }
 
-  # For SVN directories
+  # For SVN subdirectories
   menu $w.svndir_pop
   $w.svndir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
@@ -1416,6 +1434,17 @@ proc DirCanvas:makepopup {w} {
     -command { svn_branches [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Remove" \
     -command { subtract_dialog [workdir_list_files] }
+
+  # For Git files
+  menu $w.stat_gitok_pop
+  $w.stat_gitok_pop add command -label "Edit" \
+    -command { workdir_edit_file [workdir_list_files] }
+  $w.stat_gitok_pop add command -label "Git Log" \
+    -command { git_log $cvscfg(ldetail) [workdir_list_files] }
+  $w.stat_gitok_pop add command -label "Browse the Log Diagram" \
+    -command { git_branches [workdir_list_files] }
+  $w.stat_gitok_pop add command -label "Git Annotate/Blame" \
+    -command { git_annotate "" [workdir_list_files] }
 
   # For Git files with conflicts
   menu $w.git_conf_pop

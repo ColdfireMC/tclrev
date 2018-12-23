@@ -306,6 +306,19 @@ proc git_rm {args} {
   gen_log:log T "LEAVE"
 }
 
+# does git rm -r from workdir browser popup menu
+proc git_remove_dir {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+  set filelist [join $args]
+
+  set command [exec::new "git rm -r $filelist"]
+  auto_setup_dir $command
+
+  gen_log:log T "LEAVE"
+}
+
 # does git add from workdir browser
 proc git_add {args} {
   global cvscfg
