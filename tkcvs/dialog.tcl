@@ -1250,7 +1250,7 @@ proc subtractdir_dialog {args} {
 }
 
 # For New Directory and Edit File. Allows entry of name. Called from workdir browser.
-proc file_input_and_do {title command} {
+proc file_input_and_do {title command {filearg {}}} {
   global filename
 
   gen_log:log T "ENTER ($title $command)"
@@ -1271,10 +1271,11 @@ proc file_input_and_do {title command} {
   frame .file_input_and_do.bottom
   pack .file_input_and_do.bottom -side bottom -fill x -pady 4 -padx 4
 
+  # The command has to be a tcl command, not something to be exec'd
   button .file_input_and_do.ok -text "Ok" \
     -command "
       .file_input_and_do.close invoke
-      $command \$filename
+      $command $filearg \\\"\$filename\\\"
     "
   button .file_input_and_do.close -text "Cancel" \
     -command {
@@ -1782,14 +1783,4 @@ you may want to commit any local changes to that branch first."
   wm minsize .git_update 1 1
 
   gen_log:log T "LEAVE"
-}
-
-# Position the dialogs relative to the workdir or module browser
-proc dialog_position {dialog parent} {
-  set x [winfo x $parant]
-  set x [winfo x $parant]
-  set X [expr {$x + 60}]
-  set y [winfo y $parant]
-  set Y [expr {$y + 40}]
-  wm geometry $dialog +$X+$Y
 }

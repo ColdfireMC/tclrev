@@ -343,6 +343,38 @@ proc git_add {args} {
   gen_log:log T "LEAVE"
 }
 
+# Called from workdir browser popup
+proc git_rename_ask {args} {
+
+  gen_log:log T "ENTER ($args)"
+  set file [lindex $args 0]
+  if {$file eq ""} {
+    cvsfail "Rename:\nPlease select a file !" .workdir
+    return
+  }
+
+  # Send it to the dialog to ask for the filename
+  file_input_and_do "Git Rename" "git_rename \"$file\""
+
+  gen_log:log T "LEAVE"
+}
+
+# The callback for git_rename_ask and file_input_and_do
+proc git_rename {args} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($args)"
+
+  set v [viewer::new "SVN rename"]
+  set command "git mv [lindex $args 0] [lindex $args 1]"
+  $v\::do "$command"
+
+  if {$cvscfg(auto_status)} {
+    setup_dir
+  }
+  gen_log:log T "LEAVE"
+}
+
 proc git_reset {args} {
   global cvscfg
 
