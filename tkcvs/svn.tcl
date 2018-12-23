@@ -1167,11 +1167,8 @@ proc svn_pathforcopy {tagname b_or_t viewer} {
   return $to_path
 }
 
+# join (merge) a chosen revision of local file to the current revision.
 proc svn_merge {parent frompath since currentpath frombranch args} {
-#
-# This does a join (merge) of a chosen revision of localfile to the
-# current revision.
-#
   global cvscfg
   global cvsglb
 

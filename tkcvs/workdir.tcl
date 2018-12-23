@@ -952,9 +952,9 @@ proc setup_dir { } {
   }
 
   # Default for these, only Git is different
-  .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state normal \
+  .workdir.bottom.buttons.cvsfuncs.bcheckin configure -state disabled \
     -image Checkin
-  .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
+  .workdir.bottom.buttons.cvsfuncs.bupdate configure -state disabled \
     -image Checkout
   set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
      {"Add the selected files to the repository"}

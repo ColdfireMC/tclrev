@@ -10,7 +10,7 @@ if {[catch "image type arr_dn"]} {
   workdir_images
 }
 
-# Creates the widgets for the dynamic form dialog
+# Creates the widgets for the dynamic forms called from the module browser
 proc dialog_FormCreate { title form_data } {
   global cvscfg
   global cvsglb
@@ -104,6 +104,7 @@ proc dialog_FormCreate { title form_data } {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title $w $title
+  dialog_position $w .modbrowse
   wm minsize $w 1 1
 
   return
@@ -132,7 +133,7 @@ proc dialog_FormComplete { w form_data } {
   return 1
 }
 
-# Check out a CVS module from the Repository Browser
+# Check out a CVS module from the module browser
 proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   global dynamic_dialog
   global dialog_action
@@ -185,7 +186,7 @@ proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   gen_log:log T "LEAVE"
 }
 
-# Export a CVS module from the Repository Browser
+# Export a CVS module from the module browser
 proc dialog_cvs_export { cvsroot module {revtag {}} } {
   global dynamic_dialog
   global dialog_action
@@ -230,7 +231,7 @@ proc dialog_cvs_export { cvsroot module {revtag {}} } {
   gen_log:log T "LEAVE"
 }
 
-# Checkout or Export a SVN module from the Repository Browser
+# Checkout or Export a SVN module from the module browser
 proc dialog_svn_checkout { svnroot path command } {
   global dynamic_dialog
   global dialog_action
@@ -269,7 +270,7 @@ proc dialog_svn_checkout { svnroot path command } {
 }
 
 
-# Make a branch or tag (svn copy) from the Repository Browser
+# Make a branch or tag (svn copy) from the module browser
 proc dialog_svn_tag { svnroot path b_or_t } {
   global dynamic_dialog
   global dialog_action
@@ -418,6 +419,78 @@ proc dialog_svn_patch { cvsroot pathA pathB summary } {
   gen_log:log T "LEAVE"
 }
 
+# Tag a module. CVS only. Called from the module browser.
+proc rtag_dialog { cvsroot module b_or_t } {
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER ($cvsroot $module $b_or_t)"
+
+  toplevel .modtag
+  grab set .modtag
+
+  frame .modtag.top
+  pack .modtag.top -side top -fill x
+
+  message .modtag.top.lbl -aspect 300 -relief groove \
+    -text "Tag the module \"$module\" with the new tag you specify.\
+           If you fill in \"Existing Tag\", the revisions having that tag will get\
+           the new tag.  Otherwise, the head revision will be tagged."
+  label .modtag.top.olbl -text "Existing Tag" -anchor w
+  entry .modtag.top.oentry -textvariable otag \
+    -relief sunken
+  label .modtag.top.nlbl -text "New Tag" -anchor w
+  entry .modtag.top.nentry -textvariable ntag \
+    -relief sunken
+  checkbutton .modtag.top.branch -text "Branch tag (-b)" \
+     -variable b_or_t -onvalue "branch" -offvalue "tag"
+  checkbutton .modtag.top.force -text "Move existing (-F)" \
+     -variable force -onvalue "yes" -offvalue "no"
+
+  grid columnconf .modtag.top 1 -weight 1
+  grid rowconf .modtag.top 4 -weight 1
+  grid .modtag.top.lbl -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
+  grid .modtag.top.olbl -column 0 -row 1 -sticky nw
+  grid .modtag.top.oentry -column 1 -row 1
+  grid .modtag.top.nlbl -column 0 -row 2 -sticky nw
+  grid .modtag.top.nentry -column 1 -row 2
+  grid .modtag.top.branch -column 1 -row 3 -sticky w
+  grid .modtag.top.force -column 1 -row 4 -sticky w
+
+  frame .modtag.down -relief groove -bd 2
+  pack .modtag.down -side top -fill x
+
+  button .modtag.down.tag -text "Tag" \
+    -command "
+               cvs_rtag $cvsroot $module $b_or_t \$force \$otag \$ntag; \
+               .modtag.down.cancel invoke
+             "
+
+  button .modtag.down.delete -text "Remove" \
+    -command "
+               cvs_rtag $cvsroot $module tag remove \$otag \$ntag; \
+               .modtag.down.cancel invoke
+             "
+
+  button .modtag.down.cancel -text "Cancel" \
+    -command {
+               grab release .modtag
+               destroy .modtag
+             }
+
+  pack .modtag.down.tag .modtag.down.delete .modtag.down.cancel -in .modtag.down -side left \
+    -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+
+  bind .modtag.top.nentry <Return> \
+    { .modtag.down.tag invoke }
+
+  wm title .modtag "Tag Module"
+  dialog_position .modtag .modbrowse
+  wm minsize .modtag 1 1
+  gen_log:log T "LEAVE"
+}
+
+# Add files to the VCS. Called from workdir browser
 proc add_dialog {args} {
   global cvs
   global cvsglb
@@ -477,6 +550,7 @@ proc add_dialog {args} {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .add "Add Files"
+  dialog_position .add .workdir
   wm minsize .add 1 1
 
   gen_log:log T "LEAVE"
@@ -552,7 +626,9 @@ proc tag_dialog {} {
     }
   }
   wm title .tag "Tag"
+  dialog_position .tag .workdir
   wm minsize .tag 1 1
+
   gen_log:log T "LEAVE"
 }
 
@@ -617,79 +693,12 @@ proc branch_dialog {} {
     }
   }
   wm title .branch "Branch"
+  dialog_position .branch .workdir
   wm minsize .branch 1 1
   gen_log:log T "LEAVE"
 }
 
-proc rtag_dialog { cvsroot module b_or_t } {
-  global cvscfg
-  global cvsglb
-
-  gen_log:log T "ENTER ($cvsroot $module $b_or_t)"
-
-  toplevel .modtag
-  grab set .modtag
-
-  frame .modtag.top
-  pack .modtag.top -side top -fill x
-
-  message .modtag.top.lbl -aspect 300 -relief groove \
-    -text "Tag the module \"$module\" with the new tag you specify.\
-           If you fill in \"Existing Tag\", the revisions having that tag will get\
-           the new tag.  Otherwise, the head revision will be tagged."
-  label .modtag.top.olbl -text "Existing Tag" -anchor w
-  entry .modtag.top.oentry -textvariable otag \
-    -relief sunken
-  label .modtag.top.nlbl -text "New Tag" -anchor w
-  entry .modtag.top.nentry -textvariable ntag \
-    -relief sunken
-  checkbutton .modtag.top.branch -text "Branch tag (-b)" \
-     -variable b_or_t -onvalue "branch" -offvalue "tag"
-  checkbutton .modtag.top.force -text "Move existing (-F)" \
-     -variable force -onvalue "yes" -offvalue "no"
-
-  grid columnconf .modtag.top 1 -weight 1
-  grid rowconf .modtag.top 4 -weight 1
-  grid .modtag.top.lbl -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
-  grid .modtag.top.olbl -column 0 -row 1 -sticky nw
-  grid .modtag.top.oentry -column 1 -row 1
-  grid .modtag.top.nlbl -column 0 -row 2 -sticky nw
-  grid .modtag.top.nentry -column 1 -row 2
-  grid .modtag.top.branch -column 1 -row 3 -sticky w
-  grid .modtag.top.force -column 1 -row 4 -sticky w
-
-  frame .modtag.down -relief groove -bd 2
-  pack .modtag.down -side top -fill x
-
-  button .modtag.down.tag -text "Tag" \
-    -command "
-               cvs_rtag $cvsroot $module $b_or_t \$force \$otag \$ntag; \
-               .modtag.down.cancel invoke
-             "
-
-  button .modtag.down.delete -text "Remove" \
-    -command "
-               cvs_rtag $cvsroot $module tag remove \$otag \$ntag; \
-               .modtag.down.cancel invoke
-             "
-
-  button .modtag.down.cancel -text "Cancel" \
-    -command {
-               grab release .modtag
-               destroy .modtag
-             }
-
-  pack .modtag.down.tag .modtag.down.delete .modtag.down.cancel -in .modtag.down -side left \
-    -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-
-  bind .modtag.top.nentry <Return> \
-    { .modtag.down.tag invoke }
-
-  wm title .modtag "Tag Module"
-  wm minsize .modtag 1 1
-  gen_log:log T "LEAVE"
-}
-
+# Remove from VCS. Called from workdir browser
 proc subtract_dialog {args} {
   global cvsglb
   global incvs insvn inrcs ingit
@@ -753,11 +762,13 @@ proc subtract_dialog {args} {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .subtract "Remove Files"
+  dialog_position .subtract .workdir
   wm minsize .subtract 1 1
 
   gen_log:log T "LEAVE"
 }
 
+# Set the edit flag on CVS files. Called from the workdir browser.
 proc edit_dialog {args} {
   global cvsglb
   global incvs insvn inrcs ingit
@@ -802,11 +813,13 @@ proc edit_dialog {args} {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .editflag "Edit Files"
+  dialog_position .editflag .workdir
   wm minsize .editflag 1 1
 
   gen_log:log T "LEAVE"
 }
 
+# Unset the edit flag on CVS files. Called from the workdir browser.
 proc unedit_dialog {args} {
   global cvsglb
   global incvs insvn inrcs ingit
@@ -851,14 +864,13 @@ proc unedit_dialog {args} {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .uneditflag "Unedit Files"
+  dialog_position .uneditflag .workdir
   wm minsize .uneditflag 1 1
 
   gen_log:log T "LEAVE"
 }
 
-#
-# Set up a small(?) update dialog.
-#
+# CVS update with options. Called from workdir browser
 proc cvs_update_options {} {
   global cvsglb
   global cvscfg
@@ -1071,6 +1083,7 @@ Note:  The tag will be 'sticky' for the directory and for each file."
   # Window Manager stuff
   wm title .update "Update a Module"
   wm minsize .update 1 1
+  dialog_position .update .workdir
   gen_log:log T "LEAVE"
 }
 
@@ -1121,6 +1134,7 @@ proc update_with_options {} {
   gen_log:log T "LEAVE"
 }
 
+# Recursively add directories. Called from workdir browser.
 proc addir_dialog {args} {
   global cvs
   global incvs insvn inrcs ingit
@@ -1173,20 +1187,18 @@ proc addir_dialog {args} {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .add "Add Directories"
+  dialog_position .add .workdir
   wm minsize .add 1 1
 
   gen_log:log T "LEAVE"
 }
 
+# Remove directories from module. Called from workdir browser
 proc subtractdir_dialog {args} {
   global cvs
   global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($args)"
-  if {! $incvs} {
-    cvs_notincvs
-    return 1
-  }
 
   set filelist [join $args]
   if {$filelist == ""} {
@@ -1210,12 +1222,20 @@ proc subtractdir_dialog {args} {
   message .subtract.middle -text $mess -aspect 200
   pack .subtract.middle -side top -fill x
   frame .subtract.down
-  button .subtract.down.remove -text "Remove" \
-    -command {
+  button .subtract.down.remove -text "Remove"
+  if {$incvs} {
+    .subtract.down.remove configure -command {
       grab release .subtract
       destroy .subtract
       cvs_remove_dir [workdir_list_files]
     }
+  } elseif {$ingit} {
+    .subtract.down.remove configure -command {
+      grab release .subtract
+      destroy .subtract
+      git_remove_dir [workdir_list_files]
+    }
+  }
   button .subtract.down.cancel -text "Cancel" \
     -command { grab release .subtract; destroy .subtract }
   pack .subtract.down -side bottom -fill x -expand 1
@@ -1223,11 +1243,13 @@ proc subtractdir_dialog {args} {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .subtract "Remove Directories"
+  dialog_position .subtract .workdir
   wm minsize .subtract 1 1
 
   gen_log:log T "LEAVE"
 }
 
+# For New Directory and Edit File. Allows entry of name. Called from workdir browser.
 proc file_input_and_do {title command} {
   global filename
 
@@ -1264,12 +1286,15 @@ proc file_input_and_do {title command} {
     -side left -fill both -expand 1
 
   wm title .file_input_and_do $title
+  dialog_position .file_input_and_do .workdir
   wm minsize .file_input_and_do 1 1
   focus .file_input_and_do.top.entry
 
   gen_log:log T "LEAVE"
 }
 
+# To release a CVS directory from being recorded in the history
+# file as checked out. Called from workdir browser
 proc release_dialog { args } {
 
   gen_log:log T "ENTER ($args)"
@@ -1286,8 +1311,8 @@ proc release_dialog { args } {
   pack .release.top -side top -fill x
   
   checkbutton .release.binary -text "delete (-d)" \
-     -variable delflag -onvalue "-d" -offvalue ""
-  pack .release.binary -side top
+     -variable delflag -onvalue "-d" -offvalue "" -justify left
+  pack .release.binary -side top -expand 1 -fill x
 
   frame .release.down
   button .release.down.release -text "Release" \
@@ -1303,12 +1328,13 @@ proc release_dialog { args } {
     -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   wm title .release "Release Directories"
+  dialog_position .release .workdir
   wm minsize .release 1 1
 
   gen_log:log T "LEAVE"
 }
 
-# SVN update with options. Called from workdir bupdateopts button
+# SVN update with options. Called from workdir browser
 proc svn_update_options {} {
   global cvsglb
   global cvscfg
@@ -1446,10 +1472,12 @@ you may want to commit any local changes to that branch first."
 
   # Window Manager stuff
   wm title .svn_update "Update from Repository"
+  dialog_position .svn_update .workdir
   wm minsize .svn_update 1 1
   gen_log:log T "LEAVE"
 }
 
+# Called from merge procs in svn.tcl and cvs.tcl
 proc assemble_mergetags {from} {
   global cvscfg
   global current_tagname
@@ -1486,6 +1514,7 @@ proc assemble_mergetags {from} {
   return [list $curr_tag $fromtag $totag]
 }
 
+# Ask to verify and finish (commit) a merge. Called from workdir browser
 proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
   global cvscfg
 
@@ -1494,6 +1523,7 @@ proc dialog_merge_notice {sys from frombranch fromtag totag filelist} {
   }
   toplevel .reminder
   wm title .reminder "Tag and Commit"
+  dialog_position .reminder .workdir
   frame .reminder.top
   label .reminder.m1 -text \
     "Now, you must examine the merged files and resolve any conflicts.\
@@ -1748,7 +1778,18 @@ you may want to commit any local changes to that branch first."
 
   # Window Manager stuff
   wm title .git_update "Update from Repository"
+  dialog_position .git_update .workdir
   wm minsize .git_update 1 1
+
   gen_log:log T "LEAVE"
 }
 
+# Position the dialogs relative to the workdir or module browser
+proc dialog_position {dialog parent} {
+  set x [winfo x $parant]
+  set x [winfo x $parant]
+  set X [expr {$x + 60}]
+  set y [winfo y $parant]
+  set Y [expr {$y + 40}]
+  wm geometry $dialog +$X+$Y
+}

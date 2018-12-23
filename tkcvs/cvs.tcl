@@ -953,8 +953,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   gen_log:log T "LEAVE"
 }
 
-# This does a join (merge) of a chosen revision of localfile to the
-# current revision.
+# join (merge) a chosen revision of local file to the current revision.
 proc cvs_merge {parent from since frombranch args} {
   global cvs
   global cvscfg
@@ -1021,6 +1020,7 @@ proc cvs_merge {parent from since frombranch args} {
   gen_log:log T "LEAVE"
 }
 
+# Commit and tag a merge
 proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   global cvs
   global cvscfg
@@ -1487,7 +1487,7 @@ proc cvs_release {delflag args} {
       return
     }
   
-    set commandline "$cvs -n -q update \"$directory\""
+    set commandline "$cvs -d $cvscfg(cvsroot) -n -q update \"$directory\""
     gen_log:log C "$commandline"
     set ret [catch {eval "exec $commandline"} view_this]
     if {$view_this != ""} {
@@ -1498,7 +1498,7 @@ proc cvs_release {delflag args} {
         return
       }
     }
-    set commandline "$cvs -Q release $delflag \"$directory\""
+    set commandline "$cvs -d $cvscfg(cvsroot) -Q release $delflag \"$directory\""
     set ret [catch {eval "exec $commandline"} view_this]
     gen_log:log C "$commandline"
     if {$ret != 0} {
