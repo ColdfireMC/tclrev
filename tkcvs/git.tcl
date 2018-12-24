@@ -375,6 +375,7 @@ proc git_rename {args} {
   gen_log:log T "LEAVE"
 }
 
+# Revert. Called from workdir browser
 proc git_reset {args} {
   global cvscfg
 

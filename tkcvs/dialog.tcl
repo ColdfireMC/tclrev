@@ -1167,9 +1167,9 @@ proc addir_dialog {args} {
   message .add.middle -text $mess -aspect 200
   pack .add.middle -side top -fill x
 
-  checkbutton .add.binary -text "-kb (binary)" \
+  checkbutton .add.binary -text "-kb (binary)" -justify left \
      -variable binflag -onvalue "-kb" -offvalue ""
-  pack .add.binary -side top
+  pack .add.binary -side top -expand 1 -fill x
 
   frame .add.down
   button .add.down.add -text "Add" \
@@ -1272,11 +1272,19 @@ proc file_input_and_do {title command {filearg {}}} {
   pack .file_input_and_do.bottom -side bottom -fill x -pady 4 -padx 4
 
   # The command has to be a tcl command, not something to be exec'd
-  button .file_input_and_do.ok -text "Ok" \
-    -command "
-      .file_input_and_do.close invoke
-      $command $filearg \\\"\$filename\\\"
-    "
+  if {$filearg != ""} {
+    button .file_input_and_do.ok -text "Ok" \
+      -command "
+        .file_input_and_do.close invoke
+        $command $filearg \\\"\$filename\\\"
+      "
+  } else {
+    button .file_input_and_do.ok -text "Ok" \
+      -command "
+        .file_input_and_do.close invoke
+        $command \"\$filename\"
+      "
+  }
   button .file_input_and_do.close -text "Cancel" \
     -command {
       grab release .file_input_and_do

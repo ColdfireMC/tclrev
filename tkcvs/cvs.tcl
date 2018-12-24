@@ -450,7 +450,7 @@ proc cvs_add_dir {binflag args} {
     cvs_notincvs
     return 1
   }
-  set filelist [join $args]
+  set filelist $args
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
     return 1
