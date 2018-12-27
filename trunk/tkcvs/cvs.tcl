@@ -1486,6 +1486,10 @@ proc cvs_release {delflag args} {
       cvsfail "$directory is not a directory" .workdir
       return
     }
+    # We're in the level above the directory to be released, so we don't necessarily
+    # know its root
+    read_cvs_dir "$directory/CVS"
+    gen_log:log D "$directory: CVSROOT=$cvscfg(cvsroot)"
   
     set commandline "$cvs -d $cvscfg(cvsroot) -n -q update \"$directory\""
     gen_log:log C "$commandline"
