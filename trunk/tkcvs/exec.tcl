@@ -140,24 +140,26 @@ namespace eval ::exec {
           return
         }
 
-        # FIXME: can we do it by word, not line?
-        if {$filter != ""} {
+        gen_log:log F "STDOUT:  $line"
+        append data "$line\n"
+        # In case we lost the viewer
+        if {$viewer eq ""} {
+          return
+        }
+        if {$filter ne ""} {
+          # Send the line to the filter, which may return a tag
           set filtered_line [$filter [namespace current] $line]
           set texttag [lindex $filtered_line 0]
           set line [lindex $filtered_line 1]
-        }
-        append data "$line\n"
-        if {$viewer != ""} {
-          if {$filter != ""} {
-            if {$texttag != "noshow"} {
-              $v_w.text insert end "$line\n" $texttag
-            }
-          } else {
-            $v_w.text insert end "$line\n"
+          # One possible tag is "noshow" in which case we suppress the line
+          # FIXME: there's a builtin "elide" tag now, should we use it?
+          if {$texttag != "noshow"} {
+            $v_w.text insert end "$line\n" $texttag
           }
-          $v_w.text yview end
+        } else {
+          $viewer\::ansi_print "$line"
         }
-        gen_log:log F "STDOUT:  $line"
+        $v_w.text yview end
       }
 
       proc err_handler {} {
@@ -294,6 +296,8 @@ namespace eval ::exec {
   }
 }
 
+# This viewer kicks off an exec::new and display its output.
+# It can call a filter to process the output line in some way
 namespace eval ::viewer {
   variable instance 0
   #
@@ -357,11 +361,69 @@ namespace eval ::viewer {
         }
       }
 
-      # Call this proc to write arbitrary text to the viewer
+      # Call this proc to write arbitrary text to the viewer, possibly
+      # with a tag to color it
       proc log { text {texttag {}} } {
         variable w
         $w.text insert end $text $texttag 
         $w.text yview end
+      }
+
+      # A filter that detects ANSI color codes and changes them to tags
+      proc ansi_print { line } {
+        variable w
+        global cvscfg
+
+        # ANSI colors
+        set ansi(30m) black
+        set ansi(31m) red
+        set ansi(32m) green
+        set ansi(33m) yellow
+        set ansi(34m) blue
+        set ansi(35m) magenta
+        set ansi(36m) cyan
+        set ansi(37m) white
+        set ansi(m) none
+        # Bold etc, which let's not do for now
+        set ansi(1m) "" ;#bold
+        set ansi(4m) "" ;#underline
+        set ansi(5m) "" ;#blink
+        set ansi(7m) "" ;#inverse
+      
+        set newline ""
+        set ansicolor none
+        set idx 0
+        while {$idx < [string length $line]} {
+          set char [string index $line $idx]
+          binary scan [encoding convertto ascii $char] c* x
+          # If x=27, that's the escape
+          if {$x == 27} {
+            set char "^"
+            incr idx
+            set seq $idx
+            set nextchar [string index $line $seq]
+            binary scan [encoding convertto ascii $nextchar] c* y
+            # If the next char isn't [, I don't know what this is
+            if {$y != 91} {
+              gen_log:log D "UNKNOWN ESCAPE $y ($nextchar)"
+              continue
+            }
+            set code ""
+            while {($y != 109) && ([expr {$idx - $seq}] < 5)} {
+              set nextchar [string index $line $idx]
+              binary scan [encoding convertto ascii $nextchar] c* y
+              append code [string index $line $idx]
+              incr idx
+            }
+            set code [string range $code 1 end]
+            set ansicolor $ansi($code)
+          } else {
+            $w.text insert end $char $ansicolor
+            incr idx
+          }
+          #gen_log:log D "$idx|$x| $char  TAG=$ansicolor"
+        }
+        $w.text insert end "\n"
       }
 
       proc search {} {
@@ -433,56 +495,6 @@ proc status_colortags {exec line} {
   return [list $tag $line]
 }
 
-# A filter for output lines from GIT status
-# Returns the name of the tag to use when printing
-# the line in the text widget
-proc status_colortags_git {exec line} {
-  global cvscfg
-
-  #gen_log:log T "ENTER ($exec \"$line\")"
-  set tag default
-  # mode is a two-character field where
-  # X is the modification state of the index and
-  # Y is the state of the work tree
-  #    ' ' = unmodified
-  #    M = modified
-  #    A = added
-  #    D = deleted
-  #    R = renamed
-  #    C = copied
-  #    U = updated but unmerged
-
-  set mode1 [string index $line 0]
-  set mode2 [string index $line 1]
-  set file [lrange $line 1 end]
-  set mode "$mode1$mode2"
-    gen_log:log D "$line"
-    gen_log:log D "mode \"$mode\" file $file"
-    switch -glob -- $mode {
-      "M " { set tag updated }
-      " M" { set tag modified }
-      "A*" { set tag added }
-      "D*" { set tag removed }
-      "R*" { set tag renamed }
-      "C*" { set tag copied }
-      "U*" { set tag conflict }
-      "??" { set tag [expr {$cvscfg(status_filter) ? {noshow} : {unknown}}] }
-      default { set tag default }
-    }
-  #gen_log:log T "LEAVE: $tag"
-  return [list $tag $line]
-}
-
-proc log_colortags_git {exec line} {
-  gen_log:log T "ENTER ($exec \"$line\")"
-  set tag default
-  if {[regexp {[\s\*]*commit } $line]} {
-    set tag yellow
-  }
-  gen_log:log T "LEAVE: $tag"
-  return [list $tag $line]
-}
-
 # A filter to colorize diff (patch) output
 proc patch_colortags {exec line} {
   global cvscfg
@@ -517,63 +529,9 @@ proc hilight_rcslog {exec line} {
   return [list $tag $line]
 }
 
-# A filter that detects ANSI color codes and changes them to tags
-proc ansi_colortags {exec line} {
-  # ANSI colors
-  set ansi(30m) black
-  set ansi(31m) red
-  set ansi(32m) green
-  set ansi(33m) yellow
-  set ansi(34m) blue
-  set ansi(35m) magenta
-  set ansi(36m) cyan
-  set ansi(37m) white
-  set ansi(m) none
-  # Bold, which let's not do
-  set ansi(1m) ""
 
-  gen_log:log T "ENTER: $line"
-  set newline ""
-  set tags {}
-  set idx 0
-  while {$idx < [string length $line]} {
-    set char [string index $line $idx]
-    binary scan [encoding convertto ascii $char] c* x
-    # If x=27, that's the escape
-    if {$x == 27} {
-      set char "^"
-      incr idx
-      set seq $idx
-      set nextchar [string index $line $seq]
-      binary scan [encoding convertto ascii $nextchar] c* y
-      # If the next char isn't [, I don't know what this is
-      if {$y != 91} {
-        gen_log:log D "UNKNOWN ESCAPE $y ($nextchar)"
-        continue
-      }
-      set code ""
-      while {($y != 109) && ([expr {$idx - $seq}] < 5)} {
-        set nextchar [string index $line $idx]
-        binary scan [encoding convertto ascii $nextchar] c* y
-        append code [string index $line $idx]
-        incr idx
-      }
-      set code [string range $code 1 end]
-      #gen_log:log D "TAG=$ansi($code)"
-      lappend tags $ansi($code)
-    } else {
-      append newline $char
-      incr idx
-    }
-    #gen_log:log D "$idx|$x| $char"
-  }
-  # FIXME: it colors the whole line by the first tag, not really what we want
-  set tag [lindex $tags 0]
-  gen_log:log T "LEAVE: $tag $newline"
-  return [list $tag $newline]
-}
-
-# This is a plain viewer that prints whatever text is sent to it
+# This is a plain viewer that prints whatever text is sent to it.
+# Called directly with input gathered from an eval exec, not exec::new
 namespace eval ::view_output {
   variable instance 0
 
