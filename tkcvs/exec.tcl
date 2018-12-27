@@ -140,19 +140,18 @@ namespace eval ::exec {
           return
         }
 
-        gen_log:log F "STDOUT:  $line"
-        append data "$line\n"
-        # In case we lost the viewer
-        if {$viewer eq ""} {
-          return
-        }
         if {$filter ne ""} {
           # Send the line to the filter, which may return a tag
           set filtered_line [$filter [namespace current] $line]
           set texttag [lindex $filtered_line 0]
           set line [lindex $filtered_line 1]
-          # One possible tag is "noshow" in which case we suppress the line
-          # FIXME: there's a builtin "elide" tag now, should we use it?
+        }
+        gen_log:log F "STDOUT:  $line"
+        append data "$line\n"
+        if {$viewer eq ""} {
+          return
+        }
+        if {$filter ne ""} {
           if {$texttag != "noshow"} {
             $v_w.text insert end "$line\n" $texttag
           }
