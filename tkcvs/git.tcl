@@ -260,22 +260,16 @@ proc git_log {detail args} {
     set title "Git Log $filelist ($detail)"
   }
 
-  set commandline "git log --no-color"
+  set commandline "git log"
   switch -- $detail {
     latest {
       append flags " --pretty=oneline --max-count=1"
-      set filter ""
     }
     summary {
       append flags " --pretty=oneline"
-      set filter ""
     }
     verbose {
       append flags " --graph --all"
-      set filter log_colortags_git
-    }
-    default {
-      set filter ""
     }
   }
 
@@ -285,7 +279,7 @@ proc git_log {detail args} {
       $v\::log "-- $file -------------------------------\n" blue
     }
     set command "git log $flags -- \"$file\""
-    $v\::do "$command" 1 $filter
+    $v\::do "$command" 1
     $v\::wait
   }
 
@@ -433,7 +427,8 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  set commandline "git log --graph --all --no-color"
+  #set commandline "git log --graph --all"
+  set commandline "git log --graph"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -442,7 +437,7 @@ proc git_log_rev {rev file} {
   append title " $file"
 
   set logcmd [viewer::new "$title"]
-  $logcmd\::do "$commandline" 0 log_colortags_git
+  $logcmd\::do "$commandline" 0
 
   gen_log:log T "LEAVE"
 }
@@ -464,7 +459,7 @@ proc git_check {} {
   }
   set command "git status $flags"
   set check_cmd [viewer::new $title]
-  $check_cmd\::do "$command" 0 ansi_colortags
+  $check_cmd\::do "$command" 0
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"
@@ -709,7 +704,7 @@ proc git_checkout {args} {
   }
 
   set co_cmd [viewer::new "Git Update"]
-  $co_cmd\::do "$command" 1 status_colortags
+  $co_cmd\::do "$command" 1
   auto_setup_dir $co_cmd
 
   gen_log:log T "LEAVE"
@@ -1348,7 +1343,7 @@ namespace eval ::git_branchlog {
         set parent1 [set parent2 ""]
 
         # First method of finding base of branch
-        set command1 "git show-branch -a"
+        set command1 "git show-branch -a --no-color"
         set cmd1 [exec::new $command1]
         set cmd1_output [$cmd1\::output]
         $cmd1\::destroy
