@@ -278,7 +278,7 @@ proc git_log {detail args} {
     if {[llength $filelist] > 1} {
       $v\::log "-- $file -------------------------------\n" blue
     }
-    set command "git log $flags -- \"$file\""
+    set command "git log --color $flags -- \"$file\""
     $v\::do "$command" 1
     $v\::wait
   }
@@ -427,7 +427,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  set commandline "git log --graph --all"
+  set commandline "git log --graph --all --color"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
