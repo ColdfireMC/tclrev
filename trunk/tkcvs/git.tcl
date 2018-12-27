@@ -427,8 +427,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  #set commandline "git log --graph --all"
-  set commandline "git log --graph"
+  set commandline "git log --graph --all"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
