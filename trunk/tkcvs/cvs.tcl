@@ -1162,17 +1162,7 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
 
   gen_log:log T "ENTER ($cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
 
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
-  if {$incvs} {
-    set mess "This is already a CVS controlled directory.  Are you\
-              sure that you want to check out another module in\
-              to this directory?"
-    if {[cvsconfirm $mess .modbrowse] != "ok"} {
-      return
-    }
-  }
-
-  set mess "This will check out $module from CVS.\nAre you sure?"
+  set mess "This will check out $module to $target.\nAre you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     if {$revtag != {}} {
       set revtag "-r \"$revtag\""
@@ -1189,8 +1179,7 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
     if {$mtag2 != {}} {
       set mtag2 "-j \"$mtag2\""
     }
-    set v [::viewer::new "CVS Checkout"]
-    set cwd [pwd]
+    set v [viewer::new "CVS Checkout"]
     $v\::do "$cvs -d \"$cvsroot\" checkout $prune\
              $revtag $date $target\
              $mtag1 $mtag2\
@@ -1243,16 +1232,7 @@ proc cvs_export { cvsroot kflag revtag date target module } {
 
   gen_log:log T "ENTER ($cvsroot $kflag $revtag $date $target $module)"
     
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
-  if {$incvs} { 
-    set mess "This is already a CVS controlled directory.  Are you\
-              sure that you want to export a module in to this directory?"
-    if {[cvsconfirm $mess .modbrowse] != "ok"} {
-      return
-    }
-  }
-
-  set mess "This will export $module from CVS.\nAre you sure?"
+  set mess "This will export $module to $target.\nAre you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     if {$revtag != {}} {
       set revtag "-r \"$revtag\""

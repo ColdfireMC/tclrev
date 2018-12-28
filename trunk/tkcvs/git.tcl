@@ -669,7 +669,7 @@ proc git_branch {branchname updflag args} {
   gen_log:log T "LEAVE"
 }
 
-# git checkout - called from workdir browser
+# git checkout - called from Update in workdir browser
 proc git_checkout {args} {
 
   gen_log:log T "ENTER ($args)"
@@ -728,16 +728,32 @@ proc git_checkout_options {args} {
     "Tag" {
        set command "git checkout $cvscfg(svn_tagdir)"
      }
-    #"Revision" {
-       ## Let them get away with saying r3 instead of 3
-       #set rev [string trimleft $cvsglb(revnumber) {r}]
-       #set command "git checkout --ignore-ancestry ^/trunk/$module_dir -r $rev"
-     }
   }
   set upd_cmd [viewer::new "Git Checkout"]
   $upd_cmd\::do "$command" 0 status_colortags
 
   auto_setup_dir $upd_cmd
+}
+
+# Make a clone using the Module Browser
+proc git_clone {root tag target} {
+  global incvs insvn inrcs ingit
+
+  gen_log:log T "ENTER ($root $tag $target)"
+  set command "git clone"
+  if {$tag ne "HEAD"} {
+    append command " -b \"$tag\""
+  }
+  append command " \"$root\" \"$target\""
+
+  set mess "This will clone $tag to $target.\nAre you sure?"
+  if {[cvsconfirm $mess .modbrowse] == "ok"} {
+    set v [viewer::new "Git Clone"]
+    $v\::do "$command"
+  }
+
+  gen_log:log T "LEAVE"
+  return
 }
 
 proc git_merge_conflict {args} {

@@ -1309,31 +1309,26 @@ proc svn_checkout {url path rev target cmd} {
 
   gen_log:log T "ENTER ($url $path $rev $target $cmd)"
 
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
-  if {$insvn} {
-    set mess "This is already a SVN controlled directory.  Are you\
-              sure that you want to export into this directory?"
-    if {[cvsconfirm $mess .modbrowse] != "ok"} {
-      return
-    }
-  }
-
   set command "svn $cmd"
   if {$rev != {} } {
     # Let them get away with saying r3 instead of 3
     set rev [string trimleft $rev {r}]
     append command " -r$rev"
   }
-  set path [safe_url $path]
-  append command " $url/$path"
-  if {$target != {} } {
-    append command " $target"
-  }
-  gen_log:log C "$command"
 
-  set v [viewer::new "SVN $cmd"]
-  $v\::do "$command"
-  $v\::wait
+  set mess "This will $cmd $path to $target.\nAre you sure?"
+  if {[cvsconfirm $mess .modbrowse] == "ok"} {
+    set path [safe_url $path]
+    append command " $url/$path"
+    if {$target != {} } {
+      append command " $target"
+    }
+    gen_log:log C "$command"
+  
+    set v [viewer::new "SVN $cmd"]
+    $v\::do "$command"
+    $v\::wait
+  }
   gen_log:log T "LEAVE"
 }
 

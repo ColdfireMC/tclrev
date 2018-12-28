@@ -144,30 +144,30 @@ proc dialog_cvs_checkout { cvsroot module {revtag {} } } {
   if {$revtag == {} && [info exists dynamic_dialog(revtag)]} {
     set revtag $dynamic_dialog(revtag)
   }
+  set dir [pwd]
   set dynamic_dialog(cvsroot) $cvsroot
   set dynamic_dialog(module) $module
   set dynamic_dialog(revtag) $revtag
-  set dynamic_dialog(target) [pwd]
   set dynamic_dialog(prune) {-P}
   set dynamic_dialog(kflag) {}
 
   # field  req type labeltext          data
   set dialog_form_checkout {
-    1       0   l  {CVS Repository}    1
-    cvsroot 1   t  {CVSROOT}           {}
-    2       0   l  {Module}            1
-    module  1   t  {Name/Path}         {}
-    revtag  0   t  {Revision/Tag}      {}
-    date    0   t  {Date}              {}
-    3       0   l  {Destination}       1
-    target  0   t  {Target Directory} {}
-    4       0   l  {Merge }            0
-    mtag1   0   t  {Old tag}           {}
-    mtag2   0   t  {New tag}           {}
-    5       0   l  {Advanced}          0
-    prune   0   r  {Empty Directories} {{Create} {}
+    1       0   l {CVS Repository}     1
+    cvsroot 1   t {CVSROOT}            {}
+    2       0   l {Module}             1
+    module  1   t {Name/Path}          {}
+    revtag  0   t {Revision/Tag}       {}
+    date    0   t {Date}               {}
+    3       0   l {Destination}        1
+    target  1   t {Target Directory}   {}
+    4       0   l {Merge }             0
+    mtag1   0   t {Old tag}            {}
+    mtag2   0   t {New tag}            {}
+    5       0   l {Advanced}           0
+    prune   0   r {Empty Directories}  {{Create} {}
                                         {Don't Create} {-P}}
-    kflag   0   r  {Keyword Expansion} {{Default} {}
+    kflag   0   r {Keyword Expansion}  {{Default} {}
                                         {Keep as-is} {-ko}
                                         {Treat files as binary} {-kb}
                                         {Keywords only} {-kk}}
@@ -195,10 +195,10 @@ proc dialog_cvs_export { cvsroot module {revtag {}} } {
   if {$revtag == {} && [info exists dynamic_dialog(revtag)]} {
     set revtag $dynamic_dialog(revtag)
   }
+  set dir [pwd]
   set dynamic_dialog(cvsroot) $cvsroot
   set dynamic_dialog(module) $module
   set dynamic_dialog(revtag) $revtag
-  set dynamic_dialog(target) [pwd]
 
   # field  req type labeltext          data
   set dialog_form_export {
@@ -239,7 +239,6 @@ proc dialog_svn_checkout { svnroot path command } {
   set dynamic_dialog(path) $path
   set dynamic_dialog(svnroot) $svnroot
   set dynamic_dialog(command) $command
-  set dynamic_dialog(dir) $dir
 
   # field  req type labeltext          data
   set dialog_form_export {
@@ -248,14 +247,13 @@ proc dialog_svn_checkout { svnroot path command } {
     path    1   t {Path in Repository} {}
     rev     0   t {Revision/Date}      {}
     2       0   l {Destination}        1
-    dir     1   t {Current Directory}  {}
-    target  0   t {Target Directory}   {}
+    target  1   t {Target Directory}   {}
     3       0   l {Working Copy or Unversioned Copy} {}
     command 0   r {Versioning}         {{Versioned (Checkout)}  {checkout}
                                         {Un-Versioned (Export)} {export}}
   }
   # Action function
-  set dialog_action {svn_checkout $dynamic_dialog(dir) \
+  set dialog_action {svn_checkout \
      $dynamic_dialog(svnroot) $dynamic_dialog(path) \
      $dynamic_dialog(rev) $dynamic_dialog(target) \
      $dynamic_dialog(command)
@@ -265,9 +263,8 @@ proc dialog_svn_checkout { svnroot path command } {
   gen_log:log T "LEAVE"
 }
 
-# Checkout or Export a Git branch from the module browser
-# git clone -b master /Users/dorothyr/teststuff/GIT_REPOSITORY.git Clone-master
-proc dialog_git_checkout { gitroot path command } {
+# Clone a Git branch from the module browser
+proc dialog_git_clone { gitroot path } {
   global dynamic_dialog
   global dialog_action
 
@@ -277,25 +274,22 @@ proc dialog_git_checkout { gitroot path command } {
   set dir [pwd]
   set dynamic_dialog(path) $path
   set dynamic_dialog(gitroot) $gitroot
-  set dynamic_dialog(command) $command
 
   # field  req type labeltext          data
-  set dialog_form_export {
+  set dialog_form_clone {
     1       0   l {Git Repository}     1
     gitroot 1   t {Git URL}            {}
-    path    0   t {Path in Repository} {}
-    rev     0   t {Revision/Date}      {}
+    path    0   t {Branch}             {}
     2       0   l {Destination}        1
     target  1   t {Target Directory}   {}
   }
   # Action function
-  set dialog_action {git_checkout \
+  set dialog_action {git_clone \
      $dynamic_dialog(gitroot) $dynamic_dialog(path) \
-     $dynamic_dialog(rev) $dynamic_dialog(target) \
-     $dynamic_dialog(command)
+     $dynamic_dialog(target)
   }
 
-  set form [dialog_FormCreate "Checkout or Export" $dialog_form_export]
+  set form [dialog_FormCreate "Clone" $dialog_form_clone]
   gen_log:log T "LEAVE"
 }
 

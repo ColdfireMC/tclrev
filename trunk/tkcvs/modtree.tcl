@@ -119,30 +119,32 @@ proc ModTree:newitem {w v name title args} {
   #gen_log:log T "LEAVE"
 }
 
-# We need a flat one, no children involved
-# to list the output of git ls-remote
-proc ModList:newitem {w name ref} {
+# A flat list, no children involved, to list the output of git ls-remote
+proc ModList:newitem {w path ref} {
   global Tree
   global cvsglb
   global cvscfg
 
-  gen_log:log T "ENTER ($w $name $ref)"
+  set branch [file tail $path]
 
   if {! [info exists Tree($w:x)] } { set Tree($w:x) 2 }
   if {! [info exists Tree($w:y)] } { set Tree($w:y) 2 }
   if {! [info exists Tree($w:jitems)] } { set Tree($w:jitems) 0 }
+  if {! [info exists Tree($w:$path:name)] } { set Tree($w:$path:name) "$branch" }
+  if {! [info exists Tree($w:$path:title)] } { set Tree($w:$path:title) "Selection" }
+  if {! [info exists Tree($w:$path:tag)] } { set Tree($w:$path:tag) "" }
   set x $Tree($w:x)
   set y $Tree($w:y)
   incr  Tree($w:jitems)
   set j $Tree($w:jitems)
 
   $w.tree.list create text $x $y \
-      -text $name \
+      -text $path \
       -fill $cvsglb(fg) \
       -font $cvscfg(listboxfont) -anchor w \
       -tag $w.tree.list.tx$j
 
-  #$w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$name\""
+  $w.tree.list bind $w.tree.list.tx$j <1> "ModTree:setselection $w \"$path\""
   $w.tree.list bind $w.tree.list.tx$j <Enter> "ModTree:flash $w $j"
   $w.tree.list bind $w.tree.list.tx$j <Leave> "ModTree:unflash $w $j"
 
@@ -417,7 +419,7 @@ proc ModTree:setselection {w v} {
   if {$v != ""} {
     set Tree($w:selection) $v
     set j $Tree($w:$v:tag)
-    #ModTree:setTextHBox $w $w.tree.list.tx$j
+    ModTree:setTextHBox $w $w.tree.list.tx$j
     ModTree:setTextHBox $w $j
     set modbrowse_module $Tree($w:$v:name)
     set modbrowse_title $Tree($w:$v:title)
