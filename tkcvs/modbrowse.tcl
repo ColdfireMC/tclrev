@@ -251,7 +251,7 @@ proc modbrowse_guess_vcs {} {
 
   set vcs ""
 
-  set cvs_cmd "cvs -d $cvsglb(root) rdiff -l -s -D 01/01/1971 $modbrowse_module"
+  set cvs_cmd "cvs -d $cvsglb(root) rdiff -l -s -D 01/01/1971 \"$modbrowse_module\""
   gen_log:log C $cvs_cmd
   set cvsret [catch {eval "exec $cvs_cmd > $cvscfg(null)"} cvsout]
   if {[string match {*Diffing*} $cvsout]} {
@@ -277,6 +277,7 @@ proc modbrowse_guess_vcs {} {
   if {$gitret} {
     #gen_log:log E $gitout
   } else {
+    set cvscfg(gitroot) $cvsglb(root)
     gen_log:log T "LEAVE (git)"
     return "git"
   }
@@ -303,8 +304,6 @@ proc modbrowse_menus {} {
     .modbrowse.menubar add cascade -label "TkCVS" -menu [menu .modbrowse.menubar.apple]
   }
   .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.file] -label "File" -underline 0
-  .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.cvs] -label "CVS" -underline 0
-  .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.svn] -label "SVN" -underline 0
   .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.options] -label "Options" -underline 0
 
   # Have to do this after the .apple menu
@@ -321,6 +320,7 @@ proc modbrowse_menus {} {
   .modbrowse.menubar.file add command -label "Exit" -underline 1 \
      -command { module_exit; exit_cleanup 1 }
 
+  menu .modbrowse.menubar.cvs
   .modbrowse.menubar.cvs add command -label "CVS Checkout" \
       -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module}
   .modbrowse.menubar.cvs add command -label "CVS Export" \
@@ -348,6 +348,7 @@ proc modbrowse_menus {} {
   .modbrowse.menubar.cvs add command -label "Show All Checkouts" -underline 0 \
      -command {cvs_history all ""}
 
+  menu .modbrowse.menubar.svn
   .modbrowse.menubar.svn add command -label "SVN Checkout" \
       -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
   .modbrowse.menubar.svn add command -label "SVN Export" \
@@ -357,12 +358,16 @@ proc modbrowse_menus {} {
   .modbrowse.menubar.svn add command -label "Branch Module" -underline 0 \
      -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
   .modbrowse.menubar.svn add command -label "Make Patch File" -underline 0 \
-     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 0 }
+     -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 0 }
   .modbrowse.menubar.svn add command -label "View Patch Summary" -underline 0 \
-     -command { dialog_svn_patch $cvscfg(cvsroot) $modbrowse_path $selB_path 1 }
+     -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 1 }
   .modbrowse.menubar.svn add separator
   .modbrowse.menubar.svn add command -label "Import CWD into Repository" \
      -command svn_import_run
+
+  menu .modbrowse.menubar.git
+  .modbrowse.menubar.git add command -label "Git Clone" \
+     -command { dialog_git_clone $cvscfg(gitroot) $modbrowse_path }
 
   .modbrowse.menubar.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
      -variable cvscfg(aliasfolder) -onvalue true -offvalue false \
@@ -387,12 +392,16 @@ proc modbrowse_menus {} {
 proc modbrowse_run {} {
   global env
   global incvs insvn inrcs ingit
-  global modval
   global cvscfg
   global cvsglb
   global cvs
   global cmd
   global cvsroot
+  global modval
+  global modtitle
+  global modbrowse_module
+  global modbrowse_path
+  global modbrowse_title
 
 
   gen_log:log T "ENTER ()"
@@ -460,6 +469,16 @@ proc modbrowse_run {} {
   # Maybe this root is new to us?
   ::picklist::used cvsroot "$cvsglb(root)"
 
+  # Start without revision-control menu
+  gen_log:log D "CONFIGURE VCS MENUS"
+  set optmenu_idx [.modbrowse.menubar index "File"]
+  foreach label {"CVS" "SVN" "GIT"} {
+    if {! [catch {set vcsmenu_idx [.modbrowse.menubar index "$label"]}]} {
+      .modbrowse.menubar delete $vcsmenu_idx
+    }
+  }
+  set optmenu_idx [.modbrowse.menubar index "Options"]
+  
   switch $cvsglb(vcs) {
     cvs {
       .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
@@ -484,8 +503,8 @@ proc modbrowse_run {} {
       .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
       .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
       .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
-      .modbrowse.menubar entryconfigure "CVS" -state normal
-      .modbrowse.menubar entryconfigure "SVN" -state disabled
+      .modbrowse.menubar insert $optmenu_idx cascade -label "CVS" \
+        -menu .modbrowse.menubar.cvs
     }
     svn {
       .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
@@ -506,15 +525,15 @@ proc modbrowse_run {} {
       .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
       .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal
       .modbrowse.bottom.buttons.svnfuncs.remove configure -state normal
-      .modbrowse.menubar entryconfigure "CVS" -state disabled
-      .modbrowse.menubar entryconfigure "SVN" -state normal
+      .modbrowse.menubar insert $optmenu_idx cascade -label "SVN" \
+        -menu .modbrowse.menubar.svn
     }
-    default {
-      # Disable all except checkout
+    git {
+      # Disable all except clone
       .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-        -command { git_checkout_dialog $cvscfg(gitroot) $modbrowse_module }
+        -command { dialog_git_clone $cvscfg(gitroot) $modbrowse_module }
       .modbrowse.bottom.buttons.modfuncs.export configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.tag configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.branchtag configure -state disabled
@@ -524,8 +543,23 @@ proc modbrowse_run {} {
       .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
       .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
       .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
-      .modbrowse.menubar entryconfigure "CVS" -state disabled
-      .modbrowse.menubar entryconfigure "SVN" -state disabled
+      .modbrowse.menubar insert $optmenu_idx cascade -label "GIT" \
+        -menu .modbrowse.menubar.git
+    }
+    default {
+      # Disable all
+      .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.export configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.tag configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.branchtag configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.patchfile configure -state disabled
+      .modbrowse.bottom.buttons.cvsfuncs.who configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.filecat configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.filelog configure -state disabled
+      .modbrowse.bottom.buttons.svnfuncs.remove configure -state disabled
     }
   }
 
@@ -552,6 +586,7 @@ proc modbrowse_run {} {
       cvs_modbrowse_tree [lsort [array names modval]] "/"
     }
     git {
+      # Nothing to do here
     }
   }
 

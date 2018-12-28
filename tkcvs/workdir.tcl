@@ -519,10 +519,10 @@ proc workdir_menus {} {
 
   # GIT
   menu .workdir.menubar.git
-  .workdir.menubar.git add command -label "Checkout" -underline 6 \
+  .workdir.menubar.git add command -label "Checkout/Update" -underline 6 \
      -command {git_checkout [workdir_list_files]}
   .workdir.menubar.git add command -label "Update with Options" -underline 13 \
-     -command { git_update_options }
+     -command { git_checkout_options }
   .workdir.menubar.git add command -label "Commit/Checkin" -underline 5 \
      -command git_commit_dialog
   .workdir.menubar.git add command -label "Revert/Reset" -underline 3 \
@@ -933,8 +933,6 @@ proc setup_dir { } {
     }
   }
   set rptmenu_idx [.workdir.menubar index "Reports"]
-  #puts "reports $rptmenu_idx"
-  #puts "----------"
 
   # Disable report menu items
   .workdir.menubar.reports entryconfigure "Check Directory" -state disabled
@@ -1212,7 +1210,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -image GitCheckout -command { git_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal \
-     -command { git_update_options }
+     -command { git_checkout_options }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal
