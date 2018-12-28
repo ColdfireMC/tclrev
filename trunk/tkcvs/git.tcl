@@ -174,7 +174,7 @@ proc find_git_remote {dirname} {
   set cfgline [lindex [split [$cmd(git_config)\::output] "\n"] 0]
   set cvscfg(origin) [lindex $cfgline 0]
   set cvscfg(url) [lindex $cfgline 1]
-  set cvslbg(root) $cvscfg(url)
+  set cvsglb(root) $cvscfg(url)
   set cvsglb(vcs) git
   gen_log:log T "LEAVE"
 }
@@ -214,17 +214,31 @@ proc parse_gitlist {tf gitroot} {
 }
 
 proc git_push {} {
+  global cvscfg
+
   gen_log:log T "ENTER"
 
-  set cmd(git_push) [exec::new "git push"]
+  set mess "This will push your committed changes to\
+            $cvscfg(url).\n\n Are you sure?"
+
+  if {[cvsconfirm $mess .workdir] == "ok"} {
+    set cmd(git_push) [exec::new "git push"]
+  }
 
   gen_log:log T "LEAVE"
 }
 
 proc git_fetch {} {
+  global cvscfg
+
   gen_log:log T "ENTER"
 
-  set cmd(git_push) [exec::new "git fetch"]
+  set mess "This will fetch changes from\
+            $cvscfg(url).\n\n Are you sure?"
+
+  if {[cvsconfirm $mess .workdir] == "ok"} {
+    set cmd(git_fetch) [exec::new "git fetch"]
+  }
 
   gen_log:log T "LEAVE"
 }
