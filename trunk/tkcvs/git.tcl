@@ -20,7 +20,7 @@ proc git_workdir_status {} {
 
   gen_log:log T "ENTER"
   # See what branch we're on
-  set cmd(git_branch) [exec::new "git branch"]
+  set cmd(git_branch) [exec::new "git branch --no-color"]
   set branch_lines [split [$cmd(git_branch)\::output] "\n"]
   foreach line $branch_lines {
     if [string match {\* *} $line] {
@@ -148,7 +148,7 @@ proc git_workdir_status {} {
       gen_log:log D "$Filelist($f:date)"
       gen_log:log D "$Filelist($f:editors)"
     } else {
-      set command "git log -n 1 -- \"$f\""
+      set command "git log -n 1 --no-color -- \"$f\""
       set cmd(dircheck) [exec::new "$command"]
       set len [$cmd(dircheck)\::output]
       $cmd(dircheck)\::destroy
@@ -171,9 +171,29 @@ proc find_git_remote {dirname} {
   gen_log:log T "ENTER ($dirname)"
 
   set cmd(git_config) [exec::new "git remote -v"]
-  set cfgline [lindex [split [$cmd(git_config)\::output] "\n"] 0]
-  set cvscfg(origin) [lindex $cfgline 0]
-  set cvscfg(url) [lindex $cfgline 1]
+  set lines [split [$cmd(git_config)\::output] "\n"]
+  set i 0
+  foreach line $lines {
+    if {$i == 0} {
+      # Take the first line, whatever it is, to fill basic info
+      set cvscfg(origin) [lindex $line 0]
+      set cvscfg(url) [lindex $line 1]
+      # In case fetch and push keywords aren't found
+      set cvsglb(fetch_origin) $cvscfg(origin)
+      set cvsglb(fetch_url) $cvscfg(url)
+      set cvsglb(push_origin) $cvscfg(origin)
+      set cvsglb(push_url) $cvscfg(url)
+    }
+    # Then, in case fetch and push urls are different
+    if {[string match {*(fetch)} $line]} {
+      set cvsglb(fetch_origin) [lindex $line 0]
+      set cvsglb(fetch_url) [lindex $line 1]
+    } elseif {[string match {*(push)} $line]} {
+      set cvsglb(push_origin) [lindex $line 0]
+      set cvsglb(push_url) [lindex $line 1]
+    }
+    incr i
+  }
   set cvsglb(root) $cvscfg(url)
   set cvsglb(vcs) git
   gen_log:log T "LEAVE"
@@ -214,12 +234,12 @@ proc parse_gitlist {tf gitroot} {
 }
 
 proc git_push {} {
-  global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER"
 
   set mess "This will push your committed changes to\
-            $cvscfg(url).\n\n Are you sure?"
+            $cvsglb(push_origin) $cvsglb(push_url).\n\n Are you sure?"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
     set cmd(git_push) [exec::new "git push"]
@@ -229,12 +249,12 @@ proc git_push {} {
 }
 
 proc git_fetch {} {
-  global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER"
 
   set mess "This will fetch changes from\
-            $cvscfg(url).\n\n Are you sure?"
+            $cvsglb(fetch_origin) $cvsglb(fetch_url).\n\n Are you sure?"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
     set cmd(git_fetch) [exec::new "git fetch"]
@@ -257,8 +277,6 @@ proc git_list_tags {} {
 
 # Called from "Log" in Reports menu
 proc git_log {detail args} {
-  global cvscfg
-
   gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
@@ -303,8 +321,6 @@ proc git_log {detail args} {
 
 # does git rm from workdir browser
 proc git_rm {args} {
-  global cvscfg
-
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
 
@@ -316,8 +332,6 @@ proc git_rm {args} {
 
 # does git rm -r from workdir browser popup menu
 proc git_remove_dir {args} {
-  global cvscfg
-
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
 
@@ -740,7 +754,7 @@ proc git_checkout_options {args} {
        set command "git checkout $cvsglb(branchname)"
      }
     "Tag" {
-       set command "git checkout $cvscfg(svn_tagdir)"
+       set command "git checkout $cvsglb(tagname)"
      }
   }
   set upd_cmd [viewer::new "Git Checkout"]
