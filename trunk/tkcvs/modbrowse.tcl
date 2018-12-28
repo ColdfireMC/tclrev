@@ -47,17 +47,18 @@ proc modbrowse_setup {} {
   label .modbrowse.top.lmcode -text "Module"
   entry .modbrowse.top.tmcode -textvariable modbrowse_module \
     -font $cvscfg(listboxfont) -border 2
+  bind .modbrowse.top.tmcode <Return> {modbrowse_run}
 
   # We have these possibilities
-  foreach VCS {cvs svn} {
+  foreach VCS {cvs svn git} {
     if [info exists env(${VCS}ROOT)] {
-      gen_log:log D "env(${VCS}ROOT) $env(${VCS}ROOT) $VCS"
-      ::picklist::used cvsroot "$env(${VCS}ROOT) $VCS"
+      gen_log:log D "env(${VCS}ROOT) $env(${VCS}ROOT)"
+      ::picklist::used cvsroot "$env(${VCS}ROOT)"
     }
   }
   foreach VCS {cvs svn git} {
     if [info exists cvscfg(${VCS}root)] {
-      gen_log:log D "cvscfg(${VCS}root) $cvscfg(${VCS}root) $VCS"
+      gen_log:log D "cvscfg(${VCS}root) $cvscfg(${VCS}root)"
       ::picklist::used cvsroot $cvscfg(${VCS}root)
     }
   }
@@ -66,11 +67,7 @@ proc modbrowse_setup {} {
 
   label .modbrowse.top.lroot -text "Repository"
   ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
-  # We can't really do this because we can't necessarily guess
-  # the VCS from a path name. We also don't want to do it for
-  # a SVN repository if we're in a CVS one, for example
-  #::picklist::bind .modbrowse.top.troot <Return> \
-     { modbrowse_run }
+  ::picklist::bind .modbrowse.top.troot <Return> { modbrowse_run }
 
   button .modbrowse.top.bworkdir -image Workdir \
     -command {workdir_setup}
@@ -238,6 +235,56 @@ proc modbrowse_images {} {
   }
 }
 
+# Try to contact the repository somehow to guess what kind it is
+proc modbrowse_guess_vcs {} {
+  global cvsglb
+  global cvscfg
+  global modbrowse_module
+
+  gen_log:log T "ENTER"
+
+  # If there's no root at all, don't waste our time
+  if {$cvsglb(root) eq ""} {
+    gen_log:log T "LEAVE ($cvsglb(vcs))"
+    return $cvsglb(vcs)
+  }
+
+  set vcs ""
+
+  set cvs_cmd "cvs -d $cvsglb(root) rdiff -l -s -D 01/01/1971 $modbrowse_module"
+  gen_log:log C $cvs_cmd
+  set cvsret [catch {eval "exec $cvs_cmd > $cvscfg(null)"} cvsout]
+  if {[string match {*Diffing*} $cvsout]} {
+    gen_log:log T "LEAVE (cvs)"
+    return "cvs"
+  } else {
+    #gen_log:log E $cvsout
+  }
+
+  set svn_cmd "svn list $cvsglb(root)"
+  gen_log:log C $svn_cmd
+  set svnret [catch {eval "exec $svn_cmd"} svnout]
+  if {$svnret} {
+    #gen_log:log E $svnout
+  } else {
+    gen_log:log T "LEAVE (svn)"
+    return "svn"
+  }
+
+  set git_cmd "git ls-remote $cvsglb(root)"
+  gen_log:log C $git_cmd
+  set gitret [catch {eval "exec $git_cmd"} gitout]
+  if {$gitret} {
+    #gen_log:log E $gitout
+  } else {
+    gen_log:log T "LEAVE (git)"
+    return "git"
+  }
+
+  gen_log:log T "LEAVE ($cvsglb(vcs))"
+  return $cvsglb(vcs)
+}
+
 proc modbrowse_menus {} {
   global cvscfg
   global cvsglb
@@ -365,6 +412,9 @@ proc modbrowse_run {} {
   ModTree:delitem .modbrowse.treeframe /
   ModTree:destroy .modbrowse.treeframe
   busy_start .modbrowse
+
+  set cvsglb(vcs) [modbrowse_guess_vcs]
+
   switch $cvsglb(vcs) {
     svn {
       .modbrowse.top.lroot configure -text "SVN URL"
@@ -408,14 +458,14 @@ proc modbrowse_run {} {
     }
   }
   # Maybe this root is new to us?
-  ::picklist::used cvsroot "$cvsglb(root) $cvsglb(vcs)"
+  ::picklist::used cvsroot "$cvsglb(root)"
 
   switch $cvsglb(vcs) {
     cvs {
       .modbrowse.bottom.buttons.modfuncs.filebrowse configure \
         -command { browse_files $modbrowse_module }
       .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
-        -command { cvs_checkout_dialog $cvscfg(cvsroot) $modbrowse_module }
+        -command { dialog_cvs_checkout $cvscfg(cvsroot) $modbrowse_module }
       .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
         -command { import_run }
       .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
@@ -460,11 +510,11 @@ proc modbrowse_run {} {
       .modbrowse.menubar entryconfigure "SVN" -state normal
     }
     default {
-      # Disable 'em all
-      .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state disabled
-      .modbrowse.bottom.buttons.modfuncs.checkout configure -state disabled
+      # Disable all except checkout
       .modbrowse.bottom.buttons.cvsfuncs.import configure -state disabled
-      .modbrowse.bottom.buttons.modfuncs.checkout configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state disabled
+      .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
+        -command { git_checkout_dialog $cvscfg(gitroot) $modbrowse_module }
       .modbrowse.bottom.buttons.modfuncs.export configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.tag configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.branchtag configure -state disabled

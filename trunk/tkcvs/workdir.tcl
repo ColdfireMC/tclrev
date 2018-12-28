@@ -460,10 +460,12 @@ proc workdir_menus {} {
   .workdir.menubar.cvs add command -label "Update" -underline 0 \
      -command { \
         cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Update with Options" -underline 7 \
+  .workdir.menubar.cvs add command -label "Update with Options" -underline 13 \
      -command cvs_update_options
-  .workdir.menubar.cvs add command -label "Commit/Checkin" -underline 0 \
+  .workdir.menubar.cvs add command -label "Commit/Checkin" -underline 5 \
      -command cvs_commit_dialog
+  .workdir.menubar.cvs add command -label "Revert" -underline 3 \
+     -command cvs_revert
   .workdir.menubar.cvs add command -label "Add Files" -underline 0 \
      -command { add_dialog [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Add Recursively" \
@@ -472,27 +474,15 @@ proc workdir_menus {} {
      -command { subtract_dialog [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Remove Recursively" \
      -command { subtractdir_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Set Binary Flag" \
-     -command { cvs_binary [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Unset Binary Flag" \
-     -command { cvs_ascii [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Set Edit Flag (Edit)" -underline 15 \
-     -command { cvs_edit [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Unset Edit Flag (Unedit)" -underline 11 \
-     -command { cvs_unedit [workdir_list_files] }
   .workdir.menubar.cvs add command -label "Tag" -underline 0 \
      -command { tag_dialog }
   .workdir.menubar.cvs add command -label "Branch" -underline 0 \
      -command { branch_dialog }
-  .workdir.menubar.cvs add command -label "Browse the Log Diagram" \
-     -command { cvs_branches [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Resolve Conflicts" \
-     -command { cvs_merge_conflict [workdir_list_files] }
+  .workdir.menubar.cvs add command -label "Join (Merge) Directory" \
+     -underline 0 -command { cvs_directory_merge }
   .workdir.menubar.cvs add separator
   .workdir.menubar.cvs add command -label "Release" \
      -command { release_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Join (Merge) Directory" \
-     -underline 0 -command { cvs_directory_merge }
   .workdir.menubar.cvs add command -label "Import CWD into Repository" \
      -underline 0 -command import_run
 
@@ -500,37 +490,51 @@ proc workdir_menus {} {
   menu .workdir.menubar.svn
   .workdir.menubar.svn add command -label "Update" -underline 0 \
      -command {svn_update [workdir_list_files]}
-  .workdir.menubar.svn add command -label "Resolve (Un-mark Conflict)" -underline 0 \
+  .workdir.menubar.svn add command -label "Resolve (Un-mark Conflict)" \
      -command {svn_resolve [workdir_list_files]}
   .workdir.menubar.svn add command -label "Commit/Checkin" -underline 0 \
      -command svn_commit_dialog
+  .workdir.menubar.svn add command -label "Revert" -underline 3 \
+     -command svn_revert
   .workdir.menubar.svn add command -label "Add Files" -underline 0 \
      -command { add_dialog [workdir_list_files] }
   .workdir.menubar.svn add command -label "Remove Files" -underline 0 \
      -command { subtract_dialog [workdir_list_files] }
-  .workdir.menubar.svn add command -label "Browse the Log Diagram" \
-     -command { svn_branches [workdir_list_files] }
+  .workdir.menubar.svn add command -label "Tag" -underline 0 \
+     -command { tag_dialog }
+  .workdir.menubar.svn add command -label "Branch" -underline 0 \
+     -command { branch_dialog }
   .workdir.menubar.svn add separator
   .workdir.menubar.svn add command -label "Import CWD into Repository" \
      -underline 0 -command svn_import_run
 
   # RCS
   menu .workdir.menubar.rcs
-  .workdir.menubar.rcs add command -label "Checkout" -underline 0 \
+  .workdir.menubar.rcs add command -label "Checkout" -underline 6 \
      -command { rcs_checkout [workdir_list_files] }
-  .workdir.menubar.rcs add command -label "Checkin" -underline 0 \
+  .workdir.menubar.rcs add command -label "Checkin" -underline 6 \
      -command { rcs_commit_dialog [workdir_list_files] }
-  .workdir.menubar.rcs add command -label "Browse the Log Diagram" \
-     -command { rcs_branches [workdir_list_files] }
+  .workdir.menubar.rcs add command -label "Revert" -underline 3 \
+     -command rcs_revert
 
   # GIT
   menu .workdir.menubar.git
-  .workdir.menubar.git add command -label "Log" -underline 0 \
-     -command { git_log $cvscfg(ldetail) [workdir_list_files] }
+  .workdir.menubar.git add command -label "Checkout" -underline 6 \
+     -command {git_checkout [workdir_list_files]}
+  .workdir.menubar.git add command -label "Update with Options" -underline 13 \
+     -command { git_update_options }
+  .workdir.menubar.git add command -label "Commit/Checkin" -underline 5 \
+     -command git_commit_dialog
+  .workdir.menubar.git add command -label "Revert/Reset" -underline 3 \
+     -command git_reset
   .workdir.menubar.git add command -label "Add Files" -underline 0 \
      -command { add_dialog [workdir_list_files] }
   .workdir.menubar.git add command -label "Remove Files" -underline 0 \
      -command { subtract_dialog [workdir_list_files] }
+  .workdir.menubar.git add command -label "Tag" -underline 0 \
+     -command { tag_dialog }
+  .workdir.menubar.git add command -label "Branch" -underline 0 \
+     -command { branch_dialog }
 
   # Status and log
   .workdir.menubar.reports add command -label "Check Directory" -underline 0
@@ -1278,7 +1282,7 @@ proc setup_dir { } {
       gen_log:log C "$command"
       set ret [catch {eval "exec $command"} output]
       if {$ret} {
-        gen_log:log E "$output"
+        #gen_log:log E "$output"
       } else {
         gen_log:log F "$output"
         foreach infoline [split $output "\n"] {
@@ -1534,15 +1538,15 @@ proc cvsroot_check { dir } {
 
   gen_log:log C "svn info"
   set svnret [catch {eval "exec svn info"} svnout]
-  if {$svnret} {
-    gen_log:log E $svnout
-  } else {
+  if {! $svnret} {
     gen_log:log F $svnout
     set insvn [ read_svn_dir $dir ]
     if {$insvn} {
       gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
       return [list $incvs $insvn $inrcs $ingit]
     }
+  } else {
+    #gen_log:log E $svnout
   }
 
   set rcsdir [file join $dir RCS]
@@ -1574,16 +1578,16 @@ proc cvsroot_check { dir } {
 
   gen_log:log C "git rev-parse --is-inside-work-tree"
   set gitret [catch {eval "exec git rev-parse --is-inside-work-tree"} gitout]
-  if {$gitret} {
-    gen_log:log E "gitout $gitout"
-    set ingit 0
-  } else {
+  if {! $gitret} {
     # revparse may return "false"
     gen_log:log F "gitout $gitout"
     if {$gitout} {
       set ingit 1
       find_git_remote $dir
     }
+  } else {
+    #gen_log:log E "gitout $gitout"
+    set ingit 0
   }
   gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
   return [list $incvs $insvn $inrcs $ingit]
