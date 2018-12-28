@@ -740,14 +740,25 @@ proc git_clone {root tag target} {
   global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($root $tag $target)"
-  set command "git clone"
-  if {$tag ne "HEAD"} {
-    append command " -b \"$tag\""
-  }
-  append command " \"$root\" \"$target\""
 
-  set mess "This will clone $tag to $target.\nAre you sure?"
+
+  set dir [pwd]
+  if {[file pathtype $target] eq "absolute"} {
+    set tgt $target
+  } else {
+    set tgt "$dir/$target"
+  }
+  set mess "This will clone\n\
+     $root $tag\n\
+     to directory\n\
+     $tgt\n\
+     Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
+    set command "git clone"
+    if {$tag ne "HEAD"} {
+      append command " -b \"$tag\""
+    }
+    append command " \"$root\" \"$target\""
     set v [viewer::new "Git Clone"]
     $v\::do "$command"
   }
