@@ -1154,15 +1154,13 @@ proc cvs_check {} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_checkout { dir cvsroot prune kflag revtag date target mtag1 mtag2 module } {
-  #
-  # This checks out a new module into the current directory.
-  #
+# Check out a cvs module from the module browser
+proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } {
   global cvs
   global cvscfg
   global incvs insvn inrcs ingit
 
-  gen_log:log T "ENTER ($dir $cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
+  gen_log:log T "ENTER ($cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
@@ -1193,12 +1191,10 @@ proc cvs_checkout { dir cvsroot prune kflag revtag date target mtag1 mtag2 modul
     }
     set v [::viewer::new "CVS Checkout"]
     set cwd [pwd]
-    cd $dir
     $v\::do "$cvs -d \"$cvsroot\" checkout $prune\
              $revtag $date $target\
              $mtag1 $mtag2\
              $kflag \"$module\""
-    cd $cwd
   }
   gen_log:log T "LEAVE"
   return
@@ -1239,13 +1235,13 @@ proc cvs_filelog {filename parent {graphic {0}} } {
 }
 
 # This exports a new module (see man cvs and read about export) into
-# the current directory.
-proc cvs_export { dir cvsroot kflag revtag date target module } {
+# the target directory.
+proc cvs_export { cvsroot kflag revtag date target module } {
   global cvs
   global cvscfg 
   global incvs insvn inrcs ingit
 
-  gen_log:log T "ENTER ($dir $cvsroot $kflag $revtag $date $target $module)"
+  gen_log:log T "ENTER ($cvsroot $kflag $revtag $date $target $module)"
     
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} { 
@@ -1270,10 +1266,8 @@ proc cvs_export { dir cvsroot kflag revtag date target module } {
 
     set v [::viewer::new "CVS Export"]
     set cwd [pwd]
-    cd $dir
     $v\::do "$cvs -d \"$cvsroot\" export\
              $revtag $date $target $kflag \"$module\""
-    cd $cwd
   }
   gen_log:log T "LEAVE"
   return
@@ -1826,7 +1820,6 @@ proc parse_cvsmodules {tf cvsroot} {
   global cvs
   global modval
   global modtitle
-  global cvsglb
   global cvscfg
 
   gen_log:log T "ENTER ($tf $cvsroot)"
@@ -1840,7 +1833,8 @@ proc parse_cvsmodules {tf cvsroot} {
   catch {unset modtitle}
 
   # We have to use cvs to access the modules file
-  set command "$cvs -d \"$cvscfg(cvsroot)\" checkout -p CVSROOT/modules"
+  set cvscfg(cvsroot) $cvsroot
+  set command "$cvs -d \"$cvsroot\" checkout -p CVSROOT/modules"
   set cmd(cvs_co) [exec::new $command]
   if {[info exists cmd(cvs_co)]} {
     set cat_modules_file [$cmd(cvs_co)\::output]

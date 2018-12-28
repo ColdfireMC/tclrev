@@ -1304,10 +1304,10 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
 }
 
 # SVN Checkout or Export.  Called from Repository Browser
-proc svn_checkout {dir url path rev target cmd} {
+proc svn_checkout {url path rev target cmd} {
   global incvs insvn inrcs ingit
 
-  gen_log:log T "ENTER ($dir $url $path $rev $target $cmd)"
+  gen_log:log T "ENTER ($url $path $rev $target $cmd)"
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$insvn} {
