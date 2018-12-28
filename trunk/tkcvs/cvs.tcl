@@ -1162,7 +1162,17 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
 
   gen_log:log T "ENTER ($cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
 
-  set mess "This will check out $module to $target.\nAre you sure?"
+  set dir [pwd]
+  if {[file pathtype $target] eq "absolute"} {
+    set tgt $target
+  } else {
+    set tgt "$dir/$target"
+  }
+  set mess "This will checkout\n\
+     $cvsroot/$module\n\
+     to directory\n\
+     $tgt\n\
+     Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     if {$revtag != {}} {
       set revtag "-r \"$revtag\""
@@ -1231,8 +1241,18 @@ proc cvs_export { cvsroot kflag revtag date target module } {
   global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($cvsroot $kflag $revtag $date $target $module)"
-    
-  set mess "This will export $module to $target.\nAre you sure?"
+
+  set dir [pwd]
+  if {[file pathtype $target] eq "absolute"} {
+    set tgt $target
+  } else {
+    set tgt "$dir/$target"
+  }
+  set mess "This will export\n\
+     $cvsroot/$module\n\
+     to directory\n\
+     $tgt\n\
+     Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     if {$revtag != {}} {
       set revtag "-r \"$revtag\""

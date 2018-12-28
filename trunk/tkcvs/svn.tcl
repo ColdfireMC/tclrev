@@ -1316,7 +1316,17 @@ proc svn_checkout {url path rev target cmd} {
     append command " -r$rev"
   }
 
-  set mess "This will $cmd $path to $target.\nAre you sure?"
+  set dir [pwd]
+  if {[file pathtype $target] eq "absolute"} {
+    set tgt $target
+  } else {
+    set tgt "$dir/$target"
+  }
+  set mess "This will $cmd\n\
+     $url/$path\n\
+     to directory\n\
+     $tgt\n\
+     Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     set path [safe_url $path]
     append command " $url/$path"
