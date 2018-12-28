@@ -1534,8 +1534,8 @@ proc cvsroot_check { dir } {
     }
   }
 
-  gen_log:log C "svn info"
-  set svnret [catch {eval "exec svn info"} svnout]
+  gen_log:log C "svn info --show-item url"
+  set svnret [catch {eval "exec svn info --show-item url"} svnout]
   if {! $svnret} {
     gen_log:log F $svnout
     set insvn [ read_svn_dir $dir ]
