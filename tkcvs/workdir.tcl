@@ -1534,8 +1534,8 @@ proc cvsroot_check { dir } {
     }
   }
 
-  gen_log:log C "svn info --show-item url"
-  set svnret [catch {eval "exec svn info --show-item url"} svnout]
+  gen_log:log C "svn info"
+  set svnret [catch {eval "exec svn info"} svnout]
   if {! $svnret} {
     gen_log:log F $svnout
     set insvn [ read_svn_dir $dir ]
@@ -1544,7 +1544,7 @@ proc cvsroot_check { dir } {
       return [list $incvs $insvn $inrcs $ingit]
     }
   } else {
-    #gen_log:log E $svnout
+    gen_log:log E $svnout
   }
 
   set rcsdir [file join $dir RCS]
@@ -1584,7 +1584,7 @@ proc cvsroot_check { dir } {
       find_git_remote $dir
     }
   } else {
-    #gen_log:log E "gitout $gitout"
+    gen_log:log E "gitout $gitout"
     set ingit 0
   }
   gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
