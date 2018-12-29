@@ -1333,7 +1333,6 @@ proc svn_checkout {url path rev target cmd} {
     if {$target != {} } {
       append command " $target"
     }
-    gen_log:log C "$command"
   
     set v [viewer::new "SVN $cmd"]
     $v\::do "$command"
