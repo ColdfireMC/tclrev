@@ -198,12 +198,12 @@ proc mkfiles {topdir} {
 }
 
 proc modfiles {} {
-  global env
+  global tcl_platform
 
   set tmpfile "list.tmp"
 
   file delete -force $tmpfile
-  if {[ info exists env(SystemDrive) ]} {
+  if {$tcl_platform(platform) eq "windows"} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
