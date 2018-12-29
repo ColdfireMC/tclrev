@@ -1,4 +1,4 @@
-.TH TkCVS 1 Release 8.2.4
+.TH TkCVS 1 Release 9.0
 .SH NAME
 TkCVS - a Tk/Tcl Graphical Interface to CVS and Subversion
 .SH SYNOPSIS
@@ -6,7 +6,9 @@ TkCVS - a Tk/Tcl Graphical Interface to CVS and Subversion
 [\-dir directory] [\-root cvsroot] [\-win workdir|module|merge] [\-log file]
 .SH DESCRIPTION
 .LP
-TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present.  TkDiff is bundled in for browsing and merging your changes.
+TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present. Git functionality is new in version 9.0.
+.LP
+TkDiff is bundled in for browsing and merging your changes.
 .LP
 TkCVS also aids in browsing the repository. For Subversion, the repository tree is browsed like an ordinary file tree.  For CVS, the CVSROOT/modules file is read.  TkCVS extends CVS with a method to produce a browsable, "user friendly" listing of modules. This requires special comments in the CVSROOT/modules file. See "CVS Modules File" for more guidance.
 .SP
@@ -71,7 +73,7 @@ You can move into a directory by double-clicking on it.
 Double clicking on a file will load the file into a suitable editor so you can change it. A different editor can be used for different file types (see Configuration Files).
 .SS File Status
 .LP
-When you are in a directory that is under CVS or Subversion control, the file status will be shown by an icon next to each file. Checking the "Status Column" option causes the status to be displayed in text in its own column. Some possible statuses are:
+When you are in a directory that is under CVS, Subversion, or Git control, the file status will be shown by an icon next to each file. Checking the "Status Column" option causes the status to be displayed in text in its own column. Some possible statuses are:
 .TP
 .B Up-to-date
 The file is up to date with respect to the repository.
@@ -104,13 +106,16 @@ The file is not contained in the repository. You may need to add the file to the
 A directory which has been checked out from a CVS repository.
 .TP
 .B [directory:SVN]
-The file is a directory which has been checked out from a Subversion repository.  In Subversion, directories are themselves versioned objects.
+A directory which has been checked out from a Subversion repository.  In Subversion, directories are themselves versioned objects.
 .TP
 .B [directory:RCS]
 A directory which contains an RCS sub-directory or some files with the ,v suffix, presumably containing some files that are under RCS revision control.
 .TP
+.B [directory:GIT]
+A directory which has been cloned from a Git repository.
+.TP
 .B [directory]
-The file is a directory.
+A directory not controlled by one of the supported revision control systems
 .SS File Filters
 .LP
 You can specify file matching patterns to instruct TkCVS which files you wish to see. You can also specify patterns telling it which files to remove when you press the "Clean" button or select the \fBFile->Cleanup\fR menu item.
