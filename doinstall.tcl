@@ -112,9 +112,9 @@ set usage "Usage: doinstall.tcl \[-nox\] \[destination\]"
 set X 1
 
 # Check Tcl/TK version
-if {$tcl_version < 8.3} {
+if {$tcl_version < 8.5} {
    tk_dialog .wrongversion "Tcl/Tk too old" \
-   "TkCVS requires Tcl/Tk 8.3 or better!" \
+   "TkCVS requires Tcl/Tk 8.5 or better!" \
    error 0 {Bye Bye}
    exit 1
 }
