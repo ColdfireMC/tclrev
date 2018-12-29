@@ -1,4 +1,11 @@
-Release 9.0
+Release 9.0.1 December, 2018
+
+- Roll back a svn command line option that was too new
+
+- Fix the test scripts so they run on Windows again
+
+
+Release 9.0 December, 2018
 
 - Added Git functionality!
 
