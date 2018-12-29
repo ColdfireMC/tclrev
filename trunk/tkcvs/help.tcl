@@ -57,8 +57,6 @@ proc aboutbox {} {
     [file join $cvscfg(bitmapdir) anglerfish_med.gif]
   label .about.top.gif2 -image Anglerfish
 
-  #append string1 "A friendly interface to CVS\n"
-  #append string1 "   and Subversion\n"
   append string1 "A friendly graphical interface\n"
   append string1 "  for CVS and Subversion\n"
   append string1 "  *** Now with Git! ***\n"
@@ -115,6 +113,7 @@ proc help_cvs_version {visual} {
   if {[llength $whichcvs]} {
     set whichcvs [join $whichcvs]
     set commandline "$cvs -v"
+    gen_log:log C "$commandline"
     catch {eval "exec $commandline"} cvs_output
     set cvsglb(have_cvs) 1
   }
@@ -122,6 +121,7 @@ proc help_cvs_version {visual} {
   if {[llength $whichsvn]} {
     set whichsvn [join $whichsvn]
     set commandline "svn --version"
+    gen_log:log C "$commandline"
     set ret [catch {eval "exec $commandline"} svn_output]
     set cvsglb(have_svn) 1
   }
@@ -129,6 +129,7 @@ proc help_cvs_version {visual} {
   if {[llength $whichrcs]} {
     set whichrcs [join $whichrcs]
     set commandline "rcs --version"
+    gen_log:log C "$commandline"
     set ret [catch {eval "exec $commandline"} rcs_output]
     set cvsglb(have_rcs) 1
   }
@@ -136,31 +137,32 @@ proc help_cvs_version {visual} {
   if {[llength $whichgit]} {
     set whichgit [join $whichgit]
     set commandline "git --version"
+    gen_log:log C "$commandline"
     set ret [catch {eval "exec $commandline"} git_output]
     set cvsglb(have_git) 1
   }
 
   if {$visual} {
     set v [viewer::new "Versions"]
-    $v\::log "-----------------------------------------\n"
+    $v\::log "-----------------------------------------\n" blue
     if {$cvsglb(have_cvs)} {
       $v\::log "$whichcvs\n$cvs_output"
     } else {
       $v\::log "$cvs was not found in your path."
     }
-    $v\::log "\n-----------------------------------------\n"
+    $v\::log "\n-----------------------------------------\n" blue
     if {$cvsglb(have_svn)} {
       $v\::log "$whichsvn\n$svn_output"
     } else {
       $v\::log "svn was not found in your path."
     }
-    $v\::log "\n-----------------------------------------\n"
+    $v\::log "\n-----------------------------------------\n" blue
     if {$cvsglb(have_rcs)} {
       $v\::log "$whichrcs\n$rcs_output"
     } else {
       $v\::log "rcs was not found in your path."
     }
-    $v\::log "\n-----------------------------------------\n"
+    $v\::log "\n-----------------------------------------\n" blue
     if {$cvsglb(have_git)} {
       $v\::log "$whichgit\n$git_output"
     } else {
@@ -335,7 +337,9 @@ proc man_description {} {
 
 <h1>DESCRIPTION</h1>
 
-TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present.  TkDiff is bundled in for browsing and merging your changes.
+TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present. Git functionality is new in version 9.0.
+
+TkDiff is bundled in for browsing and merging your changes.
 
 TkCVS also aids in browsing the repository. For Subversion, the repository tree is browsed like an ordinary file tree.  For CVS, the CVSROOT/modules file is read.  TkCVS extends CVS with a method to produce a browsable, "user friendly" listing of modules. This requires special comments in the CVSROOT/modules file. See "CVS Modules File" for more guidance.
   }
@@ -413,7 +417,7 @@ Double clicking on a file will load the file into a suitable editor so you can c
 
 <h2>File Status</h2>
 
-When you are in a directory that is under CVS or Subversion control, the file status will be shown by an icon next to each file. Checking the "Status Column" option causes the status to be displayed in text in its own column. Some possible statuses are:
+When you are in a directory that is under CVS, Subversion, or Git control, the file status will be shown by an icon next to each file. Checking the "Status Column" option causes the status to be displayed in text in its own column. Some possible statuses are:
 
 <h3>Up-to-date</h3>
 The file is up to date with respect to the repository.
@@ -446,13 +450,16 @@ The file is not contained in the repository. You may need to add the file to the
 A directory which has been checked out from a CVS repository.
 
 <h3>[directory:SVN]</h3>
-The file is a directory which has been checked out from a Subversion repository.  In Subversion, directories are themselves versioned objects.
+A directory which has been checked out from a Subversion repository.  In Subversion, directories are themselves versioned objects.
 
 <h3>[directory:RCS]</h3>
 A directory which contains an RCS sub-directory or some files with the ,v suffix, presumably containing some files that are under RCS revision control.
 
+<h3>[directory:GIT]</h3>
+A directory which has been cloned from a Git repository.
+
 <h3>[directory]</h3>
-The file is a directory.
+A directory not controlled by one of the supported revision control systems
 
 <h2>File Filters</h2>
 

@@ -1,20 +1,25 @@
 Release 9.0
 
-- Git functionality!
+- Added Git functionality!
 
 - Speeded up branch browsing in Subversion substantially
 
-- Update tkdiff to version 4.3.5
+- Updated tkdiff to version 4.3.5
 
-- Update MacOS UI to version 10.x (High Sierra)
+- Made the Module Browser more independent of the Working Directory
+  Browser. You can now move around among repositories of different
+  version control systems.
 
-- Small user interface tweaks:
+- Updated MacOS UI to compatibility with version 10.x (High Sierra)
+
+- Many user interface tweaks:
   - Made a Copy/Paste right-mouse-button popup for the text widgets, so
     you can copy text from them
   - Re-arranged the Report and Status detail menus for more efficiency
 
 - I'm no longer making stand-alone MacOS or Windows packages. You can
   still run it from the Tcl/Tk code on those platforms.
+
 
 Release 8.2.4
 
