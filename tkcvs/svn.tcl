@@ -1063,13 +1063,13 @@ proc svn_tag {tagname b_or_t updflag args} {
   set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
 
   if { $filelist == {} } {
-    set command "svn copy --parents -m\"comment\" $cvscfg(url) $to_url"
+    set command "svn copy --parents -m\"$comment\" $cvscfg(url) $to_url"
     $v\::log "$command"
     $v\::do "$command"
   } else {
     foreach f $filelist {
       if {$f == "."} {
-        set command "svn copy --parents -m\"comment\" $cvscfg(url) $to_url"
+        set command "svn copy --parents -m\"$comment\" $cvscfg(url) $to_url"
       } else {
         svn_pathforcopy $tagname $pathelem $v
         set from_url [safe_url $cvscfg(url)/$f]
