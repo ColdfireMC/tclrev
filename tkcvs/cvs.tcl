@@ -953,6 +953,39 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   gen_log:log T "LEAVE"
 }
 
+# Do what was setup in the "Update with Options" dialog
+proc cvs_opt_update {} {
+  global cvsglb
+
+  gen_log:log T "ENTER"
+
+  if { $cvsglb(updatename) == "" } {
+    set tagname "BASE"
+  } else {
+    set tagname $cvsglb(updatename)
+  }
+  if { $cvsglb(get_all_dirs) == "No" } { set cvsglb(getdirname) "" }
+  if { $cvsglb(getdirname) == "" } {
+    set dirname " "
+  } else {
+    set dirname $cvsglb(getdirname)
+  }
+  #puts "from update_setup, tagname $tagname.  norm_bin $cvsglb(norm_bin)"
+  if { $cvsglb(tagmode_selection) == "Keep" } {
+    set tagname "BASE"
+  } elseif { $cvsglb(tagmode_selection) == "Trunk" } {
+    set tagname "HEAD"
+  }
+
+  eval "cvs_update {$tagname} {$cvsglb(norm_bin)} \
+       {$cvsglb(action_notag)} \
+       {$cvsglb(update_recurse)} {$cvsglb(update_prune)} \
+       {$cvsglb(get_all_dirs)} {$dirname} \
+       [workdir_list_files]"
+
+  gen_log:log T "LEAVE"
+}
+
 # join (merge) a chosen revision of local file to the current revision.
 proc cvs_merge {parent from since frombranch args} {
   global cvs
