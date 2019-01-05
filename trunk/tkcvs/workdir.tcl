@@ -522,7 +522,7 @@ proc workdir_menus {} {
   .workdir.menubar.git add command -label "Checkout/Update" -underline 6 \
      -command {git_checkout [workdir_list_files]}
   .workdir.menubar.git add command -label "Update with Options" -underline 13 \
-     -command { git_checkout_options }
+     -command { git_update_options }
   .workdir.menubar.git add command -label "Commit/Checkin" -underline 5 \
      -command git_commit_dialog
   .workdir.menubar.git add command -label "Revert/Reset" -underline 3 \
@@ -1210,7 +1210,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
       -image GitCheckout -command { git_checkout [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bupdateopts configure -state normal \
-     -command { git_checkout_options }
+     -command { git_update_options }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.btag configure -state normal

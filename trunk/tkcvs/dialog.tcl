@@ -910,10 +910,9 @@ proc cvs_update_options {} {
 
   gen_log:log T "ENTER"
 
-  if {[winfo exists .update]} {
-    wm deiconify .update
-    raise .update
-    grab set .update
+  if {[winfo exists .cvs_update]} {
+    wm deiconify .cvs_update
+    raise .cvs_update
     gen_log:log T "LEAVE"
     return
   }
@@ -923,200 +922,200 @@ proc cvs_update_options {} {
     update_set_defaults
   }
 
-  toplevel .update
-  grab set .update
-  frame .update.explaintop
+  toplevel .cvs_update
+  grab set .cvs_update
+  frame .cvs_update.explaintop
   # Provide an explanation of this dialog box
-  label .update.explaintop.explain -relief raised -bd 1 \
+  label .cvs_update.explaintop.explain -relief raised -bd 1 \
     -text "Update all files in local directory"
 
-  frame .update.options
-  frame .update.options.whichrev -relief groove -border 2
-  frame .update.options.diropts -relief groove -border 2
-  frame .update.options.normbin -relief groove -border 2
+  frame .cvs_update.options
+  frame .cvs_update.options.whichrev -relief groove -border 2
+  frame .cvs_update.options.diropts -relief groove -border 2
+  frame .cvs_update.options.normbin -relief groove -border 2
 
-  frame .update.down
+  frame .cvs_update.down
 
   # Always pack OK/Cancel first so they don't disappear
-  pack .update.down -side bottom -fill x
-  pack .update.explaintop -side top -fill x -pady 1
-  pack .update.explaintop.explain -side top -fill x -pady 1
-  pack .update.options -side top -fill x -pady 1
+  pack .cvs_update.down -side bottom -fill x
+  pack .cvs_update.explaintop -side top -fill x -pady 1
+  pack .cvs_update.explaintop.explain -side top -fill x -pady 1
+  pack .cvs_update.options -side top -fill x -pady 1
 
-  pack .update.options.whichrev -side top -fill x
-  pack .update.options.diropts -side top -fill x
-  pack .update.options.normbin -side top -fill x
+  pack .cvs_update.options.whichrev -side top -fill x
+  pack .cvs_update.options.diropts -side top -fill x
+  pack .cvs_update.options.normbin -side top -fill x
 
   # keep-same-tag update
-  radiobutton .update.options.whichrev.keep \
+  radiobutton .cvs_update.options.whichrev.keep \
     -text "Keep same branch or trunk" \
     -variable cvsglb(tagmode_selection) -value "Keep" -anchor w \
-    -command {.update.options.whichrev.getrev.lblentry.tname configure -state disabled
-              .update.options.whichrev.getrev.lblentry.dirtag configure -state disabled}
+    -command {.cvs_update.options.whichrev.getrev.lblentry.tname configure -state disabled
+              .cvs_update.options.whichrev.getrev.lblentry.dirtag configure -state disabled}
   # update to the head revision
-  radiobutton .update.options.whichrev.trunk \
+  radiobutton .cvs_update.options.whichrev.trunk \
     -text "Update local files to be on main trunk (-A)" \
     -variable cvsglb(tagmode_selection) -value "Trunk" -anchor w \
-    -command {.update.options.whichrev.getrev.lblentry.tname configure -state disabled
-              .update.options.whichrev.getrev.lblentry.dirtag configure -state disabled}
+    -command {.cvs_update.options.whichrev.getrev.lblentry.tname configure -state disabled
+              .cvs_update.options.whichrev.getrev.lblentry.dirtag configure -state disabled}
   # update to different branch/tag or not
-  radiobutton .update.options.whichrev.tag \
+  radiobutton .cvs_update.options.whichrev.tag \
     -text "Update (-r) local files to be on tag/branch" \
     -variable cvsglb(tagmode_selection) -value "Getrev" -anchor w \
-    -command {.update.options.whichrev.getrev.lblentry.tname configure -state normal
-              .update.options.whichrev.getrev.lblentry.dirtag configure -state normal}
+    -command {.cvs_update.options.whichrev.getrev.lblentry.tname configure -state normal
+              .cvs_update.options.whichrev.getrev.lblentry.dirtag configure -state normal}
 
-  message .update.options.whichrev.explainkeep -font $cvscfg(listboxfont) \
+  message .cvs_update.options.whichrev.explainkeep -font $cvscfg(listboxfont) \
     -justify left -width 400 \
     -text "If local directory is on main trunk, get latest on main trunk.
 If local directory is on a branch, get latest on that branch.
 If local directory/file has \"sticky\" non-branch tag, no update."
-  message .update.options.whichrev.explaintrunk -font $cvscfg(listboxfont) \
+  message .cvs_update.options.whichrev.explaintrunk -font $cvscfg(listboxfont) \
     -justify left -width 400 \
     -text "Advice:  If your local directories are currently on a branch,
 you may want to commit any local changes to that branch first."
 
-  pack .update.options.whichrev.keep -side top -fill x
-  pack .update.options.whichrev.explainkeep \
+  pack .cvs_update.options.whichrev.keep -side top -fill x
+  pack .cvs_update.options.whichrev.explainkeep \
     -side top -fill x -pady 1 -ipady 0
-  pack .update.options.whichrev.trunk -side top -fill x
-  pack .update.options.whichrev.explaintrunk \
+  pack .cvs_update.options.whichrev.trunk -side top -fill x
+  pack .cvs_update.options.whichrev.explaintrunk \
     -side top -fill x -pady 1 -ipady 0
-  pack .update.options.whichrev.tag -side top -fill x
+  pack .cvs_update.options.whichrev.tag -side top -fill x
 
-  frame .update.options.whichrev.getrev
-  frame .update.options.whichrev.getrev.lblentry
-  label .update.options.whichrev.getrev.lblentry.tlbl -text "Tag Name" -anchor w
-  entry .update.options.whichrev.getrev.lblentry.tname -relief sunken \
+  frame .cvs_update.options.whichrev.getrev
+  frame .cvs_update.options.whichrev.getrev.lblentry
+  label .cvs_update.options.whichrev.getrev.lblentry.tlbl -text "Tag Name" -anchor w
+  entry .cvs_update.options.whichrev.getrev.lblentry.tname -relief sunken \
     -textvariable cvsglb(updatename)
-  button .update.options.whichrev.getrev.lblentry.dirtag -text "Dir Tag" \
+  button .cvs_update.options.whichrev.getrev.lblentry.dirtag -text "Dir Tag" \
     -command {
     set cvsglb(updatename) $current_tagname
     }
-  message .update.options.whichrev.getrev.explaintag -font $cvscfg(listboxfont) \
+  message .cvs_update.options.whichrev.getrev.explaintag -font $cvscfg(listboxfont) \
     -justify left -width 400 \
     -text "Advice:  Update local files to main trunk (head) first.
 Note:  The tag will be 'sticky' for the directory and for each file."
 
-  pack .update.options.whichrev.getrev -side top -expand 1 -fill x
-  pack .update.options.whichrev.getrev.lblentry -side top -expand 1 -fill x
-  pack .update.options.whichrev.getrev.lblentry.tlbl -side left
-  pack .update.options.whichrev.getrev.lblentry.tname -side left -fill x -padx 2 -pady 4
-  pack .update.options.whichrev.getrev.lblentry.dirtag -side left -fill x -padx 2 -pady 4
-  pack .update.options.whichrev.getrev.explaintag \
+  pack .cvs_update.options.whichrev.getrev -side top -expand 1 -fill x
+  pack .cvs_update.options.whichrev.getrev.lblentry -side top -expand 1 -fill x
+  pack .cvs_update.options.whichrev.getrev.lblentry.tlbl -side left
+  pack .cvs_update.options.whichrev.getrev.lblentry.tname -side left -fill x -padx 2 -pady 4
+  pack .cvs_update.options.whichrev.getrev.lblentry.dirtag -side left -fill x -padx 2 -pady 4
+  pack .cvs_update.options.whichrev.getrev.explaintag \
     -side top -fill x -pady 1 -ipady 0
 
   # Where user chooses the action to take if tag is not on a file
-  label .update.options.whichrev.getrev.asknotfound \
+  label .cvs_update.options.whichrev.getrev.asknotfound \
     -text "If file doesn't exist on this branch/tag:" -anchor w
-  frame .update.options.whichrev.getrev.notfound
-  radiobutton .update.options.whichrev.getrev.notfound.remove \
+  frame .cvs_update.options.whichrev.getrev.notfound
+  radiobutton .cvs_update.options.whichrev.getrev.notfound.remove \
     -text "Remove file from local directory" \
     -variable cvsglb(action_notag) -value "Remove"
-  radiobutton .update.options.whichrev.getrev.notfound.gethead \
+  radiobutton .cvs_update.options.whichrev.getrev.notfound.gethead \
     -text "Get head revision (-f)" \
     -variable cvsglb(action_notag) -value "Get_head"
 
-  pack .update.options.whichrev.getrev.asknotfound -side top -fill x
-  pack .update.options.whichrev.getrev.notfound -side top -expand 1 -fill x
-  pack .update.options.whichrev.getrev.notfound.remove -side left
-  pack .update.options.whichrev.getrev.notfound.gethead -side left
+  pack .cvs_update.options.whichrev.getrev.asknotfound -side top -fill x
+  pack .cvs_update.options.whichrev.getrev.notfound -side top -expand 1 -fill x
+  pack .cvs_update.options.whichrev.getrev.notfound.remove -side left
+  pack .cvs_update.options.whichrev.getrev.notfound.gethead -side left
 
   # Recurse or not.
-  frame .update.options.diropts.radio1
-  radiobutton .update.options.diropts.radio1.recurse -text "Recurse the subdirectories" \
+  frame .cvs_update.options.diropts.radio1
+  radiobutton .cvs_update.options.diropts.radio1.recurse -text "Recurse the subdirectories" \
      -variable cvsglb(update_recurse) -value "recurse" -anchor w \
      -command {
-              .update.options.diropts.getdir configure -state normal
-              .update.options.diropts.prune configure -state normal
-              .update.options.diropts.lblentry.tdir configure -state normal
+              .cvs_update.options.diropts.getdir configure -state normal
+              .cvs_update.options.diropts.prune configure -state normal
+              .cvs_update.options.diropts.lblentry.tdir configure -state normal
               }
-  radiobutton .update.options.diropts.radio1.local -text "This directory only (-l)" \
+  radiobutton .cvs_update.options.diropts.radio1.local -text "This directory only (-l)" \
      -variable cvsglb(update_recurse) -value "local" -anchor w \
      -command {
-              .update.options.diropts.getdir configure -state disabled
-              .update.options.diropts.prune configure -state disabled
-              .update.options.diropts.lblentry.tdir configure -state disabled
+              .cvs_update.options.diropts.getdir configure -state disabled
+              .cvs_update.options.diropts.prune configure -state disabled
+              .cvs_update.options.diropts.lblentry.tdir configure -state disabled
               }
 
-  pack .update.options.diropts.radio1 -side top -expand 1 -fill x
-  pack .update.options.diropts.radio1.recurse -side left
-  pack .update.options.diropts.radio1.local -side left
+  pack .cvs_update.options.diropts.radio1 -side top -expand 1 -fill x
+  pack .cvs_update.options.diropts.radio1.recurse -side left
+  pack .cvs_update.options.diropts.radio1.local -side left
 
-  label .update.options.diropts.prunelbl \
+  label .cvs_update.options.diropts.prunelbl \
     -text "\nIf directory is here but no longer in repository:" -anchor w
-  checkbutton .update.options.diropts.prune -text "Prune it (-P)" \
+  checkbutton .cvs_update.options.diropts.prune -text "Prune it (-P)" \
      -variable cvsglb(update_prune) -onvalue "prune" -offvalue "no-prune" -anchor w
   # Where user chooses whether to pick up directories not currently in local
-  label .update.options.diropts.getlbl \
+  label .cvs_update.options.diropts.getlbl \
     -text "If directory is in repository but not in local:" -anchor w
-  checkbutton .update.options.diropts.getdir -text "Get it (-d)" \
+  checkbutton .cvs_update.options.diropts.getdir -text "Get it (-d)" \
     -variable cvsglb(get_all_dirs) -onvalue "Yes" -offvalue "No" -anchor w \
     -command {
                if {$cvsglb(get_all_dirs) != "Yes"} {
-                 .update.options.diropts.lblentry.tdir configure -state disabled
+                 .cvs_update.options.diropts.lblentry.tdir configure -state disabled
                } else {
-                 .update.options.diropts.lblentry.tdir configure -state normal
+                 .cvs_update.options.diropts.lblentry.tdir configure -state normal
                }
              }
-  frame .update.options.diropts.lblentry
-  label .update.options.diropts.lblentry.tlbl -text "Specific directory (optional)" -anchor w
-  entry .update.options.diropts.lblentry.tdir -relief sunken -state disabled \
+  frame .cvs_update.options.diropts.lblentry
+  label .cvs_update.options.diropts.lblentry.tlbl -text "Specific directory (optional)" -anchor w
+  entry .cvs_update.options.diropts.lblentry.tdir -relief sunken -state disabled \
     -textvariable cvsglb(getdirname)
   # State of top radiobuttons (keep same, main, or tag)
   if {$cvsglb(tagmode_selection) != "Getrev"} {
-    .update.options.whichrev.getrev.lblentry.tname configure -state disabled
-    .update.options.whichrev.getrev.lblentry.dirtag configure -state disabled
+    .cvs_update.options.whichrev.getrev.lblentry.tname configure -state disabled
+    .cvs_update.options.whichrev.getrev.lblentry.dirtag configure -state disabled
   }
   # state of -l radiobuttons
   if {$cvsglb(update_recurse) != "recurse"} {
-    .update.options.diropts.getdir configure -state disabled
-    .update.options.diropts.prune configure -state disabled
-    .update.options.diropts.lblentry.tdir configure -state disabled
+    .cvs_update.options.diropts.getdir configure -state disabled
+    .cvs_update.options.diropts.prune configure -state disabled
+    .cvs_update.options.diropts.lblentry.tdir configure -state disabled
   }
   # State of -d checkbutton
   if {$cvsglb(get_all_dirs) != "Yes"} {
-    .update.options.diropts.lblentry.tdir configure -state disabled
+    .cvs_update.options.diropts.lblentry.tdir configure -state disabled
   }
 
-  pack .update.options.diropts.prunelbl -side top -expand 1 -fill x
-  pack .update.options.diropts.prune -side top -expand 1 -fill x
-  pack .update.options.diropts.getlbl -side top -expand 1 -fill x
-  pack .update.options.diropts.getdir -side top -expand 1 -fill x
-  pack .update.options.diropts.lblentry -side top -expand 1 -fill x
-  pack .update.options.diropts.lblentry.tlbl -side left
-  pack .update.options.diropts.lblentry.tdir -side left -fill x -padx 2 -pady 4
+  pack .cvs_update.options.diropts.prunelbl -side top -expand 1 -fill x
+  pack .cvs_update.options.diropts.prune -side top -expand 1 -fill x
+  pack .cvs_update.options.diropts.getlbl -side top -expand 1 -fill x
+  pack .cvs_update.options.diropts.getdir -side top -expand 1 -fill x
+  pack .cvs_update.options.diropts.lblentry -side top -expand 1 -fill x
+  pack .cvs_update.options.diropts.lblentry.tlbl -side left
+  pack .cvs_update.options.diropts.lblentry.tdir -side left -fill x -padx 2 -pady 4
 
   # normal or binary?
-  label .update.options.normbin.lnormbin -text "Treat files as:" -anchor w
-  frame .update.options.normbin.radio
-  radiobutton .update.options.normbin.radio.normalfile -text "Normal file" \
+  label .cvs_update.options.normbin.lnormbin -text "Treat files as:" -anchor w
+  frame .cvs_update.options.normbin.radio
+  radiobutton .cvs_update.options.normbin.radio.normalfile -text "Normal file" \
     -variable cvsglb(norm_bin) -value "Normal" -anchor w
-  radiobutton .update.options.normbin.radio.binaryfile -text "Binary file (-kb)" \
+  radiobutton .cvs_update.options.normbin.radio.binaryfile -text "Binary file (-kb)" \
     -variable cvsglb(norm_bin) -value "Binary" -anchor w
 
-  pack .update.options.normbin.lnormbin -side top -fill both
-  pack .update.options.normbin.radio -side top -expand 1 -fill x
-  pack .update.options.normbin.radio.normalfile -side left
-  pack .update.options.normbin.radio.binaryfile -side left
+  pack .cvs_update.options.normbin.lnormbin -side top -fill both
+  pack .cvs_update.options.normbin.radio -side top -expand 1 -fill x
+  pack .cvs_update.options.normbin.radio.normalfile -side left
+  pack .cvs_update.options.normbin.radio.binaryfile -side left
 
   # The OK/Cancel buttons
-  button .update.ok -text "OK" \
-    -command { grab release .update; wm withdraw .update; update_with_options }
-  button .update.apply -text "Apply" \
-    -command update_with_options
-  button .update.reset -text "Reset defaults" \
+  button .cvs_update.ok -text "OK" \
+    -command { grab release .cvs_update; wm withdraw .cvs_update; cvs_opt_update }
+  button .cvs_update.apply -text "Apply" \
+    -command cvs_opt_update
+  button .cvs_update.reset -text "Reset defaults" \
     -command update_set_defaults
-  button .update.quit -text "Close" \
-    -command { grab release .update; wm withdraw .update }
+  button .cvs_update.quit -text "Close" \
+    -command { grab release .cvs_update; wm withdraw .cvs_update }
 
-  pack .update.ok .update.apply .update.reset .update.quit -in .update.down \
+  pack .cvs_update.ok .cvs_update.apply .cvs_update.reset .cvs_update.quit -in .cvs_update.down \
     -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
   # Window Manager stuff
-  wm title .update "Update a Module"
-  wm minsize .update 1 1
-  dialog_position .update .workdir
+  wm title .cvs_update "Update a Module"
+  wm minsize .cvs_update 1 1
+  dialog_position .cvs_update .workdir
   gen_log:log T "LEAVE"
 }
 
@@ -1132,39 +1131,6 @@ proc update_set_defaults {} {
   set cvsglb(get_all_dirs) "No"
   set cvsglb(getdirname) ""
   set cvsglb(norm_bin) "Normal"
-}
-
-# Do what was setup in the "Update with Options" dialog
-proc update_with_options {} {
-  global cvsglb
-
-  gen_log:log T "ENTER"
-
-  if { $cvsglb(updatename) == "" } {
-    set tagname "BASE"
-  } else {
-    set tagname $cvsglb(updatename)
-  }
-  if { $cvsglb(get_all_dirs) == "No" } { set cvsglb(getdirname) "" }
-  if { $cvsglb(getdirname) == "" } {
-    set dirname " "
-  } else {
-    set dirname $cvsglb(getdirname)
-  }
-  #puts "from update_setup, tagname $tagname.  norm_bin $cvsglb(norm_bin)"
-  if { $cvsglb(tagmode_selection) == "Keep" } {
-    set tagname "BASE"
-  } elseif { $cvsglb(tagmode_selection) == "Trunk" } {
-    set tagname "HEAD"
-  }
-
-  eval "cvs_update {$tagname} {$cvsglb(norm_bin)} \
-       {$cvsglb(action_notag)} \
-       {$cvsglb(update_recurse)} {$cvsglb(update_prune)} \
-       {$cvsglb(get_all_dirs)} {$dirname} \
-       [workdir_list_files]"
-
-  gen_log:log T "LEAVE"
 }
 
 # Recursively add directories. Called from workdir browser.
@@ -1390,8 +1356,9 @@ proc svn_update_options {} {
     return
   }
 
+  # Set defaults
   if {! [info exists cvsglb(tagmode_selection)]} {
-    set cvsglb(tagmode_selection) "Keep"
+    update_set_defaults
   }
 
   toplevel .svn_update
@@ -1684,8 +1651,8 @@ proc history_browser {} {
 
 # Git update with options. Called from workdir bupdateopts button
 proc git_update_options {} {
-  global cvsglb
   global cvscfg
+  global cvsglb
 
   gen_log:log T "ENTER"
 
@@ -1696,8 +1663,9 @@ proc git_update_options {} {
     return
   }
 
+  # Set defaults
   if {! [info exists cvsglb(tagmode_selection)]} {
-    set cvsglb(tagmode_selection) "Keep"
+    update_set_defaults
   }
 
   toplevel .git_update
@@ -1807,10 +1775,10 @@ you may want to commit any local changes to that branch first."
 
   # The OK/Cancel buttons
   button .git_update.ok -text "OK" \
-    -command { git_checkout_options; wm withdraw .git_update }
+    -command { git_opt_update; wm withdraw .git_update }
 
   button .git_update.apply -text "Apply" \
-    -command { git_checkout_options }
+    -command { git_opt_update }
 
   button .git_update.quit -text "Close" \
     -command { wm withdraw .git_update }

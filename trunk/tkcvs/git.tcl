@@ -697,6 +697,31 @@ proc git_branch {branchname updflag args} {
   gen_log:log T "LEAVE"
 }
 
+# git checkout with options - called from Update with Options in workdir browser
+proc git_opt_update {args} {
+  global cvscfg
+  global cvsglb
+
+  switch -exact -- $cvsglb(tagmode_selection) {
+    "Keep" {
+       set command "git checkout"
+     }
+    "Trunk" {
+       set command "git checkout master"
+     }
+    "Branch" {
+       set command "git checkout $cvsglb(branchname)"
+     }
+    "Tag" {
+       set command "git checkout $cvsglb(tagname)"
+     }
+  }
+  set upd_cmd [viewer::new "Git Checkout"]
+  $upd_cmd\::do "$command" 0 status_colortags
+
+  auto_setup_dir $upd_cmd
+}
+
 # git checkout - called from Update in workdir browser
 proc git_checkout {args} {
 
@@ -735,32 +760,6 @@ proc git_checkout {args} {
   auto_setup_dir $co_cmd
 
   gen_log:log T "LEAVE"
-}
-
-# git checkout - called from Update with Options in workdir browser
-proc git_checkout_options {args} {
-  global cvscfg
-  global cvsglb
-  global module_dir
-
-  switch -exact -- $cvsglb(tagmode_selection) {
-    "Keep" {
-       set command "git checkout"
-     }
-    "Trunk" {
-       set command "git checkout master"
-     }
-    "Branch" {
-       set command "git checkout $cvsglb(branchname)"
-     }
-    "Tag" {
-       set command "git checkout $cvsglb(tagname)"
-     }
-  }
-  set upd_cmd [viewer::new "Git Checkout"]
-  $upd_cmd\::do "$command" 0 status_colortags
-
-  auto_setup_dir $upd_cmd
 }
 
 # Make a clone using the Module Browser
