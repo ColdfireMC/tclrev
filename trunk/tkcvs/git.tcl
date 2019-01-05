@@ -638,10 +638,10 @@ proc git_commit {comment args} {
 }
 
 # git tag - called from tag dialog
-proc git_tag {tagname annotate args} {
+proc git_tag {tagname annotate comment args} {
   global cvscfg
 
-  gen_log:log T "ENTER ($tagname $annotate $args)"
+  gen_log:log T "ENTER ($tagname $annotate $comment $args)"
 
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
@@ -651,7 +651,7 @@ proc git_tag {tagname annotate args} {
 
   set command "git tag "
   if {$annotate == "yes"} {
-    append command "-a -m tagged_by_TkCVS"
+    append command "-a -m \"$comment\""
   }
   append command " $tagname $filelist"
 

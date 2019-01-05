@@ -1,3 +1,10 @@
+Release 9.0.?
+
+- Restore missing dollar sign to variable in svn_tag
+
+- Add an entry for the comment when tagging in Subversion or Git
+
+
 Release 9.0.1 December, 2018
 
 - Roll back a svn command line option that was too new
@@ -28,7 +35,7 @@ Release 9.0 December, 2018
   still run it from the Tcl/Tk code on those platforms.
 
 
-Release 8.2.4
+Release 8.2.4 (not officially released)
 
 - Implicit -dir on invocation.  added use case: tkcvs <dir> 
   Same as tkcvs -dir <file>  (patch #101 by Maxim Yanchenko)

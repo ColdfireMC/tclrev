@@ -610,20 +610,30 @@ proc tag_dialog {} {
   checkbutton .tag.top.force -text "Move existing tag" \
      -variable forceflag -onvalue "yes" -offvalue "no"
   checkbutton .tag.top.annotate -text "Annotate" \
-     -variable annotateflag -onvalue "yes" -offvalue "no"
+     -variable annotateflag -onvalue "yes" -offvalue "no" \
+     -command {.tag.top.comentry configure -state normal}
+  label .tag.top.comlbl -text "Comment" -anchor w
+  entry .tag.top.comentry -relief sunken -textvariable tagcomment
   grid columnconf .tag.top 1 -weight 1
   grid rowconf .tag.top 3 -weight 1
   grid .tag.top.msg -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
   grid .tag.top.lbl -column 0 -row 1 -sticky nw
   grid .tag.top.entry -column 1 -row 1 -sticky ew
-  #grid .tag.top.tag -column 1 -row 2 -sticky w
-  # If in CVS, offer -f option (forceflag)
   if {$incvs} {
+    # If in CVS, offer -f option (forceflag)
     grid .tag.top.force -column 1 -row 3 -sticky w
-  }
-  # If in Git, offer -a option (annotateflag)
-  if {$ingit} {
+  } elseif {$insvn} {
+    # If in SVN, offer an entry for the comment
+    set tagcomment "tag copy by TkCVS"
+    grid .tag.top.comlbl -column 0 -row 4 -sticky nw
+    grid .tag.top.comentry -column 1 -row 4 -sticky ew
+    .tag.top.comentry configure -state normal
+  } elseif {$ingit} {
+    # If in Git, offer -a option (annotateflag) and comment entry
+    set tagcomment "tag copy by TkCVS"
     grid .tag.top.annotate -column 1 -row 3 -sticky w
+    grid .tag.top.comlbl -column 0 -row 4 -sticky nw
+    grid .tag.top.comentry -column 1 -row 4 -sticky ew
   }
   frame .tag.down -relief groove -bd 2
   pack .tag.down -side bottom -fill x -expand 1
@@ -639,12 +649,12 @@ proc tag_dialog {} {
     }
   } elseif {$insvn} {
     .tag.down.tag configure -command {
-      svn_tag $tagname "tag" no [workdir_list_files]
+      svn_tag $tagname "tag" no "$tagcomment" [workdir_list_files]
       grab release .tag; destroy .tag
     }
   } elseif {$ingit} {
     .tag.down.tag configure -command {
-      git_tag $tagname $annotateflag [workdir_list_files]
+      git_tag $tagname $annotateflag "$tagcomment" [workdir_list_files]
       grab release .tag; destroy .tag
     }
   }
