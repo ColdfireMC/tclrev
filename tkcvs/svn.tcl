@@ -1042,11 +1042,11 @@ proc svn_revert {args} {
 }
 
 # svn tag or branch - called from tag and branch dialogs
-proc svn_tag {tagname b_or_t updflag args} {
+proc svn_tag {tagname b_or_t updflag comment args} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($tagname $b_or_t $updflag $args)"
+  gen_log:log T "ENTER ($tagname $b_or_t $updflag comment $args)"
 
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
@@ -1058,10 +1058,12 @@ proc svn_tag {tagname b_or_t updflag args} {
   if {$b_or_t == "tag"} {set pathelem "$cvscfg(svn_tagdir)"}
   if {$b_or_t == "branch"} {set pathelem "$cvscfg(svn_branchdir)"}
 
-  set comment "${b_or_t}_copy_by_TkCVS"
   set v [viewer::new "SVN Copy $tagname"]
-  set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
+  set to_url [string trimright "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)" "/"]
 
+  # When delivered scriptically, there can't be any spaces in the comments. This is a
+  # known problem with Subversion.
+  regsub -all { } $comment {\\ } comment
   if { $filelist == {} } {
     set command "svn copy --parents -m\"$comment\" $cvscfg(url) $to_url"
     $v\::log "$command"
