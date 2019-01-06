@@ -175,15 +175,13 @@ proc conflict {filename} {
 }
 
 proc commit {comment} {
-  global tcl_platform
-
   puts "COMMIT"
   puts [pwd]
   set tmpfile "list.tmp"
   file delete -force $tmpfile
 
   puts "Finding RCS files"
-  if {$tcl_platform(platform) eq "windows"} {
+  if {[ info exists env(SystemDrive) ]} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
@@ -232,14 +230,13 @@ proc mkfiles {topdir} {
 }
 
 proc modfiles {} {
-  global tcl_platform
 
   puts "MODIFYING FILES"
   set tmpfile "list.tmp"
   file delete -force $tmpfile
 
   puts "Finding RCS files"
-  set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
+  if {[ info exists env(SystemDrive) ]} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {

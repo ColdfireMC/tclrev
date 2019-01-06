@@ -287,11 +287,10 @@ proc mkfiles {topdir} {
 }
 
 proc modfiles {} {
-  global tcl_platform
-
   set tmpfile "list.tmp"
+
   file delete -force $tmpfile
-  if {$tcl_platform(platform) eq "windows"} {
+  if {[ info exists env(SystemDrive) ]} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
@@ -349,6 +348,9 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
   switch -regexp -- $arg {
     {^--*nobranch.*} {
       set branching_desired 0; incr i
+    }
+    {^--*nomess.*} {
+      set leave_a_mess 0; incr i
     }
   }
 }
@@ -486,21 +488,22 @@ if {$branching_desired} {
   }
 }
 
-# Leave the trunk with uncommitted changes
-puts "==============================="
-puts "Making Uncommitted changes on trunk"
-cd $WD/$Master
-# Local only
-writefile FileLocal.txt 1
-# Conflict. Have to do this before the add and delete,
-# or the merge will fail before you get to the conflicted file
-conflict Ftrunk.txt
-# Newly added
-writefile FileAdd.txt 2
-addfile FileAdd.txt trunk
-# Deleted
-delfile File3.txt trunk
-# Modify
-writefile File2.txt 2
-cd $WD
-
+if {$leave_a_mess} {
+  # Leave the trunk with uncommitted changes
+  puts "==============================="
+  puts "Making Uncommitted changes on trunk"
+  cd $WD/$Master
+  # Local only
+  writefile FileLocal.txt 1
+  # Conflict. Have to do this before the add and delete,
+  # or the merge will fail before you get to the conflicted file
+  conflict Ftrunk.txt
+  # Newly added
+  writefile FileAdd.txt 2
+  addfile FileAdd.txt trunk
+  # Deleted
+  delfile File3.txt trunk
+  # Modify
+  writefile File2.txt 2
+  cd $WD
+}
