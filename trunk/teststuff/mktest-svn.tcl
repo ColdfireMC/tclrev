@@ -159,11 +159,10 @@ proc mkfiles {topdir} {
 }
 
 proc modfiles {} {
-  global tcl_platform
-
   set tmpfile "list.tmp"
+
   file delete -force $tmpfile
-  if {$tcl_platform(platform) eq "windows"} {
+  if {[ info exists env(SystemDrive) ]} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
@@ -235,6 +234,9 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
   switch -regexp -- $arg {
     {^--*nobranch.*} {
       set branching_desired 0; incr i
+    }
+    {^--*nomess.*} {
+      set leave_a_mess 0; incr i
     }
   }
 }
@@ -334,22 +336,24 @@ if {$branching_desired} {
   commit "Add file FB on Branch B"
 }
 
-# Leave the trunk with uncommitted changes
-puts "==============================="
-puts "Making Uncommitted changes on trunk"
-cd $WD/svn_test_trunk
-# Local only
-writefile FileLocal.txt 1
-# Newly added
-writefile FileAdd.txt 2
-addfile FileAdd.txt trunk
-# Deleted
-delfile File3.txt trunk
-# Modify
-writefile File2.txt 2
-# Conflict
-conflict Ftrunk.txt
-cd $WD
+if {$leave_a_mess} {
+  # Leave the trunk with uncommitted changes
+  puts "==============================="
+  puts "Making Uncommitted changes on trunk"
+  cd $WD/svn_test_trunk
+  # Local only
+  writefile FileLocal.txt 1
+  # Newly added
+  writefile FileAdd.txt 2
+  addfile FileAdd.txt trunk
+  # Deleted
+  delfile File3.txt trunk
+  # Modify
+  writefile File2.txt 2
+  # Conflict
+  conflict Ftrunk.txt
+  cd $WD
+}
 
 # Remove the source
 file delete -force -- svn_test
