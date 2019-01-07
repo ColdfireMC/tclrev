@@ -179,6 +179,13 @@ proc svn_workdir_status {} {
     regexp  {<wc\-status\s+([^>]*)>} $wcstatusent tmp wcstatusheader
     regexp  {item=\"(\w+)\"} $wcstatusheader tmp wcstatus
     regexp  {revision=\"(\w+)\"} $wcstatusheader tmp wrev
+    # FIXME?: an item can have item="normal" but props="modified"
+    # In a short status, that's the same as ' M'  'C' for conflicted is also possible
+    # After a merge, "." has that status. "svn diff" shows "Modified:svn:mergeinfo"
+    # We aren't using that info though we could get it this way:
+    regexp  {props=\"(\w+)\"} $wcstatusheader tmp props
+    # It may be relevant to merging, ie. to show that we have done a merge but not
+    # committed it.
     if { [ regexp  {<lock>.*</lock>} $wcstatusent wclock ] } {
       set lockstatus "havelock"
     }
@@ -195,13 +202,18 @@ proc svn_workdir_status {} {
       set displaymod "<dir> "
     }
 
+
     set mayhavelock false
     switch -exact -- $wcstatus {
       "normal" {
         if { $repstatus == "modified"} {
           append displaymod "Out-of-date"
         } else {
-          append displaymod "Up-to-date"
+          if {$props eq "modified"} {
+            append displaymod "Property Modified"
+          } else {
+            append displaymod "Up-to-date"
+          }
           set mayhavelock true
         }
       }
@@ -405,6 +417,7 @@ proc svn_opt_update {} {
     "Revision" {
        # Let them get away with saying r3 instead of 3
        set rev [string trimleft $cvsglb(revnumber) {r}]
+       # FIXME: This doesn't work if you're not on the trunk
        set command "svn switch --ignore-ancestry ^/trunk/$module_dir -r $rev"
      }
   }
@@ -699,7 +712,7 @@ proc svn_delete {root path} {
   }
   set url [safe_url $root/$path]
   set v [viewer::new "SVN delete"]
-  set command "svn delete \"$url\" -m\"Removed_using_TkCVS\""
+  set command "svn delete -m\"Removed\\ using\\ TkCVS\" \"$url\""
   $v\::do "$command"
   modbrowse_run
   gen_log:log T "LEAVE"
@@ -1055,27 +1068,33 @@ proc svn_tag {tagname b_or_t updflag comment args} {
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
 
-  if {$b_or_t == "tag"} {set pathelem "$cvscfg(svn_tagdir)"}
-  if {$b_or_t == "branch"} {set pathelem "$cvscfg(svn_branchdir)"}
+  if {$b_or_t == "tag"} {
+    set pathelem "$cvscfg(svn_tagdir)"
+    set typearg "tags"
+  }
+  if {$b_or_t == "branch"} {
+    set pathelem "$cvscfg(svn_branchdir)"
+    set typearg "branches"
+  }
 
   set v [viewer::new "SVN Copy $tagname"]
-  set to_url [string trimright "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)" "/"]
+  set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
 
   # When delivered scriptically, there can't be any spaces in the comments. This is a
-  # known problem with Subversion.
+  # known thing with Subversion. So we escape them.
   regsub -all { } $comment {\\ } comment
   if { $filelist == {} } {
-    set command "svn copy --parents -m\"$comment\" $cvscfg(url) $to_url"
+    set command "svn copy -m\"$comment\" \"$cvscfg(url)\" \"$to_url\""
     $v\::log "$command"
     $v\::do "$command"
   } else {
     foreach f $filelist {
-      if {$f == "."} {
-        set command "svn copy --parents -m\"$comment\" $cvscfg(url) $to_url"
+      set from_path [safe_url $cvscfg(url)/$f]
+      set to_path [svn_pathforcopy $tagname $typearg]
+      if {[file isdirectory $f]} {
+        set command "svn copy -m\"$comment\" $from_path $to_path"
       } else {
-        svn_pathforcopy $tagname $pathelem $v
-        set from_url [safe_url $cvscfg(url)/$f]
-        set command "svn copy --parents -m\"$comment\" $from_url $to_url"
+        set command "svn copy --parents -m\"$comment\" \"$from_path\" \"$to_path/$f\""
       }
       $v\::log "$command"
       $v\::do "$command"
@@ -1084,7 +1103,7 @@ proc svn_tag {tagname b_or_t updflag comment args} {
 
   if {$updflag == "yes"} {
     # update so we're on the branch
-    set to_path [svn_pathforcopy $tagname $b_or_t $v]
+    set to_path [svn_pathforcopy $tagname $typearg]
     set command "svn switch $to_path"
     $v\::log "$command"
     $v\::do "$command" 0 status_colortags
@@ -1097,89 +1116,46 @@ proc svn_tag {tagname b_or_t updflag comment args} {
   gen_log:log T "LEAVE"
 }
 
-proc svn_rcopy {from_path b_or_t newtag} {
-#
 # makes a tag or branch.  Called from the workdir, module or branch
 # browser
-#
+proc svn_rcopy {from_path b_or_t newtag {from {}}} {
   global cvscfg
   global cvsglb
 
   gen_log:log T "ENTER ($from_path $b_or_t $newtag)"
 
-  # We're going to do some dangerous second-guessing here.  If "trunk", or
-  # something just below the "branches" or "tags" path, is selected, we guess
-  # they want to copy its contents.
-  # Otherwise, we'll copy exactly what they have selected.
-  set need_list 0
-  set idx [string length $cvscfg(svnroot)]
-  incr idx ;# advance past /
-  set from_path_remainder [string range $from_path $idx end]
-  set pathelements [file split $from_path_remainder]
-  if {$from_path_remainder == "$cvscfg(svn_trunkdir)"} {
-    set need_list 1
-  } elseif {[llength $pathelements] == 2} {
-    set from_type [lindex $pathelements 0]
-    switch -- $from_type {
-      "$cvscfg(svn_tagdir)" -
-      "$cvscfg(svn_branchdir)" {
-        set need_list 1
-      }
-    }
+  if {[string match {bran*} $b_or_t]} {
+    set comment "branch\\ rcopy\\ by\\ TkCVS"
+  } else {
+    set comment "tag\\ rcopy\\ by\\ TkCVS"
   }
-  set comment "${b_or_t}_copy_by_TkCVS"
 
   set v [viewer::new "SVN Copy $newtag"]
-  set comment "Copied_using_TkCVS"
-  set to_path [svn_pathforcopy $newtag $b_or_t $v]
+  set to_path [svn_pathforcopy $newtag $b_or_t]
+  set from_path [string trimright $from_path "/"]
 
-  if {! $need_list } {
-    # Copy the selected path
-    set command "svn copy -m\"$comment\" [safe_url $from_path] $to_path"
-    $v\::do "$command"
-    $v\::wait
+  # Copy the selected path
+  if { $from != {} } {
+    set command "svn copy -$from -m\"$comment\" [safe_url $from_path] $to_path"
   } else {
-    # Copy the contents of the selected path
-    set command "svn list [safe_url $from_path]"
-    set cmd(svnlist) [exec::new "$command"]
-    if {[info exists cmd(svnlist)]} {
-      set contents [split [$cmd(svnlist)\::output] "\n"]
-      $cmd(svnlist)\::destroy
-      catch {unset cmd(svnlist)}
-    }
-    foreach f $contents {
-      if {$f == ""} {continue}
-      set file_from_path [safe_url "$from_path/$f"]
-      set command "svn copy -m\"$comment\" $file_from_path $to_path"
-      $v\::log "$command\n"
-      $v\::do "$command"
-      $v\::wait
-    }
+    set command "svn copy -m\"$comment\" [safe_url $from_path] $to_path"
   }
+  $v\::do "$command"
+  $v\::wait
   gen_log:log T "LEAVE"
 }
 
-proc svn_pathforcopy {tagname b_or_t viewer} {
-# For svn copy, the destination path in the repository must already
-# exist. If we're tagging somewhere other than the top level, it may
-# not exist yet.  This proc creates the path if necessary and returns
-# it to the calling proc, which will do the copy.
+# If a file to be copied isn't at the top level, we need to construct the
+# destination path. It's no longer necessary to do svn mkdir, since svn copy
+# has a --parent option.
+proc svn_pathforcopy {tagname b_or_t} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER (\"$tagname\" \"$b_or_t\" \"$viewer\")"
+  gen_log:log T "ENTER (\"$tagname\" \"$b_or_t\")"
   # Can't use file join or it will mess up the URL
   set to_path [safe_url "$cvscfg(svnroot)/$b_or_t/$tagname"]
-  set comment "${b_or_t}_directory_path_by_TkCVS"
 
-  # If no file yet has this tag/branch name, create it
-  set ret [catch "eval exec svn list $to_path" err]
-  if {$ret} {
-    set command "svn mkdir -m\"$comment\" $to_path"
-    $viewer\::log "$command\n"
-    $viewer\::do "$command"
-    $viewer\::wait
-  }
   # We may need to construct a path to copy the file to
   set cum_path ""
   set pathelements [file split $cvsglb(relpath)]
@@ -1187,16 +1163,11 @@ proc svn_pathforcopy {tagname b_or_t viewer} {
   for {set i 0} {$i < $depth} {incr i} {
     set cum_path [file join $cum_path [lindex $pathelements $i]]
     gen_log:log D "  $i $cum_path"
-    set ret [catch "eval exec svn list $to_path/$cum_path" err]
-    if {$ret} {
-      set command "svn mkdir -m\"$comment\" $to_path/$cum_path"
-      $viewer\::do "$command"
-      $viewer\::wait
-    }
   }
   if {$cum_path != ""} {
     set to_path "$to_path/$cum_path"
   }
+
   gen_log:log T "LEAVE (\"$to_path\")"
   return $to_path
 }
@@ -1284,17 +1255,16 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
     } else {
       set from_path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$frombranch/$cvsglb(relpath)"
     }
+    set from_path [string trimright $from_path "/"]
     # tag the current (mergedto) branch
-    # FIXME: this assumes top of current branch, even if you have an older rev checked out
-    # svn status -u [--xml]
-    svn_tag $fromtag tags false $args ;# opens its own viewer
+    svn_tag $fromtag "tag" no "tag\ after\ merge\ by\ TkCVS" $args
     # Tag the mergedfrom branch
     set filelist [join $args]
-    foreach file $filelist {
-      if {$file == "."} {
-        svn_rcopy [safe_url $from_path] "tags" $totag ;# opens its own viewer
+    foreach f $filelist {
+      if {$f == "."} {
+        svn_rcopy [safe_url $from_path] "tags" $totag $from
       } else {
-        svn_rcopy [safe_url $from_path/$f] "tags" $totag ;# opens its own viewer
+        svn_rcopy [safe_url $from_path/$f] "tags" $totag/$f $from
       }
     }
   }

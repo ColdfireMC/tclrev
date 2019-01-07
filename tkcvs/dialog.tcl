@@ -584,6 +584,7 @@ proc tag_dialog {} {
   global incvs insvn inrcs ingit
   global cvscfg
   global cvsglb
+  global tagcomment
 
   gen_log:log T "ENTER"
   toplevel .tag
@@ -591,17 +592,18 @@ proc tag_dialog {} {
   set msg ""
   pack .tag.top -side top -fill x
   if {$incvs} {
-    set msg "Apply a new tag\
-             to the marked files, or\
-             to the directory, recursively"
+    set msg "Apply a new tag to the marked files\
+             or to the directory, recursively"
   } elseif {$insvn} {
-    set msg "Create a new tag copy\
-             of the marked files or\
-             of the directory, recursively"
+    set msg "Create a new tag copy of the marked files\
+             or of the directory, recursively.\n\
+             \nAdvice: Update local directory to HEAD first."
   } elseif {$ingit} {
-    set msg "Apply a new tag\
-             to the marked files or\
-             the directory, recursively"
+    set msg "Apply a new tag to the marked files\
+             or the directory, recursively"
+  }
+  if {! [info exists tagcomment]} {
+    set tagcomment "tag copy by TkCVS"
   }
   message .tag.top.msg -justify left -aspect 300 -relief groove \
     -text $msg
@@ -611,7 +613,7 @@ proc tag_dialog {} {
      -variable forceflag -onvalue "yes" -offvalue "no"
   checkbutton .tag.top.annotate -text "Annotate" \
      -variable annotateflag -onvalue "yes" -offvalue "no" \
-     -command {.tag.top.comentry configure -state normal}
+     -command {toggle_state .tag.top.comentry}
   label .tag.top.comlbl -text "Comment" -anchor w
   entry .tag.top.comentry -relief sunken -textvariable tagcomment
   grid columnconf .tag.top 1 -weight 1
@@ -623,14 +625,13 @@ proc tag_dialog {} {
     # If in CVS, offer -f option (forceflag)
     grid .tag.top.force -column 1 -row 3 -sticky w
   } elseif {$insvn} {
-    # If in SVN, offer an entry for the comment
-    set tagcomment "tag copy by TkCVS"
     grid .tag.top.comlbl -column 0 -row 4 -sticky nw
     grid .tag.top.comentry -column 1 -row 4 -sticky ew
     .tag.top.comentry configure -state normal
   } elseif {$ingit} {
     # If in Git, offer -a option (annotateflag) and comment entry
-    set tagcomment "tag copy by TkCVS"
+    # Start with the comment disabled. Annotate button will toggle it
+    .tag.top.comentry configure -state disabled
     grid .tag.top.annotate -column 1 -row 3 -sticky w
     grid .tag.top.comlbl -column 0 -row 4 -sticky nw
     grid .tag.top.comentry -column 1 -row 4 -sticky ew
@@ -670,6 +671,7 @@ proc branch_dialog {} {
   global incvs insvn inrcs ingit
   global cvscfg
   global cvsglb
+  global branchcomment
 
   gen_log:log T "ENTER"
   toplevel .branch
@@ -677,16 +679,18 @@ proc branch_dialog {} {
   set msg ""
   pack .branch.top -side top -fill x
   if {$incvs} {
-    set msg "Apply a new branch tag\
-             to the marked files, or\
-             to the directory, recursively"
+    set msg "Apply a new branch tag to the marked files\
+             or to the directory, recursively"
   } elseif {$insvn} {
-    set msg "Create a new branch copy\
-             of the marked files or\
-             of the directory, recursively"
+    set msg "Create a new branch copy of the marked files\
+             or of the directory, recursively.\n\
+             \nAdvice: Update local directory to HEAD first."
   } elseif {$ingit} {
     set msg "Branch the marked files or\
              the directory, recursively"
+  }
+  if {! [info exists branchcomment]} {
+    set branchcomment "branch\ copy\ by\ TkCVS"
   }
   message .branch.top.msg -justify left -aspect 300 -relief groove \
     -text $msg
@@ -694,13 +698,19 @@ proc branch_dialog {} {
   entry .branch.top.entry -relief sunken -textvariable branchname
   checkbutton .branch.top.upd -text "Update current directory to be on new branch" \
     -variable updflag -onvalue "yes" -offvalue "no"
+  label .branch.top.comlbl -text "Comment" -anchor w
+  entry .branch.top.coment -relief sunken -textvariable branchcomment
   grid columnconf .branch.top 1 -weight 1
   grid rowconf .branch.top 3 -weight 1
   grid .branch.top.msg -column 0 -row 0 -columnspan 2 -pady 2 -sticky ew
   grid .branch.top.lbl -column 0 -row 1 -sticky nw
   grid .branch.top.entry -column 1 -row 1 -sticky ew
+  if {$insvn} {
+    grid .branch.top.comlbl -column 0 -row 2 -sticky nw
+    grid .branch.top.coment -column 1 -row 2 -sticky ew
+  }
   # Offer update option for all VCSs
-  grid .branch.top.upd -column 1 -row 3 -sticky w
+  grid .branch.top.upd -column 0 -row 3 -sticky w -columnspan 2
   #
   frame .branch.down -relief groove -bd 2
   pack .branch.down -side bottom -fill x -expand 1
@@ -716,7 +726,7 @@ proc branch_dialog {} {
     }
   } elseif {$insvn} {
     .branch.down.branch configure -command {
-      svn_tag $branchname "branch" $updflag [workdir_list_files]
+      svn_tag $branchname "branch" $updflag $branchcomment [workdir_list_files]
       grab release .branch; destroy .branch
     }
   } elseif {$ingit} {
@@ -1793,3 +1803,17 @@ you may want to commit any local changes to that branch first."
 
   gen_log:log T "LEAVE"
 }
+
+# Toggle the state of a widget
+proc toggle_state {widg} {
+  set curstate [$widg cget state]
+  switch -- $state {
+   "normal" {
+     .widg configure -state disabled
+   }
+   "disabled" {
+     .widg configure -state normal
+   }
+  }
+}
+

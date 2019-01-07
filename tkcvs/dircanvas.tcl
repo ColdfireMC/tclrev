@@ -274,6 +274,8 @@ proc DirCanvas:loadimages { } {
     -format gif -file [file join $cvscfg(bitmapdir) dir_plus.gif]
   image create photo dir_minus \
     -format gif -file [file join $cvscfg(bitmapdir) dir_minus.gif]
+  image create photo dir_mod \
+    -format gif -file [file join $cvscfg(bitmapdir) dir_mod.gif]
   image create photo link \
     -format gif -file [file join $cvscfg(bitmapdir) link.gif]
   image create photo link_ok \
@@ -673,6 +675,10 @@ proc DirCanvas:build {w} {
      }
      "<dir> Up-to-date" {
        set DirList($w:$f:icon) dir_ok
+       set DirList($w:$f:popup) svndir_pop
+     }
+     "<dir> Property Modified" {
+       set DirList($w:$f:icon) dir_mod
        set DirList($w:$f:popup) svndir_pop
      }
      "<dir> Not managed*" {

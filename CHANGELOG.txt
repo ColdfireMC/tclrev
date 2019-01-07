@@ -1,8 +1,8 @@
-Release 9.0.?
-
-- Restore missing dollar sign to variable in svn_tag
+Release 9.0.2 January, 2019
 
 - Add an entry for the comment when tagging in Subversion or Git
+
+- Fix regressions and errors in Subversion branching and tagging
 
 
 Release 9.0.1 December, 2018
