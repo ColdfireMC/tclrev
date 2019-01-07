@@ -1806,13 +1806,13 @@ you may want to commit any local changes to that branch first."
 
 # Toggle the state of a widget
 proc toggle_state {widg} {
-  set curstate [$widg cget state]
-  switch -- $state {
+  set curstate [$widg cget -state]
+  switch -- $curstate {
    "normal" {
-     .widg configure -state disabled
+     $widg configure -state disabled
    }
    "disabled" {
-     .widg configure -state normal
+     $widg configure -state normal
    }
   }
 }
