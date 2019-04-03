@@ -986,6 +986,7 @@ namespace eval ::git_branchlog {
         variable logstate
         variable relpath
         variable filename
+        variable show_branch_a
         variable show_tags
         variable show_merges
 
@@ -1148,6 +1149,12 @@ namespace eval ::git_branchlog {
           set trunk $current_tagname
           gen_log:log D "Using current branch for trunk=$trunk"
         }
+
+        # First method of finding base of branch, Do it once and save the output.
+        set command1 "git show-branch -a --no-color"
+        set cmd1 [exec::new $command1]
+        set show_branch_a [$cmd1\::output]
+        $cmd1\::destroy
 
         # Collect the branches
         foreach branch $branches {
@@ -1388,6 +1395,7 @@ namespace eval ::git_branchlog {
       # its parent
       proc identify_parent {branch} {
         variable filename
+        variable show_branch_a
 
         gen_log:log T "ENTER ($branch)"
 
@@ -1395,15 +1403,11 @@ namespace eval ::git_branchlog {
         set base1_hash [set base2_hash ""]
         set parent1 [set parent2 ""]
 
-        # First method of finding base of branch
-        set command1 "git show-branch -a --no-color"
-        set cmd1 [exec::new $command1]
-        set cmd1_output [$cmd1\::output]
-        $cmd1\::destroy
+        # First method of finding base of branch, from show-branch -a
         set capture ""
         set base ""
         set parent ""
-        foreach ln [split $cmd1_output "\n"] {
+        foreach ln [split $show_branch_a "\n"] {
           # Look for someting like " + [branchB^]"
           # We overwrite "capture" because the last one is what we want
           if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*\\\]" $ln capture] {
