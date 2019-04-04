@@ -77,16 +77,10 @@ proc checkout_files {topdir} {
   puts "CHECKOUT FINISHED"
 }
 
-proc writefile {filename wn} {
-  # Assume we have write permission, we got it from the calling proc
-  set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
-  set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
-
-  set ind [expr {int(rand()*[llength $wordlist($wn)])}]
-  set word [lindex $wordlist($wn) $ind]
-  puts " append \"$word\" to $filename"
-  set fp [open $filename a]
-  puts $fp $word
+proc writefile {filename string} {
+  puts " append \"$string\" to $filename"
+  set fp [open "$filename" a]
+  puts $fp $string
   close $fp
 }
 
@@ -146,7 +140,7 @@ proc conflict {filename} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   file attributes $filename -permissions u+w
-  writefile $filename 1
+  writefile $filename "Conflict A"
   set exec_cmd "ci -m\"change1\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -160,7 +154,7 @@ proc conflict {filename} {
   file delete -force -- $filename
   file rename Ftmp.txt $filename
   file attributes $filename -permissions u+w
-  writefile $filename 2
+  writefile $filename "Conflict B"
   # When we check in a conflicting version, it creates
   # a branch
   set exec_cmd "ci -m\"change2\\\ conflicting\" $filename"
@@ -216,27 +210,28 @@ proc mkfiles {topdir} {
 
   # Make some files each containing a random word
   foreach n {1 2 3} {
-    writefile File$n.txt 1
+    writefile File$n.txt "Initial"
   }
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
     cd $D
     foreach n {1 2 " 3"} {
-      writefile F$n.txt 1
+      writefile F$n.txt "Initial"
     }
     cd $topdir
   }
 }
 
-proc modfiles {} {
+proc modfiles {string} {
+  global tcl_platform
 
   puts "MODIFYING FILES"
   set tmpfile "list.tmp"
   file delete -force $tmpfile
 
   puts "Finding RCS files"
-  if {[ info exists env(SystemDrive) ]} {
+  if {$tcl_platform(platform) eq "windows"} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
@@ -251,7 +246,7 @@ proc modfiles {} {
   while { [gets $fl item] >= 0} {
     # Why didn't co -l make it writeable?
     file attributes $item -permissions u+w
-    writefile $item 2
+    writefile $item "$string"
   }
   close $fl
   file delete -force $tmpfile
@@ -274,29 +269,29 @@ checkout_files $testdir
 puts "==============================="
 puts "First revision"
 puts "** modfiles"
-modfiles
+modfiles "Main 1"
 puts "** commit"
 commit "First Revision"
 puts "** writefile"
-writefile Fnew.txt 2
+writefile Fnew.txt "Main 1"
 puts "** addfile"
 addfile Fnew.txt
 
 puts "==============================="
 puts "Second revision"
 checkout_files $testdir
-modfiles
+modfiles "Main 2"
 commit "Second revision"
 
 puts "==============================="
 puts "Making Uncommitted changes"
 #Local only
-writefile FileLocal.txt 1
+writefile FileLocal.txt "Pending"
 # Deleted
 delfile File3.txt
 # Modify
 file attributes File2.txt -permissions u+w
-writefile File2.txt 2
+writefile File2.txt "Pending"
 lock File2.txt
 # Conflict
 puts "** conflict"

@@ -96,15 +96,10 @@ proc merge {fromtag totag} {
   cd $WD
 }
 
-proc writefile {filename wn} {
-  set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
-  set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
-
-  set ind [expr {int(rand()*[llength $wordlist($wn)])}]
-  set word [lindex $wordlist($wn) $ind]
-  puts " append \"$word\" to $filename"
+proc writefile {filename string} {
+  puts " append \"$string\" to $filename"
   set fp [open "$filename" a]
-  puts $fp $word
+  puts $fp $string
   close $fp
 }
 
@@ -143,26 +138,27 @@ proc mkfiles {topdir} {
 
   cd $trunkhead
 
-  # Make some files each containing a random word
+  # Make some text files
   foreach n {1 2 3} {
-    writefile "File$n.txt" 1
+    writefile "File$n.txt" "Initial"
   }
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
     foreach n {1 2 " 3"} {
       set subf [file join $D "F$n.txt"]
-      writefile $subf 1
+      writefile $subf "Initial"
     }
   }
   cd $WD
 }
 
-proc modfiles {} {
-  set tmpfile "list.tmp"
+proc modfiles {string} {
+  global tcl_platform
 
+  set tmpfile "list.tmp"
   file delete -force $tmpfile
-  if {[ info exists env(SystemDrive) ]} {
+  if {$tcl_platform(platform) eq "windows"} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
@@ -175,7 +171,7 @@ proc modfiles {} {
   }
   set fl [open $tmpfile r]
   while { [gets $fl item] >= 0} {
-    writefile $item 2
+    writefile $item "$string"
   }
   close $fl
   file delete -force $tmpfile
@@ -204,7 +200,7 @@ proc conflict {filename} {
   # Save a copy
   file copy $filename Ftmp.txt
   # Make a change
-  writefile $filename 1
+  writefile $filename "Conflict A"
   set exec_cmd "svn commit -m \"change1\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -217,7 +213,7 @@ proc conflict {filename} {
   # Make a different change (we hope)
   file delete -force -- $filename
   file rename Ftmp.txt $filename
-  writefile $filename 2
+  writefile $filename "Conflict B"
   # Check out head, which now conflicts with our change
   set exec_cmd "svn update --non-interactive -r HEAD $filename"
   puts "$exec_cmd"
@@ -227,6 +223,7 @@ proc conflict {filename} {
 
 ##############################################
 set branching_desired 1
+set leave_a_mess 1
 
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
@@ -261,8 +258,8 @@ checkout_branch "$SVNROOT" "$taghead(trunk)"
 puts "==============================="
 puts "First revision on $taghead(trunk)"
 cd svn_test_$taghead(trunk)
-modfiles
-writefile Ftrunk.txt 2
+modfiles "Main 1"
+writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt $taghead(trunk)
 commit "First revision on $taghead(trunk)"
 cd $WD
@@ -272,7 +269,7 @@ if {$branching_desired} {
   puts "MAKING BRANCH A"
   newbranch $SVNROOT $taghead(trunk) branchA
   cd $WD/svn_test_branchA
-  writefile FbranchA.txt 2
+  writefile FbranchA.txt "BranchA 1"
   addfile FbranchA.txt branchA
   commit "Add file FbranchA.txt on branch A"
   cd $WD
@@ -280,14 +277,14 @@ if {$branching_desired} {
   puts "==============================="
   puts "First revision on Branch A"
   cd $WD/svn_test_branchA
-  modfiles
+  modfiles "BranchA 1"
   commit "First revision on branch A"
   cd $WD
 
   puts "==============================="
   puts "Second revision on Branch A"
   cd $WD/svn_test_branchA
-  modfiles
+  modfiles "BranchA 2"
   commit "Second revision on branch A"
   cd $WD
 
@@ -301,14 +298,14 @@ if {$branching_desired} {
 puts "==============================="
 puts "Second revision on $taghead(trunk)"
 cd $WD/svn_test_trunk
-modfiles
+modfiles "Main 2"
 commit "Second revision on $taghead(trunk)"
 cd $WD
 
 puts "==============================="
 puts "Third revision on $taghead(trunk)"
 cd $WD/svn_test_trunk
-modfiles
+modfiles "Main 3"
 commit "Third revision on $taghead(trunk)"
 cd $WD
 
@@ -318,8 +315,8 @@ if {$branching_desired} {
   puts "MAKING BRANCH AA"
   newbranch $SVNROOT branchA branchAA
   cd $WD/svn_test_branchAA
-  modfiles
-  writefile FbranchAA.txt 2
+  modfiles "BranchAA 1"
+  writefile FbranchAA.txt "BranchAA 1"
   addfile FbranchAA.txt branchAA
   delfile Ftrunk.txt branchAA
   commit "Changes on Branch AA"
@@ -330,10 +327,11 @@ if {$branching_desired} {
   puts "MAKING BRANCH B"
   newbranch $SVNROOT $taghead(trunk) branchB
   cd $WD/svn_test_branchB
-  modfiles
-  writefile FbranchB.txt 1
+  modfiles "BranchB 1"
+  writefile FbranchB.txt "BranchB 1"
   addfile FbranchB.txt branchB
   commit "Add file FB on Branch B"
+  cd $WD
 }
 
 if {$leave_a_mess} {
@@ -342,14 +340,17 @@ if {$leave_a_mess} {
   puts "Making Uncommitted changes on trunk"
   cd $WD/svn_test_trunk
   # Local only
-  writefile FileLocal.txt 1
+  writefile FileLocal.txt "Pending"
   # Newly added
-  writefile FileAdd.txt 2
+  writefile FileAdd.txt "Pending"
   addfile FileAdd.txt trunk
   # Deleted
   delfile File3.txt trunk
   # Modify
-  writefile File2.txt 2
+  writefile File2.txt "Pending"
+  writefile "Dir1/F 3.txt" "Pending"
+  writefile "Dir1/F2.txt" "Pending"
+  writefile "Dir 2/F1.txt" "Pending"
   # Conflict
   conflict Ftrunk.txt
   cd $WD

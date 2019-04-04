@@ -8,7 +8,7 @@ proc cleanup_old {root} {
     puts "Deleting $root"
     file delete -force $root
   }
-  set oldirs [glob -nocomplain -- git_test*]
+  set oldirs [glob -nocomplain -- git_test**]
   foreach od $oldirs {
     puts "Deleting $od"
     file delete -force $od
@@ -27,6 +27,21 @@ proc clone {Root Clone} {
     puts "COULD NOT CLONE REPOSITORY $Root to $Clone"
     exit 1
   }
+}
+
+proc worktree {Root Branch} {
+  puts "==============================="
+  puts "MAKING WORKTREE"
+  cd $Root
+  set exec_cmd "git worktree add --track -b branch$Branch ../git_test_wtree$Branch"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  if {$ret} {
+    puts "COULD NOT MAKE WORKTREE ../git_test_wtree$Branch"
+    exit 1
+  }
+  cd ..
 }
 
 proc repository {Root} {
@@ -168,15 +183,10 @@ proc merge {fromtag totag} {
   cd $WD
 }
 
-proc writefile {filename wn} {
-  set wordlist(1) {capacious glower canorous spoonerism tenebrous nescience gewgaw effulgence}
-  set wordlist(2) {billet willowwacks amaranthine chaptalize nervure moxie overslaugh}
-
-  set ind [expr {int(rand()*[llength $wordlist($wn)])}]
-  set word [lindex $wordlist($wn) $ind]
-  puts " append \"$word\" to $filename"
+proc writefile {filename string} {
+  puts " append \"$string\" to $filename"
   set fp [open "$filename" a]
-  puts $fp $word
+  puts $fp $string
   close $fp
 }
 
@@ -273,28 +283,29 @@ proc mkfiles {topdir} {
 
   # Make some files each containing a random word
   foreach n {1 2 3} {
-    writefile "File$n.txt" 1
+    writefile "File$n.txt" "Initial"
   }
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
     foreach n {1 2 " 3"} {
       set subf [file join $D "F$n.txt"]
-      writefile $subf 1
+      writefile $subf "Initial"
     }
   }
   cd $WD
 }
 
-proc modfiles {} {
-  set tmpfile "list.tmp"
+proc modfiles {string} {
+  global tcl_platform
 
+  set tmpfile "list.tmp"
   file delete -force $tmpfile
-  if {[ info exists env(SystemDrive) ]} {
+  if {$tcl_platform(platform) eq "windows"} {
     puts "Must be a PC"
     set ret [catch {eval "exec [auto_execok dir] /b F*.txt /s > $tmpfile"} out]
   } else {
-    set ret [catch {eval "exec find . -name F*.txt -o -name .git -a -type f > $tmpfile"} out]
+    set ret [catch {eval "exec find . -name F*.txt -a -type f > $tmpfile"} out]
   }
   if {$ret} {
     puts "Find failed"
@@ -303,7 +314,7 @@ proc modfiles {} {
   }
   set fl [open $tmpfile r]
   while { [gets $fl item] >= 0} {
-    writefile $item 2
+    writefile $item $string
   }
   close $fl
   file delete -force $tmpfile
@@ -317,7 +328,7 @@ proc conflict {filename} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  writefile $filename 1
+  writefile $filename "Conflict A"
   set exec_cmd "git commit -m \"change on temp_branch\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -328,7 +339,7 @@ proc conflict {filename} {
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   # Make a different change to same line
-  writefile $filename 1
+  writefile $filename "Conflict B"
   set exec_cmd "git commit -m \"change on master\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
@@ -341,6 +352,7 @@ proc conflict {filename} {
 
 ##############################################
 set branching_desired 1
+set leave_a_mess 1
 
 for {set i 0} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
@@ -381,8 +393,8 @@ cd $WD
 puts "==============================="
 puts "First revision on trunk"
 cd $Master
-modfiles
-writefile Ftrunk.txt 2
+modfiles "Main 1"
+writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt master
 stage
 commit "First revision on trunk"
@@ -394,20 +406,20 @@ if {$branching_desired} {
   puts "MAKING BRANCH A"
   newbranch master branchA
   cd $WD/git_test_branchA
-  writefile FbranchA.txt 2
+  writefile FbranchA.txt "BranchA 1"
   addfile FbranchA.txt branchA
   stage
   commit "Add file FbranchA.txt on branch A"
 
   puts "==============================="
   puts "First revision on Branch A"
-  modfiles
+  modfiles "BranchA 1"
   stage
   commit "First revision on branch A"
 
   puts "==============================="
   puts "Second revision on Branch A"
-  modfiles
+  modfiles "BranchA 2"
   stage
   commit "Second revision on branch A"
   push ""
@@ -424,13 +436,13 @@ puts "==============================="
 puts "Second revision on trunk"
 cd $WD/$Master
 fetch {--all}
-modfiles
+modfiles "Main 2"
 stage
 commit "Second revision on trunk"
 
 puts "==============================="
 puts "Third revision on trunk"
-modfiles
+modfiles "Main 3"
 stage
 commit "Third revision on trunk"
 push ""
@@ -441,10 +453,10 @@ if {$branching_desired} {
   # Branch off of the branch
   puts "==============================="
   puts "MAKING BRANCH AA"
-  newbranch branchA branchAA
-  cd $WD/git_test_branchAA
-  modfiles
-  writefile FbranchAA.txt 2
+  worktree git_test_branchA AA
+  cd $WD/git_test_wtreeAA
+  modfiles "BranchAA 1"
+  writefile FbranchAA.txt "BranchAA 1"
   addfile FbranchAA.txt branchAA
   delfile Ftrunk.txt branchAA
   stage
@@ -452,35 +464,35 @@ if {$branching_desired} {
 
   puts "==============================="
   puts "Revision on Branch AA"
-  modfiles
+  modfiles "BranchAA 2"
   stage
   commit "Second changes on Branch AA"
-  push ""
-  push $Root
+  #push ""
+  #push $Root
   cd $WD
 
   # Branch B
   puts "==============================="
   puts "MAKING BRANCH B"
-  newbranch master branchB
-  cd $WD/git_test_branchB
-  modfiles
-  writefile FbranchB.txt 1
+  worktree git_test_master B
+  cd $WD/git_test_wtreeB
+  modfiles "BranchB 1"
+  writefile FbranchB.txt "BranchB 1"
   addfile FbranchB.txt branchB
   stage
   commit "First changes on Branch B"
 
   puts "==============================="
   puts "Revision on Branch B"
-  modfiles
+  modfiles "BranchB 2"
   stage
   commit "Second changes on Branch B"
-  push ""
-  push $Root
+  #push ""
+  #push $Root
   cd $WD
 
-  # Update all the directories
-  foreach branch {branchA branchAA branchB master} {
+  # Update the clones
+  foreach branch {branchA master} {
     cd $WD/git_test_$branch
     push {--all}
     fetch {--all}
@@ -494,16 +506,19 @@ if {$leave_a_mess} {
   puts "Making Uncommitted changes on trunk"
   cd $WD/$Master
   # Local only
-  writefile FileLocal.txt 1
+  writefile FileLocal.txt "Pending"
   # Conflict. Have to do this before the add and delete,
   # or the merge will fail before you get to the conflicted file
   conflict Ftrunk.txt
   # Newly added
-  writefile FileAdd.txt 2
+  writefile FileAdd.txt "Pending"
   addfile FileAdd.txt trunk
   # Deleted
   delfile File3.txt trunk
   # Modify
-  writefile File2.txt 2
+  writefile File2.txt "Pending"
+  writefile "Dir1/F 3.txt" "Pending"
+  writefile "Dir1/F2.txt" "Pending"
+  writefile "Dir 2/F1.txt" "Pending"
   cd $WD
 }
