@@ -41,11 +41,15 @@ proc git_workdir_status {} {
     if {[string length $statline] < 1} {
       continue
     }
+    # MM "Dir1/F 3.txt"
+    #  M Dir2/F2.txt
     set status [string range $statline 0 1]
-    set f [lindex $statline 1]
+    # Strip quotes
+    set f [string trim [lindex $statline 1] "\""]
+    # Trim path
+    regsub "^$module_dir/" $f "" f
+    gen_log:log D "TRIMMED $status $f"
     if {[regexp {/} $f]} {
-      #set dir [lindex [file split $f] 0]
-      #set Filelist($dir:status) "<directory:GIT>"
       continue
     }
     lappend statfiles "$f"
