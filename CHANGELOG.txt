@@ -1,3 +1,13 @@
+Release 9.0.3 April, 2019
+
+- Fix subdirectories in git
+
+- Hide .git file in worktree directory
+
+- Rationalize the text files in the test generator, and "leave_a_mess" in
+  subdirectories
+
+
 Release 9.0.2 January, 2019
 
 - Add an entry for the comment when tagging in Subversion or Git
