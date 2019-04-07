@@ -425,6 +425,18 @@ if {$branching_desired} {
   push ""
   cd $WD
 
+  # Branch C
+  puts "==============================="
+  puts "MAKING BRANCH C FROM SAME ROOT"
+  worktree git_test_master C
+  cd $WD/git_test_wtreeC
+  modfiles "BranchC 1"
+  writefile FbranchC.txt "BranchC 1"
+  addfile FbranchC.txt branchC
+  stage
+  commit "First changes on Branch C"
+  cd $WD
+
   puts "==============================="
   puts "Merging BranchA to trunk"
   merge branchA master

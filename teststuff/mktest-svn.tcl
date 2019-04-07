@@ -288,6 +288,17 @@ if {$branching_desired} {
   commit "Second revision on branch A"
   cd $WD
 
+  # Branch C
+  puts "==============================="
+  puts "MAKING BRANCH C FROM SAME ROOT"
+  newbranch cvs_test HEAD branchC
+  cd $WD/cvs_test_branchC
+  modfiles "BranchC 1"
+  writefile FbranchC.txt "BranchC 1"
+  addfile FbranchC.txt branchC
+  commit "Add file FC on Branch B"
+  cd $WD
+
   puts "==============================="
   puts "Merging BranchA to trunk"
   merge branchA trunk
