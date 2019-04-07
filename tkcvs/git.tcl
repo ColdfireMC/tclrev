@@ -463,6 +463,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
+  # --full-history causes merges to be shown
   set commandline "git log --graph --all --full-history --oneline --color"
   if {$rev ne ""} {
     append commandline " $rev"
@@ -1108,7 +1109,7 @@ namespace eval ::git_branchlog {
         gen_log:log D "final branches: $branches"
 
         # Get all the author, date, comment, etc data at once.
-        # Need --full-history or it will simplify
+        # --full-history causes merges to be shown
         set command "git log --all --full-history --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
@@ -1177,7 +1178,7 @@ if {1} {
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
           if {$branch eq $trunk} {
-            set command "git rev-list --abbrev-commit --sparse --first-parent $trunk -- \"$filename\""
+            set command "git rev-list --abbrev-commit --first-parent $trunk -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
             $cmd_revlist\::destroy
@@ -1340,7 +1341,8 @@ if {1} {
         set last ""
         while {$i < $l} {
           set line [lindex $lines $i]
-          gen_log:log D "Line $i of $l:  $line"
+          #gen_log:log D "Line $i of $l:  $line"
+          gen_log:log D "$line"
           if { [ regexp {^\s*$} $last ] && [ string match {commit *} $line] } {
             # ^ the last line was empty and this one starts with commit
             if {[expr {$l - $i}] < 0} {break}
@@ -1351,7 +1353,7 @@ if {1} {
             # commit 4c5ebde9ca8d3248a2359152eae48fafe27142ae (tag: tag_1, tag: tag_3, branchA)
             if {[regexp {\(.*\)} $line parenthetical]} {
               set parenthetical [string range $parenthetical 1 end-1]
-              gen_log:log D "  parenthetical $parenthetical"
+              #gen_log:log D "  parenthetical $parenthetical"
               if {[set tagmatches [regexp -inline -all {tag: (.*?)(,|$)} $parenthetical]] ne ""} {
                 # This will return something like 
                 # {tag: tag_1,} tag_1 , {tag: Tag_3,} Tag_3 ,
@@ -1428,9 +1430,9 @@ if {1} {
 
         gen_log:log T "ENTER ($branch)"
 
-        set guess1 [set guess2 ""]
-        set base1_hash [set base2_hash ""]
-        set parent1 [set parent2 ""]
+        set base_guess1 [set base_guess2 ""]
+        set base_hash1 [set base_hash2 ""]
+        set parent_guess1 [set parent_guess2 ""]
 
         # First method of finding base of branch, from show-branch -a
         set capture ""
@@ -1441,24 +1443,29 @@ if {1} {
           # Look for someting like " + [branchB^]"
           # We overwrite "capture" because the last one is what we want
           if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*\\\]" $br_a_ln capture] {
-            gen_log:log D "TRACK Base candidate 1 for $branch:  $capture"
+            #gen_log:log D "TRACK Base candidate 1 for $branch:  $capture"
           }
         }
         # attempt to get the bit between the braces
-        if [regexp {^.*\[(\S+)\].*$} $capture null guess1] {
-          gen_log:log D "TRACK Base candidate 1 for $branch: $guess1"
+        if [regexp {^.*\[(\S+)\].*$} $capture null base_guess1] {
+          #gen_log:log D "TRACK Base candidate 1 for $branch: $base_guess1"
           # Find the hash of the branch base we just identified
-          set command "git log -n1 --oneline --no-color $guess1 -- \"$filename\""
-          set cmd_id2 [exec::new $command]
+          set command "git log -n1 --oneline --no-color $base_guess1 -- \"$filename\""
+          set cmd_b1 [exec::new $command]
+          set cmd_b1_out [$cmd_b1\::output]
+          $cmd_b1\::destroy
           # Don't do an implicit split because the comment string may be messy
-          regsub { .*$} $cmd_id2 {} base1_hash
-          gen_log:log D "TRACK Base candidate 1 for $branch: $base1_hash"
+          regsub { .*$} $cmd_b1_out {} base_hash1
+          ##gen_log:log D "TRACK Base candidate 1 for $branch: $base_hash1"
           # Now find its immediate parent
-          set command "git rev-parse --short $guess1^ -- \"$filename\""
+          set command "git rev-parse --short $base_guess1^ -- \"$filename\""
           set cmd_p1 [exec::new $command]
+          set cmd_p1_out [$cmd_p1\::output]
           # Don't do an implicit split because the comment string may be messy
-          regsub { .*$} $cmd_p1 {} parent1
-          gen_log:log D "TRACK Parent candidate 1 for $branch: $parent1"
+          regsub { .*$} $cmd_p1_out {} parent_guess1
+          set parent_guess1 [string trim $parent_guess1 "\n"]
+          $cmd_p1\::destroy
+          #gen_log:log D "TRACK Parent candidate 1 for $branch: $parent_guess1"
         }
 }
 
@@ -1475,38 +1482,40 @@ if {1} {
           # Look for someting like " + [branchB@{0}^]"
           # This time, we want the next to last match
           if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $br_r_ln capture] {
-            gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
+            #gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
             lappend savlist $capture
           }
         }
         set capture [lindex $savlist end-1]
         # attempt to get the bit between the braces
-        if [regexp {^.*\[(\S+)\].*$} $capture null guess2] {
-          gen_log:log D "TRACK Base candidate 2 for $branch: $guess2"
+        if [regexp {^.*\[(\S+)\].*$} $capture null base_guess2] {
+          #gen_log:log D "TRACK Base candidate 2 for $branch: $base_guess2"
           # Find the hash of the branch base we just identified
-          set command "git log -n1 --oneline --no-color $guess2 -- \"$filename\""
+          set command "git log -n1 --oneline --no-color $base_guess2 -- \"$filename\""
           set cmd_id2 [exec::new $command]
-          set base2_hash [lindex [$cmd_id2\::output] 0]
-          gen_log:log D "TRACK Base candidate 2 for $branch: $base2_hash"
+          set base_hash2 [lindex [$cmd_id2\::output] 0]
+          #gen_log:log D "TRACK Base candidate 2 for $branch: $base_hash2"
           # Now find its immediate parent
-          set command "git rev-parse --short $guess2^ -- \"$filename\""
+          set command "git rev-parse --short $base_guess2^ -- \"$filename\""
           set cmd_p2 [exec::new $command]
-          set parent2 [lindex [$cmd_p2\::output] 0]
-          gen_log:log D "TRACK Parent candidate 2 for $branch: $parent2"
+          set parent_guess2 [lindex [$cmd_p2\::output] 0]
+          #gen_log:log D "TRACK Parent candidate 2 for $branch: $parent_guess2"
         }
-        if {$base1_hash ne ""} {
-          set base $base1_hash
+gen_log:log D "TRACK method 1: Base: $base_guess1 ($base_hash1)  Parent: $parent_guess1"
+gen_log:log D "TRACK method 2: Base: $base_guess2 ($base_hash2)  Parent: $parent_guess2"
+        if {$base_hash1 ne ""} {
+          set base $base_hash1
           gen_log:log D "TRACK Base for $branch: $base from guess 1"
-        } elseif {$base2_hash ne ""} {
-          set base $base2_hash
+        } elseif {$base_hash2 ne ""} {
+          set base $base_hash2
           gen_log:log D "TRACK Base for $branch: $base from guess 2"
         }
         # Second method seems more reliable for parent
-        if {$parent2 ne ""} {
-          set parent $parent2
+        if {$parent_guess2 ne ""} {
+          set parent $parent_guess2
           gen_log:log D "TRACK Parent for $branch: $parent from guess 2"
-        } elseif {$parent1 ne ""} {
-          set parent $parent1
+        } elseif {$parent_guess1 ne ""} {
+          set parent $parent_guess1
           gen_log:log D "TRACK Parent for $branch: $parent from guess 1"
         }
         gen_log:log D "TRACK returning for $branch: BASE $base  PARENT $parent"
