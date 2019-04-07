@@ -133,7 +133,7 @@ proc gen_log:clear { } {
 proc gen_log:save { } {
   set initialfile "tkcvs_log.txt"
 
-  set types  { {{All Files} *} }
+  set types  {{ "Text Files" {*.txt *.log}} {"All Files" {*}} }
   set savfile [ \
     tk_getSaveFile -title "Save Trace" \
        -filetypes $types \

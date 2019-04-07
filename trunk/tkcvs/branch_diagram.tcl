@@ -1256,6 +1256,7 @@ namespace eval ::logcanvas {
           }
           # If there's no trunk, find the beginning of a branch
           if {! [info exists trunkrev] || $trunkrev == ""} {
+            gen_log:log D "No trunk found!"
             set min 999999
             foreach a [array names revbtags] {
               if {$a == "" } {continue}
@@ -1268,6 +1269,7 @@ namespace eval ::logcanvas {
             }
             if {$min != 999999} {
               set basebranch "r$min"
+              gen_log:log D "No trunk, starting with basebranch $basebranch"
             }
           }
 

@@ -174,6 +174,10 @@ proc find_git_remote {dirname} {
 
   gen_log:log T "ENTER ($dirname)"
 
+  if {! [info exists cvscfg(url)] } {
+    set cvscfg(url) ""
+    set cvscfg(origin) ""
+  }
   set cmd(git_config) [exec::new "git remote -v"]
   set lines [split [$cmd(git_config)\::output] "\n"]
   set i 0
@@ -459,7 +463,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  set commandline "git log --graph --all --color"
+  set commandline "git log --graph --all --full-history --color"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -1039,6 +1043,9 @@ namespace eval ::git_branchlog {
 
         # Get a list of the branches from the repository.
         # This gives you the local branches
+        set remote_branches {}
+        set local_branches {}
+
         set command "git branch --format=\'%(refname:short)\'"
         set cmd_lbranch [exec::new $command {} 0 {} 1]
         set lbranch_output [$cmd_lbranch\::output]
@@ -1101,8 +1108,8 @@ namespace eval ::git_branchlog {
         gen_log:log D "final branches: $branches"
 
         # Get all the author, date, comment, etc data at once.
-        # Don't supply the filename here, or else we miss things we'll need later
-        set command "git log --all --abbrev-commit --date=iso --tags --decorate=short --no-color"
+        # Need --full-history or it will simplify
+        set command "git log --all --full-history --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1155,15 +1162,22 @@ namespace eval ::git_branchlog {
         }
 
         # First method of finding base of branch, Do it once and save the output.
+if {1} {
         set command1 "git show-branch -a --no-color"
         set cmd1 [exec::new $command1]
-        set show_branch_a [$cmd1\::output]
+        # Chop off the comments. We don't need them and they choke regexp later on.
+        foreach cmd1_line [split [$cmd1\::output] "\n"] {
+          regsub {\].*$} $cmd1_line {]} line
+          lappend show_branch_a $line
+        }
         $cmd1\::destroy
+}
 
         # Collect the branches
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
           if {$branch eq $trunk} {
+            #set command "git rev-list --abbrev-commit --sparse --first-parent $trunk -- \"$filename\""
             set command "git rev-list --abbrev-commit --topo-order --sparse --first-parent $trunk -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
@@ -1179,6 +1193,7 @@ namespace eval ::git_branchlog {
             set parent [lindex $base_and_parent 1]
             gen_log:log D "BASE=$base PARENT=$parent"
             set branchparent($branch) $parent
+            #set command "git rev-list --abbrev-commit $parent..$branch -- \"$filename\""
             set command "git rev-list --abbrev-commit --topo-order $parent..$branch -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
@@ -1197,7 +1212,7 @@ namespace eval ::git_branchlog {
             }
 
             if {$base ne ""} {
-              set revbranches($parent) $base
+              lappend revbranches($parent) $base
               set branchrevs($base) $branchrevs($branch)
               set revbtags($base) $branch
               gen_log:log D "$branch BASE: $base   PARENT: $parent"
@@ -1230,6 +1245,12 @@ namespace eval ::git_branchlog {
             if {$r == $revnum_current} {
               # We need to make a new artificial branch off of $r
               lappend revbranches($r) {current}
+            }
+            if {! [info exists revdate($r)]} {
+              # FIXME: What to do with these? Arguably we shouldn't draw them at all
+              gen_log:log D "ERROR: revdate($r) is missing"
+              set revdate($r) "?"
+              continue
             }
             gen_log:log D " $r $revdate($r) ($revcomment($r))"
             set revkind($r) "revision"
@@ -1276,6 +1297,12 @@ namespace eval ::git_branchlog {
             if {$r == $revnum_current} {
               # We need to make a new artificial branch off of $r
               lappend revbranches($r) {current}
+            }
+            if {! [info exists revdate($r)]} {
+              # FIXME: What to do with these? Arguably we shouldn't draw them at all
+              gen_log:log D "ERROR: revdate($r) is missing"
+              set revdate($r) "?"
+              continue
             }
             gen_log:log D "  $r $revdate($r) ($revcomment($r))"
             set revpath($r) $path
@@ -1411,27 +1438,31 @@ namespace eval ::git_branchlog {
         set capture ""
         set base ""
         set parent ""
-        foreach ln [split $show_branch_a "\n"] {
+if {1} {
+        foreach br_a_ln $show_branch_a {
           # Look for someting like " + [branchB^]"
           # We overwrite "capture" because the last one is what we want
-          if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*\\\]" $ln capture] {
+          if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*\\\]" $br_a_ln capture] {
             gen_log:log D "TRACK Base candidate 1 for $branch:  $capture"
           }
         }
         # attempt to get the bit between the braces
         if [regexp {^.*\[(\S+)\].*$} $capture null guess1] {
-          gen_log:log D "TRACK Base guess1 for $branch = $guess1"
+          gen_log:log D "TRACK Base candidate 1 for $branch: $guess1"
           # Find the hash of the branch base we just identified
           set command "git log -n1 --oneline $guess1 -- \"$filename\""
-          set cmd_id1 [exec::new $command]
-          set base1_hash [lindex [$cmd_id1\::output] 0]
-          gen_log:log D "TRACK Base hash 1 for $branch = $base1_hash"
+          set cmd_id2 [exec::new $command]
+          # Don't do an implicit split because the comment string may be messy
+          regsub { .*$} $cmd_id2 {} base1_hash
+          gen_log:log D "TRACK Base candidate 1 for $branch: $base1_hash"
           # Now find its immediate parent
           set command "git rev-parse --short $guess1^ -- \"$filename\""
           set cmd_p1 [exec::new $command]
-          set parent1 [lindex [$cmd_p1\::output] 0]
-          gen_log:log D "TRACK Parent hash 1 for $branch = $parent1"
+          # Don't do an implicit split because the comment string may be messy
+          regsub { .*$} $cmd_p1 {} parent1
+          gen_log:log D "TRACK Parent candidate 1 for $branch: $parent1"
         }
+}
 
         # Second method of finding base of branch
         set command2 "git show-branch --reflog $branch"
@@ -1442,10 +1473,10 @@ namespace eval ::git_branchlog {
         set base ""
         set parent ""
         set savlist ""
-        foreach ln [split $cmd2_output "\n"] {
+        foreach br_r_ln [split $cmd2_output "\n"] {
           # Look for someting like " + [branchB@{0}^]"
           # This time, we want the next to last match
-          if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $ln capture] {
+          if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $br_r_ln capture] {
             gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
             lappend savlist $capture
           }
@@ -1453,34 +1484,34 @@ namespace eval ::git_branchlog {
         set capture [lindex $savlist end-1]
         # attempt to get the bit between the braces
         if [regexp {^.*\[(\S+)\].*$} $capture null guess2] {
-          gen_log:log D "TRACK Base guess2 for $branch = $guess2"
+          gen_log:log D "TRACK Base candidate 2 for $branch: $guess2"
           # Find the hash of the branch base we just identified
           set command "git log -n1 --oneline $guess2 -- \"$filename\""
           set cmd_id2 [exec::new $command]
           set base2_hash [lindex [$cmd_id2\::output] 0]
-          gen_log:log D "TRACK base2_hash for $branch = $base2_hash"
+          gen_log:log D "TRACK Base candidate 2 for $branch: $base2_hash"
           # Now find its immediate parent
           set command "git rev-parse --short $guess2^ -- \"$filename\""
           set cmd_p2 [exec::new $command]
           set parent2 [lindex [$cmd_p2\::output] 0]
-          gen_log:log D "TRACK Parent 2 hash for $branch = $parent2"
+          gen_log:log D "TRACK Parent candidate 2 for $branch: $parent2"
         }
         if {$base1_hash ne ""} {
           set base $base1_hash
-          gen_log:log D "TRACK base for $branch is from guess 1"
+          gen_log:log D "TRACK Base for $branch: $base from guess 1"
         } elseif {$base2_hash ne ""} {
           set base $base2_hash
-          gen_log:log D "TRACK base $branch is from guess 2"
+          gen_log:log D "TRACK Base for $branch: $base from guess 2"
         }
-        if {$parent1 ne ""} {
-          set parent $parent1
-          gen_log:log D "TRACK parent $branch is from guess 1"
-        } elseif {$parent2 ne ""} {
+        # Second method seems more reliable for parent
+        if {$parent2 ne ""} {
           set parent $parent2
-          gen_log:log D "TRACK parent $branch is from guess 2"
+          gen_log:log D "TRACK Parent for $branch: $parent from guess 2"
+        } elseif {$parent1 ne ""} {
+          set parent $parent1
+          gen_log:log D "TRACK Parent for $branch: $parent from guess 1"
         }
-
-        gen_log:log D "TRACK returning for $branch BASE $base  PARENT $parent"
+        gen_log:log D "TRACK returning for $branch: BASE $base  PARENT $parent"
         gen_log:log T "return ($base $parent)"
         return [list $base $parent]
       }
@@ -1521,6 +1552,9 @@ namespace eval ::git_branchlog {
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
           gen_log:log D "branchrevs($a) $branchrevs($a)"
+        }
+        foreach a [lsort -dictionary [array names revbranches]] {
+           gen_log:log D "revbranches($a) $revbranches($a)"
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revbtags]] {

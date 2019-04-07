@@ -66,7 +66,7 @@ proc ro_textbindings {txtw} {
 }
 
 proc save_viewcontents {w} {
-  set types  { {{All Files} *} }
+  set types  { {"Text Files" {*.txt *.log}} {"All Files" *} }
   set savfile [ \
     tk_getSaveFile -title "Save Results Summary" \
        -initialdir "." \
