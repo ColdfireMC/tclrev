@@ -306,10 +306,10 @@ proc git_log {detail args} {
       append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      append flags " --pretty=oneline"
+      append flags " --graph --all --oneline"
     }
     verbose {
-      append flags " --graph --all"
+      append flags " --all"
     }
   }
 
@@ -463,7 +463,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  set commandline "git log --graph --all --full-history --color"
+  set commandline "git log --graph --all --full-history --oneline --color"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -1177,8 +1177,7 @@ if {1} {
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
           if {$branch eq $trunk} {
-            #set command "git rev-list --abbrev-commit --sparse --first-parent $trunk -- \"$filename\""
-            set command "git rev-list --abbrev-commit --topo-order --sparse --first-parent $trunk -- \"$filename\""
+            set command "git rev-list --abbrev-commit --sparse --first-parent $trunk -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
             $cmd_revlist\::destroy
@@ -1193,8 +1192,7 @@ if {1} {
             set parent [lindex $base_and_parent 1]
             gen_log:log D "BASE=$base PARENT=$parent"
             set branchparent($branch) $parent
-            #set command "git rev-list --abbrev-commit $parent..$branch -- \"$filename\""
-            set command "git rev-list --abbrev-commit --topo-order $parent..$branch -- \"$filename\""
+            set command "git rev-list --abbrev-commit $parent..$branch -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
             $cmd_revlist\::destroy
@@ -1450,7 +1448,7 @@ if {1} {
         if [regexp {^.*\[(\S+)\].*$} $capture null guess1] {
           gen_log:log D "TRACK Base candidate 1 for $branch: $guess1"
           # Find the hash of the branch base we just identified
-          set command "git log -n1 --oneline $guess1 -- \"$filename\""
+          set command "git log -n1 --oneline --no-color $guess1 -- \"$filename\""
           set cmd_id2 [exec::new $command]
           # Don't do an implicit split because the comment string may be messy
           regsub { .*$} $cmd_id2 {} base1_hash
@@ -1465,7 +1463,7 @@ if {1} {
 }
 
         # Second method of finding base of branch
-        set command2 "git show-branch --reflog $branch"
+        set command2 "git show-branch --no-color --reflog $branch"
         set cmd2 [exec::new $command2]
         set cmd2_output [$cmd2\::output]
         $cmd2\::destroy
@@ -1486,7 +1484,7 @@ if {1} {
         if [regexp {^.*\[(\S+)\].*$} $capture null guess2] {
           gen_log:log D "TRACK Base candidate 2 for $branch: $guess2"
           # Find the hash of the branch base we just identified
-          set command "git log -n1 --oneline $guess2 -- \"$filename\""
+          set command "git log -n1 --oneline --no-color $guess2 -- \"$filename\""
           set cmd_id2 [exec::new $command]
           set base2_hash [lindex [$cmd_id2\::output] 0]
           gen_log:log D "TRACK Base candidate 2 for $branch: $base2_hash"
