@@ -235,7 +235,7 @@ proc parse_gitlist {tf gitroot} {
     #gen_log:log D "modtitle($dname)=$modtitle($dname)"
     ModList:newitem $tf $dname $modval($dname)
   }
-
+  update idletasks
   # Then you can do something like this to list the files
   # git ls-tree -r refs/heads/master --name-only
   gen_log:log T "LEAVE"
@@ -1054,13 +1054,15 @@ namespace eval ::git_branchlog {
         set log_output [$branches_log\::output]
         $branches_log\::destroy
         set log_lines [split $log_output "\n"]
+        # Line could look like this:
+        # 8fafe27142ae (tag: tag_1, tag: tag_3, branchA)
         foreach logline $log_lines {
-          if {[regexp {\(.*\)} $logline wanted]} {
-             # Strip off the parentheses
-             regsub -all {[()]} $wanted {} wanted 
-             # It might have tags and so on, so just take the last string
-             regsub {^.* } $wanted {} wanted
-             if {! [regexp {HEAD} $wanted]} {
+          if {[regexp {\(.*\)} $logline parenthetical]} {
+            set parenthetical [string range $parenthetical 1 end-1]
+             gen_log:log D "  parenthetical $parenthetical"
+             regsub -all {tag: (.*?)(,|$)} $parenthetical {} branches_only
+             regsub {^.* } $branches_only {} wanted
+             if {! [regexp {HEAD} $wanted] && [regexp {\w+} $wanted]} {
                lappend branches $wanted
              }
            }
@@ -1076,7 +1078,9 @@ namespace eval ::git_branchlog {
               lappend filtered_branches $r
             }
           } else {
-            lappend filtered_branches $r
+            if {$r ni $filtered_branches} {
+              lappend filtered_branches $r
+            }
           }
         }
         set branches $filtered_branches
@@ -1182,7 +1186,8 @@ namespace eval ::git_branchlog {
               continue
             }
 
-            if {$base ne ""} {
+            if {($base ne "") && ($parent ne $base)} {
+              # If parent == base drawing loops forever. That's why we checked it.
               lappend revbranches($parent) $base
               set branchrevs($base) $branchrevs($branch)
               set revbtags($base) $branch
@@ -1284,10 +1289,10 @@ namespace eval ::git_branchlog {
         if { $rootrev ne "" } {
           lappend branchlist $rootrev
         }
-        if {$branch ne $trunk} {
-          gen_log:log D "$branch"
-          set branch [string trimright $branch "/"]
-        }
+        #if {$branch ne $trunk} {
+          #gen_log:log D "$branch"
+          #set branch [string trimright $branch "/"]
+        #}
 
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
@@ -1427,14 +1432,14 @@ namespace eval ::git_branchlog {
           set cmd_b1 [exec::new $command]
           set cmd_b1_out [$cmd_b1\::output]
           $cmd_b1\::destroy
-          # Don't do an implicit split because the comment string may be messy
+          # Don't do an implicit split because the string may be messy
           regsub { .*$} $cmd_b1_out {} base_hash1
           ##gen_log:log D "TRACK Base candidate 1 for $branch: $base_hash1"
           # Now find its immediate parent
           set command "git rev-parse --short $base_guess1^ -- \"$filename\""
           set cmd_p1 [exec::new $command]
           set cmd_p1_out [$cmd_p1\::output]
-          # Don't do an implicit split because the comment string may be messy
+          # Don't do an implicit split because the string may be messy
           regsub { .*$} $cmd_p1_out {} parent_guess1
           set parent_guess1 [string trim $parent_guess1 "\n"]
           $cmd_p1\::destroy

@@ -33,7 +33,7 @@ proc workdir_setup {} {
   toplevel .workdir
   wm title .workdir "TkCVS $cvscfg(version) Working Directory"
   wm iconname .workdir "TkCVS"
-  if {$tcl_platform(platform) eq "unix"} {
+  if {$tcl_platform(platform) ne "windows"} {
     wm iconbitmap .workdir @$cvscfg(bitmapdir)/tkcvs48.xbm
   }
   wm minsize .workdir 430 300

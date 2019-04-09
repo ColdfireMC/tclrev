@@ -2019,6 +2019,7 @@ proc cvs_modbrowse_tree { mnames node } {
   gather_mod_index
   gen_log:log T "LEAVE"
 }
+
 proc cvs_lock {do files} {
   global cvscfg
   global cvscfg

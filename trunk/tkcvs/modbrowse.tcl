@@ -16,16 +16,23 @@ proc modbrowse_setup {} {
   gen_log:log T "ENTER"
   set cwd [pwd]
 
+  if {[winfo exists .modbrowse]} {
+    wm deiconify .modbrowse
+    raise .modbrowse
+    return
+  }
+
   # Window manager stuff.
   toplevel .modbrowse
   wm title .modbrowse "TkCVS $cvscfg(version) Repository Browser"
   wm iconname .modbrowse "TkCVS Repository Browser"
-  if {$tcl_platform(platform) != "windows"} {
+  if {$tcl_platform(platform) ne "windows"} {
     wm iconbitmap .modbrowse @$cvscfg(bitmapdir)/tkcvs48.xbm
   }
-  wm protocol .modbrowse WM_DELETE_WINDOW {
-    .modbrowse.bottom.buttons.close invoke 
-  }
+  wm minsize .modbrowse 430 300
+  wm protocol .modbrowse WM_DELETE_WINDOW {.modbrowse.bottom.buttons.close invoke}
+  wm withdraw .modbrowse
+
   if {[info exists cvscfg(modgeom)]} {
     wm geometry .modbrowse $cvscfg(modgeom)
   } else {
@@ -601,6 +608,7 @@ proc module_exit { } {
 
   gen_log:log T "ENTER"
 
+  # Stop any checkout that may be in process
   if {[info exists cmd(cvs_co)]} {
     catch {$cmd(cvs_co)\::abort}
     catch {unset cmd(cvs_co)}
@@ -618,7 +626,7 @@ proc module_exit { } {
     }
     gen_log:log C "$cvs -Q release $dirs"
     catch {eval "exec $cvs -Q release $dirs"}
-    # Doing it this way makes it pop up an error on windoze.
+    # Doing it this way makes it pop up an error on windows.
     # Very annoying.
     #set finish [exec::new "$cvs -Q release $dirs"]
     #$finish\::wait
