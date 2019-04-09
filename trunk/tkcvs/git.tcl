@@ -318,7 +318,8 @@ proc git_log {detail args} {
     if {[llength $filelist] > 1} {
       $v\::log "-- $file -------------------------------\n" blue
     }
-    set command "git log --color $flags -- \"$file\""
+    #set command "git log --color $flags -- \"$file\""
+    set command "git log --no-color $flags -- \"$file\""
     $v\::do "$command" 1
     $v\::wait
   }
@@ -464,7 +465,7 @@ proc git_log_rev {rev file} {
 
   set title "Git log"
   # --full-history causes merges to be shown
-  set commandline "git log --graph --all --full-history --oneline --color"
+  set commandline "git log --graph --all --oneline --no-color"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -1044,73 +1045,46 @@ namespace eval ::git_branchlog {
 
         # Get a list of the branches from the repository.
         # This gives you the local branches
-        set remote_branches {}
-        set local_branches {}
+        set branches {}
+        lappend branches $current_tagname
 
-        set command "git branch --format=\'%(refname:short)\'"
-        set cmd_lbranch [exec::new $command {} 0 {} 1]
-        set lbranch_output [$cmd_lbranch\::output]
-        $cmd_lbranch\::destroy
-        set lblines [split $lbranch_output "\n"]
-        foreach bl $lblines {
-          if {[string length $bl] > 0} {
-            lappend local_branches [string trim $bl "'"]
-          }
+        # This gets only the branches that are relevant to the current file
+        set command "git log --all --topo-order --first-parent --remove-empty --oneline --format=%h%d -- \"$filename\""
+        set branches_log [exec::new $command {} 0 {} 1]
+        set log_output [$branches_log\::output]
+        $branches_log\::destroy
+        set log_lines [split $log_output "\n"]
+        foreach logline $log_lines {
+          if {[regexp {\(.*\)} $logline wanted]} {
+             # Strip off the parentheses
+             regsub -all {[()]} $wanted {} wanted 
+             # It might have tags and so on, so just take the last string
+             regsub {^.* } $wanted {} wanted
+             if {! [regexp {HEAD} $wanted]} {
+               lappend branches $wanted
+             }
+           }
         }
-        # This one gives remote branches.
-        set command "git branch -r --format=\'%(refname:short)\'"
-        set cmd_rbranch [exec::new $command {} 0 {} 1]
-        set rbranch_output [$cmd_rbranch\::output]
-        $cmd_rbranch\::destroy
-        set rblines [split $rbranch_output "\n"]
-        foreach bl $rblines {
-          if {[string length $bl] > 0} {
-            lappend remote_branches [string trim $bl "'"]
-          }
-        }
-        # Now we combine them. If there's a locally visible branch we prefer it
+        gen_log:log D "preliminary branches: $branches"
+        # Filter out duplicates. If there's a locally visible branch we prefer it
         # because it may have changes that haven't been pushed to remote
-        set idx 0
-        foreach r $remote_branches {
-          regsub {.*/} $r {} rtail
-          if {$rtail eq "HEAD"} {
-            set remote_branches [lreplace $remote_branches $idx $idx]
-          }
-          incr idx
-        }
-        gen_log:log D "local_branches: $local_branches"
-        gen_log:log D "remote_branches: $remote_branches"
-        set idx 0
-        set match_list ""
-        set branches $local_branches
-        set i 0
-        foreach r_br $remote_branches {
-          incr i
-          regsub {.*/} $r_br {} rtail
-          # We found a remote that we don't need. Add its index to the removal list
-          if {$rtail in $local_branches} {
-            lappend match_list $i
-            continue
+        set filtered_branches {}
+        foreach r $branches {
+          if {[regexp {/} $r]} {
+            regsub {.*/} $r {} rtail
+            if {$rtail ni $branches} {
+              lappend filtered_branches $r
+            }
+          } else {
+            lappend filtered_branches $r
           }
         }
-        # Remove the indexed remotes
-        set i 0
-        foreach r_br $remote_branches {
-          incr i
-          set found 0
-          foreach j $match_list {
-            if {$i == $j} { set found 1 }
-          }
-          if {$found == 0} {
-            gen_log:log D "$r_br needed"
-            lappend branches $r_br
-          }
-        }
+        set branches $filtered_branches
         gen_log:log D "final branches: $branches"
 
         # Get all the author, date, comment, etc data at once.
         # --full-history causes merges to be shown
-        set command "git log --all --full-history --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
+        set command "git log --all --remove-empty --first-parent --full-history --abbrev-commit --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1163,7 +1137,6 @@ namespace eval ::git_branchlog {
         }
 
         # First method of finding base of branch, Do it once and save the output.
-if {1} {
         set command1 "git show-branch -a --no-color"
         set cmd1 [exec::new $command1]
         # Chop off the comments. We don't need them and they choke regexp later on.
@@ -1172,7 +1145,6 @@ if {1} {
           lappend show_branch_a $line
         }
         $cmd1\::destroy
-}
 
         # Collect the branches
         foreach branch $branches {
@@ -1405,7 +1377,7 @@ if {1} {
               foreach commentline [lrange $lines [expr {$j + 1}] [expr {$c - 2}]] {
                 set commentline [string range $commentline 4 end]
                 append revcomment($revnum) $commentline
-                append revcomment($revnum) "\n"
+                #append revcomment($revnum) "\n"
               }
               set i [expr {$c - 1}]
             }
@@ -1438,11 +1410,12 @@ if {1} {
         set capture ""
         set base ""
         set parent ""
-if {1} {
+        gen_log:log D "TRACK $branch"
+
         foreach br_a_ln $show_branch_a {
-          # Look for someting like " + [branchB^]"
+          # Look for someting like " + [branchB^] or "+ [branchA~2]"
           # We overwrite "capture" because the last one is what we want
-          if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*\\\]" $br_a_ln capture] {
+          if [regexp "\\\s+\\+\\\s+\\\[$branch\\\W*.*?\\\]" $br_a_ln capture] {
             #gen_log:log D "TRACK Base candidate 1 for $branch:  $capture"
           }
         }
@@ -1465,44 +1438,45 @@ if {1} {
           regsub { .*$} $cmd_p1_out {} parent_guess1
           set parent_guess1 [string trim $parent_guess1 "\n"]
           $cmd_p1\::destroy
-          #gen_log:log D "TRACK Parent candidate 1 for $branch: $parent_guess1"
-        }
-}
-
-        # Second method of finding base of branch
-        set command2 "git show-branch --no-color --reflog $branch"
-        set cmd2 [exec::new $command2]
-        set cmd2_output [$cmd2\::output]
-        $cmd2\::destroy
-        set capture ""
-        set base ""
-        set parent ""
-        set savlist ""
-        foreach br_r_ln [split $cmd2_output "\n"] {
-          # Look for someting like " + [branchB@{0}^]"
-          # This time, we want the next to last match
-          if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $br_r_ln capture] {
-            #gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
-            lappend savlist $capture
-          }
-        }
-        set capture [lindex $savlist end-1]
-        # attempt to get the bit between the braces
-        if [regexp {^.*\[(\S+)\].*$} $capture null base_guess2] {
-          #gen_log:log D "TRACK Base candidate 2 for $branch: $base_guess2"
-          # Find the hash of the branch base we just identified
-          set command "git log -n1 --oneline --no-color $base_guess2 -- \"$filename\""
-          set cmd_id2 [exec::new $command]
-          set base_hash2 [lindex [$cmd_id2\::output] 0]
-          #gen_log:log D "TRACK Base candidate 2 for $branch: $base_hash2"
-          # Now find its immediate parent
-          set command "git rev-parse --short $base_guess2^ -- \"$filename\""
-          set cmd_p2 [exec::new $command]
-          set parent_guess2 [lindex [$cmd_p2\::output] 0]
-          #gen_log:log D "TRACK Parent candidate 2 for $branch: $parent_guess2"
         }
 gen_log:log D "TRACK method 1: Base: $base_guess1 ($base_hash1)  Parent: $parent_guess1"
+
+        # Second method of finding base of branch
+        if {($parent_guess1 eq "") || ($base_guess1 eq "")} {
+          set command2 "git show-branch --no-color --reflog $branch"
+          set cmd2 [exec::new $command2]
+          set cmd2_output [$cmd2\::output]
+          $cmd2\::destroy
+          set capture ""
+          set base ""
+          set parent ""
+          set savlist ""
+          foreach br_r_ln [split $cmd2_output "\n"] {
+            # Look for someting like " + [branchB@{0}^]"
+            # This time, we want the next to last match
+            if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $br_r_ln capture] {
+              #gen_log:log D "TRACK Base candidate 2 for $branch:  $capture"
+              lappend savlist $capture
+            }
+          }
+          set capture [lindex $savlist end-1]
+          # attempt to get the bit between the braces
+          if [regexp {^.*\[(\S+)\].*$} $capture null base_guess2] {
+            #gen_log:log D "TRACK Base candidate 2 for $branch: $base_guess2"
+            # Find the hash of the branch base we just identified
+            set command "git log -n1 --oneline --no-color $base_guess2 -- \"$filename\""
+            set cmd_id2 [exec::new $command]
+            set base_hash2 [lindex [$cmd_id2\::output] 0]
+            #gen_log:log D "TRACK Base candidate 2 for $branch: $base_hash2"
+            # Now find its immediate parent
+            set command "git rev-parse --short $base_guess2^ -- \"$filename\""
+            set cmd_p2 [exec::new $command]
+            set parent_guess2 [lindex [$cmd_p2\::output] 0]
+            #gen_log:log D "TRACK Parent candidate 2 for $branch: $parent_guess2"
+          }
 gen_log:log D "TRACK method 2: Base: $base_guess2 ($base_hash2)  Parent: $parent_guess2"
+        }
+
         if {$base_hash1 ne ""} {
           set base $base_hash1
           gen_log:log D "TRACK Base for $branch: $base from guess 1"

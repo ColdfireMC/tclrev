@@ -156,7 +156,9 @@ namespace eval ::exec {
             $v_w.text insert end "$line\n" $texttag
           }
         } else {
-          $viewer\::ansi_print "$line"
+          # disable until (1;32m) type codes are fixed
+          #$viewer\::ansi_print "$line"
+          $v_w.text insert end "$line\n"
         }
         $v_w.text yview end
       }
@@ -377,11 +379,18 @@ namespace eval ::viewer {
         set ansi(30m) black
         set ansi(31m) red
         set ansi(32m) green
-        set ansi(33m) yellow
+        set ansi(33m) brown
         set ansi(34m) blue
         set ansi(35m) magenta
         set ansi(36m) cyan
         set ansi(37m) white
+        set ansi(1\;30) darkgray
+        set ansi(1\;31) lightred
+        set ansi(1\;32) lightgreen
+        set ansi(1\;33) yellow
+        set ansi(1\;34) lightblue
+        set ansi(1\;35) lightpurple
+        set ansi(1\;36) lightcyan
         set ansi(m) none
         # Bold etc, which let's not do for now
         set ansi(1m) "" ;#bold
