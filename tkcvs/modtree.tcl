@@ -17,7 +17,7 @@ proc ModTree:create {w {open_func {}} } {
     ModTree:loadimages
   }
 
-  set winwid [winfo width $w]
+  set winwid [winfo width [winfo parent $w]]
   panedwindow $w.pw -relief sunk -bd 2
   $w.pw configure -handlepad 35 -sashwidth 4 -sashpad 0 -handlesize 10
   frame $w.tree
