@@ -33,10 +33,14 @@ proc worktree {Root Branch} {
   puts "==============================="
   puts "MAKING WORKTREE"
   cd $Root
-  set exec_cmd "git worktree add --track -b branch$Branch ../git_test_wtree$Branch"
+  set exec_cmd "git worktree add --track -b branch$Branch ../git_test_branch$Branch"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
+  if {$ret} {
+    puts "COULD NOT MAKE WORKTREE ../git_test_branch$Branch"
+    exit 1
+  }
   cd ..
 }
 
@@ -151,32 +155,21 @@ proc merge {fromtag totag} {
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
 
-  # This works but isn't necessary for an arrow.
-  #set date [clock format [clock seconds] -format "%H-%M-%S"]
-  # First, tag the "from" file that's not in this branch
-  #set exec_cmd "git tag -a mergeto_${totag}_$date -m \"Merge $fromtag to $totag\" $fromtag"
-  #puts "$exec_cmd"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #if {$ret} {
-    #puts $out
-    #exit 1
-  #}
-  # Now, the version that's in the current branch
-  #set exec_cmd "git tag -a mergefrom_${fromtag}_$date -m \"Merge $fromtag to $totag\""
-  #puts "$exec_cmd"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #if {$ret} {
-    #puts $out
-    #exit 1
-  #}
-  #set exec_cmd "git push origin mergeto_${totag}_$date"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #puts $out
-  #set exec_cmd "git push origin mergefrom_${fromtag}_$date"
-  #set ret [catch {eval "exec $exec_cmd"} out]
-  #puts $out
-
   cd $WD
+}
+
+proc tag {tag msg} {
+  if {$msg eq ""} {
+    set exec_cmd "git tag $tag"
+  } else {
+    set exec_cmd "git tag -a $tag -m \"$msg\""
+  }
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  if {$ret} {
+    puts $out
+    exit 1
+  }
 }
 
 proc writefile {filename string} {
@@ -320,12 +313,12 @@ proc conflict {filename} {
   # Create a conflict. In Git, this is done with a temporary branch.
  
   # Check out a new branch
-  set exec_cmd "git checkout -b temp_branch"
+  set exec_cmd "git checkout -b clash"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
   writefile $filename "Conflict A"
-  set exec_cmd "git commit -m \"change on temp_branch\" $filename"
+  set exec_cmd "git commit -m \"change on clash\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -340,7 +333,7 @@ proc conflict {filename} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  set exec_cmd "git merge temp_branch"
+  set exec_cmd "git merge clash"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -382,6 +375,7 @@ clone $Root $Master
 populate $Master
 cd $Master
 commit "Commit the imported files"
+tag "init" "the starting point"
 push ""
 cd $WD
 
@@ -394,6 +388,8 @@ writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt master
 stage
 commit "First revision on trunk"
+tag "tagA" ""
+tag "tagC" ""
 push ""
 cd $WD
 
@@ -425,7 +421,7 @@ if {$branching_desired} {
   puts "==============================="
   puts "MAKING BRANCH C FROM SAME ROOT"
   worktree git_test_master C
-  cd $WD/git_test_wtreeC
+  cd $WD/git_test_branchC
   modfiles "BranchC 1"
   writefile FbranchC.txt "BranchC 1"
   addfile FbranchC.txt branchC
@@ -453,6 +449,7 @@ puts "Third revision on trunk"
 modfiles "Main 3"
 stage
 commit "Third revision on trunk"
+tag "tagB" ""
 push ""
 cd $WD
 
@@ -461,8 +458,11 @@ if {$branching_desired} {
   # Branch off of the branch
   puts "==============================="
   puts "MAKING BRANCH AA"
+  cd $WD/git_test_branchA
+  tag "tagAA" ""
+  cd $WD
   worktree git_test_branchA AA
-  cd $WD/git_test_wtreeAA
+  cd $WD/git_test_branchAA
   modfiles "BranchAA 1"
   writefile FbranchAA.txt "BranchAA 1"
   addfile FbranchAA.txt branchAA
@@ -475,15 +475,13 @@ if {$branching_desired} {
   modfiles "BranchAA 2"
   stage
   commit "Second changes on Branch AA"
-  #push ""
-  #push $Root
   cd $WD
 
   # Branch B
   puts "==============================="
   puts "MAKING BRANCH B"
   worktree git_test_master B
-  cd $WD/git_test_wtreeB
+  cd $WD/git_test_branchB
   modfiles "BranchB 1"
   writefile FbranchB.txt "BranchB 1"
   addfile FbranchB.txt branchB
@@ -495,12 +493,10 @@ if {$branching_desired} {
   modfiles "BranchB 2"
   stage
   commit "Second changes on Branch B"
-  #push ""
-  #push $Root
   cd $WD
 
   # Update the clones
-  foreach branch {branchA master} {
+  foreach branch {branchA branchAA branchB branchC master} {
     cd $WD/git_test_$branch
     push {--all}
     fetch {--all}

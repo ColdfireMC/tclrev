@@ -8,6 +8,9 @@ set CvsRoot [file join $WD "CVS_REPOSITORY"]
 if {[ file isdirectory $CvsRoot ]} {
   file delete -force $CvsRoot
 }
+if {[ file isdirectory CVSROOT ]} {
+  file delete -force CVSROOT
+}
 set oldirs [glob -nocomplain -- cvs_test*]
 foreach od $oldirs {
   puts "Deleting $od"
