@@ -2021,6 +2021,7 @@ proc cvs_modbrowse_tree { mnames node } {
 }
 
 proc cvs_lock {do files} {
+  global cvs
   global cvscfg
   global cvscfg
 

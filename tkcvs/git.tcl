@@ -120,6 +120,8 @@ proc git_workdir_status {} {
     # fields before the filename.
     # XY, now the second field, has "." for unmodified.
     if {![file isdirectory $f]} {
+      # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
+      if {! $cvscfg(gitdetail)} continue
       set good_line ""
       # Format: short hash, commit time, committer
       set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
