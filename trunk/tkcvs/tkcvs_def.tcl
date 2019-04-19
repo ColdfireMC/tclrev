@@ -18,6 +18,8 @@ set cvscfg(showstatcol) true
 set cvscfg(showdatecol) true
 # If you want to see the editors/author/lockers column
 set cvscfg(showeditcol) true
+# If you want to see hash and author in Git
+set cvscfg(gitdetail) false
 # Sort by filename or status (filecol or statcol)
 set cvscfg(sort_pref) {filecol -increasing}
 
