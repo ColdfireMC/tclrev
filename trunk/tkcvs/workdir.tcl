@@ -36,6 +36,7 @@ proc workdir_setup {} {
   if {$tcl_platform(platform) ne "windows"} {
     wm iconbitmap .workdir @$cvscfg(bitmapdir)/tkcvs48.xbm
   }
+  wm iconphoto .workdir -default Tclfish64
   wm minsize .workdir 430 300
   wm protocol .workdir WM_DELETE_WINDOW { .workdir.close invoke }
   wm withdraw .
@@ -1361,6 +1362,8 @@ proc directory_list { filenames } {
       if {$i == ".git"} {continue}
       if {$incvs} {
         set Filelist($i:status) "Not managed by CVS"
+      } elseif {$ingit} {
+        set Filelist($i:status) ""
       } else {
         set Filelist($i:status) "<file>"
       }

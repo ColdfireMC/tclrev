@@ -22,6 +22,8 @@ set cvscfg(showeditcol) true
 set cvscfg(gitdetail) false
 # Sort by filename or status (filecol or statcol)
 set cvscfg(sort_pref) {filecol -increasing}
+# Max number of revs to go back in a git branch diagram
+set cvscfg(gitmaxhist) 1000
 
 # Branch Diagram options
 # Number of tags in a Subversion repository that's "too many", ie

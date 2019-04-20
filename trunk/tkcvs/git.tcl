@@ -111,59 +111,61 @@ proc git_workdir_status {} {
     set Filelist($f:editors) ""
   }
 
-  set globfiles [glob -nocomplain *]
-  set allfiles [lsort -unique -dictionary [concat $statfiles $globfiles]]
-  foreach f $allfiles {
-    # --porcelain=1 out: XY <filename>, where X is the modification state of the index
-    #   and Y is the state of the work tree.  ' ' = unmodified.
-    # --porcelain=2 out has an extra interger field before the status and 6 extra
-    # fields before the filename.
-    # XY, now the second field, has "." for unmodified.
-    if {![file isdirectory $f]} {
-      # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
-      if {! $cvscfg(gitdetail)} continue
-      set good_line ""
-      # Format: short hash, commit time, committer
-      set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
-      set cmd(git_log) [exec::new "$command"]
-      set log_out [$cmd(git_log)\::output]
-      if {[string length $log_out] > 0} {
-        # git log returned something, but git status didn't, so
-        # I guess it must be up-to-date
-        if {! [info exists Filelist($f:status)] || ($Filelist($f:status) eq "<file>")} {
-          set Filelist($f:status) "Up-to-date"
-          gen_log:log D "$Filelist($f:status)"
+  if {$cvscfg(gitdetail)} {
+  # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
+  # by the gitdetail variable
+    set globfiles [glob -nocomplain *]
+    set allfiles [lsort -unique -dictionary [concat $statfiles $globfiles]]
+    foreach f $allfiles {
+      # --porcelain=1 out: XY <filename>, where X is the modification state of the index
+      #   and Y is the state of the work tree.  ' ' = unmodified.
+      # --porcelain=2 out has an extra integer field before the status and 6 extra
+      # fields before the filename.
+      # XY, now the second field, has "." for unmodified.
+      if {![file isdirectory $f]} {
+        set good_line ""
+        # Format: short hash, commit time, committer
+        set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
+        set cmd(git_log) [exec::new "$command"]
+        set log_out [$cmd(git_log)\::output]
+        if {[string length $log_out] > 0} {
+          # git log returned something, but git status didn't, so
+          # I guess it must be up-to-date
+          if {! [info exists Filelist($f:status)] || ($Filelist($f:status) eq "<file>")} {
+            set Filelist($f:status) "Up-to-date"
+            gen_log:log D "$Filelist($f:status)"
+          }
         }
-      }
-      foreach log_line [split $log_out "\n"] {
-        if {[string length $log_line] > 0} {
-          set good_line $log_line
+        foreach log_line [split $log_out "\n"] {
+          if {[string length $log_line] > 0} {
+            set good_line $log_line
+          }
         }
-      }
-      gen_log:log D "good_line $good_line"
-      $cmd(git_log)\::destroy
-      set items [split $good_line "|"]
-      gen_log:log D "items $items"
-      set hash [string trim [lindex $items 0] "\""]
-      set wdate [string trim [lindex $items 1] "\""]
-      set wwho [string trim [lindex $items 2] "\""]
-      set Filelist($f:stickytag) $hash
-      catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
-      set Filelist($f:editors) $wwho
-      gen_log:log D "$Filelist($f:stickytag)"
-      gen_log:log D "$Filelist($f:date)"
-      gen_log:log D "$Filelist($f:editors)"
-    } else {
-      set command "git log -n 1 --no-color -- \"$f\""
-      set cmd(dircheck) [exec::new "$command"]
-      set len [$cmd(dircheck)\::output]
-      $cmd(dircheck)\::destroy
-      if {$len > 0} {
-        set Filelist($f:status) "<directory:GIT>"
+        gen_log:log D "good_line $good_line"
+        $cmd(git_log)\::destroy
+        set items [split $good_line "|"]
+        gen_log:log D "items $items"
+        set hash [string trim [lindex $items 0] "\""]
+        set wdate [string trim [lindex $items 1] "\""]
+        set wwho [string trim [lindex $items 2] "\""]
+        set Filelist($f:stickytag) $hash
+        catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
+        set Filelist($f:editors) $wwho
+        gen_log:log D "$Filelist($f:stickytag)"
+        gen_log:log D "$Filelist($f:date)"
+        gen_log:log D "$Filelist($f:editors)"
       } else {
-        set Filelist($f:status) "<directory>"
+        set command "git log -n 1 --no-color -- \"$f\""
+        set cmd(dircheck) [exec::new "$command"]
+        set len [$cmd(dircheck)\::output]
+        $cmd(dircheck)\::destroy
+        if {$len > 0} {
+          set Filelist($f:status) "<directory:GIT>"
+        } else {
+          set Filelist($f:status) "<directory>"
+        }
+        gen_log:log D "$Filelist($f:status)"
       }
-      gen_log:log D "$Filelist($f:status)"
     }
   }
 
@@ -453,6 +455,7 @@ proc git_status {detail args} {
       append flags " --verbose"
     }
   }
+  append flags " --no-color"
   set stat_cmd [viewer::new $title]
   set commandline "git status $flags $filelist"
   $stat_cmd\::do "$commandline" 0
@@ -1052,7 +1055,7 @@ namespace eval ::git_branchlog {
 
         # This gets only the branches that are relevant, as opposed to listing branches -r
         # The format implies --oneline
-        set command "git log --all --simplify-by-decoration --first-parent --remove-empty -250 --format=%h%d -- \"$filename\""
+        set command "git log --all --simplify-by-decoration --first-parent --remove-empty -$cvscfg(gitmaxhist) --format=%h%d -- \"$filename\""
         set branches_log [exec::new $command {} 0 {} 1]
         set log_output [$branches_log\::output]
         $branches_log\::destroy
