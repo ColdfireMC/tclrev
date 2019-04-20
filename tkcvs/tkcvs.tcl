@@ -417,6 +417,8 @@ if {![info exists cvscfg(ignore_file_filter)]} {
 set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
 
 # Load the images that are used in more than one module
+image create photo Tclfish64 \
+  -format gif -file [file join $cvscfg(bitmapdir) ticklefish64.gif]
 image create photo Log \
   -format gif -file [file join $cvscfg(bitmapdir) log.gif]
 image create photo Checkout \

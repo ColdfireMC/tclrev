@@ -3,6 +3,8 @@ Release 9.0.5 April, 2019
 - cvscfg(gitdetail) variable to make git listing faster by
   skipping the git log -n 1 for each file. Set in ~/.tkcvs
 
+- Add a wm iconphoto
+
 
 Release 9.0.4 April, 2019
 
