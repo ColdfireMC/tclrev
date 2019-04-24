@@ -1655,6 +1655,7 @@ gen_log:log D " $pattern MATCHED $text"
       menu_std_help $logcanvas.menubar
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $logcanvas @$cvscfg(bitmapdir)/branch.xbm
+        wm iconphoto $logcanvas -default Tclfish64
       }
       wm protocol $logcanvas WM_DELETE_WINDOW \
         [namespace code {$logcanvas.close invoke}]
