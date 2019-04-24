@@ -28,6 +28,7 @@ proc modbrowse_setup {} {
   wm iconname .modbrowse "TkCVS Repository Browser"
   if {$tcl_platform(platform) ne "windows"} {
     wm iconbitmap .modbrowse @$cvscfg(bitmapdir)/tkcvs48.xbm
+    wm iconphoto .modbrowse -default Tclfish64
   }
   wm minsize .modbrowse 430 300
   wm protocol .modbrowse WM_DELETE_WINDOW {.modbrowse.bottom.buttons.close invoke}

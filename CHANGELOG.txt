@@ -1,9 +1,16 @@
 Release 9.0.5 April, 2019
 
-- cvscfg(gitdetail) variable to make git listing faster by
-  skipping the git log -n 1 for each file. Set in ~/.tkcvs
+- cvscfg(gitdetail) variable to make git listing faster by skipping the
+  "git log -n 1" for each file. Set in ~/.tkcvs or site_def
 
-- Add a wm iconphoto
+- cvscfg(gitmaxhist) variable to set how far back to go in a long history
+  Set in ~/.tkcvs or site_def
+
+- Completely reworked the branch diagram builder. It relies less on git
+  invocations and more on its own inferences. It's both faster and better,
+  I hope
+
+- Fixes in tkdiff for MacOS
 
 
 Release 9.0.4 April, 2019
@@ -55,7 +62,7 @@ Release 9.0 December, 2018
   - Re-arranged the Report and Status detail menus for more efficiency
 
 - I'm no longer making stand-alone MacOS or Windows packages. You can
-  still run it from the Tcl/Tk code on those platforms.
+  still run it from the Tcl/Tk code on those platforms.revbranches($new_branchparent)
 
 
 Release 8.2.4 (not officially released)

@@ -1362,8 +1362,6 @@ proc directory_list { filenames } {
       if {$i == ".git"} {continue}
       if {$incvs} {
         set Filelist($i:status) "Not managed by CVS"
-      } elseif {$ingit} {
-        set Filelist($i:status) ""
       } else {
         set Filelist($i:status) "<file>"
       }
