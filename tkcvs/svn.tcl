@@ -1502,7 +1502,6 @@ namespace eval ::svn_branchlog {
         variable revcomment
         variable revkind
         variable revpath
-        variable revname
         variable revtags
         variable revbtags
         variable revmergefrom
@@ -1528,7 +1527,6 @@ namespace eval ::svn_branchlog {
         catch { unset revbranches }
         catch { unset revkind }
         catch { unset revpath }
-        catch { unset revname }
         set branchlist ""
 
         pack forget $lc.close
@@ -1615,7 +1613,6 @@ namespace eval ::svn_branchlog {
         }
         set branchrevs($rootrev) $branchrevs(trunk)
         set revkind($rootrev) "root"
-        set revname($rootrev) "trunk"
         # revbtags is for DrawTree
         set revbtags($rootrev) "trunk"
         set revpath($rootrev) $path
@@ -1684,7 +1681,6 @@ namespace eval ::svn_branchlog {
           # build a list of all branches so we can make sure each branch is on
           # a revbranch list so there will be a full set of branches on diagram
           lappend branchlist $rb
-          set revname($rb) $branch
           lappend revbtags($rb) $branch
           set revpath($rb) $path
 
@@ -1774,7 +1770,6 @@ namespace eval ::svn_branchlog {
               set revpath($r) $path
             }
             set revkind($rb) "tag"
-            set revname($rb) "$tag"
             set revpath($rb) $path
 
             # Now do log -q to find the previous rev, which is down
@@ -1972,7 +1967,6 @@ namespace eval ::svn_branchlog {
         variable revcomment
         variable revkind
         variable revpath
-        variable revname
         variable revtags
         variable revbtags
         variable branchrevs
