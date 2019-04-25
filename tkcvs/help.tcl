@@ -842,6 +842,12 @@ If your SVN repository has a structure similar to trunk, branches, and tags but 
     set cvscfg(svn_tagdir) "ducklings"
 The branch browser depends on the convention of having a trunk, branches, and tags structure to draw the diagram.  These variables may give you a little more flexibility.
 
+<h2>GIT</h2>
+<h3>cvscfg(gitdetail)</h3>
+Set to true or false. If it's false (off) an individual git log call to each file will be suppressed to save time. You won't see the hashtag or committer in that case.
+
+<h3>cvscfg(gitmaxhist)</h3>
+For the branch visualizer. Tells how far back into the history to go. Default is 250 commits.
 
 <h2>GUI</h2>
 
