@@ -1528,7 +1528,7 @@ gen_log:log D " $pattern MATCHED $text"
         set opt($key) $value
       }
       toplevel $logcanvas
-      wm title $logcanvas "$sys Log $filename"
+      wm title $logcanvas "TkCVS $cvscfg(version) -- $sys Log $filename"
       menu $logcanvas.menubar
 
       if {[tk windowingsystem] == "aqua"} {

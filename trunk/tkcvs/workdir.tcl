@@ -31,7 +31,7 @@ proc workdir_setup {} {
   # Make a new toplevel and unmap . so that the working directory browser
   # the module browser are equal
   toplevel .workdir
-  wm title .workdir "TkCVS $cvscfg(version) Working Directory"
+  wm title .workdir "TkCVS $cvscfg(version) -- Working Directory"
   wm iconname .workdir "TkCVS"
   if {$tcl_platform(platform) ne "windows"} {
     wm iconbitmap .workdir @$cvscfg(bitmapdir)/tkcvs48.xbm
