@@ -1117,8 +1117,8 @@ namespace eval ::git_branchlog {
             set rootrev $lastrev
           }
           gen_log:log D "USE ROOT $rootrev"
-          set revpath($rootrev) $path
         }
+        set revpath($rootrev) $path
         # Just curious, we don't really need to know
         gen_log:log D "[llength $allrevs] revisions found"
         catch {unset allrevs}
