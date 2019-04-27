@@ -1,3 +1,10 @@
+Release 9.0.6 April, 2019
+
+- small fix to sometimes-missing rootrev($path)
+
+- put a platform-wide iconphoto on tkdiff
+
+
 Release 9.0.5 April, 2019
 
 - cvscfg(gitdetail) variable to make git listing faster by skipping the
