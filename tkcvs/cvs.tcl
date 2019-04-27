@@ -2229,6 +2229,7 @@ namespace eval ::cvs_branchlog {
         pack forget $lc.close
         pack $lc.stop -in $lc.down.closefm -side right
         $lc.stop configure -state normal
+        busy_start $lc
 
         set logstate {R}
 

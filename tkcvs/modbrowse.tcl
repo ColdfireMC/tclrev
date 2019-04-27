@@ -24,7 +24,7 @@ proc modbrowse_setup {} {
 
   # Window manager stuff.
   toplevel .modbrowse
-  wm title .modbrowse "TkCVS $cvscfg(version) Repository Browser"
+  wm title .modbrowse "TkCVS $cvscfg(version) -- Repository Browser"
   wm iconname .modbrowse "TkCVS Repository Browser"
   if {$tcl_platform(platform) ne "windows"} {
     wm iconbitmap .modbrowse @$cvscfg(bitmapdir)/tkcvs48.xbm

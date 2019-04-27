@@ -1532,6 +1532,7 @@ namespace eval ::svn_branchlog {
         pack forget $lc.close
         pack $lc.stop -in $lc.down.closefm -side right
         $lc.stop configure -state normal
+        busy_start $lc
 
         # Can't use file join or it will mess up the URL
         set safe_filename [safe_url $filename]
