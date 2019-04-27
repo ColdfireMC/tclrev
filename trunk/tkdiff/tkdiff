@@ -7554,6 +7554,7 @@ proc main {} {
     wm withdraw .
     wm protocol . WM_DELETE_WINDOW do-exit
     wm title . "$g(name) $g(version)"
+    wm iconphoto . -default deltaGif
 
     if {![catch {set windowingsystem [tk windowingsystem]}]} {
         if {$windowingsystem == "x11"} {
@@ -7593,7 +7594,6 @@ proc main {} {
     }
     if {$g(windowingSystem) == "aqua"} {
         get_aqua_params
-        wm iconphoto . -default deltaGif
     }
 
 #   Wipe the data structure clean ...
