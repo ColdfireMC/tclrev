@@ -65,8 +65,11 @@ proc module_file {} {
   }
   cd CVSROOT
   set mf [open "modules" a]
+  puts $mf "subdirs -a\tcvs_test/Dir1 cvs_test/Dir\\\ 2"
+  puts $mf "CVSROOT\tCVSROOT"
   puts $mf "#D\tcvs_test\tSome files under CVS control"
-  puts $mf "cvs_test\tcvs_test"
+  puts $mf "#D\tcvs_test/Dir1\tDir1"
+  puts $mf "cvs_test/Dir1\tcvs_test/Dir1"
   close $mf
   set exec_cmd "cvs ci -m\"Add\\\ a\\\ module\\\ and\\\ a\\\ #D\\\ line\" modules"
   puts "$exec_cmd"
@@ -109,6 +112,13 @@ proc newbranch {proj oldtag newtag} {
   set exec_cmd "cvs -d $env(CVSROOT) co -r $newtag -d ${proj}_$newtag cvs_test"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
+}
+
+proc tag {tag obj} {
+  set exec_cmd "cvs tag -F $tag $obj"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
 }
 
 proc merge {fromtag totag} {
@@ -301,6 +311,8 @@ modfiles "Main 1"
 writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt trunk
 commit "First revision on trunk"
+tag "tagA" "."
+tag "tagC" "."
 cd $WD
 
 if {$branching_desired} {
@@ -357,6 +369,7 @@ puts "Third revision on trunk"
 cd $WD/cvs_test_trunk
 modfiles "Main 3"
 commit "Third revision on trunk"
+tag "tagB" "."
 cd $WD
 
 if {$branching_desired} {
@@ -394,8 +407,8 @@ if {$leave_a_mess} {
   # Newly added
   writefile FileAdd.txt "Pending"
   addfile FileAdd.txt trunk
-  # Deleted
-  delfile File3.txt trunk
+  # Missing
+  file delete -- File3.txt trunk
   # Modify
   writefile File2.txt "Pending"
   writefile "Dir1/F 3.txt" "Pending"

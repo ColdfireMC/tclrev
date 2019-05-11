@@ -80,6 +80,16 @@ proc newbranch {Root oldtag newtag} {
   set ret [catch {eval "exec $exec_cmd"} out]
 }
 
+proc tag {Root tag} {
+  global taghead
+
+  puts "Tag: $tag"
+  set exec_cmd "svn copy \".\" file:///$Root/$taghead(tag)/$tag -m \"Tag $tag\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+}
+
 proc merge {fromtag totag} {
   global WD
 
@@ -262,6 +272,8 @@ modfiles "Main 1"
 writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt $taghead(trunk)
 commit "First revision on $taghead(trunk)"
+tag $SVNROOT "tagA"
+tag $SVNROOT "tagC"
 cd $WD
 
 if {$branching_desired} {
@@ -291,12 +303,12 @@ if {$branching_desired} {
   # Branch C
   puts "==============================="
   puts "MAKING BRANCH C FROM SAME ROOT"
-  newbranch cvs_test HEAD branchC
-  cd $WD/cvs_test_branchC
+  newbranch $SVNROOT $taghead(trunk) branchC
+  cd $WD/svn_test_branchC
   modfiles "BranchC 1"
   writefile FbranchC.txt "BranchC 1"
   addfile FbranchC.txt branchC
-  commit "Add file FC on Branch B"
+  commit "Add file FC on Branch C"
   cd $WD
 
   puts "==============================="
@@ -318,6 +330,7 @@ puts "Third revision on $taghead(trunk)"
 cd $WD/svn_test_trunk
 modfiles "Main 3"
 commit "Third revision on $taghead(trunk)"
+tag $SVNROOT "tagB"
 cd $WD
 
 if {$branching_desired} {
@@ -355,8 +368,8 @@ if {$leave_a_mess} {
   # Newly added
   writefile FileAdd.txt "Pending"
   addfile FileAdd.txt trunk
-  # Deleted
-  delfile File3.txt trunk
+  # Missing
+  file delete -- File3.txt trunk
   # Modify
   writefile File2.txt "Pending"
   writefile "Dir1/F 3.txt" "Pending"
