@@ -212,15 +212,17 @@ proc find_git_remote {dirname} {
 }
 
 # For module browser.
-proc parse_gitlist {tf gitroot} {
+proc parse_gitlist {gitroot} {
   global cvsglb
   global modval 
   global modtitle
 
-  gen_log:log T "ENTER ($tf $gitroot)"
+  gen_log:log T "ENTER ($gitroot)"
+
   # Clear the arrays
   catch {unset modval}
   catch {unset modtitle}
+  set tv .modbrowse.treeframe.pw
 
   set command "git ls-remote \"$cvsglb(root)\""
   gen_log:log C "$command"
@@ -235,9 +237,9 @@ proc parse_gitlist {tf gitroot} {
     # This is the hash
     set modval($dname) [lindex $line 0] 
     gen_log:log D "modval($dname)=$modval($dname)"
-    #set modtitle($dname) $dname
-    #gen_log:log D "modtitle($dname)=$modtitle($dname)"
-    ModList:newitem $tf $dname $modval($dname)
+    #ModList:newitem $tf $dname $modval($dname)
+    gen_log:log D "$tv insert {} end -id $dname -text $dname -values $modval($dname)"
+    $tv insert {} end -id "$dname" -text "$dname" -values $modval($dname)
   }
   update idletasks
   # Then you can do something like this to list the files

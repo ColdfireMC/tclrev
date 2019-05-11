@@ -41,9 +41,6 @@ proc workdir_setup {} {
   wm protocol .workdir WM_DELETE_WINDOW { .workdir.close invoke }
   wm withdraw .
 
-  if {[catch "image type Conflict"]} {
-    workdir_images
-  }
   if {[info exists cvscfg(workgeom)]} {
     wm geometry .workdir $cvscfg(workgeom)
   }
@@ -314,82 +311,6 @@ proc workdir_setup {} {
   #change_dir "[pwd]"
   setup_dir
   gen_log:log T "LEAVE"
-}
-
-proc workdir_images {} {
-  global cvscfg
-
-  image create photo arr_up \
-    -format gif -file [file join $cvscfg(bitmapdir) arrow_up.gif]
-  image create photo arh_up \
-    -format gif -file [file join $cvscfg(bitmapdir) arrow_hl_up.gif]
-  image create photo arr_dn \
-    -format gif -file [file join $cvscfg(bitmapdir) arrow_dn.gif]
-  image create photo arh_dn \
-    -format gif -file [file join $cvscfg(bitmapdir) arrow_hl_dn.gif]
-  image create photo updir \
-    -format gif -file [file join $cvscfg(bitmapdir) updir.gif]
-  image create photo Folder \
-    -format gif -file [file join $cvscfg(bitmapdir) dir.gif]
-  image create photo Check \
-    -format gif -file [file join $cvscfg(bitmapdir) check.gif]
-  image create photo Fileview \
-    -format gif -file [file join $cvscfg(bitmapdir) fileview.gif]
-  image create photo Fileedit \
-    -format gif -file [file join $cvscfg(bitmapdir) fileedit.gif]
-  image create photo Annotate \
-    -format gif -file [file join $cvscfg(bitmapdir) annotate.gif]
-  image create photo Delete \
-    -format gif -file [file join $cvscfg(bitmapdir) delete.gif]
-  image create photo Dir_new \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_new.gif]
-  image create photo Refresh \
-    -format gif -file [file join $cvscfg(bitmapdir) loop-glasses.gif]
-  image create photo Branches \
-    -format gif -file [file join $cvscfg(bitmapdir) branch.gif]
-  image create photo DirBranches \
-    -format gif -file [file join $cvscfg(bitmapdir) dirbranch.gif]
-  image create photo Add \
-    -format gif -file [file join $cvscfg(bitmapdir) add.gif]
-  image create photo Remove \
-    -format gif -file [file join $cvscfg(bitmapdir) remove.gif]
-  image create photo Diff \
-    -format gif -file [file join $cvscfg(bitmapdir) diff.gif]
-  image create photo Checkin \
-    -format gif -file [file join $cvscfg(bitmapdir) checkin.gif]
-  image create photo Revert \
-    -format gif -file [file join $cvscfg(bitmapdir) loop-ball.gif]
-  image create photo Edit \
-    -format gif -file [file join $cvscfg(bitmapdir) edit.gif]
-  image create photo Unedit \
-    -format gif -file [file join $cvscfg(bitmapdir) unedit.gif]
-  image create photo Modules \
-    -format gif -file [file join $cvscfg(bitmapdir) modbrowse.gif]
-  image create photo Modules_cvs \
-    -format gif -file [file join $cvscfg(bitmapdir) modbrowse_cvs.gif]
-  image create photo Modules_svn \
-    -format gif -file [file join $cvscfg(bitmapdir) modbrowse_svn.gif]
-  image create photo Modules_git \
-    -format gif -file [file join $cvscfg(bitmapdir) modbrowse_git.gif]
-  image create photo Lock \
-    -format gif -file [file join $cvscfg(bitmapdir) locked.gif]
-  image create photo UnLock \
-    -format gif -file [file join $cvscfg(bitmapdir) unlocked.gif]
-  image create photo Tags \
-    -format gif -file [file join $cvscfg(bitmapdir) tags.gif]
-  image create photo Mergebranch \
-    -format gif -file [file join $cvscfg(bitmapdir) newmerge_simple.gif]
-  image create photo Mergediff \
-    -format gif -file [file join $cvscfg(bitmapdir) newmerge.gif]
-  image create photo Conflict \
-    -format gif -file [file join $cvscfg(bitmapdir) conflict.gif]
-  image create photo GitCheckin \
-    -format gif -file [file join $cvscfg(bitmapdir) git_checkin.gif]
-  image create photo GitCheckout \
-    -format gif -file [file join $cvscfg(bitmapdir) git_checkout.gif]
-
-  image create photo Man \
-    -format gif -file [file join $cvscfg(bitmapdir) man.gif]
 }
 
 proc workdir_menus {} {

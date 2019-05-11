@@ -10,9 +10,6 @@ proc DirCanvas:create {w} {
 
   gen_log:log T "ENTER ($w)"
 
-  if {[catch "image type folder"]} {
-    DirCanvas:loadimages
-  }
   if [winfo exists $w.pw] {
     catch {DirCanvas:destroy $w.pw}
     catch {destroy $w.pw}
@@ -251,87 +248,7 @@ proc DirCanvas:newitem {w f} {
   gen_log:log T "LEAVE"
 }
 
-proc DirCanvas:loadimages { } {
-  global cvscfg
-
-  image create photo paper \
-    -format gif -file [file join $cvscfg(bitmapdir) paper.gif]
-  image create photo cvsdir \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_cvs.gif]
-  image create photo svndir \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_svn.gif]
-  image create photo rcsdir \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_rcs.gif]
-  image create photo gitdir \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_git.gif]
-  image create photo folder \
-    -format gif -file [file join $cvscfg(bitmapdir) folder.gif]
-  image create photo dir_ok \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_ok.gif]
-  image create photo dir_ood \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_ood.gif]
-  image create photo dir_plus \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_plus.gif]
-  image create photo dir_minus \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_minus.gif]
-  image create photo dir_mod \
-    -format gif -file [file join $cvscfg(bitmapdir) dir_mod.gif]
-  image create photo link \
-    -format gif -file [file join $cvscfg(bitmapdir) link.gif]
-  image create photo link_ok \
-    -format gif -file [file join $cvscfg(bitmapdir) link_ok.gif]
-  image create photo link_okml \
-    -format gif -file [file join $cvscfg(bitmapdir) link_okml.gif]
-  image create photo link_okol \
-    -format gif -file [file join $cvscfg(bitmapdir) link_okol.gif]
-  image create photo link_mod \
-    -format gif -file [file join $cvscfg(bitmapdir) link_mod.gif]
-  image create photo link_modml \
-    -format gif -file [file join $cvscfg(bitmapdir) link_modml.gif]
-  image create photo link_modol \
-    -format gif -file [file join $cvscfg(bitmapdir) link_modol.gif]
-  image create photo link_plus \
-    -format gif -file [file join $cvscfg(bitmapdir) link_plus.gif]
-  image create photo stat_ex \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_ex.gif]
-  image create photo stat_kb \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_kb.gif]
-  image create photo stat_cvsplus_kb \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_plus_kb.gif]
-  image create photo stat_ok \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_ok.gif]
-  image create photo stat_ood \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_ood.gif]
-  image create photo stat_okml \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_okml.gif]
-  image create photo stat_okol \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_okol.gif]
-  image create photo stat_merge \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_merge.gif]
-  image create photo stat_mod \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_mod.gif]
-  image create photo stat_modml \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_modml.gif]
-  image create photo stat_modol \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_modol.gif]
-  image create photo stat_mod_red \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_mod_red.gif]
-  image create photo stat_mod_green \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_mod_green.gif]
-  image create photo stat_plus \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_plus.gif]
-  image create photo stat_ques \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
-  image create photo stat_minus \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_minus.gif]
-  image create photo stat_conf \
-    -format gif -file [file join $cvscfg(bitmapdir) stat_conf.gif]
-}
-
-#
 # Delete element $v from the list $w.
-# deleted.
-#
 proc DirCanvas:delitem {w v} {
   gen_log:log T "ENTER ($w $v)"
   DirCanvas:buildwhenidle $w

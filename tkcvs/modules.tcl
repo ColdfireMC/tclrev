@@ -118,7 +118,7 @@ proc find_filenames {mcode} {
    
   set view_lines [split $view_this "\n"]
   foreach line $view_lines {
-    #gen_log:log D "$line"
+    gen_log:log D "$line"
     if {[string match "File *" $line]} {
       set lst [split $line]
       set cut [expr {[llength $lst] - 6}]
