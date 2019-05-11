@@ -190,7 +190,7 @@ proc svn_workdir_status {} {
       set lockstatus "havelock"
     }
 
-    # wcstatus="added|normal|deleted|unversioned|modified|none
+    # wcstatus="added|normal|deleted|missing|unversioned|modified|none
     # repstatus="modified|none"
     set status ""
 
@@ -217,6 +217,7 @@ proc svn_workdir_status {} {
           set mayhavelock true
         }
       }
+      "missing" { append displaymod "Missing" }
       "modified" {
         if  { $repstatus == "modified"} {
           append displaymod "Needs Merge"
@@ -719,13 +720,18 @@ proc svn_delete {root path} {
 }
 
 # This is the callback for the folder-opener in ModTree
-proc svn_jit_listdir { tf into } {
+proc svn_jit_listdir {} {
   global cvscfg
   global cvsglb
 
-  gen_log:log T "ENTER ($tf $into)"
+  gen_log:log T "ENTER"
   set cvscfg(svnroot) $cvsglb(root)
-  set dir [string trimleft $into / ]
+  set tv .modbrowse.treeframe.pw
+  set opendir [$tv selection]
+  # It might be a string like {/trunk/Dir 2}
+  set opendir [join $opendir]
+  gen_log:log D "selection: $opendir"
+  set dir [string trimleft $opendir / ]
   set command "svn list -v \"$cvscfg(svnroot)/$dir\""
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
@@ -752,32 +758,34 @@ proc svn_jit_listdir { tf into } {
     }
   }
 
-  busy_start $tf
-  ModTree:close $tf /$dir
-  ModTree:delitem $tf /$dir/_jit_placeholder
+  busy_start $tv
+  # Remove the placeholder
+  if {[$tv exists "/$dir/placeholder"]} {
+    gen_log:log D "$tv delete /$dir/placeholder"
+    $tv delete \"/$dir/placeholder\"
+  }
   foreach f $fils {
-    set command "ModTree:newitem $tf \"/$dir/$f\" \"$f\" \"$info($f)\" -image Fileview"
-    set r [catch "$command" err]
+    gen_log:log D "$tv insert /$dir end -id /$dir/$f -text $f -image paper"
+    $tv insert "/$dir" end -id "/$dir/$f" -text "$f" -image paper
   }
   foreach d $dirs {
-    svn_jit_dircmd $tf $dir/$d
+    svn_jit_dircmd "$dir" $d
   }
-  gen_log:log D "ModTree:open $tf /$dir"
-  ModTree:open $tf /$dir
 
-  busy_done $tf
+  busy_done $tv
   gen_log:log T "LEAVE"
 }
 
-proc svn_jit_dircmd { tf dir } {
+proc svn_jit_dircmd { parent dir } {
   global cvscfg
   global Tree
 
-  #gen_log:log T "ENTER ($tf $dir)"
+  gen_log:log T "ENTER ($parent $dir)"
 
+  set tv .modbrowse.treeframe.pw
   # Here we are just figuring out if the top level directory is empty or not.
   # We don't have to collect any other information, so no -v flag
-  set command "svn list \"$cvscfg(svnroot)/$dir\""
+  set command "svn list \"$cvscfg(svnroot)/$parent/$dir\""
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
     set contents [$cmd(svnlist)\::output]
@@ -785,13 +793,13 @@ proc svn_jit_dircmd { tf dir } {
     catch {unset cmd(svnlist)}
   }
   set lbl "[file tail $dir]/"
-  set exp "([llength $contents] items)"
-  set parent "[file root $dir]"
 
   set dirs {}
   set fils {}
+  set nl 0
   foreach logline [split $contents "\n"] {
     if {$logline == ""} continue
+    incr nl
     #gen_log:log D "$logline"
     if [string match {*/} $logline] {
       set item [string trimright $logline "/"]
@@ -800,38 +808,39 @@ proc svn_jit_dircmd { tf dir } {
       lappend fils $logline
     }
   }
+  set exp "($nl items)"
+  set val_list [list $exp]
+
+  if {$parent ne {}} {
+    set parent "/$parent"
+  }
 
   # To avoid having to look ahead and build the whole tree at once, we put
   # a "marker" item in non-empty directories so it will look non-empty
   # and be openable
   if {$dirs == {} && $fils == {}} {
-    catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$exp\" -image Folder"
+    # Empty, so no placeholder
+    gen_log:log D "$tv insert $parent end -id $parent/$dir -text $lbl -values $val_list -image folder"
+    $tv insert "$parent" end -id "$parent/$dir" -text "$lbl" -values "$val_list" -image folder
   } else {
-    # Newitem returns nothing if the item already exists, or an "after" from
-    # buildwhenidle if the item had to be inserted
-    set r [catch "ModTree:newitem $tf \"/$dir\" \"$lbl\" \"$exp\" -image Folder" err]
-    if {! $r} {
-      if {! $Tree($tf:/$dir:open)} {
-        # If the node is already open, we don't need a placeholder
-        catch "ModTree:newitem $tf \"/$dir/_jit_placeholder\" \"\" \"\" -image {}"
-      }
-    }
+    gen_log:log D "$tv insert $parent end -id $parent/$dir -text $lbl -values $val_list -image folder"
+    $tv insert "$parent" end -id "$parent/$dir" -text "$lbl" -values "$val_list" -image folder
+    # Placeholder so that folder is openable
+    gen_log:log D "$tv insert $parent/$dir end -id $parent/$dir/placeholder -text placeholder"
+    $tv insert "$parent/$dir" end -id "$parent/$dir/placeholder" -text placeholder
   }
 
   #gen_log:log T "LEAVE"
 }
 
 # called from module browser - list branches & tags
-proc parse_svnmodules {tf svnroot} {
+proc parse_svnmodules {svnroot} {
   global cvscfg
   global modval
 
-  gen_log:log T "ENTER ($tf $svnroot)"
+  gen_log:log T "ENTER ($svnroot)"
 
-  if {[catch "image type fileview"]} {
-    workdir_images
-  }
-
+  set tv .modbrowse.treeframe.pw
   set cvscfg(svnroot) $svnroot
   set command "svn list -v $svnroot"
   set cmd(svnlist) [exec::new "$command"]
@@ -859,13 +868,29 @@ proc parse_svnmodules {tf svnroot} {
   }
 
   foreach f $fils {
-    catch "ModTree:newitem $tf \"/$f\" \"$f\" \"$info($f)\" -image Fileview"
+    gen_log:log D "$tv insert {} end -id $f -text $f -image Fileview"
+    $tv insert {} end -id $f -text "$f" -image Fileview
   }
   foreach d $dirs {
-    svn_jit_dircmd $tf $d
+    svn_jit_dircmd {} $d
   }
-
   gen_log:log T "LEAVE"
+}
+
+# Called when a directory in the module browser is closed
+proc svn_closedir {} {
+  set tv .modbrowse.treeframe.pw
+  set closedir [$tv selection]
+  # It might be a list like {/trunk/Dir 2}
+  set closedir [join $closedir]
+  gen_log:log D "selection: $closedir"
+  # Clear the contents
+  set contents [$tv children $closedir]
+  gen_log:log D "$tv delete $contents"
+  $tv delete $contents
+  # Put the placeholder back
+  gen_log:log D "$tv insert $closedir end -id $closedir/placeholder -text placeholder"
+  $tv insert "$closedir" end -id "$closedir/placeholder" -text placeholder
 }
 
 # called from workdir Reports menu. Uses recurse setting

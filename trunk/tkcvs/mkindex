@@ -22,8 +22,8 @@ auto_mkindex . \
   import.tcl \
   import2.tcl \
   joincanvas.tcl \
+  load_images.tcl \
   modbrowse.tcl \
-  modtree.tcl \
   modules.tcl \
   picklist.tcl \
   rcs.tcl \

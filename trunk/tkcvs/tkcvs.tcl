@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.0.5"
+set cvscfg(version) "9.0.7"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -415,30 +415,7 @@ if {![info exists cvscfg(ignore_file_filter)]} {
 # Remember what the setting was.  We'll have to restore it after
 # leaving a directory with a .cvsignore file.
 set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
-
-# Load the images that are used in more than one module
-image create photo Tclfish64 \
-  -format gif -file [file join $cvscfg(bitmapdir) ticklefish64.gif]
-image create photo Log \
-  -format gif -file [file join $cvscfg(bitmapdir) log.gif]
-image create photo Checkout \
-  -format gif -file [file join $cvscfg(bitmapdir) checkout.gif]
-image create photo CheckoutOpts \
-  -format gif -file [file join $cvscfg(bitmapdir) checkout_opts.gif]
-image create photo Export \
-  -format gif -file [file join $cvscfg(bitmapdir) export.gif]
-image create photo Tag \
-  -format gif -file [file join $cvscfg(bitmapdir) tag.gif]
-image create photo Branchtag \
-   -format gif -file [file join $cvscfg(bitmapdir) branchtag.gif]
-image create photo Import \
-   -format gif -file [file join $cvscfg(bitmapdir) import.gif]
-image create photo Mergebranch \
-  -format gif -file [file join $cvscfg(bitmapdir) newmerge_simple.gif]
-image create photo Mergediff \
-  -format gif -file [file join $cvscfg(bitmapdir) newmerge.gif]
-image create photo Man \
-  -format gif -file [file join $cvscfg(bitmapdir) man.gif]
+load_all_images
 
 set cvsglb(root) ""
 set cvsglb(vcs) ""

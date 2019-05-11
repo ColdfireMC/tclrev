@@ -1,3 +1,8 @@
+Release 9.0.7 May, 2019
+
+- Re-implemented the module browser with ttk::treeview
+
+
 Release 9.0.6 April, 2019
 
 - small fix to sometimes-missing rootrev($path)

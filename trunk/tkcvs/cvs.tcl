@@ -1849,17 +1849,13 @@ proc read_cvs_dir {dirname} {
 }
 
 # For the module browser. Reads CVSROOT/modules
-proc parse_cvsmodules {tf cvsroot} {
+proc parse_cvsmodules {cvsroot} {
   global cvs
   global modval
   global modtitle
   global cvscfg
 
-  gen_log:log T "ENTER ($tf $cvsroot)"
-
-  if {[catch "image type fileview"]} {
-    workdir_images
-  }
+  gen_log:log T "ENTER ($cvsroot)"
 
   # Clear the arrays
   catch {unset modval}
@@ -1915,42 +1911,43 @@ proc cvs_modbrowse_tree { mnames node } {
   global modval
   global modtitle
   global dcontents
-  global Tree
+  #global Tree
 
-  gen_log:log T "ENTER (... $node)"
+  gen_log:log T "ENTER ($mnames $node)"
 
   if {! [info exists cvscfg(aliasfolder)]} {
     set cvscfg(aliasfolder) false
   }
 
-  set tf ".modbrowse.treeframe"
-  foreach mname $mnames {
+  set tv ".modbrowse.treeframe.pw"
+  foreach mname [lsort $mnames] {
     gen_log:log D "{$mname} {$modval($mname)}"
-    set dimage "dir"
+    set dimage "mod"
     # The descriptive title of the module.  If not specified, modval is used.
     set title $modval($mname)
     if {[info exists modtitle($mname)]} {
       set title $modtitle($mname)
-      #gen_log:log D "* modtitle($mname) {$title}"
+      gen_log:log D "* modtitle($mname) {$title}"
     }
     if {[string match "-a *" $modval($mname)]} {
       # Its an alias module
       regsub {\-a } $modtitle($mname) "Alias for " title
       if {$cvscfg(aliasfolder)} {
-        #gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
-        if {! [info exists Tree($tf:/Aliases:children)]} {
-          #gen_log:log D "Making Aliases"
-          ModTree:newitem $tf /Aliases Aliases "Aliases" -image "adir"
+        gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
+        if {! [$tv exists "AliasTop"]} {
+          gen_log:log D "Making Aliases"
+          gen_log:log D "$tv insert {} end -id AliasTop -text Aliases -image adir -values Aliases"
+          $tv insert {} end -id AliasTop -text "Aliases" -image "adir" -values "Aliases"
         }
-        ModTree:newitem $tf /Aliases/$mname $mname "$title" -image "amod"
+        gen_log:log D "$tv insert AliasTop end -id $mname -text $mname -image amod -values $title"
+        $tv insert AliasTop end -id $mname -text $mname -image "amod" -values \"$title\"
         continue
       }
-      set dimage amod
     } elseif {[string match "* *" $modval($mname)]} {
       # The value isn't a simple path
-      #gen_log:log D "Found spaces in modval($mname) $modval($mname)"
+      gen_log:log D "Found spaces in modval($mname) $modval($mname)"
     } elseif {[string match "*/*" $modval($mname)]} {
-      #gen_log:log D "Set image to dir because $modval($mname) contains a slash"
+      gen_log:log D "Set image to dir because $modval($mname) contains a slash"
       set dimage dir
       set path $modval($mname)
       if {[llength $modval($mname)] > 1} {
@@ -1963,18 +1960,19 @@ proc cvs_modbrowse_tree { mnames node } {
       set pathroot "$pathroot"
       if {[info exists modtitle($pathtop)]} {
         set title $modtitle($pathtop)
-        #gen_log:log D "* Using pathtop * modtitle($pathtop) {$title}"
+        gen_log:log D "* Using pathtop * modtitle($pathtop) {$title}"
       } elseif {[info exists modtitle($path)]} {
         set title $modtitle($path)
-        #gen_log:log D "* Using path * modtitle($path) {$title}"
+        gen_log:log D "* Using path * modtitle($path) {$title}"
       } else {
-        #gen_log:log D "* No modtitle($path)"
+        gen_log:log D "* No modtitle($path)"
       }
-      #gen_log:log D "path=$path pathtop=$pathtop pathroot=$pathroot"
-      if {! [info exists Tree($tf:$pathroot:children)]} {
-        #gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
+      gen_log:log D "path=$path pathtop=$pathtop pathroot=$pathroot"
+      if {! [$tv exists $pathroot]} {
+        gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
         if {[info exists modval($pathtop)]} { set dimage mdir }
-        ModTree:newitem $tf $pathroot $pathtop "$title" -image $dimage
+        gen_log:log D "$tv insert {} end -id $pathroot -text $pathtop -image dir -values $title"
+        $tv insert {} end -id "$pathroot" -text $pathtop -image dir -values \"$title\"
       }
       set pathroot ""
       for {set i 1} {$i < $pathdepth} {incr i} {
@@ -1988,19 +1986,25 @@ proc cvs_modbrowse_tree { mnames node } {
           set title $modtitle($newnode)
         } elseif {[info exists modtitle($mname)]} {
           set title $modtitle($mname)
-        } else {
         }
-        if {! [info exists Tree($tf:$newpath:children)]} {
+        if {! [info exists dcontants($pathroot)]} {
           set modvalpath [file join "/" $modval($mname)]
           regsub { &\S+} $modvalpath {} modvalpath
           if {$modvalpath == $newpath} {
             set newnode $mname
           }
-          set dimage dir
-          #gen_log:log D "2 Making $newnode for an intermediate node"
           lappend dcontents($pathroot) $newnode
-          if {[info exists modval($newnode)]} {set dimage mdir}
-          ModTree:newitem $tf $newpath $newnode "$title" -image $dimage
+          if {[info exists modval($newnode)]} {
+            gen_log:log D "3 Making $newnode as a leaf"
+            set dimage mod
+          } else {
+            gen_log:log D "2 Making $newnode as an intermediate node"
+            set dimage dir
+          }
+          if {! [$tv exists $newpath]} {
+            gen_log:log D "$tv insert /$pathroot end -id $newpath -text $newnode -image $dimage -values $title"
+            $tv insert "/$pathroot" end -id $newpath -text $newnode -image $dimage -values \"$title\"
+          }
         }
       }
       # If we got here we just did a leaf, so break out and dont put it
@@ -2008,12 +2012,20 @@ proc cvs_modbrowse_tree { mnames node } {
       continue
     }
     set treepath [file join $node $mname]
-    if {[info exists Tree($tf:$treepath:children)]} {
-      #gen_log:log D "  Already handled $treepath"
+    if {[info exists dcontents($treepath)]} {
+      gen_log:log D "  Already handled $treepath"
       continue
     }
     if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
-    ModTree:newitem $tf $treepath $mname $title -image $dimage
+    gen_log:log D "$tv insert {} end -id $mname -text $mname -image mod -values $title"
+    $tv insert {} end -id $mname -text $mname -image mod -values \"$title\"
+  }
+  # Move the Aliases to the top
+  if {[$tv exists AliasTop]} {
+    gen_log:log D "$tv detach AliasTop"
+    $tv detach AliasTop
+    gen_log:log D "$tv move AliasTop {} 0"
+    $tv move AliasTop {} 0
   }
   update idletasks
   gather_mod_index

@@ -35,13 +35,8 @@ proc modbrowse_setup {} {
   wm withdraw .modbrowse
 
   if {[info exists cvscfg(modgeom)]} {
+    update
     wm geometry .modbrowse $cvscfg(modgeom)
-  } else {
-    wm geometry .modbrowse 510x470
-  }
-
-  if {[catch "image type Who"]} {
-    modbrowse_images
   }
 
   modbrowse_menus
@@ -211,7 +206,7 @@ proc modbrowse_setup {} {
   set_tooltips .modbrowse.top.bworkdir \
     {"Open the Working Directory Browser"}
 
-  frame .modbrowse.treeframe
+  frame .modbrowse.treeframe -bg $cvsglb(canvbg)
   pack .modbrowse.treeframe -side bottom -fill both -expand yes -pady 0
 
   set screenWidth [winfo vrootwidth .]
@@ -221,26 +216,6 @@ proc modbrowse_setup {} {
   wm minsize .modbrowse 430 300
 
   gen_log:log T "LEAVE"
-}
-
-proc modbrowse_images {} {
-  global cvscfg
-
-  image create photo Workdir \
-    -format gif -file [file join $cvscfg(bitmapdir) folderopen.gif]
-  image create photo Files \
-    -format gif -file [file join $cvscfg(bitmapdir) files.gif]
-  image create photo Patches \
-    -format gif -file [file join $cvscfg(bitmapdir) rdiff.gif]
-  image create photo Patchfile \
-    -format gif -file [file join $cvscfg(bitmapdir) patchfile.gif]
-  image create photo Who \
-    -format gif -file [file join $cvscfg(bitmapdir) who.gif]
-  image create photo SvnRemove \
-    -format gif -file [file join $cvscfg(bitmapdir) delete_red.gif]
-  if {[catch "image type arr_dn"]} {
-    workdir_images
-  }
 }
 
 # Try to contact the repository somehow to guess what kind it is
@@ -380,11 +355,7 @@ proc modbrowse_menus {} {
   .modbrowse.menubar.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
      -variable cvscfg(aliasfolder) -onvalue true -offvalue false \
      -command {
-        ModTree:delitem .modbrowse.treeframe /
-        ModTree:destroy .modbrowse.treeframe
-        busy_start .modbrowse
-        ModTree:create .modbrowse.treeframe
-        pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
+        .modbrowse.treeframe.pw delete [.modbrowse.treeframe.pw children {}]
         cvs_modbrowse_tree [lsort [array names modval]] "/"
      }
   .modbrowse.menubar.options add separator
@@ -426,7 +397,6 @@ proc modbrowse_run {} {
   wm deiconify .modbrowse
   raise .modbrowse
 
-  ModTree:delitem .modbrowse.treeframe /
   ModTree:destroy .modbrowse.treeframe
   busy_start .modbrowse
 
@@ -437,12 +407,24 @@ proc modbrowse_run {} {
       .modbrowse.top.lroot configure -text "SVN URL"
       .modbrowse.top.lmcode configure -text "Selection"
       # Set up ModTree and tell it to use clbk just-in-time-listdir
-      ModTree:create .modbrowse.treeframe svn_jit_listdir
+      ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      .modbrowse.treeframe.tree.lbl configure -text "File"
-      .modbrowse.treeframe.labl.lbl configure -text "Information"
+      .modbrowse.treeframe.pw heading #0 -text "File"
+      .modbrowse.treeframe.pw heading information -text "Information"
       # parse_svnmodules will do "svn list" and post the files and directories
-      parse_svnmodules .modbrowse.treeframe $cvsglb(root)
+      bind .modbrowse.treeframe.pw <<TreeviewOpen>> svn_jit_listdir
+      bind .modbrowse.treeframe.pw <<TreeviewClose>> svn_closedir
+      bind .modbrowse.treeframe.pw <<TreeviewSelect>> {
+        global modbrowse_module
+        global modbrowse_path
+        global modbrowse_title
+        set modbrowse_title [string trimleft [.modbrowse.treeframe.pw selection] "/"]
+        set modbrowse_path [join [.modbrowse.treeframe.pw selection]]
+        set modbrowse_module $modbrowse_path
+      }
+
+      # parse_svnmodules does svn list of the repository
+      parse_svnmodules $cvsglb(root)
     }
     cvs {
       .modbrowse.top.lroot configure -text "CVSROOT"
@@ -450,30 +432,49 @@ proc modbrowse_run {} {
       # Set up ModTree
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      .modbrowse.treeframe.tree.lbl configure -text "Module"
-      .modbrowse.treeframe.labl.lbl configure -text "Information"
+      .modbrowse.treeframe.pw heading #0 -text "Module"
+      .modbrowse.treeframe.pw heading information -text "Information"
+      bind .modbrowse.treeframe.pw <<TreeviewSelect>> {
+        global modbrowse_module
+        global modbrowse_path
+        global modbrowse_title
+        set modbrowse_title [.modbrowse.treeframe.pw selection]
+        set modbrowse_path [.modbrowse.treeframe.pw selection]
+        set modbrowse_module $modbrowse_path
+      }
+
       # parse_cvsmodules will check out CVSROOT/modules and post what it finds
-      parse_cvsmodules .modbrowse.treeframe $cvsglb(root)
+      parse_cvsmodules $cvsglb(root)
     }
     git {
       .modbrowse.top.lroot configure -text "Origin"
       .modbrowse.top.lmcode configure -text "Selection"
-      # Set up ModTree
+      # Set up ModTree for a git ls-remote
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      .modbrowse.treeframe.tree.lbl configure -text "Reference"
-      .modbrowse.treeframe.labl.lbl configure -text "Commit ID"
+      .modbrowse.treeframe.pw heading #0 -text "Reference"
+      .modbrowse.treeframe.pw heading information -text "Commit ID"
+      bind .modbrowse.treeframe.pw <<TreeviewSelect>> {
+        global modbrowse_module
+        global modbrowse_path
+        global modbrowse_title
+        set modbrowse_title [.modbrowse.treeframe.pw selection]
+        set modbrowse_path [.modbrowse.treeframe.pw selection]
+        set modbrowse_module [.modbrowse.treeframe.pw item $modbrowse_path -values]
+      }
+
       # parse_gitlist will do git ls-remote and post what it finds
-      parse_gitlist .modbrowse.treeframe $cvsglb(root)
+      parse_gitlist $cvsglb(root)
     }
     default {
       # Just make an empty frame
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      busy_done .modbrowse
       return
     }
   }
+  busy_done .modbrowse
+
   # Maybe this root is new to us?
   ::picklist::used cvsroot "$cvsglb(root)"
 
@@ -635,8 +636,8 @@ proc module_exit { } {
   cd $cwd
   gen_log:log F "CD [pwd]"
 
-  ModTree:delitem .modbrowse.treeframe /
   set cvscfg(modgeom) [wm geometry .modbrowse]
+  ModTree:destroy .modbrowse.modtree
   destroy .modbrowse
   catch {destroy .tooltips_wind}
   exit_cleanup 0
@@ -684,5 +685,25 @@ proc module_changedir {new_dir} {
   }
   gen_log:log F "$cwd"
   gen_log:log T "LEAVE"
+}
+
+proc ModTree:create {w} {
+  global cvsglb
+  global cvscfg
+
+  ttk::treeview $w.pw
+  $w.pw configure -columns "information"
+  ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) -fieldbackground $cvsglb(canvbg)
+  ttk::style configure Heading -font $cvscfg(listboxfont) -background $cvsglb(canvbg)
+  scrollbar $w.yscroll -orient vertical \
+      -relief sunken -command "$w.pw yview"
+  pack $w.yscroll -side right -fill y
+
+  focus $w.pw
+}
+
+proc ModTree:destroy {w} {
+  destroy $w.pw
+  destroy $w.yscroll
 }
 
