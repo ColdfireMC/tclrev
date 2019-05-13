@@ -77,6 +77,10 @@ proc git_workdir_status {} {
          set Filelist($f:status) "Removed"
          gen_log:log D "$Filelist($f:status)"
         }
+        { D} {
+         set Filelist($f:status) "Missing"
+         gen_log:log D "$Filelist($f:status)"
+        }
         {R*} {
          set Filelist($f:status) "Renamed"
          gen_log:log D "$Filelist($f:status)"
@@ -489,7 +493,7 @@ proc git_check {} {
   set title "Git Directory Check"
   # I know we use a short report for other VCSs, but for Git you really
   # need the full report to know what's staged and what's not
-  set flags "--no-color"
+  set flags "--porcelain"
   # Show unknown files if desired
   if {$cvscfg(status_filter)} {
     append flags " -uno"
