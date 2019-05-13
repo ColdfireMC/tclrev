@@ -48,7 +48,6 @@ proc git_workdir_status {} {
     set f [string trim [lindex $statline 1] "\""]
     # Trim path
     regsub "^$module_dir/" $f "" f
-    gen_log:log D "TRIMMED $status $f"
     if {[regexp {/} $f]} {
       continue
     }
@@ -122,50 +121,45 @@ proc git_workdir_status {} {
       # --porcelain=2 out has an extra integer field before the status and 6 extra
       # fields before the filename.
       # XY, now the second field, has "." for unmodified.
-      if {![file isdirectory $f]} {
-        set good_line ""
-        # Format: short hash, commit time, committer
-        set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
-        set cmd(git_log) [exec::new "$command"]
-        set log_out [$cmd(git_log)\::output]
+      set good_line ""
+      # Format: short hash, commit time, committer
+      set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
+      set cmd(git_log) [exec::new "$command"]
+      set log_out [$cmd(git_log)\::output]
+      if {[string length $log_out] > 0} {
+        # git log returned something, but git status didn't, so
+        # I guess it must be up-to-date
+        if {! [info exists Filelist($f:status)] || ($Filelist($f:status) eq "<file>")} {
+          set Filelist($f:status) "Up-to-date"
+          gen_log:log D "$Filelist($f:status)"
+        }
+      }
+      foreach log_line [split $log_out "\n"] {
+        if {[string length $log_line] > 0} {
+          set good_line $log_line
+        }
+      }
+      gen_log:log D "good_line $good_line"
+      $cmd(git_log)\::destroy
+      set items [split $good_line "|"]
+      gen_log:log D "items $items"
+      set hash [string trim [lindex $items 0] "\""]
+      set wdate [string trim [lindex $items 1] "\""]
+      set wwho [string trim [lindex $items 2] "\""]
+      set Filelist($f:stickytag) $hash
+      catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
+      set Filelist($f:editors) $wwho
+      gen_log:log D "$Filelist($f:stickytag)"
+      gen_log:log D "$Filelist($f:date)"
+      gen_log:log D "$Filelist($f:editors)"
+      if {[file isdirectory $f]} {
         if {[string length $log_out] > 0} {
-          # git log returned something, but git status didn't, so
-          # I guess it must be up-to-date
-          if {! [info exists Filelist($f:status)] || ($Filelist($f:status) eq "<file>")} {
-            set Filelist($f:status) "Up-to-date"
-            gen_log:log D "$Filelist($f:status)"
-          }
-        }
-        foreach log_line [split $log_out "\n"] {
-          if {[string length $log_line] > 0} {
-            set good_line $log_line
-          }
-        }
-        gen_log:log D "good_line $good_line"
-        $cmd(git_log)\::destroy
-        set items [split $good_line "|"]
-        gen_log:log D "items $items"
-        set hash [string trim [lindex $items 0] "\""]
-        set wdate [string trim [lindex $items 1] "\""]
-        set wwho [string trim [lindex $items 2] "\""]
-        set Filelist($f:stickytag) $hash
-        catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
-        set Filelist($f:editors) $wwho
-        gen_log:log D "$Filelist($f:stickytag)"
-        gen_log:log D "$Filelist($f:date)"
-        gen_log:log D "$Filelist($f:editors)"
-      } else {
-        set command "git log -n 1 --no-color -- \"$f\""
-        set cmd(dircheck) [exec::new "$command"]
-        set len [$cmd(dircheck)\::output]
-        $cmd(dircheck)\::destroy
-        if {$len > 0} {
           set Filelist($f:status) "<directory:GIT>"
         } else {
           set Filelist($f:status) "<directory>"
         }
-        gen_log:log D "$Filelist($f:status)"
       }
+      gen_log:log D "$Filelist($f:status)"
     }
   }
 
@@ -230,7 +224,6 @@ proc parse_gitlist {gitroot} {
   set remote_output [$rem_cmd\::output]
 
   foreach line [split $remote_output "\n"] {
-    gen_log:log F "$line"
     if  {$line eq ""} {continue}
     set dname [lindex $line 1] 
     gen_log:log D "dname=$dname"
@@ -496,7 +489,7 @@ proc git_check {} {
   set title "Git Directory Check"
   # I know we use a short report for other VCSs, but for Git you really
   # need the full report to know what's staged and what's not
-  set flags ""
+  set flags "--no-color"
   # Show unknown files if desired
   if {$cvscfg(status_filter)} {
     append flags " -uno"
@@ -1050,7 +1043,6 @@ namespace eval ::git_branchlog {
         set path $relpath
 
         # This gives you the local branches
-        set branches {}
         lappend branches $current_tagname
 
         # Quick scan for branches and tags
