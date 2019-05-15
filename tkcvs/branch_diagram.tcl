@@ -1459,7 +1459,6 @@ namespace eval ::logcanvas {
             foreach element [$logcanvas.canvas find withtag all] {
               if {[catch {$logcanvas.canvas itemcget $element -text} text] == 0} {
                 # Check if text element matches search pattern
-gen_log:log D " $text"
                 if {[string is true $search_nocase]} {
                   if {[string match -nocase $pattern $text]} {
                     # Add element to list of matching elements
@@ -1469,7 +1468,7 @@ gen_log:log D " $text"
                   if {[string match $pattern $text]} {
                     # Add element to list of matching elements
                     lappend search_elements $element
-gen_log:log D " $pattern MATCHED $text"
+                    gen_log:log D " $pattern MATCHED $text"
                   }
                 }
               }
