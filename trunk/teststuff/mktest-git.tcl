@@ -492,12 +492,12 @@ if {$branching_desired} {
   cd $WD
 
   # Update the clones
-  foreach branch {branchA branchAA branchB branchC master} {
-    cd $WD/git_test_$branch
-    push {--all}
-    fetch {--all}
-    cd $WD
-  }
+  #foreach branch {branchA branchAA branchB branchC master} {
+    #cd $WD/git_test_$branch
+    #push {--all}
+    #fetch {--all}
+    #cd $WD
+  #}
 }
 
 if {$leave_a_mess} {
@@ -513,8 +513,8 @@ if {$leave_a_mess} {
   # Newly added
   writefile FileAdd.txt "Pending"
   addfile FileAdd.txt trunk
-  # Deleted
-  delfile File3.txt trunk
+  # Missing
+  file delete -- File3.txt trunk
   # Modify
   writefile File2.txt "Pending"
   writefile "Dir1/F 3.txt" "Pending"
