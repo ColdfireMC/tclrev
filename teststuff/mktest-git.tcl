@@ -37,10 +37,6 @@ proc worktree {Root Branch} {
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
-  if {$ret} {
-    puts "COULD NOT MAKE WORKTREE ../git_test_branch$Branch"
-    exit 1
-  }
   cd ..
 }
 
