@@ -418,8 +418,9 @@ proc modbrowse_run {} {
         global modbrowse_module
         global modbrowse_path
         global modbrowse_title
-        set modbrowse_title [string trimleft [.modbrowse.treeframe.pw selection] "/"]
-        set modbrowse_path [join [.modbrowse.treeframe.pw selection]]
+        set selection [join [.modbrowse.treeframe.pw selection]]
+        set modbrowse_title [string trimleft $selection "/"]
+        set modbrowse_path $modbrowse_title
         set modbrowse_module $modbrowse_path
       }
 
@@ -438,9 +439,10 @@ proc modbrowse_run {} {
         global modbrowse_module
         global modbrowse_path
         global modbrowse_title
-        set modbrowse_title [.modbrowse.treeframe.pw selection]
-        set modbrowse_path [.modbrowse.treeframe.pw selection]
-        set modbrowse_module $modbrowse_path
+        set selection [join [.modbrowse.treeframe.pw selection]]
+        set modbrowse_title [string trimleft $selection "/"]
+        set modbrowse_path $modbrowse_title
+        set modbrowse_module  [.modbrowse.treeframe.pw item $selection -text]
       }
 
       # parse_cvsmodules will check out CVSROOT/modules and post what it finds
@@ -458,8 +460,10 @@ proc modbrowse_run {} {
         global modbrowse_module
         global modbrowse_path
         global modbrowse_title
-        set modbrowse_title [.modbrowse.treeframe.pw selection]
-        set modbrowse_path [.modbrowse.treeframe.pw selection]
+        set selection [join [.modbrowse.treeframe.pw selection]]
+        set modbrowse_title $selection
+        set modbrowse_path $modbrowse_title
+        # The hash, not the name
         set modbrowse_module [.modbrowse.treeframe.pw item $modbrowse_path -values]
       }
 
@@ -518,6 +522,7 @@ proc modbrowse_run {} {
     svn {
       .modbrowse.bottom.buttons.cvsfuncs.import configure -state normal \
         -command { svn_import_run }
+      .modbrowse.bottom.buttons.modfuncs.filebrowse configure -state disabled
       .modbrowse.bottom.buttons.modfuncs.checkout configure -state normal \
         -command { dialog_svn_checkout $cvscfg(svnroot) $modbrowse_path checkout}
       .modbrowse.bottom.buttons.modfuncs.export configure -state normal \

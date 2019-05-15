@@ -1,0 +1,10 @@
+#D	chocolate	Top Chocolate
+#D	chocolate/truffle	Cocoa Level 2
+#D	chocolate/truffle/cocoa3	Cocoa Level 3
+#D	sniffer	Chocolate Sniffer
+sniffer	chocolate/truffle/cocoa3/sniffer
+#D	snuff	Chocolate Snuffler
+snuff	chocolate/truffle/cocoa3/snuffler
+#D	biter	Chocolate Biter
+biter	chocolate/truffle/cocoa3/biter
+deep -a chocolate/truffle/cocoa3/sniffer chocolate/truffle/cocoa3/snuffler chocolate/truffle/cocoa3/biter

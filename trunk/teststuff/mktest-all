@@ -1,0 +1,8 @@
+#!/bin/tcsh
+
+foreach vcs (rcs cvs svn git)
+  ./mktest-$vcs.tcl
+  #./mktest-$vcs.tcl --nobranch
+  #./mktest-$vcs.tcl --nomess
+end
+

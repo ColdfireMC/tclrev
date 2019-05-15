@@ -836,7 +836,6 @@ proc svn_jit_dircmd { parent dir } {
 # called from module browser - list branches & tags
 proc parse_svnmodules {svnroot} {
   global cvscfg
-  global modval
 
   gen_log:log T "ENTER ($svnroot)"
 

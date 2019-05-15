@@ -1932,6 +1932,7 @@ proc cvs_modbrowse_tree { mnames node } {
     if {[string match "-a *" $modval($mname)]} {
       # Its an alias module
       regsub {\-a } $modtitle($mname) "Alias for " title
+      # If we want all the aliases in a folder, do this
       if {$cvscfg(aliasfolder)} {
         gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
         if {! [$tv exists "AliasTop"]} {
@@ -1941,8 +1942,12 @@ proc cvs_modbrowse_tree { mnames node } {
         }
         gen_log:log D "$tv insert AliasTop end -id $mname -text $mname -image amod -values $title"
         $tv insert AliasTop end -id $mname -text $mname -image "amod" -values \"$title\"
-        continue
+      } else {
+        # Otherwise, it just goes in the list
+        gen_log:log D "$tv insert {} end -id $mname -text $mname -image amod -values $title"
+        $tv insert {} end -id $mname -text $mname -image "amod" -values \"$title\"
       }
+      continue
     } elseif {[string match "* *" $modval($mname)]} {
       # The value isn't a simple path
       gen_log:log D "Found spaces in modval($mname) $modval($mname)"

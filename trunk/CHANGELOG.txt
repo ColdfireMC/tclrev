@@ -2,6 +2,9 @@ Release 9.0.7 May, 2019
 
 - Re-implemented the module browser with ttk::treeview
 
+- When on branch-of-a-branch, look for diagram elements in the immediate
+  fetch origin as well as the default .git repository
+
 
 Release 9.0.6 April, 2019
 
