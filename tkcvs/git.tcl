@@ -143,19 +143,15 @@ proc git_workdir_status {} {
           set good_line $log_line
         }
       }
-      gen_log:log D "good_line $good_line"
       $cmd(git_log)\::destroy
       set items [split $good_line "|"]
-      gen_log:log D "items $items"
       set hash [string trim [lindex $items 0] "\""]
       set wdate [string trim [lindex $items 1] "\""]
       set wwho [string trim [lindex $items 2] "\""]
       set Filelist($f:stickytag) $hash
       catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
       set Filelist($f:editors) $wwho
-      gen_log:log D "$Filelist($f:stickytag)"
-      gen_log:log D "$Filelist($f:date)"
-      gen_log:log D "$Filelist($f:editors)"
+      gen_log:log D "$Filelist($f:stickytag)\t$Filelist($f:date)\t$Filelist($f:editors)"
       if {[file isdirectory $f]} {
         if {[string length $log_out] > 0} {
           set Filelist($f:status) "<directory:GIT>"
@@ -1113,22 +1109,6 @@ namespace eval ::git_branchlog {
            }
         }
 
-        # Decide on a root revision. We may have gotten it from the %h:%p:%d list, or not
-if {0} {
-        if {! [info exists rootrev] } {
-          gen_log:log D "No parentless root"
-          gen_log:log D "Checking for parent of $lastrev"
-          if {[info exists revparent($lastrev)]} {
-            set rootrev $revparent($lastrev)
-            gen_log:log D "ROOT PARENT revparent($lastrev) $revparent($lastrev)"
-          } else {
-            set rootrev $lastrev
-          }
-          gen_log:log D "USE ROOT $rootrev"
-        }
-        set revpath($rootrev) $relpath
-}
-
         # De-duplicate the tags, while we're thinking of it.
         foreach a [array names revtags] {
           if {[llength $revtags($a)] > 1} {
@@ -1137,16 +1117,20 @@ if {0} {
         }
 
         # Decide what to use for the trunk.
+        if {![info exists branches]} {
+          set branches {}
+        }
         set trunk_guess [guess_trunk $branches]
         if {$trunk_guess eq ""} {
           if {[info exists outside_branches]} {
             set trunk_guess [guess_trunk $outside_branches]
           }
         }
-        if {$trunk_guess eq ""} {
-          set trunk $current_tagname
-        } else {
+        if {$trunk_guess ne ""} {
           set trunk $trunk_guess
+        } else {
+          set trunk $current_tagname
+          set repos($trunk) "."
         }
         gen_log:log D "TRUNK: $trunk"
 
@@ -1523,9 +1507,11 @@ puts "$trunk is already in revbtags($a) $revbtags($a)"
             }
           }
         }
+        if {![info exists my_branches]} {
+          set my_branches {}
+        }
         if {![info exists last_h]} {
-          gen_log:log T "LEAVE (NONE {}"
-          return [list "NONE" {}]
+          set last_h "NONE"
         }
         gen_log:log T "LEAVE ($last_h $my_branches)"
         return [list $last_h $my_branches]
