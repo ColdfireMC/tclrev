@@ -20,7 +20,7 @@ proc browse_files {module} {
     cvsfail "Please select a module!" .modbrowse
     return
   }
-  #gen_log:log D "[array names modval]"
+  gen_log:log D "[array names modval]"
   if {$module ni [array names modval]} {
     cvsfail "$module is not a CVS module" .modbrowse
     return
