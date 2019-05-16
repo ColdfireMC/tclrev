@@ -56,29 +56,32 @@ proc modbrowse_setup {} {
   foreach VCS {cvs svn git} {
     if [info exists env(${VCS}ROOT)] {
       gen_log:log D "env(${VCS}ROOT) $env(${VCS}ROOT)"
-      ::picklist::used cvsroot "$env(${VCS}ROOT)"
+      picklist_used cvsroot "$env(${VCS}ROOT)"
     }
   }
   foreach VCS {cvs svn git} {
     if [info exists cvscfg(${VCS}root)] {
       gen_log:log D "cvscfg(${VCS}root) $cvscfg(${VCS}root)"
-      ::picklist::used cvsroot $cvscfg(${VCS}root)
+      picklist_used cvsroot $cvscfg(${VCS}root)
     }
   }
   # Where do we think we are?
   gen_log:log D "cvsglb(root) $cvsglb(root) cvsglb(vcs) $cvsglb(vcs)"
 
   label .modbrowse.top.lroot -text "Repository"
-  ::picklist::entry .modbrowse.top.troot cvsglb(root) cvsroot
-  ::picklist::bind .modbrowse.top.troot <Return> { modbrowse_run }
+  ttk::combobox .modbrowse.top.troot -textvariable cvsglb(root)
+  .modbrowse.top.troot configure -values $cvscfg(cvsroot)
+  bind .modbrowse.top.troot <Return> { modbrowse_run }
+  bind .modbrowse.top.troot <<ComboBoxSelected>> { modbrowse_run }
 
   button .modbrowse.top.bworkdir -image Workdir \
     -command {workdir_setup}
 
   label .modbrowse.top.lcwd -text "Current Directory"
-  ::picklist::entry .modbrowse.top.tcwd cwd directory
-  ::picklist::bind .modbrowse.top.tcwd <Return> \
-     {if {[pwd] != $cwd} {module_changedir "$cwd"}}
+  ttk::combobox .modbrowse.top.tcwd -textvariable cwd
+  .modbrowse.top.tcwd configure -values $cvscfg(directory)
+  bind .modbrowse.top.tcwd <Return>             {if {[pwd] != $cwd} {change_dir "$cwd"}}
+  bind .modbrowse.top.tcwd <<ComboBoxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
   grid columnconf .modbrowse.top 1 -weight 1
   grid rowconf .modbrowse.top 3 -weight 1
@@ -480,7 +483,7 @@ proc modbrowse_run {} {
   busy_done .modbrowse
 
   # Maybe this root is new to us?
-  ::picklist::used cvsroot "$cvsglb(root)"
+  picklist_used cvsroot "$cvsglb(root)"
 
   # Start without revision-control menu
   gen_log:log D "CONFIGURE VCS MENUS"
@@ -681,7 +684,7 @@ proc module_changedir {new_dir} {
     }
     # Add to the directory picklist
     if {[winfo exists .workdir]} {
-      ::picklist::used directory [pwd]
+      picklist_used directory [pwd]
       setup_dir
     }
   } else {
