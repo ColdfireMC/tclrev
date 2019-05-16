@@ -218,6 +218,56 @@ proc dialog_position {dialog parent} {
   wm geometry $dialog +$X+$Y
 }
 
+# Read a file containing user's saved picklist variables and values
+proc picklist_load {} {
+  global cvscfg
+
+  if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] r]}]} {
+    while {[gets $file var_name] > 0} {
+      while {[gets $file item] > 0} {
+        lappend cvscfg($var_name) $item
+      }
+    }
+    close $file
+  }
+}
+
+# See if current value is in the saved list. If not, add it.
+# If so, promote it to the beginning (last used)
+proc picklist_used {var_name value} {
+  global cvscfg
+
+  if {[info exists cvscfg($var_name)]} {
+    if {[set i [lsearch -exact $cvscfg($var_name) $value]] >= 0} {
+      set cvscfg($var_name) [lreplace $cvscfg($var_name) $i $i]
+    }
+    set cvscfg($var_name) [lrange [concat $value $cvscfg($var_name)] 0 50]
+  } else {
+    set cvscfg($var_name) $value
+  }
+}
+
+# Save user's picklist variables and values to a file
+proc picklist_save {} {
+  global cvscfg
+
+  if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] w]}]} {
+    foreach var_name {cvsroot directory} {
+      puts $file $var_name
+      set c 0
+      if {! [info exists cvscfg($var_name)]} { continue }
+      foreach item $cvscfg($var_name) {
+        # number of items saved is a preference
+        if {$c >= $cvscfg(picklist_items)} {break}
+        puts $file $item
+        incr c
+      }
+      puts $file ""
+    }
+    close $file
+  }
+}
+
 # Take a color like $d9d9d9 and darken it
 proc rgb_shadow {color} {
   set rgb_color [winfo rgb . $color]

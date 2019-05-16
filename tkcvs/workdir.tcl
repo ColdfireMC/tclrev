@@ -53,9 +53,10 @@ proc workdir_setup {} {
   frame .workdir.top -relief groove -border 2
   pack .workdir.top -side top -fill x
 
-  ::picklist::entry .workdir.top.tcwd cwd directory
-  ::picklist::bind .workdir.top.tcwd <Return> \
-     {if {[pwd] != $cwd} {change_dir "$cwd"}}
+  ttk::combobox .workdir.top.tcwd -textvariable cwd
+  .workdir.top.tcwd configure -values $cvscfg(directory)
+  bind .workdir.top.tcwd <Return>             {if {[pwd] != $cwd} {change_dir "$cwd"}}
+  bind .workdir.top.tcwd <<ComboBoxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
   button .workdir.top.updir_btn -image updir \
     -command {change_dir ..}
@@ -833,7 +834,7 @@ proc setup_dir { } {
 
   set module_dir ""
   set current_tagname ""
-  ::picklist::used directory [pwd]
+  picklist_used directory [pwd]
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
@@ -1792,7 +1793,7 @@ proc save_options { } {
   }
 
   close $fo
-  ::picklist::save
+  picklist_save
   gen_log:log T "LEAVE"
 }
 

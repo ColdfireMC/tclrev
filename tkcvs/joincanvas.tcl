@@ -94,7 +94,7 @@ namespace eval joincanvas {
                 set tagrevision [string trim [lindex $tagitems 1]]
                 set tagname [string trim [lindex $tagitems 0]]
                 # Add all the tags to a picklist for our "since" tag
-                ::picklist::used alltags $tagname
+                picklist_used alltags $tagname
 
                 set parts [split $tagrevision {.}]
                 if {[expr {[llength $parts] & 1}] == 1} {
@@ -125,7 +125,7 @@ namespace eval joincanvas {
             }
           }
         }
-        ::picklist::used alltags ""
+        picklist_used alltags ""
       }
 
       proc node {joincanvas rev x y} {
@@ -558,8 +558,9 @@ namespace eval joincanvas {
 
       label $joincanvas.up.lversSince -text "   Since" -anchor w
       frame $joincanvas.up.eSince -bg $cvscfg(colourB)
-      ::picklist::clear alltags
-      ::picklist::entry $joincanvas.up.rversSince "" alltags
+      #::picklist::clear alltags
+      ttk::combobox $joincanvas.up.rversSince -textvariable tagname
+      $joincanvas.up.rversSince -values $cvscfg(alltags)
       label $joincanvas.up.lversTo -text "Merge To" -anchor w
       entry $joincanvas.up.rversTo -relief groove \
         -bd 1 -relief sunk -state readonly -readonlybackground $cvsglb(bg)

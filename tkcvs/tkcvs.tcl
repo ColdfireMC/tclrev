@@ -118,7 +118,7 @@ set optfile [file join $cvscfg(home) .tkcvs]
 if {[file exists $optfile]} {
   catch {source $optfile}
 }
-::picklist::load
+picklist_load
 
 # Set some defaults
 set cvsglb(commit_comment) ""
