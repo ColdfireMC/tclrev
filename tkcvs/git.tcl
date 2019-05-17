@@ -1579,9 +1579,10 @@ puts "$trunk is already in revbtags($a) $revbtags($a)"
               incr i
             }
             set line [lindex $lines $i]
-            # Author: dorothyr <dorothyr@tadg>
+            # Author: dorothy rob <dorothyr@tadg>
             if { [string match {Author:*} $line] } {
-              set revwho($revnum) [lindex $line 1]
+              set remainder [join [lrange $line 1 end]]
+              regsub { <.*>} $remainder {} revwho($revnum)
             }
             incr i
             set line [lindex $lines $i]
