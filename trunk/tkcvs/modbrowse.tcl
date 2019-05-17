@@ -72,7 +72,7 @@ proc modbrowse_setup {} {
   ttk::combobox .modbrowse.top.troot -textvariable cvsglb(root)
   .modbrowse.top.troot configure -values $cvscfg(cvsroot)
   bind .modbrowse.top.troot <Return> { modbrowse_run }
-  bind .modbrowse.top.troot <<ComboBoxSelected>> { modbrowse_run }
+  bind .modbrowse.top.troot <<ComboboxSelected>> { modbrowse_run }
 
   button .modbrowse.top.bworkdir -image Workdir \
     -command {workdir_setup}
@@ -81,7 +81,7 @@ proc modbrowse_setup {} {
   ttk::combobox .modbrowse.top.tcwd -textvariable cwd
   .modbrowse.top.tcwd configure -values $cvscfg(directory)
   bind .modbrowse.top.tcwd <Return>             {if {[pwd] != $cwd} {change_dir "$cwd"}}
-  bind .modbrowse.top.tcwd <<ComboBoxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
+  bind .modbrowse.top.tcwd <<ComboboxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
   grid columnconf .modbrowse.top 1 -weight 1
   grid rowconf .modbrowse.top 3 -weight 1

@@ -56,7 +56,7 @@ proc workdir_setup {} {
   ttk::combobox .workdir.top.tcwd -textvariable cwd
   .workdir.top.tcwd configure -values $cvscfg(directory)
   bind .workdir.top.tcwd <Return>             {if {[pwd] != $cwd} {change_dir "$cwd"}}
-  bind .workdir.top.tcwd <<ComboBoxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
+  bind .workdir.top.tcwd <<ComboboxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
   button .workdir.top.updir_btn -image updir \
     -command {change_dir ..}
