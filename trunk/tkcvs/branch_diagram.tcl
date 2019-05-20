@@ -368,7 +368,7 @@ namespace eval ::logcanvas {
                    if {$rev == ""} {
                      git_annotate_r "" $filename
                    } else {
-                     git_annotate_r $rev $revpath($rev) $filename
+                     git_annotate_r $rev $filename
                    }
                }]
              $logcanvas.delta configure -state disabled

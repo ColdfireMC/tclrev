@@ -33,8 +33,8 @@ set cvscfg(toomany_tags) 25
 # diagram before it says "more..."
 set cvscfg(tagdepth) 6
 # Hilight colours for revision-log boxes
-set cvscfg(colourA) darkgreen
-set cvscfg(colourB) brown
+set cvscfg(colourA) palegreen4
+set cvscfg(colourB) brown3
 
 # Maximum number of places to save in the picklist history
 set cvscfg(picklist_items) 10
@@ -244,13 +244,14 @@ if {$tcl_platform(platform) == "windows"} {
 # --------------------
 # User Menus
 #
-# Set any of these strings to a cvs command to add to the User Menu
-   set cvsmenu(Show_My_Checkouts) "history"
-   set cvsmenu(Show_All_Checkouts) "history -a"
-# Set these to a shell command whose output you want to catch
+# Add a cvs command to add to the User Menu
+#  set cvsmenu(Show_My_Checkouts) "history"
+#  set cvsmenu(Show_All_Checkouts) "history -a"
+# Run a a shell command whose output you want to catch
 #   set usermenu(show_makevars) "gmake -pn | grep '='"
-# Set these to standalone programs
+# Run a standalone programs
 #   set execmenu(tkman_cvs) "tkman cvs"
+#   set execmenu(GitK) {gitk [lindex $cvsglb(current_selection) $i]}
 
 #
 # --------------------
