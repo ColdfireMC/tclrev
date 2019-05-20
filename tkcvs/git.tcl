@@ -1076,6 +1076,7 @@ namespace eval ::git_branchlog {
           set branches [concat $reachable_branches $logged_branches]
         }
         set branches [prune_branchlist $branches]
+puts "Starting branches:  $branches"
 
         # De-duplicate the tags, while we're thinking of it.
         foreach a [array names revtags] {
@@ -1089,35 +1090,52 @@ namespace eval ::git_branchlog {
         set trunk_found 0
         # If there's only one choice, don't waste time looking
         if {[llength $branches] == 1} {
-           set trunk "$branches"
+           set trunk [lindex $branches 0]
            set trunk_found 1
-           gen_log:log D "Only one branch! trunk=$trunk"
+           gen_log:log D "Only one branch to begin with! That was easy! trunk=$trunk"
         }
         if {! $trunk_found} {
-          if {[llength $reachable_branches] == 1} {
-             set trunk "$reachable_branches"
-             set trunk_found 1
-             gen_log:log D "Only one reachable branch. trunk=$trunk"
+          # Now we go through the branches and eliminate the ones that this file
+          # doesn't inhabit
+          foreach br $branches {
+            gen_log:log D "$br"
+            set cmd(git_revtest) [exec::new "git rev-list -n 1 --abbrev-commit $br -- \"$filename\""]
+            set revtest_lines [split [$cmd(git_revtest)\::output] "\n"]
+            # Dont' bother parsing, we only need to know if it's something or nothing
+            gen_log:log D $revtest_lines
+            if { [llength $revtest_lines] < 1 } {
+              # We can remove that one
+              set idx [lsearch $branches $br]
+              set branches [lreplace $branches $idx $idx]
+              gen_log:log D "Removing $br from consideration"
+puts "Removing $br from consideration"
+            }
+          }
+puts "Remaining branches: $branches"
+          if {[llength $branches] == 1} {
+           set trunk [lindex $branches 0]
+           set trunk_found 1
+           gen_log:log D "Only one branch left after the revlist test. trunk=$trunk"
           }
         }
         if {! $trunk_found} {
-          # master may or may not be in our list of branches. If it is, try to use it,
-          # but only if it was picked up in the log
-          if { "master" in $logged_branches } {
+          # master may or may not be in our list of branches. If it is, try to use it
+          if { "master" in $branches } {
             set trunk "master"
             set trunk_found 1
             gen_log:log D "master is in branches, trunk=$trunk"
+puts "master is in branches, trunk=$trunk"
           }
         }
         if {! $trunk_found} {
-          set m [lsearch -glob $logged_branches {*/master}]
+          set m [lsearch -glob $branches {*/master}]
           if {$m > -1} {
-            set trunk [lindex $logged_branches $m]
-            gen_log:log D "master is in branches, trunk=$trunk"
+            set trunk [lindex $branches $m]
+            gen_log:log D "*/master is in branches, trunk=$trunk"
+puts "*/master is in branches, trunk=$trunk"
             set trunk_found 1
           }
         }
-        # FIXME: We probably need to check and see if it's empty though.
         if {! $trunk_found} {
           # since we did the branch detection in date-order, newest to oldest, the
           # oldest branch may be at the end of the list?
@@ -1125,7 +1143,7 @@ namespace eval ::git_branchlog {
           set trunk [lindex $logged_branches end]
         }
         gen_log:log D "TRUNK: $trunk"
-puts "trunk $trunk"
+puts "TRUNK: $trunk"
         # Make sure the trunk is the first in the branchlist
         set idx [lsearch $branches $trunk]
         set branches [lreplace $branches $idx $idx]
@@ -1134,7 +1152,6 @@ puts "trunk $trunk"
         # Get rev lists for the branches
         catch {unset branch_matches}
         gen_log:log D "Final branches: $branches"
-puts "branches  $branches"
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
           set command "git rev-list --reverse --abbrev-commit --first-parent $branch -- \"$filename\""
@@ -1151,6 +1168,7 @@ puts "branches  $branches"
               }
             }
           } else {
+            # This shouldn't happen because we pruned already, no harm in checking
             gen_log:log D "branch $branch is EMPTY. Removing from the list"
             # If it's empty, remove this branch from the list
             set idx [lsearch $branches $branch]
@@ -1218,9 +1236,7 @@ puts "branches  $branches"
               gen_log:log D "using $base"
             }
 
-# FIXME: we don't anymore, we abandoned the -C stuff
-            # Get the log info for each revision. We have to do it inside here, to know which -C to use.
-            # It does result in some duplication though.
+            # Get the log info for each revision.
             set command "git show --quiet --abbrev-commit --date=iso --no-color $branchrevs($branch) -- \"$filename\""
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
@@ -1406,19 +1422,19 @@ puts "branches  $branches"
           gen_log:log D "branchrevs($trunk) $branchrevs($trunk)"
           if {! [info exists revbtags($rootrev)]} {
             gen_log:log D "No revbtags($rootrev)!"
-            puts "No revbtags($rootrev)"
+puts "No revbtags($rootrev)"
             set root_ok 0
           }
           # If we have children for this, it's a perfectly good root
           if {[info exists revchildren($rootrev)]} {
             gen_log:log D "revchildren($rootrev) $revchildren($rootrev)"
-            puts "revchildren($rootrev) $revchildren($rootrev)"
-            puts "Not moving the root, just the revbtags"
+puts "revchildren($rootrev) $revchildren($rootrev)"
+puts "Not moving the root, just check the revbtags"
             # But we may have to move the tag
             foreach a [array names revbtags] {
               if {$trunk in $revbtags($a)} {
                 gen_log:log D "$trunk is already in revbtags($a) $revbtags($a)"
-                puts "$trunk is already in revbtags($a) $revbtags($a)"
+puts "$trunk is already in revbtags($a) $revbtags($a), all is ok"
                 set idx [lsearch $revbtags($a) $trunk]
                 set revbtags($a) [lreplace $revbtags($a) $idx $idx]
                 lappend revbtags($rootrev) $trunk
@@ -1430,10 +1446,10 @@ puts "branches  $branches"
           if {! $root_ok} {
             # We can try using the end of the trunk's revlist
             set lastref [lindex $branchrevs($trunk) end]
-            puts "last branchrevs($trunk) $lastref"
+puts "last branchrevs($trunk) $lastref"
             if {[info exists revbtags($lastref)]} {
-              puts "revbtags($lastref) revbtags($lastref)"
-              puts "Moving root to $lastref"
+puts "revbtags($lastref) revbtags($lastref)"
+puts "Moving root to $lastref"
               set rootrev $lastref
               set root_ok 1
             }
@@ -1443,8 +1459,8 @@ puts "branches  $branches"
               # Use the position that it already got somehow
               if {$trunk in $revbtags($a)} {
                 gen_log:log D "$trunk is already in revbtags($a) $revbtags($a)"
-                puts "$trunk is already in revbtags($a) $revbtags($a)"
-                puts "Moving root to $a"
+puts "$trunk is already in revbtags($a) $revbtags($a)"
+puts "Moving root to $a"
                 set rootrev $a
                 set root_ok
                 break
