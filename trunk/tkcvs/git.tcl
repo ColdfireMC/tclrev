@@ -991,6 +991,7 @@ namespace eval ::git_branchlog {
         variable revkind
         variable revparent
         variable revpath
+        variable revstate
         variable revtags
         variable revbtags
         variable revmergefrom
@@ -1009,6 +1010,7 @@ namespace eval ::git_branchlog {
         catch { unset branchrevs }
         catch { unset revwho }
         catch { unset revdate }
+        catch { unset revstate }
         catch { unset revtime }
         catch { unset revcomment }
         catch { unset revtags }
@@ -1171,7 +1173,7 @@ namespace eval ::git_branchlog {
               }
             }
           } else {
-            # This shouldn't happen because we pruned already, no harm in checking
+            # This shouldn't happen because we pruned already
             gen_log:log D "branch $branch is EMPTY. Removing from the list"
             # If it's empty, remove this branch from the list
             set idx [lsearch $branches $branch]
@@ -1263,6 +1265,9 @@ namespace eval ::git_branchlog {
             if {! [info exists revcomment($parent)] } {
               gen_log:log D "MISSING INFO for PARENT $parent of $branch"
               load_mystery_info $revparent($base) .
+              # Draw it differently because it may not be reachable
+              set revpath($parent) $relpath
+              set revstate($parent) "ghost"
             }
 
             # Adding this to trunk but it doesn't always belong there
@@ -1794,6 +1799,7 @@ namespace eval ::git_branchlog {
         variable revbtags
         variable branchrevs
         variable revbranches
+        variable revstate
         variable revmergefrom
         variable logstate
         variable revnum
@@ -1829,6 +1835,10 @@ namespace eval ::git_branchlog {
           ## Only take one from the list that you might have here
           set revmergefrom($a) [lindex $revmergefrom($a) end]
           gen_log:log D "revmergefrom($a) $revmergefrom($a)"
+        }
+        gen_log:log D ""
+        foreach a [lsort -dictionary [array names revstate]] {
+          gen_log:log D "revstate($a) $revstate($a)"
         }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}

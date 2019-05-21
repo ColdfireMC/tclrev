@@ -808,10 +808,19 @@ namespace eval ::logcanvas {
         # ...and add the contents
         if {[info exists revstate($revision)]} {
           if {$revstate($revision) == {dead}} {
+            # in CVS, a "dead" revision, which is often present if a file was
+            # added on a branch
             $logcanvas.canvas create line \
               $x $y $tx $ty -fill red -width $curr(width)
             $logcanvas.canvas create line \
               $tx $y $x $ty -fill red -width $curr(width)
+          } elseif {$revstate($revision) == {ghost}} {
+            # In GIT, a similar thing happens if a file was added on a branch.
+            # It's not dead, it's just not reachable from the current branch.
+            $logcanvas.canvas create line \
+              $x $y $tx $ty -fill gray -width $curr(width)
+            $logcanvas.canvas create line \
+              $tx $y $x $ty -fill gray -width $curr(width)
           }
         }
         set tx [expr {$x + $box_width/2}]
