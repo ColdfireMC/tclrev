@@ -306,7 +306,7 @@ proc git_log {detail args} {
       append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      append flags " --graph --all --date-order --format=%h\\ %<(10,trunc)%aN\\ %<(50,trunc)%s\\ %d"
+      append flags " --graph --all --format=%h\\ \\ %<(12,trunc)%aN\\ %<(54,trunc)%s"
     }
     verbose {
       append flags " --all"
@@ -318,7 +318,6 @@ proc git_log {detail args} {
     if {[llength $filelist] > 1} {
       $v\::log "-- $file -------------------------------\n" blue
     }
-    #set command "git log --color $flags -- \"$file\""
     set command "git log --no-color $flags -- \"$file\""
     $v\::do "$command" 1
     $v\::wait
@@ -465,8 +464,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "Git log"
-  # --full-history causes merges to be shown
-  set commandline "git log --graph --all --date-order --format=%h\\ %<(12,trunc)%aN\\ %<(32,trunc)%s\\ %d"
+  set commandline "git log --graph --all --format=%h\\ \\ %<(12,trunc)%aN\\ %<(54,trunc)%s"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -964,8 +962,10 @@ namespace eval ::git_branchlog {
         variable cmd_log
         variable lc
 
-        gen_log:log D "  $cmd_log\::abort"
-        catch {$cmd_log\::abort}
+        if {[info exists cmd_log]} {
+          gen_log:log D "  $cmd_log\::abort"
+          catch {$cmd_log\::abort}
+        }
         busy_done $lc
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
@@ -1048,19 +1048,20 @@ namespace eval ::git_branchlog {
         catch {unset reachable_branches}
 
         # Most efficient way I can think of to collect branch, tag, and parent information
-        set command1 "git log --all --first-parent -$cvscfg(gitmaxhist) --date-order --format=%h:%p:%d -- \"$filename\""
+        set command1 "git log --all -$cvscfg(gitmaxhist) --first-parent --date-order --format=%h:%p:%d -- \"$filename\""
         set branches_log1 [exec::new $command1 {} 0 {} 1]
         set log_output1 [$branches_log1\::output]
         $branches_log1\::destroy
         set logresults1 [parents_and_branches $log_output1]
         set h [lindex $logresults1 0]
-        if {$h ne "NONE"} {
-          set lastrev $h
+        if {$h == ""} {
+          set rootrev ""
         }
+
         set logged_branches [lindex $logresults1 1]
         set logged_branches [prune_branchlist $logged_branches]
 
-        # That doesn't always pick up the reachable ones though
+        # That doesn't always pick up the reachable branches though
         set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
         set branch_lines [split [$cmd(git_branch)\::output] "\n"]
         foreach line $branch_lines {
@@ -1076,7 +1077,6 @@ namespace eval ::git_branchlog {
           set branches [concat $reachable_branches $logged_branches]
         }
         set branches [prune_branchlist $branches]
-puts "Starting branches:  $branches"
 
         # De-duplicate the tags, while we're thinking of it.
         foreach a [array names revtags] {
@@ -1108,10 +1108,8 @@ puts "Starting branches:  $branches"
               set idx [lsearch $branches $br]
               set branches [lreplace $branches $idx $idx]
               gen_log:log D "Removing $br from consideration"
-puts "Removing $br from consideration"
             }
           }
-puts "Remaining branches: $branches"
           if {[llength $branches] == 1} {
            set trunk [lindex $branches 0]
            set trunk_found 1
@@ -1124,7 +1122,6 @@ puts "Remaining branches: $branches"
             set trunk "master"
             set trunk_found 1
             gen_log:log D "master is in branches, trunk=$trunk"
-puts "master is in branches, trunk=$trunk"
           }
         }
         if {! $trunk_found} {
@@ -1132,7 +1129,6 @@ puts "master is in branches, trunk=$trunk"
           if {$m > -1} {
             set trunk [lindex $branches $m]
             gen_log:log D "*/master is in branches, trunk=$trunk"
-puts "*/master is in branches, trunk=$trunk"
             set trunk_found 1
           }
         }
@@ -1143,11 +1139,18 @@ puts "*/master is in branches, trunk=$trunk"
           set trunk [lindex $logged_branches end]
         }
         gen_log:log D "TRUNK: $trunk"
-puts "TRUNK: $trunk"
         # Make sure the trunk is the first in the branchlist
         set idx [lsearch $branches $trunk]
         set branches [lreplace $branches $idx $idx]
         set branches [linsert $branches 0 $trunk]
+
+        # Get the info for all the revs.
+        set command "git log --all --abbrev-commit --first-parent --date=iso --tags --decorate=short --no-color -- \"$filename\""
+        set cmd_log [exec::new $command {} 0 {} 1]
+        set log_output [$cmd_log\::output]
+        $cmd_log\::destroy
+        set log_lines [split $log_output "\n"]
+        parse_gitlog $log_lines
 
         # Get rev lists for the branches
         catch {unset branch_matches}
@@ -1200,13 +1203,6 @@ puts "TRUNK: $trunk"
               catch {unset revbtags($branchtip($branch))}
             }
 
-            set command "git show --quiet --abbrev-commit --date=iso --no-color $branchrevs($branch) -- \"$filename\""
-            set cmd_log [exec::new $command {} 0 {} 1]
-            set log_output [$cmd_log\::output]
-            $cmd_log\::destroy
-            set log_lines [split $log_output "\n"]
-            parse_gitlog $log_lines
-
             continue
           }
           
@@ -1236,47 +1232,37 @@ puts "TRUNK: $trunk"
               gen_log:log D "using $base"
             }
 
-            # Get the log info for each revision.
-            set command "git show --quiet --abbrev-commit --date=iso --no-color $branchrevs($branch) -- \"$filename\""
-            set cmd_log [exec::new $command {} 0 {} 1]
-            set log_output [$cmd_log\::output]
-            $cmd_log\::destroy
-            set log_lines [split $log_output "\n"]
-            parse_gitlog $log_lines
-
             set revkind($base) "branch"
             if {[info exists revparent($base)]} {
+              # We may have found a parent in the very first git log
               set parent $revparent($base)
+              gen_log:log D "PARENT $revparent($base) of $branch already picked up"
             } else {
+              # If not, we can try to get it
               set parent [find_parent $base]
+              gen_log:log D "PARENT $revparent($base) of $branch determined by new git log %p"
               set revparent($base) $parent
             }
+            # But it will very likely not be in our revlists, so always do this instead
+            set test_parent [lindex $inBoth end]
+            if {$test_parent != ""} {
+              if {$test_parent ne $revparent($base)} {
+                gen_log:log D "PARENT $revparent($base) from log %p DOESN'T MATCH end of inBoth $test_parent for $branch"
+              } else {
+                gen_log:log D "PARENT $revparent($base) from log %p MATCHES end of inBoth $test_parent for $branch"
+              }
+              set parent $test_parent
+              set revparent($base) $parent
+              gen_log:log D "Using end of inBoth for PARENT $revparent($base) of $branch"
+            }
+
             gen_log:log D "$branch: BASE $base PARENT $parent"
             # Sometimes we get back a parent that our log --all didn't pick
             # up. This may happen if the directory had checkins that didn't
             # affect the file or the file is newly added
             if {! [info exists revcomment($parent)] } {
-              gen_log:log D "MISSING PARENT $parent for BASE $base of $branch"
-              set test_parent [lindex $inBoth end]
-              if {$test_parent != ""} {
-                set parent $test_parent
-                gen_log:log D "Backing up one by using end of inBoth = $parent for PARENT"
-              } else {
-                # parent commit without the file
-                set command "git log -n 1 --format=%p $parent"
-                #set command "git log --format=%h:%p:%d $parent --\"$filename\""
-                set cmd_log [exec::new $command {} 0 {} 1]
-                set log_output [$cmd_log\::output]
-                $cmd_log\::destroy
-                set test_parent [lindex [split $log_output "\n"] 0]
-                if {$test_parent != "" } {
-                  gen_log:log D "using $test_parent instead"
-                  set parent $test_parent
-                  gen_log:log D "Found a PARENT by git log %p, setting revparent($base) = $parent"
-                  set revparent($base) $parent
-                  load_mystery_info $test_parent .
-                }
-              }
+              gen_log:log D "MISSING INFO for PARENT $parent of $branch"
+              load_mystery_info $revparent($base) .
             }
 
             # Adding this to trunk but it doesn't always belong there
@@ -1327,7 +1313,7 @@ puts "TRUNK: $trunk"
         # so the foreach is unnecessary?
         foreach a [array names branch_matches] {
           foreach b $branch_matches($a) {
-            gen_log:log D "BRANCHES $a and $b have the same root"
+            gen_log:log D "BRANCHES $a and $b have the SAME ROOT $branchroot($a)=$branchroot($b)"
             gen_log:log D "COMPARING branchrevs($a) vs branchrevs($b)"
             lassign [list_comm $branchrevs($a) $branchrevs($b)] inBonly inBoth
             gen_log:log D "COMPARING branchrevs($b) vs branchrevs($a)"
@@ -1422,19 +1408,15 @@ puts "TRUNK: $trunk"
           gen_log:log D "branchrevs($trunk) $branchrevs($trunk)"
           if {! [info exists revbtags($rootrev)]} {
             gen_log:log D "No revbtags($rootrev)!"
-puts "No revbtags($rootrev)"
             set root_ok 0
           }
           # If we have children for this, it's a perfectly good root
           if {[info exists revchildren($rootrev)]} {
             gen_log:log D "revchildren($rootrev) $revchildren($rootrev)"
-puts "revchildren($rootrev) $revchildren($rootrev)"
-puts "Not moving the root, just check the revbtags"
             # But we may have to move the tag
             foreach a [array names revbtags] {
               if {$trunk in $revbtags($a)} {
                 gen_log:log D "$trunk is already in revbtags($a) $revbtags($a)"
-puts "$trunk is already in revbtags($a) $revbtags($a), all is ok"
                 set idx [lsearch $revbtags($a) $trunk]
                 set revbtags($a) [lreplace $revbtags($a) $idx $idx]
                 lappend revbtags($rootrev) $trunk
@@ -1446,10 +1428,7 @@ puts "$trunk is already in revbtags($a) $revbtags($a), all is ok"
           if {! $root_ok} {
             # We can try using the end of the trunk's revlist
             set lastref [lindex $branchrevs($trunk) end]
-puts "last branchrevs($trunk) $lastref"
             if {[info exists revbtags($lastref)]} {
-puts "revbtags($lastref) revbtags($lastref)"
-puts "Moving root to $lastref"
               set rootrev $lastref
               set root_ok 1
             }
@@ -1459,8 +1438,6 @@ puts "Moving root to $lastref"
               # Use the position that it already got somehow
               if {$trunk in $revbtags($a)} {
                 gen_log:log D "$trunk is already in revbtags($a) $revbtags($a)"
-puts "$trunk is already in revbtags($a) $revbtags($a)"
-puts "Moving root to $a"
                 set rootrev $a
                 set root_ok
                 break
@@ -1589,7 +1566,11 @@ puts "Moving root to $a"
             }
           }
         }
-        if {![info exists my_branches]} {
+        if {! [info exists last_h] } {
+          return "" {}
+        }
+
+        if {! [info exists my_branches] } {
           set my_branches {}
         }
 
@@ -1603,8 +1584,6 @@ puts "Moving root to $a"
             gen_log:log D "FOUND likely ROOT $revparent($last_h)"
           }
         }
-puts "--------"
-puts "root $rootrev"
         if {[info exists rootrev]} {
           gen_log:log T "LEAVE ($rootrev $my_branches)"
           return [list $rootrev $my_branches]

@@ -1,5 +1,7 @@
 Release 9.0.8 May, 2019
 
+- Fixed more problems with the branch browser.
+
 - Re-implemented the picklists with ttk::combobox
 
 

@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.0.7"
+set cvscfg(version) "9.0.8"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
