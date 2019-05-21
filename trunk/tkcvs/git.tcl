@@ -1283,7 +1283,6 @@ namespace eval ::git_branchlog {
               lappend revbranches($parent) $branchroot($branch)
             }
 
-
             # Move the branch tags from the tip to the base
             # (if there's only one rev, those are the same, so watch out)
             if {[info exists revbtags($branchtip($branch)]} {
@@ -1417,8 +1416,13 @@ namespace eval ::git_branchlog {
             foreach a [array names revbtags] {
               if {$trunk in $revbtags($a)} {
                 gen_log:log D "$trunk is already in revbtags($a) $revbtags($a)"
+                gen_log:log D " take it out of revbtags($a)"
                 set idx [lsearch $revbtags($a) $trunk]
                 set revbtags($a) [lreplace $revbtags($a) $idx $idx]
+                if {[llength $revbtags($a)] < 1} {
+                  catch {unset revbtags($a)}
+                }
+                gen_log:log D " and add it to revbtags($rootrev)"
                 lappend revbtags($rootrev) $trunk
                 set root_ok 1
                 break
@@ -1444,7 +1448,8 @@ namespace eval ::git_branchlog {
               }
             }
           }
-          set branchrevs($rootrev) $branchrevs($trunk)
+          # This makes the You are Here work
+          set branchroot($trunk) $rootrev
         } else {
           cvsfail "Can't read trunk revisions for this file" $lc
         }
