@@ -235,15 +235,15 @@ proc conflict {filename} {
 set branching_desired 1
 set leave_a_mess 1
 
-for {set i 0} {$i < [llength $argv]} {incr i} {
+for {set i 1} {$i < [llength $argv]} {incr i} {
   set arg [lindex $argv $i]
 
-  switch -regexp -- $arg {
-    {^--*nobranch.*} {
-      set branching_desired 0; incr i
+  switch -regexp $arg {
+    {^--*nobranch} {
+      set branching_desired 0
     }
-    {^--*nomess.*} {
-      set leave_a_mess 0; incr i
+    {^--*nomess} {
+      set leave_a_mess 0
     }
   }
 }
