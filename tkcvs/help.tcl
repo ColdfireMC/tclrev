@@ -337,7 +337,7 @@ proc man_description {} {
 
 <h1>DESCRIPTION</h1>
 
-TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present. Git functionality is new in version 9.0.
+TkCVS is a Tcl/Tk-based graphical interface to the CVS and Subversion configuration management systems. It displays the status of the files in the current working directory, and provides buttons and menus to execute configuration-management commands on the selected files. Limited RCS functionality is also present. Git functionality is new in version 9.
 
 TkDiff is bundled in for browsing and merging your changes.
 
