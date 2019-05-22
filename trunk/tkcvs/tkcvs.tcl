@@ -118,7 +118,16 @@ set optfile [file join $cvscfg(home) .tkcvs]
 if {[file exists $optfile]} {
   catch {source $optfile}
 }
-picklist_load
+set pickfile [file join $cvscfg(home) .tkcvs-picklists]
+if {[file exists $pickfile]} {
+  picklist_load
+}
+if {! [info exist cvsglb(directory)]} {
+  set cvsglb(directory) [pwd]
+}
+if {[info exists cvsglb(cvsroot)]} {
+  set cvscfg(cvsroot) [lindex $cvsglb(cvsroot) 0]
+}
 
 # Set some defaults
 set cvsglb(commit_comment) ""
@@ -334,12 +343,6 @@ if {$cvscfg(logging)} {
 }
 
 #
-# Add directory where we last ran to the menu list
-if { ! [info exists cvscfg(lastdir)] } {
-  set cvscfg(lastdir) [pwd]
-}
-
-#
 # Command line options
 #
 set usage "Usage:"
@@ -436,26 +439,17 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     set cvsglb(root) $cvscfg(url)
     set cvsglb(vcs) git
   } else {
-    # Check the environment. How to decide precedence though?
-    # At least we'll add them to repository dropdown to choose easily
-    # cvscfg(*root) is meant to override the envvar
-    # Having GIT_DIR set is not an option, it destroys everything
-    if {[info exists cvscfg(cvsroot)]} {
-      set cvsglb(root) $cvscfg(cvsroot)
+    # We'll respect CVSROOT environment variable if it's set
+    if {[info exists env(CVSROOT)]} {
+      set cvsglb(root) $env(CVSROOT)
+      set cvscfg(cvsroot) $env(CVSROOT)
       set cvsglb(vcs) cvs
-    } elseif {[info exists env(CVSROOT)]} {
-      set cvsglb(root) [set cvscfg(cvsroot) $env(CVSROOT)]
-      set cvsglb(vcs) cvs
-    } elseif {[info exists cvscfg(svnroot)]} {
-      set svnglb(root) $cvscfg(svnroot)
-      set cvsglb(vcs) svn
-    } elseif {[info exists env(SVNROOT)]} {
-      set cvsglb(root) [set cvscfg(cvsroot) $env(SVNROOT)]
-      set cvsglb(vcs) svn
-    } elseif {[info exists cvscfg(gitroot)]} {
-      set cvsglb(root) $cvscfg(cvsroot)
-      set cvsglb(vcs) git
     }
+  }
+  # Othewise we set it to the most recent saved in picklist
+  # which we've saved in cvscfg(cvsroot)
+  if {$cvsglb(root) == ""} {
+    set cvsglb(root) $cvscfg(cvsroot)
   }
   modbrowse_run
 # Start with Branch Browser

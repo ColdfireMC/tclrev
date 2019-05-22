@@ -221,11 +221,13 @@ proc dialog_position {dialog parent} {
 # Read a file containing user's saved picklist variables and values
 proc picklist_load {} {
   global cvscfg
+  global cvsglb
 
   if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] r]}]} {
     while {[gets $file var_name] > 0} {
+      lappend vars $var_name
       while {[gets $file item] > 0} {
-        lappend cvscfg($var_name) $item
+        lappend cvsglb($var_name) $item
       }
     }
     close $file
@@ -235,28 +237,30 @@ proc picklist_load {} {
 # See if current value is in the saved list. If not, add it.
 # If so, promote it to the beginning (last used)
 proc picklist_used {var_name value} {
-  global cvscfg
+  global cvsglb
 
-  if {[info exists cvscfg($var_name)]} {
-    if {[set i [lsearch -exact $cvscfg($var_name) $value]] >= 0} {
-      set cvscfg($var_name) [lreplace $cvscfg($var_name) $i $i]
+  gen_log:log T "ENTER ($var_name $value)"
+  if {[info exists cvsglb($var_name)]} {
+    if {[set i [lsearch -exact $cvsglb($var_name) $value]] >= 0} {
+      set cvsglb($var_name) [lreplace $cvsglb($var_name) $i $i]
     }
-    set cvscfg($var_name) [lrange [concat $value $cvscfg($var_name)] 0 50]
+    set cvsglb($var_name) [lrange [concat $value $cvsglb($var_name)] 0 50]
   } else {
-    set cvscfg($var_name) $value
+    lappend cvsglb($var_name) $value
   }
 }
 
 # Save user's picklist variables and values to a file
 proc picklist_save {} {
   global cvscfg
+  global cvsglb
 
   if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] w]}]} {
     foreach var_name {cvsroot directory} {
       puts $file $var_name
       set c 0
-      if {! [info exists cvscfg($var_name)]} { continue }
-      foreach item $cvscfg($var_name) {
+      if {! [info exists cvsglb($var_name)]} { continue }
+      foreach item $cvsglb($var_name) {
         # number of items saved is a preference
         if {$c >= $cvscfg(picklist_items)} {break}
         puts $file $item

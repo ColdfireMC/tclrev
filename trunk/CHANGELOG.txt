@@ -2,7 +2,12 @@ Release 9.0.8 May, 2019
 
 - Fixed more problems with the branch browser.
 
+- Got You are Here working again when currently not at the
+  tip of a branch
+
 - Re-implemented the picklists with ttk::combobox
+
+- Fixed a bunch of random bugs
 
 
 Release 9.0.7 May, 2019

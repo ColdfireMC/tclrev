@@ -54,7 +54,7 @@ proc workdir_setup {} {
   pack .workdir.top -side top -fill x
 
   ttk::combobox .workdir.top.tcwd -textvariable cwd
-  .workdir.top.tcwd configure -values $cvscfg(directory)
+  .workdir.top.tcwd configure -values $cvsglb(directory)
   bind .workdir.top.tcwd <Return>             {if {[pwd] != $cwd} {change_dir "$cwd"}}
   bind .workdir.top.tcwd <<ComboboxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
@@ -835,14 +835,15 @@ proc setup_dir { } {
   set module_dir ""
   set current_tagname ""
   picklist_used directory [pwd]
+  picklist_used cvsroot $cvsglb(root)
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
 
   .workdir.top.bmodbrowse configure -image Modules
   .workdir.top.lmodule configure -text "Path"
-  .workdir.top.ltagname configure -text "Tag"
-  .workdir.top.lcvsroot configure -text "CVSROOT"
+  .workdir.top.ltagname configure -text "Branch/Tag"
+  .workdir.top.lcvsroot configure -text "Repository"
   .workdir.top.tcvsroot configure -textvariable cvscfg(cvsroot)
   set cvsglb(root) $cvscfg(cvsroot)
   set cvsglb(vcs) cvs
@@ -1665,12 +1666,6 @@ proc save_options { } {
 
   # Plus the logcanvas options
   set LOGopts [concat [array names logcfg show_*] scale]
-
-  # set this to current directory, so we'll add it to the menu next time
-  if ([catch pwd]) {
-    return
-  }
-  set cvscfg(lastdir) [pwd]
 
   if {[info exists cvscfg(editorargs)] } {
     # editorargs is no longer necessary

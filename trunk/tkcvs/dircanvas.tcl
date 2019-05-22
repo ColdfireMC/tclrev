@@ -221,7 +221,7 @@ proc DirCanvas:newitem {w f} {
   global Filelist
   global cvsglb
 
-  gen_log:log T "ENTER ($w $f)"
+  #gen_log:log T "ENTER ($w $f)"
 
   set DirList($w:$f:name) $f
   gen_log:log D "Newitem $f status $Filelist($f:status)"
@@ -245,7 +245,7 @@ proc DirCanvas:newitem {w f} {
   set DirList($w:$f:selected) 0
 
   DirCanvas:buildwhenidle $w
-  gen_log:log T "LEAVE"
+#  gen_log:log T "LEAVE"
 }
 
 # Delete element $v from the list $w.
