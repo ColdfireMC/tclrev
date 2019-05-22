@@ -70,7 +70,7 @@ proc modbrowse_setup {} {
 
   label .modbrowse.top.lroot -text "Repository"
   ttk::combobox .modbrowse.top.troot -textvariable cvsglb(root)
-  .modbrowse.top.troot configure -values $cvscfg(cvsroot)
+  .modbrowse.top.troot configure -values $cvsglb(cvsroot)
   bind .modbrowse.top.troot <Return> { modbrowse_run }
   bind .modbrowse.top.troot <<ComboboxSelected>> { modbrowse_run }
 
@@ -79,7 +79,7 @@ proc modbrowse_setup {} {
 
   label .modbrowse.top.lcwd -text "Current Directory"
   ttk::combobox .modbrowse.top.tcwd -textvariable cwd
-  .modbrowse.top.tcwd configure -values $cvscfg(directory)
+  .modbrowse.top.tcwd configure -values $cvsglb(directory)
   bind .modbrowse.top.tcwd <Return>             {if {[pwd] != $cwd} {change_dir "$cwd"}}
   bind .modbrowse.top.tcwd <<ComboboxSelected>> {if {[pwd] != $cwd} {change_dir "$cwd"}}
 
@@ -244,14 +244,14 @@ proc modbrowse_guess_vcs {} {
     gen_log:log T "LEAVE (cvs)"
     return "cvs"
   } else {
-    #gen_log:log E $cvsout
+    gen_log:log E $cvsout
   }
 
   set svn_cmd "svn list $cvsglb(root)"
   gen_log:log C $svn_cmd
   set svnret [catch {eval "exec $svn_cmd"} svnout]
   if {$svnret} {
-    #gen_log:log E $svnout
+    gen_log:log E $svnout
   } else {
     gen_log:log T "LEAVE (svn)"
     return "svn"
@@ -261,7 +261,7 @@ proc modbrowse_guess_vcs {} {
   gen_log:log C $git_cmd
   set gitret [catch {eval "exec $git_cmd"} gitout]
   if {$gitret} {
-    #gen_log:log E $gitout
+    gen_log:log E $gitout
   } else {
     set cvscfg(gitroot) $cvsglb(root)
     gen_log:log T "LEAVE (git)"
@@ -682,9 +682,8 @@ proc module_changedir {new_dir} {
       set cvsglb(vcs) git
       modbrowse_run
     }
-    # Add to the directory picklist
+    # If the working directory browser is up, refresh it
     if {[winfo exists .workdir]} {
-      picklist_used directory [pwd]
       setup_dir
     }
   } else {

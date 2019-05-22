@@ -1766,21 +1766,21 @@ you may want to commit any local changes to that branch first."
   pack .git_update.ttag -in .git_update.options.tag.lblentry \
     -side left -fill x -padx 2 -pady 4
 
-  # Where user enters a revision number
-  #radiobutton .git_update.options.revision.select \
-    -text "Update local files to be a specific revision:" \
-    -variable cvsglb(tagmode_selection) -value "Revision" -justify left
+  # Where user enters a commit number
+  radiobutton .git_update.options.revision.select \
+    -text "Update local files to be a specific ID:" \
+    -variable cvsglb(tagmode_selection) -value "Commit" -justify left
 
-  #frame .git_update.options.revision.lblentry
-  #label .git_update.lrev -text "Revision" -anchor w
-  #entry .git_update.trev -relief sunken -textvariable cvsglb(revnumber)
+  frame .git_update.options.revision.lblentry
+  label .git_update.lrev -text "Commit ID" -anchor w
+  entry .git_update.trev -relief sunken -textvariable cvsglb(revnumber)
 
-  #pack .git_update.options.revision.select -side top -fill x
-  #pack .git_update.options.revision.lblentry -side top -fill x \
+  pack .git_update.options.revision.select -side top -fill x
+  pack .git_update.options.revision.lblentry -side top -fill x \
     -expand y -pady 1 -ipady 0
-  #pack .git_update.lrev -in .git_update.options.revision.lblentry \
+  pack .git_update.lrev -in .git_update.options.revision.lblentry \
     -side left -fill x -pady 4
-  #pack .git_update.trev -in .git_update.options.revision.lblentry \
+  pack .git_update.trev -in .git_update.options.revision.lblentry \
     -side left -fill x -padx 2 -pady 4
 
   # The OK/Cancel buttons
