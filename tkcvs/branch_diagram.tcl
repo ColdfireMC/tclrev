@@ -485,7 +485,7 @@ namespace eval ::logcanvas {
         variable font_bold_h
         variable logcanvas
 
-        #gen_log:log T "ENTER ($revision)"
+        gen_log:log T "ENTER ($revision)"
         set box_width \
           [expr {[image width Man] \
                  + $curr(padx) \
@@ -498,7 +498,7 @@ namespace eval ::logcanvas {
           set box_height $h
         }
         incr box_height $curr(pady,2)
-        #gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE"
         return [list $box_width $box_height]
       }
 
@@ -511,7 +511,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        #gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
+        gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
         set curr_x $x
         set curr_y $y
         # draw the box
@@ -542,7 +542,7 @@ namespace eval ::logcanvas {
           -text "You are\nhere" -anchor e \
           -fill red3 \
           -font $font_bold
-        #gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE"
         return
       }
 
@@ -630,7 +630,7 @@ namespace eval ::logcanvas {
         variable revbranches
         variable tlist
 
-        #gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
+        gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
         gen_log:log D "Drawing Root for \"$root_rev\" \"$cur_rev\""
 
         # draw the box
@@ -652,7 +652,7 @@ namespace eval ::logcanvas {
             -tags [list R$root_rev]
           incr ty -$font_norm_h
         }
-        #gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE"
         return
       }
 
@@ -672,7 +672,7 @@ namespace eval ::logcanvas {
         variable revtags
         variable tlist
 
-        gen_log:log T "ENTER ($revision)"
+        #gen_log:log T "ENTER ($revision)"
         set height $box_height
         set tag_width 0
         set box_width 0
@@ -847,7 +847,7 @@ namespace eval ::logcanvas {
         variable branchrevs
         variable revbranches
 
-        #gen_log:log T "ENTER ($x $y $root_rev $branch)"
+        gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log D "Drawing branch \"$branch\" rooted at \"$root_rev\" at ($x $y)"
         # What revisions to show on this branch?
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
@@ -986,13 +986,19 @@ namespace eval ::logcanvas {
             }
             if {$b == {current}} {
               DrawCurrent $bx $by $bw $rh $revision
+              $logcanvas.canvas lower [ \
+                $logcanvas.canvas create line \
+                  $rx $ry $mx $ry $mx $by \
+                  -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
+              ]
+              continue
             } else {
               set last_rev [lindex $branchrevs($b) 0]
               if {$last_rev == {current}} {
                 set last_rev [lindex $branchrevs($b) 1]
               }
-              DrawRoot $bx $by $bw $rh $revision $b
             }
+            DrawRoot $bx $by $bw $rh $revision $b
             $logcanvas.canvas lower [ \
               $logcanvas.canvas create line \
                 $rx $ry $mx $ry $mx $by \
@@ -1035,7 +1041,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        #gen_log:log T "ENTER"
+        gen_log:log T "ENTER"
 
         lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
         $logcanvas.canvas configure \
@@ -1074,7 +1080,7 @@ namespace eval ::logcanvas {
           gen_log:log D "y: (curr_y $curr_y) <? (view_y $view_y)"
           if {$curr_y < $view_y} {
             set dist_y [expr {$curr_y - $lly}]
-            #gen_log:log D " $curr_y is $dist_y pixels from the top"
+            gen_log:log D " $curr_y is $dist_y pixels from the top"
             set dist_y [expr {$dist_y - 2 * [image height Man]}]
             gen_log:log D "positioning y:  new y $dist_y"
           } else {
@@ -1091,7 +1097,7 @@ namespace eval ::logcanvas {
         $logcanvas.canvas xview moveto $view_xoff
         $logcanvas.canvas yview moveto $view_yoff
         update
-        #gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE"
         return
       }
 

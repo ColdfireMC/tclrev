@@ -1636,6 +1636,14 @@ namespace eval ::svn_branchlog {
           set revkind($r) "revision"
           set revpath($r) $path
         }
+        # We may have added a "current" branch. We have to set all its
+        # stuff or we'll get errors
+        foreach {revwho(current) revdate(current) revtime(current)
+           revlines(current) revcomment(current)
+           branchrevs(current) revbtags(current)}\
+           {{} {} {} {} {} {} {}} \
+           { break }
+
         set branchrevs($rootrev) $branchrevs(trunk)
         set revkind($rootrev) "root"
         # revbtags is for DrawTree
