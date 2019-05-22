@@ -834,8 +834,8 @@ proc setup_dir { } {
 
   set module_dir ""
   set current_tagname ""
-  picklist_used directory [pwd]
-  picklist_used cvsroot $cvsglb(root)
+  picklist_used directory "[pwd]"
+  picklist_used cvsroot "$cvsglb(root)"
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
