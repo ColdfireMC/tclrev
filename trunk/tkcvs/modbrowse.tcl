@@ -62,7 +62,7 @@ proc modbrowse_setup {} {
   foreach VCS {cvs svn git} {
     if [info exists cvscfg(${VCS}root)] {
       gen_log:log D "cvscfg(${VCS}root) $cvscfg(${VCS}root)"
-      picklist_used cvsroot $cvscfg(${VCS}root)
+      picklist_used cvsroot "$cvscfg(${VCS}root)"
     }
   }
   # Where do we think we are?

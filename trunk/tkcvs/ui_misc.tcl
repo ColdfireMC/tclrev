@@ -227,7 +227,7 @@ proc picklist_load {} {
     while {[gets $file var_name] > 0} {
       lappend vars $var_name
       while {[gets $file item] > 0} {
-        lappend cvsglb($var_name) $item
+        lappend cvsglb($var_name) "$item"
       }
     }
     close $file
@@ -241,12 +241,14 @@ proc picklist_used {var_name value} {
 
   gen_log:log T "ENTER ($var_name $value)"
   if {[info exists cvsglb($var_name)]} {
-    if {[set i [lsearch -exact $cvsglb($var_name) $value]] >= 0} {
+    if {[set i [lsearch -exact $cvsglb($var_name) "$value"]] >= 0} {
       set cvsglb($var_name) [lreplace $cvsglb($var_name) $i $i]
     }
-    set cvsglb($var_name) [lrange [concat $value $cvsglb($var_name)] 0 50]
+    set cvsglb($var_name) [lrange [concat [list "$value"] $cvsglb($var_name)] 0 50]
   } else {
-    lappend cvsglb($var_name) $value
+    lappend cvsglb($var_name) "$value"
+  }
+  foreach v $cvsglb($var_name) {
   }
 }
 
@@ -263,7 +265,7 @@ proc picklist_save {} {
       foreach item $cvsglb($var_name) {
         # number of items saved is a preference
         if {$c >= $cvscfg(picklist_items)} {break}
-        puts $file $item
+        puts $file "$item"
         incr c
       }
       puts $file ""
