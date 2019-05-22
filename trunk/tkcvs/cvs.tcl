@@ -2290,8 +2290,8 @@ namespace eval ::cvs_branchlog {
         variable rnum
         variable rootbranch
         variable revbranch
-        gen_log:log T "ENTER ($exec $logline)"
 
+        #gen_log:log T "ENTER ($exec $logline)"
         #gen_log:log D "$logline"
         if {$logline != {}} {
           switch -exact -- $logstate {
@@ -2579,10 +2579,12 @@ namespace eval ::cvs_branchlog {
                     }
                   }
                 }
+                # We may have added a "current" branch. We have to set all its
+                # stuff or we'll get errors
                 foreach {revwho(current) revdate(current) revtime(current)
                     revlines(current) revcomment(current)
-                    branchrevs(current)} \
-                    {{} {} {} {} {} {}} \
+                    branchrevs(current) revbtags(current)} \
+                    {{} {} {} {} {} {} {}} \
                     { break }
                   break
                 }

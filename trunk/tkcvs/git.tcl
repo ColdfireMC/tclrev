@@ -724,6 +724,9 @@ proc git_opt_update {args} {
     "Tag" {
        set command "git checkout $cvsglb(tagname)"
      }
+    "Commit" {
+       set command "git checkout $cvsglb(revnumber)"
+     }
   }
   set upd_cmd [viewer::new "Git Checkout"]
   $upd_cmd\::do "$command" 0 status_colortags
@@ -1471,11 +1474,19 @@ namespace eval ::git_branchlog {
             foreach r $branchrevs($branch) {
               if {$r == $revnum_current} {
                 # We need to make a new artificial branch off of $r
+                gen_log:log D "appending current to revbranches($r)"
                 lappend revbranches($r) {current}
+                set revbtags(current) {current}
               }
             }
           }
-  
+          # We may have added a "current" branch. We have to set all its
+          # stuff or we'll get errors
+          foreach {revwho(current) revdate(current) revtime(current)
+             revlines(current) revcomment(current)
+             branchrevs(current) revbtags(current)}\
+             {{} {} {} {} {} {} {}} \
+             { break }
           # Just checking, for debug output
           if {[info exists branchroot($branch)]} {
             gen_log:log D "branchroot($branch) $branchroot($branch)"
