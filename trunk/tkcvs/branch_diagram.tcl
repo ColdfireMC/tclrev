@@ -486,24 +486,25 @@ namespace eval ::logcanvas {
         variable logcanvas
 
         gen_log:log T "ENTER ($revision)"
-        set box_width \
+        set redbox_width \
           [expr {[image width Man] \
                  + $curr(padx) \
                  + [font measure $font_bold \
                      -displayof $logcanvas.canvas {You are}] \
                  + $curr(padx,2)}]
-        set box_height [image height Man]
+        set redbox_height [image height Man]
         set h [expr {2 * $font_bold_h}]
-        if {$h > $box_height} {
-          set box_height $h
+        if {$h > $redbox_height} {
+          set redbox_height $h
         }
-        incr box_height $curr(pady,2)
-        gen_log:log T "LEAVE"
-        return [list $box_width $box_height]
+        incr redbox_height $curr(pady,2)
+        gen_log:log D "no globals set or used"
+        gen_log:log T "LEAVE box sixe ($redbox_width x $redbox_height)"
+        return [list $redbox_width $redbox_height]
       }
 
       # Draw You are Here box
-      proc DrawCurrent { x y box_width box_height revision } {
+      proc DrawCurrent { x y width height revision } {
         variable curr
         variable revstate
         variable font_bold
@@ -511,12 +512,13 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        gen_log:log T "ENTER ($x $y $box_width $box_height $revision)"
+        gen_log:log T "ENTER ($x $y $width $height $revision)"
+        gen_log:log D "sets GLOBALS curr_x $x  curr_y $y"
         set curr_x $x
         set curr_y $y
         # draw the box
-        set tx [expr {$x + $box_width}]
-        set ty [expr {$y - $box_height}]
+        set tx [expr {$x + $width}]
+        set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
           -width $curr(width) -fill gray90 -outline red3
@@ -529,20 +531,20 @@ namespace eval ::logcanvas {
           }
         }
         set pad \
-          [expr {($box_width - [image width Man] - \
+          [expr {($width - [image width Man] - \
             [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
             / 3}]
-        set ty [expr {$y - [expr {$box_height/2}]}]
+        set ty [expr {$y - [expr {$height/2}]}]
         # add the contents
         $logcanvas.canvas create image \
           [expr {$x + $pad}] $ty \
           -image Man -anchor w
         $logcanvas.canvas create text \
-          [expr {$x + $box_width - $pad}] $ty \
+          [expr {$x + $width - $pad}] $ty \
           -text "You are\nhere" -anchor e \
           -fill red3 \
           -font $font_bold
-        gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE ()"
         return
       }
 
@@ -561,9 +563,10 @@ namespace eval ::logcanvas {
         variable tlist
 
         gen_log:log T "ENTER ($root_rev)"
-        set height $box_height
+        set root_height $box_height
+        set root_width 0
         set tag_width 0
-        set box_width 0
+
         set tlist($root_rev) {}
         if {[info exists revtags($root_rev)]} {
           # We want to show all the coloured tags plus others to take
@@ -599,25 +602,27 @@ namespace eval ::logcanvas {
             }
             incr tag_width $curr(tspcb,2)
             set h [expr {[llength $tlist($root_rev)] * $font_norm_h}]
-            if {$h > $height} {
-              set height $h
+            if {$h > $root_height} {
+              set root_height $h
             }
           }
         }
         if {![info exists revbtags($root_rev)]} {set revbtags($root_rev) {}}
         foreach s [subst $root_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
-          if {$w > $box_width} {
-            set box_width $w
+          if {$w > $root_width} {
+            set root_width $w
           }
         }
-        incr box_width $curr(padx,2)
-        set text_height [expr {$curr(pady,2) + \
+        incr width $curr(padx,2)
+        set height [expr {$curr(pady,2) + \
           [llength [subst $root_info]] * $font_norm_h}]
-        return [list $tag_width $box_width $text_height]
+        gen_log:log D "uses GLOBAL box_height for tag lists but does not set it nor use it for blue box height"
+        gen_log:log T "LEAVE (tag_width $tag_width  root_width $root_width height $height)"
+        return [list $tag_width $root_width $height]
       }
 
-      proc DrawRoot { x y box_width box_height cur_rev root_rev } {
+      proc DrawRoot { x y rbox_width rbox_height cur_rev root_rev } {
         global cvscfg
         variable curr
         variable opt
@@ -630,17 +635,17 @@ namespace eval ::logcanvas {
         variable revbranches
         variable tlist
 
-        gen_log:log T "ENTER ($x $y $box_width $box_height $cur_rev $root_rev )"
-        gen_log:log D "Drawing Root for \"$root_rev\" \"$cur_rev\""
+        gen_log:log T "ENTER ($x $y $rbox_width $rbox_height $cur_rev $root_rev)"
+        gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev at $cur_rev"
 
         # draw the box
         $logcanvas.canvas create rectangle \
           $x $y \
-          [expr {$x + $box_width}] [expr {$y - $box_height}] \
+          [expr {$x + $rbox_width}] [expr {$y - $rbox_height}] \
           -width $curr(width) \
           -fill gray90 -outline blue
 
-        set tx [expr {$x + $box_width/2}]
+        set tx [expr {$x + $rbox_width/2}]
         set ty [expr {$y - $curr(pady)}]
         gen_log:log D "[subst $root_info]"
         foreach s [subst $root_info] {
@@ -652,7 +657,8 @@ namespace eval ::logcanvas {
             -tags [list R$root_rev]
           incr ty -$font_norm_h
         }
-        gen_log:log T "LEAVE"
+        gen_log:log T "no globals used or set"
+        gen_log:log T "LEAVE ()"
         return
       }
 
@@ -672,10 +678,11 @@ namespace eval ::logcanvas {
         variable revtags
         variable tlist
 
-        #gen_log:log T "ENTER ($revision)"
+        gen_log:log T "ENTER ($revision)"
         set height $box_height
+        set width 0
         set tag_width 0
-        set box_width 0
+
         set tlist($revision) {}
         if {[info exists revtags($revision)]} {
           # We want to show all the coloured tags plus others to take
@@ -722,20 +729,20 @@ namespace eval ::logcanvas {
         if {![info exists revwho($revision)]} {set revwho($revision) {}}
         foreach s [subst $rev_info] {
           set w [font measure $font_norm -displayof $logcanvas.canvas $s]
-          if {$w > $box_width} {
-            set box_width $w
+          if {$w > $width} {
+            set width $w
           }
         }
-        incr box_width $curr(padx,2)
-        #gen_log:log T "LEAVE"
-        return [list $tag_width $box_width $height]
+        incr width $curr(padx,2)
+        gen_log:log D "uses GLOBAL box_height but does not set it"
+        gen_log:log T "LEAVE (tag_width $tag_width  width $width  height $height)"
+        return [list $tag_width $width $height]
       }
 
-      proc DrawRevision { x y box_width height revision} {
+      proc DrawRevision { x y width height revision} {
         global cvscfg
         variable opt
         variable curr
-        variable box_height
         variable rev_info
         variable revdate
         variable revtime
@@ -759,8 +766,8 @@ namespace eval ::logcanvas {
         variable mrev
         upvar branch branch
 
-        #gen_log:log T "ENTER ($x $y $box_width $height $revision)"
-        set xyw($revision) [list $x [expr {$y - ($box_height / 4)}] $box_width ]
+        gen_log:log T "ENTER ($x $y $width $height $revision)"
+        set xyw($revision) [list $x [expr {$y - ($height / 4)}] $width ]
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
@@ -799,8 +806,8 @@ namespace eval ::logcanvas {
           }
         }
         # draw the box...
-        set tx [expr {$x + $box_width}]
-        set ty [expr {$y - $box_height}]
+        set tx [expr {$x + $width}]
+        set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
           -width $curr(width) -fill gray90 \
@@ -823,7 +830,7 @@ namespace eval ::logcanvas {
               $tx $y $x $ty -fill gray -width $curr(width)
           }
         }
-        set tx [expr {$x + $box_width/2}]
+        set tx [expr {$x + $width/2}]
         set ty [expr {$y - $curr(pady)}]
         foreach s [subst $rev_info] {
           $logcanvas.canvas create text \
@@ -834,7 +841,8 @@ namespace eval ::logcanvas {
             -tags [list R$revision box active]
           incr ty -$font_norm_h
         }
-        #gen_log:log T "LEAVE"
+        gen_log:log D "no globals used or set"
+        gen_log:log T "LEAVE ()"
         return
       }
 
@@ -846,9 +854,10 @@ namespace eval ::logcanvas {
         variable revkind
         variable branchrevs
         variable revbranches
+        variable revbtags
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
-        gen_log:log D "Drawing branch \"$branch\" rooted at \"$root_rev\" at ($x $y)"
+        gen_log:log D "Drawing $revbtags($branch) $branch rooted at $root_rev ($x $y)"
         # What revisions to show on this branch?
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
         if {$branchrevs($branch) == {}} {
@@ -1029,8 +1038,11 @@ namespace eval ::logcanvas {
         if {$opt(update_drawing) < 2} {
           UpdateBndBox
         }
-        return [list $x [expr {$y + $root_height + $curr(spcy)}] \
-        $box_width $root_height $last_y]
+        set new_y [expr {$y + $root_height + $curr(spcy)}]
+        gen_log:log D "GLOBAL box_height was used several times, but not set"
+        gen_log:log D "returning (x y box_width root_height last_y)"
+        gen_log:log T "LEAVE ($x $new_y $box_width $root_height $last_y)"
+        return [list $x $new_y $box_width $root_height $last_y]
       }
 
       proc UpdateBndBox {} {
@@ -1041,7 +1053,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        gen_log:log T "ENTER"
+        gen_log:log T "ENTER ()"
 
         lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
         $logcanvas.canvas configure \
@@ -1097,7 +1109,8 @@ namespace eval ::logcanvas {
         $logcanvas.canvas xview moveto $view_xoff
         $logcanvas.canvas yview moveto $view_yoff
         update
-        gen_log:log T "LEAVE"
+        gen_log:log D "uses but does not set GLOBALS curr_x curr_y"
+        gen_log:log T "LEAVE ()"
         return
       }
 
@@ -1142,6 +1155,7 @@ namespace eval ::logcanvas {
         variable mrev
         variable match
 
+        gen_log:log D "=================================="
         gen_log:log T "ENTER ($now)"
 
         catch { unset revwho }
@@ -1261,6 +1275,7 @@ namespace eval ::logcanvas {
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
+          gen_log:log D "First setting of GLOBAL box_height ($box_height)"
 
           # Find the root. (needed for SVN and GIT). If there's a trunk, use that
           foreach a [array names revkind] {
@@ -1401,7 +1416,7 @@ namespace eval ::logcanvas {
           }
           busy_done $logcanvas
         }
-        gen_log:log T "LEAVE"
+        gen_log:log T "LEAVE ()"
         return
       }
 
