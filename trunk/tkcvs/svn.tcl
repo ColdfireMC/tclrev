@@ -1654,8 +1654,17 @@ namespace eval ::svn_branchlog {
         if { $rootrev ne "" } {
           lappend branchlist $rootrev
         }
+        # Prepare to draw something on the canvas so user knows we're working
+        set cnv_y 20
+        set yspc  15
+        set cnv_w [winfo width $lc ]
+        set cnv_x [expr {$cnv_w / 3}]
         # Branches
         # Get a list of the branches from the repository
+        # Draw something on the canvas so the user knows we're working
+        $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
+        set cnv_y [expr {$cnv_y + $yspc}]
+
         set command "svn list $cvscfg(svnroot)/$cvscfg(svn_branchdir)"
         set cmd_log [exec::new $command {} 0 {} 1]
         set branches [$cmd_log\::output]
@@ -1667,6 +1676,10 @@ namespace eval ::svn_branchlog {
         foreach branch $branches {
           gen_log:log D "$branch"
           set branch [string trimright $branch "/"]
+          # Draw something on the canvas so the user knows we're working
+          $lc.canvas create text $cnv_x $cnv_y -text $branch -tags {temporary} -fill $cvscfg(colourB)
+          set cnv_y [expr {$cnv_y + $yspc}]
+          update
           # Can't use file join or it will mess up the URL
           gen_log:log D "BRANCHES: RELPATH \"$relpath\""
           if { $relpath == {} } {
@@ -1748,6 +1761,11 @@ namespace eval ::svn_branchlog {
         # Tags
         # Get a list of the tags from the repository
         if {$show_tags} {
+          # Draw something on the canvas so the user knows we're working
+          set cnv_y [expr {$cnv_y + $yspc}]
+          $lc.canvas create text $cnv_x $cnv_y -text "Getting TAGS" -tags {temporary}
+          set cnv_y [expr {$cnv_y + $yspc}]
+
           set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
           set cmd_log [exec::new $command {} 0 {} 1]
           set tags [$cmd_log\::output]
@@ -1778,7 +1796,12 @@ namespace eval ::svn_branchlog {
             gen_log:log D "$tag"
             # There can be files such as "README" here that aren't tags
             if {![string match {*/} $tag]} {continue}
+            # Draw something on the canvas so the user knows we're working
             set tag [string trimright $tag "/"]
+            # Draw something on the canvas so the user knows we're working
+            $lc.canvas create text $cnv_x $cnv_y -text $tag -tags {temporary} -fill $cvscfg(colourA)
+            set cnv_y [expr {$cnv_y + $yspc}]
+            update
             # Can't use file join or it will mess up the URL
             gen_log:log D "TAGS: RELPATH \"$relpath\""
             if { $relpath == {} } {
@@ -2045,6 +2068,8 @@ namespace eval ::svn_branchlog {
         }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
+        # Little pause before erasing the list of branches we temporarily drew
+        after 500
         $ln\::DrawTree now
         gen_log:log T "LEAVE"
       }

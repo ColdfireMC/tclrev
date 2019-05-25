@@ -1,8 +1,12 @@
 Release 9.0.8 May, 2019
 
-- Fixed more problems with the branch browser.
+- When collecting branches in Git, and also tags in SVN, draw something
+  on the canvas so the user knows it's working.
 
-- Got You are Here working again when currently not at the
+- Draw the blue branch boxes at the top for Git, because that's more
+  how Git defines them than from an event at the bottom
+
+- You are Here is working again when currently not at the
   tip of a branch
 
 - Re-implemented the picklists with ttk::combobox
