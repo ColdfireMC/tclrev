@@ -922,13 +922,20 @@ namespace eval ::logcanvas {
         # calculate the size of each revision in the branch, and keep
         # track of the largest x and y dimensions, which we will use
         # for all when drawing
+        set rev_height 0      
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
             lassign [CalcCurrent $revision] rbw cur_height
           } else {
-            lassign [CalcRevision $revision] rtw rbw rh
+            lassign [CalcRevision $revision] rtw rbw rev_height
           }
+          if {$rev_height != 0} {
+            set rh $rev_height
+          } else {
+            set rh $cur_height
+          }
+          
           lappend rdata $rtw $rh
           if {$rtw > $tag_width} {
             set tag_width $rtw
