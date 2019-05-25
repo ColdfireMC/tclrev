@@ -478,7 +478,7 @@ namespace eval ::logcanvas {
         return
       }
 
-      # Calculate size of You are Here box
+      # Calculate size of the You are Here box
       proc CalcCurrent { revision } {
         variable curr
         variable font_bold
@@ -498,7 +498,6 @@ namespace eval ::logcanvas {
           set redbox_height $h
         }
         incr redbox_height $curr(pady,2)
-        gen_log:log D "no globals set or used"
         gen_log:log T "LEAVE box sixe ($redbox_width x $redbox_height)"
         return [list $redbox_width $redbox_height]
       }
@@ -548,6 +547,8 @@ namespace eval ::logcanvas {
         return
       }
 
+      # Finds the dimensions including tags, but not the location, for the blue root box.
+      # That (tags on the root) can only happen in CVS, I think
       proc CalcRoot { root_rev } {
         global cvscfg
         variable opt
@@ -563,7 +564,7 @@ namespace eval ::logcanvas {
         variable tlist
 
         gen_log:log T "ENTER ($root_rev)"
-        set root_height $box_height
+        set height $box_height
         set root_width 0
         set tag_width 0
 
@@ -602,8 +603,8 @@ namespace eval ::logcanvas {
             }
             incr tag_width $curr(tspcb,2)
             set h [expr {[llength $tlist($root_rev)] * $font_norm_h}]
-            if {$h > $root_height} {
-              set root_height $h
+            if {$h > $height} {
+              set height $h
             }
           }
         }
@@ -657,11 +658,11 @@ namespace eval ::logcanvas {
             -tags [list R$root_rev]
           incr ty -$font_norm_h
         }
-        gen_log:log T "no globals used or set"
         gen_log:log T "LEAVE ()"
         return
       }
 
+      # Finds the dimensions including tags, but not the location, of each revision box
       proc CalcRevision { revision } {
         global cvscfg
         variable opt
@@ -841,16 +842,20 @@ namespace eval ::logcanvas {
             -tags [list R$revision box active]
           incr ty -$font_norm_h
         }
-        gen_log:log D "no globals used or set"
         gen_log:log T "LEAVE ()"
         return
       }
 
       proc DrawBranch { x y root_rev branch } {
+        global ingit
         variable logcanvas
         variable opt
         variable curr
         variable box_height
+        variable bot_height
+        variable tip_height
+        variable lbl_height
+        variable cur_height
         variable revkind
         variable branchrevs
         variable revbranches
@@ -858,7 +863,7 @@ namespace eval ::logcanvas {
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log D "Drawing $revbtags($branch) $branch rooted at $root_rev ($x $y)"
-        # What revisions to show on this branch?
+        # What revisions to show on this branch? Options may hide some
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
         if {$branchrevs($branch) == {}} {
           set revlist {}
@@ -890,20 +895,37 @@ namespace eval ::logcanvas {
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
         set rdata {}
+        # On encountering a branch, it may be just a You are Here, which
+        # has a simplified special procedure. Otherwise, kick off a new
+        # branch.
         if {$branch == {current}} {
           set rtw 0
-          lassign [CalcCurrent $branch] box_width root_height
+          lassign [CalcCurrent $branch] box_width cur_height
         } else {
-          lassign [CalcRoot $branch] rtw box_width root_height
+          lassign [CalcRoot $branch] rtw box_width bot_height
         }
+        # In Git, we replace the blue box at the base with one at the tip.
+        # We need to carry that spacer through our calculations, as lbl_height
+        if {$ingit} {
+          set tip_height $bot_height
+          set bot_height 0
+          set lbl_height $tip_height
+        } else {
+          set tip_height 0
+          set lbl_height $bot_height
+        }
+        gen_log:log D "set lbl_height ($lbl_height)"
         if {$rtw > $tag_width} {
           set tag_width $rtw
         }
-        set height [expr {$root_height + $curr(spcy)}]
+        set height [expr {$lbl_height + $curr(spcy)}]
+        # calculate the size of each revision in the branch, and keep
+        # track of the largest x and y dimensions, which we will use
+        # for all when drawing
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
-            lassign [CalcCurrent $revision] rbw rh
+            lassign [CalcCurrent $revision] rbw cur_height
           } else {
             lassign [CalcRevision $revision] rtw rbw rh
           }
@@ -917,13 +939,23 @@ namespace eval ::logcanvas {
           incr height $curr(spcy)
           incr height $rh
         }
-        # Position branch.
+        # At the end, we've saved the height and width of the whole column
+
+        # Position branch. Query the canvas to look for overlaps, using the
+        # lower-left x and y that were passed in, and the measured width and
+        # accumulated height. Use tk's canvas overlap command to find and tag
+        # any overlapping objects within the rectangle. We haven't drawn
+        # anything yet, this is still just in memory
+
         # Look for overlap horizontally
         while {1} {
+          set overlap_llx [expr {$x - $curr(spcx)}]
+          set overlap_lly [expr {$y - $height + $curr(yfudge)}]
+          set overlap_urx [expr {$x + $tag_width + $box_width}]
+          set overlap_ury $y
           $logcanvas.canvas addtag ol_x overlapping \
-            [expr {$x - $curr(spcx)}] [expr {$y - $height + $curr(yfudge)}] \
-            [expr {$x + $tag_width + $box_width}] $y
-            set bbox [$logcanvas.canvas bbox ol_x]
+              $overlap_llx $overlap_lly $overlap_urx $overlap_ury
+          set bbox [$logcanvas.canvas bbox ol_x]
           $logcanvas.canvas dtag ol_x
           if {$bbox == {}} {
             break
@@ -934,21 +966,26 @@ namespace eval ::logcanvas {
           set x [expr {[lindex $bbox 2] + $curr(spcx) + 1}]
         }
         # Look for overlap vertically
-        $logcanvas.canvas addtag ol_y overlapping \
-          $x [expr {$y - $height}] \
-          [expr {$x + $tag_width + $box_width}] [expr {$y - $height +\
-               $curr(yfudge)}]
-        set bbox [$logcanvas.canvas bbox ol_y]
-        $logcanvas.canvas dtag ol_y
-        if {$bbox != {}} {
-          # Move down to make space
-          gen_log:log D "vertical overlap with $bbox"
-          incr y [expr {[lindex $bbox 3] - ($y - $height)}]
-        }
+          set overlap_llx $x
+          set overlap_lly [expr {$y - $height}]
+          set overlap_urx [expr {$x + $tag_width + $box_width}]
+          set overlap_ury [expr {$y - $height + $curr(yfudge)}]
+          $logcanvas.canvas addtag ol_y overlapping \
+            $overlap_llx $overlap_lly $overlap_urx $overlap_ury
+          set bbox [$logcanvas.canvas bbox ol_y]
+          $logcanvas.canvas dtag ol_y
+          if {$bbox != {}} {
+            # Move down to make space
+            gen_log:log D "vertical overlap with $bbox"
+            incr y [expr {[lindex $bbox 3] - ($y - $height) + $curr(spcy) + $tip_height}]
+          }
+
+        # Now we're ready to start drawing
         # Position to top of branch
         incr x $tag_width
+        set top_y $y
         incr y -$height
-        # Draw the branch
+        # Draw this branch
         set midx [expr {$x + $box_width/2}]
         set last_y {}
         foreach revision $revlist {rtag_width rheight} $rdata {
@@ -956,15 +993,17 @@ namespace eval ::logcanvas {
           incr y $rheight
           # For each branch off this revision, draw it to the right of this
           # revision box and a little above the centre line of this box.
-          set x2 [expr {$x +$box_width + $curr(spcx)}]
+          set x2 [expr {$x + $box_width + $curr(spcx)}]
           set y2 [expr {$y - $box_height/2 - $curr(boff)}]
           set brevs {}
           set bxys {}
           if {[info exists revbranches($revision)]} {
+            # Here we recurse into branches off of the current branch
             foreach r2 $revbranches($revision) {
-              # Do we display the branch if it is empty?
-              # If it's the you-are-here, we do anyway
               if {![info exists branchrevs($r2)] } { set branchrevs($r2) {} }
+              # Don't display the branch if it is empty unless
+              # opt(show_empty_branches) is set.  Except for You are Here,
+              # which is a special case
               if {$branchrevs($r2) == {} && $r2 != {current} && !\
                   $opt(show_empty_branches)} {
                 continue
@@ -984,49 +1023,75 @@ namespace eval ::logcanvas {
           set rx [expr {$x + $box_width}]
           set ry [expr {$y - $box_height/2}]
           set by [expr {$ry - $curr(boff)}]
-          # If it has brevs, it's the root of a branch
 
+          # If it has brevs, it's the root of a branch
+          # Draw the arrows before the boxes, leaving box-high spaces between them
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
-            if {$ly != {}} {
+            if {$ly != {} && ! $ingit} {
+              # The up-pointing arrow below the bottom revision
               $logcanvas.canvas create line \
-                $mx $ly $mx [expr {$by - $rh}] \
+                $mx [expr $ly + $tip_height] $mx [expr {$by - $rh + $tip_height}] \
                 -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
             }
             if {$b == {current}} {
-              DrawCurrent $bx $by $bw $rh $revision
+              # treat this "current" as a branch. The arrow points sideways to it
+              DrawCurrent $bx $by $bw $cur_height $revision
               $logcanvas.canvas lower [ \
                 $logcanvas.canvas create line \
                   $rx $ry $mx $ry $mx $by \
                   -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
               ]
+              # And we're done, no arrows or boxes above it
               continue
             } else {
+              # if the last (top) revision is current, we don't draw that one now.
+              # We save it for when we draw the regular revboxes, below
               set last_rev [lindex $branchrevs($b) 0]
               if {$last_rev == {current}} {
                 set last_rev [lindex $branchrevs($b) 1]
               }
             }
-            DrawRoot $bx $by $bw $rh $revision $b
-            $logcanvas.canvas lower [ \
+            # Now we actually do draw the root box
+            if {! $ingit} {
+              DrawRoot $bx $by $bw $bot_height $revision $b
+            }
+            # Arrow connecting the branch root box to its parent
+            if {$ingit} {
+              # Curved line. I can't shorten the vertical height. The swoop makes
+              # it look better, plus branching isn't as concrete in Git so it symbolizes that
               $logcanvas.canvas create line \
-                $rx $ry $mx $ry $mx $by \
-                -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
-                -fill blue
-            ]
+                $rx $ry $mx $ry $mx [expr {$by - $tip_height - $curr(boff)}] \
+                -arrow last -arrowshape $curr(arrowshape) -smooth 1
+            } else {
+              # Blue elbow
+              $logcanvas.canvas lower [ \
+                $logcanvas.canvas create line \
+                  $rx $ry $mx $ry $mx $by \
+                  -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
+                  -fill blue
+              ]
+            }
             if {$opt(update_drawing) < 1} {
               UpdateBndBox
             }
           }
+          # finised drawing special items for sub-branches
 
           if {$last_y != {}} {
+            # This is a regular between-revisions arrow
             $logcanvas.canvas create line \
               $midx $last_y $midx [expr {$y - $box_height}] \
               -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
           }
+
+          # Start drawing the boxes.
+          # First, the top one may well be "current" which is
+          # a special case.
           if {$revision == {current}} {
             DrawCurrent $x $y $box_width $rheight $revision
           } else {
+            # Otherwise, draw normal revision
             DrawRevision $x $y $box_width $rheight $revision
           }
           if {$opt(update_drawing) < 1} {
@@ -1035,14 +1100,25 @@ namespace eval ::logcanvas {
           set last_y $y
           set last_rev $revision
         }
+        # Finished individual revisions and their branches
+
+        if {$ingit} {
+          if {$last_y != {} } {
+            set gy [expr {$top_y - $height + $tip_height - $curr(spcy)}]
+            DrawRoot $x $gy $box_width $tip_height [lindex $branchrevs($branch) end] $branch
+            $logcanvas.canvas lower [ \
+              $logcanvas.canvas create line \
+               $midx $gy $midx [expr {$gy + $curr(spcy)}] \
+               -arrow first -arrowshape $curr(arrowshape) -width $curr(width) -fill blue
+            ]
+          }
+        }
         if {$opt(update_drawing) < 2} {
           UpdateBndBox
         }
-        set new_y [expr {$y + $root_height + $curr(spcy)}]
-        gen_log:log D "GLOBAL box_height was used several times, but not set"
-        gen_log:log D "returning (x y box_width root_height last_y)"
-        gen_log:log T "LEAVE ($x $new_y $box_width $root_height $last_y)"
-        return [list $x $new_y $box_width $root_height $last_y]
+        set new_y [expr {$y + $lbl_height + $curr(spcy)}]
+        gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height $last_y)"
+        return [list $x $new_y $box_width $lbl_height $last_y]
       }
 
       proc UpdateBndBox {} {
@@ -1053,8 +1129,7 @@ namespace eval ::logcanvas {
         variable curr_x
         variable curr_y
 
-        gen_log:log T "ENTER ()"
-
+        #gen_log:log T "ENTER ()"
         lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
         $logcanvas.canvas configure \
           -scrollregion [list \
@@ -1072,31 +1147,31 @@ namespace eval ::logcanvas {
           set ury [lindex $bbox 3]
           set bbox_width [expr {$urx - $llx}]
           set bbox_height [expr {$ury - $lly}]
-          gen_log:log D "diagram size: $bbox_width x $bbox_height"
-          gen_log:log D "canvas size:  $canv_width x $canv_height"
+          #gen_log:log D "diagram size: $bbox_width x $bbox_height"
+          #gen_log:log D "canvas size:  $canv_width x $canv_height"
           set canv_bot [expr {$ury - $canv_height}]
           set view_y [expr {$canv_bot - $ury}]
-          gen_log:log D "bbox:         $bbox"
-          gen_log:log D "canvas view:  $llx $canv_bot  $canv_width $view_y"
-          gen_log:log D "curr x & y:  $curr_x, $curr_y"
-          gen_log:log D "x: (curr_x $curr_x) >? (canv_width $canv_width)"
+          #gen_log:log D "bbox:         $bbox"
+          #gen_log:log D "canvas view:  $llx $canv_bot  $canv_width $view_y"
+          #gen_log:log D "curr x & y:  $curr_x, $curr_y"
+          #gen_log:log D "x: (curr_x $curr_x) >? (canv_width $canv_width)"
           if {$curr_x > $canv_width} {
             set dist_x [expr {$curr_x - $canv_width/2}]
             set dist_x [expr {$dist_x - 3 * [font measure $font_bold \
                      -displayof $logcanvas.canvas {You are}]}]
-            gen_log:log D "positioning x:  new x $dist_x"
+            #gen_log:log D "positioning x:  new x $dist_x"
           } else {
-            gen_log:log D "not re-positioning x"
+            #gen_log:log D "not re-positioning x"
             set dist_x 0
           }
-          gen_log:log D "y: (curr_y $curr_y) <? (view_y $view_y)"
+          #gen_log:log D "y: (curr_y $curr_y) <? (view_y $view_y)"
           if {$curr_y < $view_y} {
             set dist_y [expr {$curr_y - $lly}]
-            gen_log:log D " $curr_y is $dist_y pixels from the top"
+            #gen_log:log D " $curr_y is $dist_y pixels from the top"
             set dist_y [expr {$dist_y - 2 * [image height Man]}]
-            gen_log:log D "positioning y:  new y $dist_y"
+            #gen_log:log D "positioning y:  new y $dist_y"
           } else {
-            gen_log:log D "not re-positioning y"
+            #gen_log:log D "not re-positioning y"
             set dist_y 0
           }
           # Multiplying by 1.0 keeps it from being rounded to an int
@@ -1105,22 +1180,26 @@ namespace eval ::logcanvas {
           set y_proportion [expr {($dist_y * 1.0) / ($bbox_height * 1.0)}]
           set view_yoff $y_proportion
         }
-        gen_log:log D "set offset $view_xoff $view_yoff"
+        #gen_log:log D "set offset $view_xoff $view_yoff"
         $logcanvas.canvas xview moveto $view_xoff
         $logcanvas.canvas yview moveto $view_yoff
         update
-        gen_log:log D "uses but does not set GLOBALS curr_x curr_y"
-        gen_log:log T "LEAVE ()"
+        #gen_log:log T "LEAVE ()"
         return
       }
 
       proc DrawTree { {now {}} } {
         global cvscfg
         global logcfg
+        global ingit
         variable scope
         variable after_id_draw
         variable logcanvas
         variable box_height
+        variable bot_height
+        variable tip_height
+        variable lbl_height
+        variable cur_height
         variable root_info
         variable fromtags {}
         variable totags {}
@@ -1314,13 +1393,19 @@ namespace eval ::logcanvas {
             set mx [expr {$lx + $lbw/2}]
             set ry [expr {$y2 - $rh/4 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
-            $logcanvas.canvas create line \
-              $mx $ry $mx [expr {$by - $rh}] \
-              -arrow last -arrowshape $curr(arrowshape) \
-              -width $curr(width)
+            lassign [CalcRoot $trunkrev] rtw box_width ignore
 
-            lassign [CalcRoot $trunkrev] rtw box_width root_height
-            DrawRoot $lx $y2 $lbw $rh $trunkrev $trunkrev
+            if {! $ingit} {
+              # This is the blue box at the bottom of the trunk
+              DrawRoot $lx $y2 $lbw $bot_height $trunkrev $trunkrev
+              # This is the arrow at the base of the trunk
+              $logcanvas.canvas lower [ \
+                $logcanvas.canvas create line \
+                  $mx $ry $mx [expr {$by - $rh}] \
+                  -arrow last -arrowshape $curr(arrowshape) \
+                  -width $curr(width)
+              ]
+            }
             UpdateBndBox
           } elseif {[info exists basebranch]} {
             gen_log:log D "Drawing basebranch $basebranch"
@@ -1332,13 +1417,24 @@ namespace eval ::logcanvas {
             set mx [expr {$lx + $lbw/2}]
             set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
-            $logcanvas.canvas create line \
-              $mx $ry $mx [expr {$by - $rh}] \
-              -arrow last -arrowshape $curr(arrowshape) \
-              -width $curr(width)
-
-            lassign [CalcRoot $basebranch] rtw box_width root_height
-            DrawRoot $lx $y2 $lbw $rh $basebranch $basebranch
+            lassign [CalcRoot $basebranch] rtw box_width bot_height
+            # In Git, we replace the blue box at the base with one at the tip.
+            # We need to carry that spacer through our calculations, as lbl_height
+            if {$ingit} {
+              set tip_height $bot_height
+              set bot_height 0
+              set lbl_height $tip_height
+            } else {
+              set tip_height 0
+              set lbl_height $bot_height
+            }
+            if {! $ingit} {
+              $logcanvas.canvas create line \
+                $mx $ry $mx [expr {$by - $rh}] \
+                -arrow last -arrowshape $curr(arrowshape) \
+                -width $curr(width)
+              DrawRoot $lx $y2 $lbw $bot_height $basebranch $basebranch
+            }
             UpdateBndBox
           }
 
