@@ -1157,11 +1157,26 @@ namespace eval ::git_branchlog {
         set log_lines [split $log_output "\n"]
         parse_gitlog $log_lines
 
+
         # Get rev lists for the branches
         catch {unset branch_matches}
         gen_log:log D "Final branches: $branches"
+        # Prepare to draw something on the canvas so user knows we're working
+        set cnv_y 20
+        set yspc  15
+        set cnv_w [winfo width $lc ]
+        set cnv_x [expr {$cnv_w / 3}]
+        # Draw something on the canvas so the user knows we're working
+        $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
+        set cnv_y [expr {$cnv_y + $yspc}]
+
         foreach branch $branches {
           gen_log:log D "========= $branch =========="
+          # Draw something on the canvas so the user knows we're working
+          $lc.canvas create text $cnv_x $cnv_y -text $branch -tags {temporary} -fill $cvscfg(colourB)
+          set cnv_y [expr {$cnv_y + $yspc}]
+          update
+
           set command "git rev-list --reverse --abbrev-commit --first-parent $branch -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
@@ -1853,6 +1868,8 @@ namespace eval ::git_branchlog {
         }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
+        # Little pause before erasing the list of branches we temporarily drew
+        after 500
         $ln\::DrawTree now
         gen_log:log T "LEAVE"
       }
