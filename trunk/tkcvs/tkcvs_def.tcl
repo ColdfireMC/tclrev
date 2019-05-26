@@ -26,7 +26,7 @@ set cvscfg(gitdetail) false
 # Max number of revs to go back in a git branch diagram
 set cvscfg(gitmaxhist) 250
 # Which git log options to use for the branch diagram
-set cvscfg(gitlog_opts) "--first-parent --sparse"
+set cvscfg(gitlog_opts) "--first-parent"
 
 # Branch Diagram options
 # Number of tags in a Subversion repository that's "too many", ie
