@@ -285,8 +285,8 @@ proc git_list_tags {} {
 
 # Called from "Log" in Reports menu
 proc git_log {detail args} {
-  gen_log:log T "ENTER ($detail $args)"
 
+  gen_log:log T "ENTER ($detail $args)"
   busy_start .workdir.main
   set filelist [join $args]
   set flags ""
@@ -461,10 +461,11 @@ proc git_status {detail args} {
 
 # called from the branch browser
 proc git_log_rev {rev file} {
-  gen_log:log T "ENTER ($rev $file)"
+  global cvscfg
 
+  gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
-  set commandline "git log --graph --all --format=%h\\ \\ %<(12,trunc)%aN\\ %<(54,trunc)%s"
+  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %<(12,trunc)%aN\\ %<(54,trunc)%s"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -1053,7 +1054,7 @@ namespace eval ::git_branchlog {
         catch {unset reachable_branches}
 
         # Most efficient way I can think of to collect branch, tag, and parent information
-        set command1 "git log --all -$cvscfg(gitmaxhist) --first-parent --date-order --format=%h:%p:%d -- \"$filename\""
+        set command1 "git log --all -$cvscfg(gitmaxhist) $cvscfg(gitlog_opts) --date-order --format=%h:%p:%d -- \"$filename\""
         set branches_log1 [exec::new $command1 {} 0 {} 1]
         set log_output1 [$branches_log1\::output]
         $branches_log1\::destroy
@@ -1069,8 +1070,11 @@ namespace eval ::git_branchlog {
         # That doesn't always pick up the reachable branches though
         set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
         set branch_lines [split [$cmd(git_branch)\::output] "\n"]
+        # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
+        # but we can just filter it out
         foreach line $branch_lines {
           if {[string length $line] < 1} continue
+          if {[regexp {detached} $line]} continue
           lappend reachable_branches [lindex $line 0]
         }
         gen_log:log D "Reachable branches: $reachable_branches"
@@ -1150,7 +1154,7 @@ namespace eval ::git_branchlog {
         set branches [linsert $branches 0 $trunk]
 
         # Get the info for all the revs.
-        set command "git log --all --abbrev-commit --first-parent --date=iso --tags --decorate=short --no-color -- \"$filename\""
+        set command "git log --all --abbrev-commit $cvscfg(gitlog_opts) --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1162,9 +1166,11 @@ namespace eval ::git_branchlog {
         catch {unset branch_matches}
         gen_log:log D "Final branches: $branches"
         # Prepare to draw something on the canvas so user knows we're working
+        $lc.canvas yview moveto 0
+        $lc.canvas dtag temporary
         set cnv_y 20
         set yspc  15
-        set cnv_w [winfo width $lc ]
+        set cnv_w [winfo width $lc]
         set cnv_x [expr {$cnv_w / 3}]
         # Draw something on the canvas so the user knows we're working
         $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
@@ -1177,7 +1183,7 @@ namespace eval ::git_branchlog {
           set cnv_y [expr {$cnv_y + $yspc}]
           update
 
-          set command "git rev-list --reverse --abbrev-commit --first-parent $branch -- \"$filename\""
+          set command "git rev-list --reverse --abbrev-commit $cvscfg(gitlog_opts) $branch -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy

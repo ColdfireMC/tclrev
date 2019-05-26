@@ -1,5 +1,7 @@
 Release 9.0.8 May, 2019
 
+- Added a menu for git log options to the branch browser
+
 - When collecting branches in Git, and also tags in SVN, draw something
   on the canvas so the user knows it's working.
 

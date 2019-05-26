@@ -512,7 +512,6 @@ namespace eval ::logcanvas {
         variable curr_y
 
         gen_log:log T "ENTER ($x $y $width $height $revision)"
-        gen_log:log D "sets GLOBALS curr_x $x  curr_y $y"
         set curr_x $x
         set curr_y $y
         # draw the box
@@ -618,7 +617,6 @@ namespace eval ::logcanvas {
         incr width $curr(padx,2)
         set height [expr {$curr(pady,2) + \
           [llength [subst $root_info]] * $font_norm_h}]
-        gen_log:log D "uses GLOBAL box_height for tag lists but does not set it nor use it for blue box height"
         gen_log:log T "LEAVE (tag_width $tag_width  root_width $root_width height $height)"
         return [list $tag_width $root_width $height]
       }
@@ -735,7 +733,6 @@ namespace eval ::logcanvas {
           }
         }
         incr width $curr(padx,2)
-        gen_log:log D "uses GLOBAL box_height but does not set it"
         gen_log:log T "LEAVE (tag_width $tag_width  width $width  height $height)"
         return [list $tag_width $width $height]
       }
@@ -1361,7 +1358,6 @@ namespace eval ::logcanvas {
             lappend curr(arrowshape) [expr {$x * $opt(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
-          gen_log:log D "First setting of GLOBAL box_height ($box_height)"
 
           # Find the root. (needed for SVN and GIT). If there's a trunk, use that
           foreach a [array names revkind] {
@@ -1684,6 +1680,11 @@ namespace eval ::logcanvas {
          -menu [menu $logcanvas.menubar.view] -underline 0
       $logcanvas.menubar.view add cascade -label "Update When Drawing" \
         -menu $logcanvas.menubar.view.update
+      if {$ingit} {
+        $logcanvas.menubar add cascade -label "Git Options"\
+           -menu [menu $logcanvas.menubar.git_opts]
+      }
+
       menu $logcanvas.menubar.view.update
       $logcanvas.menubar.view.update add radiobutton -label "Every Revision" \
         -variable [namespace current]::opt(update_drawing) -value 0
@@ -1784,6 +1785,35 @@ namespace eval ::logcanvas {
         -command [namespace code {
           SaveOptions
         }]
+
+     if {$ingit} {
+       global git_menubar_opt
+       foreach go { "--first-parent" "--full-history" "--sparse" } {
+         $logcanvas.menubar.git_opts add checkbutton -label $go \
+           -variable git_menubar_opt($go) -onvalue 1 -offvalue 0 \
+           -command {
+               global cvscfg
+               global git_menubar_opt
+
+               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
+               set cvscfg(gitlog_opts) ""
+               foreach go [array names git_menubar_opt] {
+                 if {$git_menubar_opt($go)} {
+                   append cvscfg(gitlog_opts) "$go "
+                 }
+               }
+               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
+           }
+        }
+       foreach go { "--first-parent" "--full-history" "--sparse" } {
+         if {$go in $cvscfg(gitlog_opts)} {
+           set git_menubar_opt($go) 1
+         } else {
+           set git_menubar_opt($go) 0
+         }
+        }
+      }
+
       menu_std_help $logcanvas.menubar
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $logcanvas @$cvscfg(bitmapdir)/branch.xbm

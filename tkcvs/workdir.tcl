@@ -1658,10 +1658,10 @@ proc save_options { } {
 
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
-                 showstatcol showdatecol showeditcol auto_tag \
+                 gitdetail showstatcol showdatecol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums }
   set STRGopts { file_filter ignore_file_filter clean_these \
-                 printer log_classes lastdir sort_pref editor editorargs \
+                 gitlog_opts gitmaxhist printer log_classes lastdir sort_pref editor editorargs \
                  workgeom modgeom loggeom tracgeom }
 
   # Plus the logcanvas options
