@@ -18,12 +18,15 @@ set cvscfg(showstatcol) true
 set cvscfg(showdatecol) true
 # If you want to see the editors/author/lockers column
 set cvscfg(showeditcol) true
-# If you want to see hash and author in Git
-set cvscfg(gitdetail) false
 # Sort by filename or status (filecol or statcol)
 set cvscfg(sort_pref) {filecol -increasing}
+
+# If you want to see hash and author in Git workdir
+set cvscfg(gitdetail) false
 # Max number of revs to go back in a git branch diagram
 set cvscfg(gitmaxhist) 250
+# Which git log options to use for the branch diagram
+set cvscfg(gitlog_opts) "--first-parent --sparse"
 
 # Branch Diagram options
 # Number of tags in a Subversion repository that's "too many", ie
