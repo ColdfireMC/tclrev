@@ -1657,8 +1657,8 @@ namespace eval ::svn_branchlog {
         # Prepare to draw something on the canvas so user knows we're working
         set cnv_y 20
         set yspc  15
-        set cnv_w [winfo width $lc ]
-        set cnv_x [expr {$cnv_w / 3}]
+        set cnv_w [winfo width $lc]
+        set cnv_x [expr {$cnv_w / 2 - 8}]
         # Branches
         # Get a list of the branches from the repository
         # Draw something on the canvas so the user knows we're working

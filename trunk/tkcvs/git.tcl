@@ -1153,6 +1153,16 @@ namespace eval ::git_branchlog {
         set branches [lreplace $branches $idx $idx]
         set branches [linsert $branches 0 $trunk]
 
+        # Prepare to draw something on the canvas so user knows we're working
+        $lc.canvas yview moveto 0
+        $lc.canvas dtag temporary
+        set cnv_y 20
+        set yspc  15
+        set cnv_w [winfo width $lc]
+        set cnv_x [expr {$cnv_w / 2- 8}]
+        $lc.canvas create text $cnv_x $cnv_y -text "Getting the LOG" -tags {temporary}
+        set cnv_y [expr {$cnv_y + $yspc}]
+
         # Get the info for all the revs.
         set command "git log --all --abbrev-commit $cvscfg(gitlog_opts) --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
@@ -1165,13 +1175,6 @@ namespace eval ::git_branchlog {
         # Get rev lists for the branches
         catch {unset branch_matches}
         gen_log:log D "Final branches: $branches"
-        # Prepare to draw something on the canvas so user knows we're working
-        $lc.canvas yview moveto 0
-        $lc.canvas dtag temporary
-        set cnv_y 20
-        set yspc  15
-        set cnv_w [winfo width $lc]
-        set cnv_x [expr {$cnv_w / 3}]
         # Draw something on the canvas so the user knows we're working
         $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
         set cnv_y [expr {$cnv_y + $yspc}]
@@ -1266,8 +1269,8 @@ namespace eval ::git_branchlog {
             } else {
               # If not, we can try to get it
               set parent [find_parent $base]
-              gen_log:log D "PARENT $revparent($base) of $branch determined by new git log %p"
               set revparent($base) $parent
+              gen_log:log D "PARENT $revparent($base) of $branch determined by new git log %p"
             }
             # But it will very likely not be in our revlists, so always do this instead
             set test_parent [lindex $inBoth end]
@@ -1287,8 +1290,8 @@ namespace eval ::git_branchlog {
             # up. This may happen if the directory had checkins that didn't
             # affect the file or the file is newly added
             if {! [info exists revcomment($parent)] } {
-              gen_log:log D "MISSING INFO for PARENT $parent of $branch"
-              load_mystery_info $revparent($base) .
+              #gen_log:log D "MISSING INFO for PARENT $parent of $branch"
+              #load_mystery_info $revparent($base) .
               # Draw it differently because it may not be reachable
               set revpath($parent) $relpath
               set revstate($parent) "ghost"
@@ -1401,8 +1404,8 @@ namespace eval ::git_branchlog {
             # for reasons having nothing to do with this process. Let's try to
             # get the data.
             if {! [info exists revcomment($stock_old_branchparent)] } {
-              gen_log:log D "MISSING info for PARENT $stock_old_branchparent of MAYBE SUB-BRANCH $stockbranch"
-              load_mystery_info $stock_old_branchparent .
+              #gen_log:log D "MISSING info for PARENT $stock_old_branchparent of MAYBE SUB-BRANCH $stockbranch"
+              #load_mystery_info $stock_old_branchparent .
               if {! [info exists revbranches($parent)]} {
                 set revbranches($parent) $stock_old_branchroot
               } elseif {$stock_old_branchroot ni $revbranches($parent)} {

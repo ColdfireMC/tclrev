@@ -609,7 +609,7 @@ namespace eval ::logcanvas {
         }
         if {![info exists revbtags($root_rev)]} {set revbtags($root_rev) {}}
         foreach s [subst $root_info] {
-          set w [font measure $font_norm -displayof $logcanvas.canvas $s]
+          set w [font measure $font_norm -displayof $logcanvas.canvas " $s "]
           if {$w > $root_width} {
             set root_width $w
           }
