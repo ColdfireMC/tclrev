@@ -59,6 +59,8 @@ namespace eval joincanvas {
       set joincanvas ".joincanvas$my_idx"
 
       proc parse_cvslog_tags {filelog} {
+        global cvscfg
+        global cvsglb
         variable joincanvas
         variable tags
         variable headrev
@@ -94,7 +96,7 @@ namespace eval joincanvas {
                 set tagrevision [string trim [lindex $tagitems 1]]
                 set tagname [string trim [lindex $tagitems 0]]
                 # Add all the tags to a picklist for our "since" tag
-                picklist_used alltags $tagname
+                lappend cvsglb(alltags) $tagname
 
                 set parts [split $tagrevision {.}]
                 if {[expr {[llength $parts] & 1}] == 1} {
@@ -125,11 +127,12 @@ namespace eval joincanvas {
             }
           }
         }
-        picklist_used alltags ""
+        gen_log:log D "alltags: $cvsglb(alltags)"
       }
 
       proc node {joincanvas rev x y} {
         global cvscfg
+        global cvsglb
         variable cvscanv
         variable tags
         upvar treelist treelist
@@ -223,8 +226,16 @@ namespace eval joincanvas {
         $joincanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
       }
 
+      # combobox values have to be assigned by a proc in namespace code
+      proc fill_tags_list {cbox} {
+        global cvsglb
+
+        $cbox configure -values $cvsglb(alltags)
+      }
+
       proc fillcanvas {filename filelog} {
         global cvscfg
+        global cvsglb
         variable joincanvas
         variable cvscanv
         variable headrev
@@ -558,9 +569,12 @@ namespace eval joincanvas {
 
       label $joincanvas.up.lversSince -text "   Since" -anchor w
       frame $joincanvas.up.eSince -bg $cvscfg(colourB)
-      #::picklist::clear alltags
-      ttk::combobox $joincanvas.up.rversSince -textvariable tagname
-      $joincanvas.up.rversSince -values $cvscfg(alltags)
+
+      set tagname ""
+      # combobox values have to be assigned by a proc in namespace code
+      ttk::combobox $joincanvas.up.rversSince -textvariable tagname -values [list] \
+        -postcommand [namespace code {fill_tags_list $joincanvas.up.rversSince}]
+
       label $joincanvas.up.lversTo -text "Merge To" -anchor w
       entry $joincanvas.up.rversTo -relief groove \
         -bd 1 -relief sunk -state readonly -readonlybackground $cvsglb(bg)
@@ -612,7 +626,7 @@ namespace eval joincanvas {
                  if {$fromrev == ""} {
                    cvsfail "Please select a branch!" $joincanvas; return
                  }
-                 set sincerev [$joincanvas.up.rversSince.e get]
+                 set sincerev [$joincanvas.up.rversSince get]
                  cvs_merge $joincanvas $fromrev $sincerev $fromrev .
                  }]
 
