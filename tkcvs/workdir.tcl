@@ -490,6 +490,9 @@ proc workdir_menus {} {
   .workdir.menubar.options add checkbutton -label "Confirmation Dialogs" \
      -variable cvscfg(confirm_prompt) -onvalue true -offvalue false
   .workdir.menubar.options add separator
+  .workdir.menubar.options add checkbutton -label "Git Detailed Status" \
+     -variable cvscfg(gitdetail) -onvalue true -offvalue false
+  .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
      -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showeditcol)} {

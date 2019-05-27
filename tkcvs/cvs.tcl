@@ -91,6 +91,9 @@ proc cvs_workdir_status {} {
 
   gen_log:log T "ENTER"
 
+  # Unless the Editors column is mapped, we get all the information we
+  # need from cvs -n -q status. Only invoke command to get editors
+  # or lockers if requested
   set cmd(cvs_status) [exec::new "$cvs -n -q status -l"]
   set status_lines [split [$cmd(cvs_status)\::output] "\n"]
   if {$cvscfg(showeditcol)} {

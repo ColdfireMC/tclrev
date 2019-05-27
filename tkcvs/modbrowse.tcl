@@ -698,11 +698,15 @@ proc ModTree:create {w} {
   global cvsglb
   global cvscfg
 
-  ttk::treeview $w.pw -yscroll "$w.yscroll set"
-  $w.pw configure -columns "information"
   ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
       -fieldbackground $cvsglb(canvbg)
-  ttk::style configure Heading -font $cvscfg(listboxfont) -background $cvsglb(bg)
+  ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg)
+  # These don't do anything, IDK why
+  ttk::style configure Treeview.Cell -background cvsglb(bg)
+  ttk::style configure Treeview.Item -background cvsglb(bg)
+
+  ttk::treeview $w.pw -yscroll "$w.yscroll set"
+  $w.pw configure -columns "information"
 
   scrollbar $w.yscroll -orient vertical \
       -relief sunken -command "$w.pw yview"
