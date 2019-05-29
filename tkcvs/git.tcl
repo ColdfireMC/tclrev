@@ -177,6 +177,9 @@ proc find_git_remote {dirname} {
     set cvscfg(origin) ""
     set cvsglb(fetch_url) ""
   }
+  if {! [info exists cvscfg(origin)] } {
+    set cvscfg(origin) ""
+  }
   set cmd(git_config) [exec::new "git remote -v"]
   set lines [split [$cmd(git_config)\::output] "\n"]
   set i 0
