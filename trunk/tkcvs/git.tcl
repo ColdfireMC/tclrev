@@ -231,9 +231,8 @@ proc parse_gitlist {gitroot} {
     # This is the hash
     set modval($dname) [lindex $line 0] 
     gen_log:log D "modval($dname)=$modval($dname)"
-    #ModList:newitem $tf $dname $modval($dname)
-    gen_log:log D "$tv insert {} end -id $dname -text $dname -values $modval($dname)"
-    $tv insert {} end -id "$dname" -text "$dname" -values $modval($dname)
+    gen_log:log D "$tv insert {} end -id $dname -values [list $dname $modval($dname)]"
+    $tv insert {} end -id "$dname" -values [list "$dname" $modval($dname)]
   }
   update idletasks
   # Then you can do something like this to list the files

@@ -327,6 +327,10 @@ option add *Dialog.msg.font $cvscfg(dialogfont) userDefault
 # Sometimes we'll want to override this but let's set a default
 option add *Message.font $cvscfg(dialogfont) userDefault
 
+ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
+    -fieldbackground $cvsglb(canvbg)
+ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg) -padding {0 4}
+ttk::style configure Treeview.Cell -padding {2 0}
 
 # Initialize logging (classes are C,F,T,D)
 if { ! [info exists cvscfg(log_classes)] } {

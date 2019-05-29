@@ -1940,15 +1940,15 @@ proc cvs_modbrowse_tree { mnames node } {
         gen_log:log D "path=Aliases/$mname pathtop=Aliases pathroot=/Aliases"
         if {! [$tv exists "AliasTop"]} {
           gen_log:log D "Making Aliases"
-          gen_log:log D "$tv insert {} end -id AliasTop -text Aliases -image adir -values Aliases"
-          $tv insert {} end -id AliasTop -text "Aliases" -image "adir" -values "Aliases"
+          gen_log:log D "$tv insert {} end -id AliasTop -image adir -values {Aliases Aliases}"
+          $tv insert {} end -id AliasTop -image "adir" -values [list Aliases Aliases]
         }
-        gen_log:log D "$tv insert AliasTop end -id $mname -text $mname -image amod -values $title"
-        $tv insert AliasTop end -id $mname -text $mname -image "amod" -values \"$title\"
+        gen_log:log D "$tv insert AliasTop end -id $mname -image amod -values {$mname $title}"
+        $tv insert AliasTop end -id $mname -image "amod" -values [list "$mname" "$title"]
       } else {
         # Otherwise, it just goes in the list
-        gen_log:log D "$tv insert {} end -id $mname -text $mname -image amod -values $title"
-        $tv insert {} end -id $mname -text $mname -image "amod" -values \"$title\"
+        gen_log:log D "$tv insert {} end -id $mname $mname -image amod -values {$mname $title}"
+        $tv insert {} end -id $mname $mname -image "amod" -values [list "$mname" "$title"]
       }
       continue
     } elseif {[string match "* *" $modval($mname)]} {
@@ -1979,9 +1979,12 @@ proc cvs_modbrowse_tree { mnames node } {
       if {! [$tv exists $pathroot]} {
         gen_log:log D "1 Making $pathtop for something with a \"/\" in its module name"
         if {[info exists modval($pathtop)]} { set dimage mdir }
-        gen_log:log D "$tv insert {} end -id $pathroot -text $pathtop -image dir -values $title"
-        $tv insert {} end -id "$pathroot" -text $pathtop -image dir -values \"$title\"
+        gen_log:log D "$tv insert {} end -id $pathroot -image dir -values {$pathtop $title}"
+        $tv insert {} end -id "$pathroot" -image dir -values [list "$pathtop" "$title"]
       }
+      set col0_width [expr {($pathdepth + 1) * ($cvscfg(mod_iconwidth) * 2)}]
+# FIXME: we want to trigger this when a folder is opened
+      #$tv column #0 -width $col0_width
       set pathroot ""
       for {set i 1} {$i < $pathdepth} {incr i} {
         set newnode [lindex $pathitems $i]
@@ -2010,8 +2013,8 @@ proc cvs_modbrowse_tree { mnames node } {
             set dimage dir
           }
           if {! [$tv exists $newpath]} {
-            gen_log:log D "$tv insert /$pathroot end -id $newpath -text $newnode -image $dimage -values $title"
-            $tv insert "/$pathroot" end -id $newpath -text $newnode -image $dimage -values \"$title\"
+            gen_log:log D "$tv insert /$pathroot end -id $newpath -image $dimage -values {$newnode $title}"
+            $tv insert "/$pathroot" end -id $newpath -image $dimage -values [list "$newnode" "$title"]
           }
         }
       }
@@ -2025,8 +2028,8 @@ proc cvs_modbrowse_tree { mnames node } {
       continue
     }
     if {[info exists modval($mname)] && ($dimage != "amod")} { set dimage mdir }
-    gen_log:log D "$tv insert {} end -id $mname -text $mname -image mod -values $title"
-    $tv insert {} end -id $mname -text $mname -image mod -values \"$title\"
+    gen_log:log D "$tv insert {} end -id $mname -image mod -values {$mname $title}"
+    $tv insert {} end -id $mname -image mod -values [list "$mname" "$title"]
   }
   # Move the Aliases to the top
   if {[$tv exists AliasTop]} {

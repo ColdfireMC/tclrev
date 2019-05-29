@@ -765,8 +765,8 @@ proc svn_jit_listdir {} {
     $tv delete \"/$dir/placeholder\"
   }
   foreach f $fils {
-    gen_log:log D "$tv insert /$dir end -id /$dir/$f -text $f -image paper"
-    $tv insert "/$dir" end -id "/$dir/$f" -text "$f" -image paper
+    gen_log:log D "$tv insert /$dir end -id /$dir/$f -image paper -values [list $f]"
+    $tv insert "/$dir" end -id "/$dir/$f" -image paper -values [list "$f"]
   }
   foreach d $dirs {
     svn_jit_dircmd "$dir" $d
@@ -809,7 +809,6 @@ proc svn_jit_dircmd { parent dir } {
     }
   }
   set exp "($nl items)"
-  set val_list [list $exp]
 
   if {$parent ne {}} {
     set parent "/$parent"
@@ -820,15 +819,18 @@ proc svn_jit_dircmd { parent dir } {
   # and be openable
   if {$dirs == {} && $fils == {}} {
     # Empty, so no placeholder
-    gen_log:log D "$tv insert $parent end -id $parent/$dir -text $lbl -values $val_list -image folder"
-    $tv insert "$parent" end -id "$parent/$dir" -text "$lbl" -values "$val_list" -image folder
+    gen_log:log D "$tv insert $parent end -id $parent/$dir -image folder -values {$lbl $exp}"
+    $tv insert "$parent" end -id "$parent/$dir" -image folder -values [list "$lbl" "$exp"]
   } else {
-    gen_log:log D "$tv insert $parent end -id $parent/$dir -text $lbl -values $val_list -image folder"
-    $tv insert "$parent" end -id "$parent/$dir" -text "$lbl" -values "$val_list" -image folder
+    gen_log:log D "$tv insert $parent end -id $parent/$dir -image folder -values {$lbl $exp}"
+    $tv insert "$parent" end -id "$parent/$dir" -image folder -values [list "$lbl" "$exp"]
     # Placeholder so that folder is openable
-    gen_log:log D "$tv insert $parent/$dir end -id $parent/$dir/placeholder -text placeholder"
-    $tv insert "$parent/$dir" end -id "$parent/$dir/placeholder" -text placeholder
+    gen_log:log D "$tv insert $parent/$dir end -id $parent/$dir/placeholder -values {placeholder \"\"}"
+    $tv insert "$parent/$dir" end -id "$parent/$dir/placeholder" -values [list "placeholder" ""]
   }
+  set depth [llength [file split "$parent/$dir"]]
+  set col0_width [expr {$depth * $cvscfg(mod_iconwidth)}]
+  $tv column #0 -width $col0_width
 
   #gen_log:log T "LEAVE"
 }
@@ -867,8 +869,8 @@ proc parse_svnmodules {svnroot} {
   }
 
   foreach f $fils {
-    gen_log:log D "$tv insert {} end -id $f -text $f -image Fileview"
-    $tv insert {} end -id $f -text "$f" -image Fileview
+    gen_log:log D "$tv insert {} end -id $f -image Fileview -values {$f \"\"}"
+    $tv insert {} end -id $f -image paper -values [list "$f" ""]
   }
   foreach d $dirs {
     svn_jit_dircmd {} $d
