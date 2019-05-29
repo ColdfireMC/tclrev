@@ -244,11 +244,10 @@ proc picklist_used {var_name value} {
     if {[set i [lsearch -exact $cvsglb($var_name) "$value"]] >= 0} {
       set cvsglb($var_name) [lreplace $cvsglb($var_name) $i $i]
     }
+    # The value might have spaces. That's what the concat list is about.
     set cvsglb($var_name) [lrange [concat [list "$value"] $cvsglb($var_name)] 0 50]
   } else {
     lappend cvsglb($var_name) "$value"
-  }
-  foreach v $cvsglb($var_name) {
   }
 }
 

@@ -41,7 +41,9 @@ set cvscfg(colourB) brown3
 
 # Maximum number of places to save in the picklist history
 set cvscfg(picklist_items) 10
-
+# Starting width of treeview (module browser) first column, the one that
+# contains the icons
+set cvscfg(mod_iconwidth) 24
 # If you want the module browser to come up on startup instead of the
 # working-directory browser, uncomment this.
 #set cvscfg(startwindow) "module"

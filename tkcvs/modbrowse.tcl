@@ -412,7 +412,7 @@ proc modbrowse_run {} {
       # Set up ModTree and tell it to use clbk just-in-time-listdir
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      .modbrowse.treeframe.pw heading #0 -text "File"
+      .modbrowse.treeframe.pw heading file -text "File"
       .modbrowse.treeframe.pw heading information -text "Information"
       # parse_svnmodules will do "svn list" and post the files and directories
       bind .modbrowse.treeframe.pw <<TreeviewOpen>> svn_jit_listdir
@@ -421,7 +421,7 @@ proc modbrowse_run {} {
         global modbrowse_module
         global modbrowse_path
         global modbrowse_title
-        set selection [join [.modbrowse.treeframe.pw selection]]
+        set selection [.modbrowse.treeframe.pw selection]
         set modbrowse_title [string trimleft $selection "/"]
         set modbrowse_path $modbrowse_title
         set modbrowse_module $modbrowse_path
@@ -436,16 +436,17 @@ proc modbrowse_run {} {
       # Set up ModTree
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      .modbrowse.treeframe.pw heading #0 -text "Module"
+      .modbrowse.treeframe.pw heading file -text "Module"
       .modbrowse.treeframe.pw heading information -text "Information"
+      .modbrowse.treeframe.pw column #0 -width [expr {$cvscfg(mod_iconwidth) * 2}]
       bind .modbrowse.treeframe.pw <<TreeviewSelect>> {
         global modbrowse_module
         global modbrowse_path
         global modbrowse_title
-        set selection [join [.modbrowse.treeframe.pw selection]]
+        set selection [.modbrowse.treeframe.pw selection]
         set modbrowse_title [string trimleft $selection "/"]
         set modbrowse_path $modbrowse_title
-        set modbrowse_module  [.modbrowse.treeframe.pw item $selection -text]
+        set modbrowse_module $selection
       }
 
       # parse_cvsmodules will check out CVSROOT/modules and post what it finds
@@ -457,17 +458,18 @@ proc modbrowse_run {} {
       # Set up ModTree for a git ls-remote
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
-      .modbrowse.treeframe.pw heading #0 -text "Reference"
+      .modbrowse.treeframe.pw heading file -text "Reference"
       .modbrowse.treeframe.pw heading information -text "Commit ID"
+      .modbrowse.treeframe.pw column #0 -width 0
       bind .modbrowse.treeframe.pw <<TreeviewSelect>> {
         global modbrowse_module
         global modbrowse_path
         global modbrowse_title
-        set selection [join [.modbrowse.treeframe.pw selection]]
+        set selection [.modbrowse.treeframe.pw selection]
         set modbrowse_title $selection
         set modbrowse_path $modbrowse_title
         # The hash, not the name
-        set modbrowse_module [.modbrowse.treeframe.pw item $modbrowse_path -values]
+        set modbrowse_module [lindex [.modbrowse.treeframe.pw item $modbrowse_path -values] 1]
       }
 
       # parse_gitlist will do git ls-remote and post what it finds
@@ -698,15 +700,12 @@ proc ModTree:create {w} {
   global cvsglb
   global cvscfg
 
-  ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
-      -fieldbackground $cvsglb(canvbg)
-  ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg)
-  # These don't do anything, IDK why
-  ttk::style configure Treeview.Cell -background cvsglb(bg)
-  ttk::style configure Treeview.Item -background cvsglb(bg)
 
   ttk::treeview $w.pw -yscroll "$w.yscroll set"
-  $w.pw configure -columns "information"
+  $w.pw configure -columns "file information"
+  $w.pw column #0 -minwidth 0
+  $w.pw column #0 -width $cvscfg(mod_iconwidth)
+  $w.pw column #0 -stretch no
 
   scrollbar $w.yscroll -orient vertical \
       -relief sunken -command "$w.pw yview"
