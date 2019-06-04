@@ -24,7 +24,8 @@ proc git_workdir_status {} {
   set branch_lines [split [$cmd(git_branch)\::output] "\n"]
   foreach line $branch_lines {
     if [string match {\* *} $line] {
-      set current_tagname [lindex $line 1]
+      # Could be something like (HEAD detached at 960c171)
+      set current_tagname [join [lrange $line 1 end]]
       gen_log:log D "current_tagname=$current_tagname"
     }
   }
