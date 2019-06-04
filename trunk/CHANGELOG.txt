@@ -1,3 +1,11 @@
+Release 9.1 June, 2019
+
+- Re-implemented the working directory browser with ttk::treeview
+
+- In the branch browser, replaced the transient window for listing excessive
+  tags with an embedded listbox
+
+
 Release 9.0.8 May, 2019
 
 - Added a menu for git log options to the branch browser

@@ -10,13 +10,6 @@ namespace eval joincanvas {
     set my_idx $instance
     incr instance
 
-    if {[catch "image type Modules"]} {
-      workdir_images
-    }
-    if {[catch "image type Workdir"]} {
-      modbrowse_images
-    }
-
     #
     # Creates a new log canvas.  filelog must be the output of a cvs
     # log or rlog command.

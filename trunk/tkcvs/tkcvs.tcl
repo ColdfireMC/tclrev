@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.0.8"
+set cvscfg(version) "9.1"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -280,41 +280,6 @@ if {$WSYS eq "x11"} {
   }
 }
 
-# Fonts for the canvas "listboxes"
-set cvscfg(flashfont) $cvscfg(listboxfont)
-set fsiz [lindex $cvscfg(listboxfont) 1]
-set lbf [font actual $cvscfg(listboxfont)]
-#puts "$tcl_platform(os) $tk_patchLevel   [winfo server .]"
-#puts "listboxfont: $cvscfg(listboxfont)"
-#puts "actual listboxfont: $lbf"
-set ffam [lindex $lbf 1]
-set fsiz [lindex $lbf 3]
-
-# On X11, fsiz is often 0 because it's a scaled font. Then linespace
-# is about the best you can do to deduce the real size.
-if {$fsiz == 0} {
-  set linespace [font metrics $cvscfg(listboxfont) -linespace]
-  #puts "linespace $linespace"
-  foreach size {8 9 10 11 12 13 14} {
-    set negsize -$size
-    font create Z$size -family $ffam -size $negsize
-    set lnspc [font metric Z$size -linespace]
-    set fsize($lnspc) $negsize
-    #puts "fsize($lnspc) = $fsize($lnspc)"
-    font delete Z$size
-  }
-  set fsiz $fsize($linespace)
-}
-set cvscfg(flashfont) [list $ffam $fsiz underline]
-
-# Prefer underline, but it isn't working at all in tk8.5.0 on linux
-if {! [font actual $cvscfg(flashfont) -underline]} {
-  puts "Underline font not working.  Trying $ffam $fsiz bold"
-  puts " (known problem in Tk 8.5.0 on Linux)"
-  set cvscfg(flashfont) [list $ffam $fsiz bold]
-}
-#puts "final flashfont: $cvscfg(flashfont)"
-
 # Suppress tearoffs in menubars
 option add *tearOff 0
 
@@ -329,7 +294,8 @@ option add *Message.font $cvscfg(dialogfont) userDefault
 
 ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
     -fieldbackground $cvsglb(canvbg)
-ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg) -padding {0 4}
+# Padding has no effect on aqua, but it works on X11
+ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg) -padding {4 2}
 ttk::style configure Treeview.Cell -padding {2 0}
 
 # Initialize logging (classes are C,F,T,D)

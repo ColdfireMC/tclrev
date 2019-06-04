@@ -16,6 +16,8 @@ set cvscfg(cvslock) false
 set cvscfg(showstatcol) true
 # If you want to see the date column
 set cvscfg(showdatecol) true
+# If you want to see the revision (commit ID) column
+set cvscfg(showwrevcol) true
 # If you want to see the editors/author/lockers column
 set cvscfg(showeditcol) true
 # Sort by filename or status (filecol or statcol)

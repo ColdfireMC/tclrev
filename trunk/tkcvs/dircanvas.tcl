@@ -5,210 +5,70 @@
 proc DirCanvas:create {w} {
   global cvscfg
   global cvsglb
-  global arr
   global incvs insvn inrcs ingit
 
   gen_log:log T "ENTER ($w)"
 
-  if [winfo exists $w.pw] {
-    catch {DirCanvas:destroy $w.pw}
-    catch {destroy $w.pw}
-  }
-
   set winwid [winfo width $w]
   set beginwid [expr {$winwid / 5}]
-  panedwindow $w.pw -relief sunk -bd 2
-  $w.pw configure -handlepad 35 -sashwidth 4 -sashpad 0 -handlesize 10
 
-  foreach column {filecol statcol datecol wrevcol editcol} {
-    frame $w.$column
-    canvas $w.$column.list -highlightthickness 0 -width $beginwid
-    $w.$column configure -bg $cvsglb(canvbg)
-    $w.$column.list configure -bg $cvsglb(canvbg)
+  if {! [winfo exists $w.tree] } {
+    frame $w.pw
+    pack $w.pw -fill both -expand 1
+
+    ttk::treeview $w.tree -columns {filecol statcol datecol wrevcol editcol} \
+      -yscroll "$w.yscroll set"
+    scrollbar $w.yscroll -orient vertical \
+      -relief sunken -command "$w.tree yview"
+    pack $w.yscroll -in $w.pw -side right -fill y
+    pack $w.tree -in $w.pw -side left -expand yes -fill both
+  
+    $w.tree heading filecol -text "File"
+    $w.tree heading statcol -text "Status"
+    $w.tree heading datecol -text "Date"
+    $w.tree heading wrevcol -text "Revision"
+    $w.tree heading editcol -text "Author"
+  
+    $w.tree column #0 -width [expr {$cvscfg(mod_iconwidth) + 4}]
+    $w.tree column #0 -stretch no
   }
-  scrollbar $w.yscroll -orient vertical -command "DirCanvas:scroll_windows $w" \
-    -highlightthickness 0
-  pack $w.yscroll -side right -fill y
+  foreach col {filecol statcol datecol wrevcol editcol} {
+    $w.tree column $col -width $beginwid
+    $w.tree heading $col -image "" -command "DirCanvas:sort_by_col $w.tree $col [lindex $cvscfg(sort_pref) 1]"
+  }
+  $w.tree heading #0 -image "" -command "DirCanvas:sort_by_col $w.tree statcol [lindex $cvscfg(sort_pref) 1]"
 
-  DirCanvas:column $w filecol "file"
-  DirCanvas:column $w statcol "status"
-  DirCanvas:column $w datecol "date"
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
-  if {$incvs || $insvn || $inrcs || $ingit} {
-    DirCanvas:column $w wrevcol "revision"
-    DirCanvas:column $w editcol "editors"
-  }
 
-  # Put an extra arrow on the file column for sorting by status
-  set statusbutton $w.filecol.head.statbut
-  button $statusbutton -image arr_dn \
-    -relief raised -bd 1 -highlightthickness 0
-  set arr(filestatcol) $statusbutton
-  pack $statusbutton -side left
-  bind $statusbutton <ButtonPress-1> \
-    "DirCanvas:toggle_col $w statcol"
-  bind $statusbutton <ButtonPress-2> \
-    "DirCanvas:sort_by_col $w statcol -decreasing"
-  bind $statusbutton <ButtonPress-3> \
-    "DirCanvas:sort_by_col $w statcol -increasing"
-
+  # We've set preliminary defaults, now use the column and sorting preferences
   gen_log:log D "sort_pref:  $cvscfg(sort_pref)"
   set col [lindex $cvscfg(sort_pref) 0]
   set sense [lindex $cvscfg(sort_pref) 1]
+  # If we aren't in a VCS and therefore don't have editcol or wrevcol, sort by filename
   if { (! ($incvs || $inrcs || $insvn || $ingit))  && ( $col == "editcol" || $col == "wrevcol") } {
     gen_log:log T "setting sort to column \"filecol!\""
     set col "filecol"
-    set sense "-decreasing"
+    set sense "-increasing"
   }
+  DirCanvas:displaycolumns $w.tree
+
+  # Put an arrow on the column we're sorting by
+  gen_log:log D "will sort by column $col $sense"
   if {[string match "-inc*" $sense]} {
-    gen_log:log D "sort column $col -increasing"
-    $arr($col) configure -image arh_up
-    if {$col == "statcol"} {$arr(filestatcol) configure -image arh_up}
-  } else {
-    gen_log:log D "sort column $col -decreasing"
-    if {[info exists arr($col)] && [winfo exists $arr($col)]} {
-      $arr($col) configure -image arh_dn
-    gen_log:log D "arr(col) = arr($col);  arr($col) = $arr($col)"
-    }
+    $w.tree heading $col -image arr_dn
     if {$col == "statcol"} {
-      $arr(filestatcol) configure -image arh_dn
+      $w.tree heading #0 -image arr_dn
+    }
+  } else {
+    $w.tree heading $col -image arr_up
+    if {$col == "statcol"} {
+      $w.tree heading #0 -image arr_up
     }
   }
 
-  focus $w.filecol.list
+  focus $w.tree
   if {! [winfo exists $w.paper_pop]} {
     DirCanvas:makepopup $w
-  }
-  gen_log:log T "LEAVE"
-}
-
-proc DirCanvas:headtext {w column lbltext} {
-  $w.$column.head.lbl configure -text "$lbltext"
-}
-
-proc DirCanvas:column {w column headtext} {
-  global cvscfg
-  global incvs insvn inrcs ingit
-  global arr
-
-  gen_log:log T "ENTER ($w $column headtext)"
-  gen_log:log T "showstatcol $cvscfg(showstatcol) showdatecol $cvscfg(showdatecol) showeditcol $cvscfg(showeditcol)"
-
-  $w.$column.list configure -yscrollcommand "$w.yscroll set"
-  bind $w.$column.list <Next>  "DirCanvas:scroll_windows $w scroll  1 pages"
-  bind $w.$column.list <Prior> "DirCanvas:scroll_windows $w scroll -1 pages"
-  bind $w.$column.list <Down>  "DirCanvas:scroll_windows $w scroll  1 units"
-  bind $w.$column.list <Up>    "DirCanvas:scroll_windows $w scroll -1 units"
-  bind $w.$column.list <B2-Motion> "DirCanvas:drag_windows $w %W %y"
-  bind $w.$column.list <MouseWheel> \
-      "DirCanvas:scroll_windows $w scroll \[expr {-(%D/120)*4}\] units"
-  bind $w.$column.list <ButtonPress-4> \
-      "DirCanvas:scroll_windows $w scroll -1 units"
-  bind $w.$column.list <ButtonPress-5> \
-      "DirCanvas:scroll_windows $w scroll 1 units"
-
-  frame $w.$column.head -relief raised -bd 2
-  label $w.$column.head.lbl -text "$headtext"
-  button $w.$column.head.sbut -image arr_dn -relief flat \
-    -highlightthickness 0
-  set arr($column) $w.$column.head.sbut
-
-  bind $w.$column.head.sbut <ButtonPress-1> "DirCanvas:toggle_col $w $column"
-  bind $w.$column.head.sbut <ButtonPress-2> "DirCanvas:sort_by_col $w $column -decreasing"
-  bind $w.$column.head.sbut <ButtonPress-3> "DirCanvas:sort_by_col $w $column -increasing"
-
-  if {$column == "datecol"} {
-    if {$cvscfg(showdatecol)} {
-      DirCanvas:map_column $w datecol
-    } else {
-      gen_log:log T "LEAVE (skipping datecol)"
-    }
-    return
-  }
-  if {$column == "statcol"} {
-    if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showstatcol)} {
-      DirCanvas:map_column $w statcol
-    } else {
-      gen_log:log T "LEAVE (skipping statcol)"
-    }
-    return
-  }
-  if {$column == "editcol"} {
-    if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showeditcol)} {
-      DirCanvas:map_column $w editcol
-    } else {
-      gen_log:log T "LEAVE (skipping editcol)"
-    }
-    return
-  }
-  DirCanvas:map_column $w $column
-}
-
-proc DirCanvas:map_column {w column} {
-
-  gen_log:log T "ENTER ($w $column)"
-  set mapped_columns [$w.pw panes]
-
-  if {"$w.statcol" in $mapped_columns} {
-    set leftcol "$w.statcol"
-  } else {
-    set leftcol "$w.filecol"
-  }
-
-  if {$column == "datecol"} {
-    $w.pw add $w.$column -after $leftcol -minsize 80
-    #gen_log:log D "ADD $w.$column"
-  } elseif {$column == "statcol"} {
-    $w.pw add $w.$column -after $w.filecol -minsize 80
-    #gen_log:log D "ADD $w.$column"
-  } elseif {$column == "editcol"} {
-    $w.pw add $w.$column -after $w.wrevcol -minsize 80
-    #gen_log:log D "ADD $w.$column"
-  } else {
-    $w.pw add $w.$column -minsize 80
-    #gen_log:log D "ADD $w.$column"
-  }
-  pack $w.$column.head -side top -fill x -expand no
-  pack $w.$column.head.sbut -side right
-  pack $w.$column.head.lbl -side right -fill x -expand yes
-  pack $w.$column.list -side top -fill both -ipadx 2 -expand yes
-
-  set winwid [winfo width $w]
-  set mapped_columns [$w.pw panes]
-  set num_columns [llength $mapped_columns]
-  gen_log:log D "mapped_columns: $mapped_columns"
-  set newwid [expr {$winwid / $num_columns}]
-  for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
-    set coords [$w.pw sash coord $i]
-    set ypos [lindex $coords 1]
-    set new_xpos [expr {($i+1) * $newwid}]
-    #gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
-    $w.$column configure -width $newwid
-    $w.pw sash place $i $new_xpos $ypos
-    set real_pos [$w.pw sash coord $i]
-  }
-  update idletasks
-
-  gen_log:log T "LEAVE"
-}
-
-proc DirCanvas:unmap_column {w column} {
-  gen_log:log T "ENTER ($w $column)"
-
-  $w.pw forget $w.$column
-  set winwid [winfo width $w]
-  #gen_log:log D "WIDTH $winwid"
-  set mapped_columns [$w.pw panes]
-  set num_columns [llength $mapped_columns]
-  gen_log:log D "mapped_columns: $mapped_columns"
-  set newwid [expr {$winwid /$num_columns}]
-  for {set i 0} { $i < [expr {$num_columns - 1}] } {incr i} {
-    set coords [$w.pw sash coord $i]
-    set ypos [lindex $coords 1]
-    set new_xpos [expr {($i+1) * $newwid}]
-    #gen_log:log D "$column: moving sash $i from  $coords to $new_xpos $ypos"
-    $w.pw sash place $i $new_xpos $ypos
-    set real_pos [$w.pw sash coord $i]
   }
   gen_log:log T "LEAVE"
 }
@@ -220,8 +80,20 @@ proc DirCanvas:newitem {w f} {
   global DirList
   global Filelist
   global cvsglb
+  global incvs insvn inrcs ingit
 
   #gen_log:log T "ENTER ($w $f)"
+  set rtype ""
+  if {$inrcs} {
+    set rtype "RCS"
+  } elseif {$incvs} {
+    set rtype "CVS"
+  } elseif {$insvn} {
+    set rtype "SVN"
+  } elseif {$ingit} {
+    set rtype "GIT"
+  }
+  gen_log:log D "Directory Type: $rtype"
 
   set DirList($w:$f:name) $f
   gen_log:log D "Newitem $f status $Filelist($f:status)"
@@ -242,943 +114,232 @@ proc DirCanvas:newitem {w f} {
   } else {
     set DirList($w:$f:editors) ""
   }
-  set DirList($w:$f:selected) 0
+  catch {unset values}
+  foreach vtag {name status date sticky editors} {
+    lappend values $DirList($w:$f:$vtag)
+  }
+  DirCanvas:choose_icon $w $f $rtype
+  $w.tree insert {} end -image $DirList($w:$f:icon) -values $values -tag fileobj
 
-  DirCanvas:buildwhenidle $w
-#  gen_log:log T "LEAVE"
-}
-
-# Delete element $v from the list $w.
-proc DirCanvas:delitem {w v} {
-  gen_log:log T "ENTER ($w $v)"
-  DirCanvas:buildwhenidle $w
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:deltree {w} {
   global DirList
 
-  foreach column {filecol statcol datecol wrevcol editcol} {
-    catch {destroy $w.$column}
-  }
-  catch {destroy $w.yscroll}
   foreach t [array names DirList $w:*] {
     unset DirList($t)
   }
-}
-
-proc DirCanvas:flash {w y} {
-  global cvscfg
-
-  $w.filecol.list itemconfigure $w.filecol.list.tx$y -font $cvscfg(flashfont)
-  foreach column [lrange [$w.pw panes] 1 end] {
-    set i [$column.list find withtag $w.filecol.list.tx$y]
-    $column.list itemconfigure $i -font $cvscfg(flashfont)
+  if {[winfo exists $w]} {
+    $w delete [$w children {}]
   }
 }
 
-proc DirCanvas:unflash {w y} {
-  global cvscfg
-
-  $w.filecol.list itemconfigure $w.filecol.list.tx$y -font $cvscfg(listboxfont)
-  foreach column [lrange [$w.pw panes] 1 end] {
-    set i [$column.list find withtag $w.filecol.list.tx$y]
-    $column.list itemconfigure $i -font $cvscfg(listboxfont)
-  }
-}
-
-#
-# Change the selection to the indicated item
-#
-proc DirCanvas:setselection {w y f} {
-  global DirList
-  global cvsglb
-
-  gen_log:log T "ENTER ($w $y $f)"
-
-  DirCanvas:unselectall $w 1
-  gen_log:log D "adding \"$f\""
-  set DirList($w:$f:selected) 1
-  set DirList($w:selection) [list "$f"]
-  set cvsglb(current_selection) $DirList($w:selection)
-  DirCanvas:setTextHBox $w $w.filecol.list.tx$y
-
-  gen_log:log T "LEAVE"
-}
-
-proc DirCanvas:addselection {w y f} {
-  global DirList
-  global cvsglb
-
-  gen_log:log T "ENTER ($w $y $f)"
-
-  regsub -all {\%\%} $f {%} fn
-  regsub -all {\\\$} $fn {$} fn
-  # If it's already selected, unselect it
-  if { $DirList($w:$fn:selected) } {
-    gen_log:log D "\"$fn\" was selected - unselecting"
-    set DirList($w:$fn:selected) 0
-    set idx [lsearch -exact $DirList($w:selection) "$fn"]
-    if {$idx > -1} {
-      gen_log:log D "found \"$fn\" - removing from selection list"
-      set DirList($w:selection) [lreplace $DirList($w:selection) $idx $idx]
-      gen_log:log D "$DirList($w:selection)"
-      DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
-    }
-  } else {
-    gen_log:log D "adding \"$fn\""
-    DirCanvas:setTextHBox $w $w.filecol.list.tx$y
-    set DirList($w:$fn:selected) 1
-    lappend DirList($w:selection) "$fn"
-  }
-  set cvsglb(current_selection) $DirList($w:selection)
-  gen_log:log D "selection is \"$cvsglb(current_selection)\""
-  gen_log:log T "LEAVE"
-}
-
-
-# clear any text highlight box (used by set/clearselection)
-proc DirCanvas:clearTextHBox {w id} {
-  global cvsglb
-
-  # clear the tag corresponding to the text label
-  foreach column [$w.pw panes] {
-    catch {$column.list delete HBox$id}
-    $column.list itemconfigure $id -fill $cvsglb(fg)
-  }
-}
-
-# set a text highligh box (used by set/clearselection)
-proc DirCanvas:setTextHBox {w id} {
-  global cvsglb
-
-  # get the bounding box for the text id
-  set bbox [$w.filecol.list bbox $id]
-  if {[llength $bbox] != 4} {
-    return
-  }
-  set lx [lindex $bbox 0]
-  #set uy [lindex $bbox 1]
-  set ly [lindex $bbox 3]
-  set ly [expr {$ly +1}]
-  set uy [expr {$ly -16}]
-  set i [eval $w.filecol.list create rectangle \
-    $lx $ly [winfo width $w.filecol] $uy \
-    -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
-  $w.filecol.list itemconfigure $id -fill $cvsglb(hlfg)
-  $w.filecol.list lower $i
-  foreach column [lrange [$w.pw panes] 1 end] {
-    # create rectangle with fill, tagged with the same ID as the text,
-    # so we can delete it later
-    set i [eval $column.list create rectangle \
-      0 $ly [winfo width $column] $uy \
-      -fill $cvsglb(hlbg) -tag HBox$id -outline \"\"]
-    $column.list itemconfigure $id -fill $cvsglb(hlfg)
-    $column.list lower $i
-  }
-}
-
-proc DirCanvas:addrange {w y f} {
-  global DirList
-  global cvsglb
-
-  gen_log:log T "ENTER ($w $y $f)"
-  if {! [info exists DirList($w:selection)] || [llength $DirList($w:selection)] < 1} {
-    DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
-    set DirList($w:$f:selected) 1
-    lappend DirList($w:selection) "$f"
-    set cvsglb(current_selection) $DirList($w:selection)
-    return
-  }
-  set sel1 [lindex $DirList($w:selection) 0]
-
-  set iy $DirList($w:$sel1:y)
-  gen_log:log D "Selection 1  :  $sel1 y=$iy"
-  gen_log:log D "New Selection:  $f y=$y\n"
-
-  if { $y > $iy } {
-    foreach item [array names DirList $w:*:name] {
-      set j $DirList($item)
-      set jy $DirList($w:$j:y)
-      if { $jy > $iy && $y > $jy} {
-        gen_log:log D "$j y=$jy"
-        DirCanvas:setTextHBox $w $w.filecol.list.tx$jy
-        set DirList($w:$j:selected) 1
-        if {$j ni $DirList($w:selection)} {
-          lappend DirList($w:selection) "$j"
-        }
-      }
-    }
-  } elseif {$y < $iy } {
-    foreach item [array names DirList $w:*:name] {
-      set j $DirList($item)
-      set jy $DirList($w:$j:y)
-      if { $jy < $iy && $y < $jy} {
-        gen_log:log D "$j y=$jy"
-        DirCanvas:setTextHBox $w $w.filecol.list.tx$jy
-        set DirList($w:$j:selected) 1
-        if {$j ni $DirList($w:selection)} {
-          lappend DirList($w:selection) "$j"
-        }
-      }
-    }
-  }
-
-  DirCanvas:setTextHBox $w $w.filecol.list.tx$y
-  set DirList($w:$f:selected) 1
-  if {$f ni $DirList($w:selection)} {
-    lappend DirList($w:selection) "$f"
-  }
-
-  set cvsglb(current_selection) $DirList($w:selection)
-  gen_log:log D "selection is \"$cvsglb(current_selection)\""
-  gen_log:log T "LEAVE"
-}
-
-proc DirCanvas:unselectall {w force} {
+# This has the effect that if you click somewhere other than a row,
+# the selection is cleared.
+proc DirCanvas:unselectall {w} {
   global DirList
   global cvsglb
 
   gen_log:log T "ENTER ($w)"
-  # Don't clear unless we aren't over anything
-  if { $force || [ $w.filecol.list gettags current ] == "" } {
-    foreach s [array names DirList $w:*:name] {
-      set f $DirList($s)
-      set y $DirList($w:$f:y)
-      set DirList($w:$f:selected) 0
-      DirCanvas:clearTextHBox $w $w.filecol.list.tx$y
-    }
-    set DirList($w:selection) {}
-    set cvsglb(current_selection) {}
-  }
+  
+  $w.tree selection set {}
+  set DirList($w:selection) {}
+  set cvsglb(current_selection) {}
+
   gen_log:log T "LEAVE"
 }
 
-# Internal use only.
-# Draw the files on the canvas
-proc DirCanvas:build {w} {
-  global DirList
-  global Filelist
+# Show and hide columns according to the values of cvscfg(show*col)
+# Yes we could put them in a list variable, but that wouldn't be
+# backward compatible.
+proc DirCanvas:displaycolumns {wt} {
   global cvscfg
-  global cvsglb
   global incvs insvn inrcs ingit
 
-  gen_log:log T "ENTER ($w)"
-  foreach b [winfo children $w.filecol.list] {
-    destroy $b
-  }
-  foreach column [$w.pw panes] {
-    $column.list delete all
-  }
-  catch {unset DirList($w:buildpending)}
+  gen_log:log T "ENTER ($wt)"
 
-  set x 3
-  set lblx 21
-  set y 20
-  set imy [expr {[image height paper] + 2}]
-  set fy [font metrics $cvscfg(listboxfont) -displayof $w.filecol.list -linespace]
-  set fy [expr {$fy + 2}]
-  if {$imy > $fy} {
-    set yincr $imy
-    #gen_log:log D "Y spacing: $y set from icon"
-  } else {
-    set yincr $fy
-    #gen_log:log D "Y spacing: $y set from font"
-  }
-
-  set maxlbl 0; set longlbl ""
-  set maxstat 0; set longstat ""
-  set maxdate 0; set longdate ""
-  set maxtag 0; set longtag ""
-  set maxed 0; set longed ""
-
-  set sortcol [lindex $cvscfg(sort_pref) 0]
-  set sortsense [lindex $cvscfg(sort_pref) 1]
-  if { (!($incvs || $inrcs || $insvn || $ingit)) && ( $sortcol == "editcol" || $sortcol == "wrevcol") } {
-    gen_log:log T "setting sort to column \"filecol!\""
-    set sortcol "filecol"
-    set sortsense "-decreasing"
-  }
-
-  set rtype ""
-  if {$inrcs} {
-    set rtype "RCS"
-  } elseif {$incvs} {
-    set rtype "CVS"
-  } elseif {$insvn} {
-    set rtype "SVN"
-  } elseif {$ingit} {
-    set rtype "GIT"
-  }
-  gen_log:log D "Directory Type: $rtype"
-  #gen_log:log D "sortcol=$sortcol  sortsense=$sortsense"
-
-  set AllColumns {}
-  foreach k [array names DirList $w:*:name] {
-    set key $DirList($k)
-    set DirList($w:$k:allcolumns) [list $key $DirList($w:$key:status) \
-      $DirList($w:$key:date) $DirList($w:$key:sticky) $DirList($w:$key:editors)]
-    lappend AllColumns $DirList($w:$k:allcolumns)
-  }
-
-  set itemlist {}
-  # Always sort by name first
-  set sortedlist [lsort $sortsense -index 0 $AllColumns]
-  switch -- $sortcol {
-   "filecol" {
-    # Only by name
-   }
-   "statcol" {
-    set sortedlist [lsort $sortsense -index 1 $sortedlist]
-   }
-   "datecol" {
-    set sortedlist [lsort $sortsense -index 2 $sortedlist]
-   }
-   "wrevcol" {
-    set sortedlist [lsort -dictionary $sortsense -index 3 $sortedlist]
-   }
-   "editcol" {
-    set sortedlist [lsort $sortsense -index 4 $sortedlist]
-   }
-  }
-
-  # Create items.
-  foreach item $sortedlist {
-    set f [lindex $item 0]
-    set flen [string length $f]
-    if {$flen > $maxlbl} {
-      set maxlbl $flen
-      set longlbl $f
-    }
-    incr y -$yincr
-    set lblfg $cvsglb(fg)
-
-    # Up-to-date
-    #  The file is identical with the latest revision in the repository for the
-    #    branch in use
-    # Locally Modified
-    #  You have edited the file, and not yet committed your changes.
-    # Locally Added
-    #  You have added the file with add, and not yet committed your changes.
-    # Locally Removed
-    #  You have removed the file with remove, and not yet committed your changes
-    # Needs Checkout
-    #  Someone else has committed a newer revision to the repository. The name
-    #    is slightly misleading; you will ordinarily use update rather than
-    #    checkout to get that newer revision.
-    # Needs Patch
-    #  Like Needs Checkout, but the CVS server will send a patch rather than the
-    #    entire file. Sending a patch or sending an entire file accomplishes
-    #    the same thing.
-    # Needs Merge
-    #  Someone else has committed a newer revision to the repository, and you
-    #    have also made modifications to the file.
-    # Unresolved Conflict
-    #  This is like Locally Modified, except that a previous update command gave
-    #    a conflict. You need to resolve the conflict as described in section
-    #    Conflicts example.
-    # Unknown
-    #  CVS doesn't know anything about this file. For example, you have created
-    #     a new file and have not run add.
-
-    switch -glob -- $DirList($w:$f:status) {
-     "<file>" {
-       set DirList($w:$f:icon) paper
-       set DirList($w:$f:popup) paper_pop
-      }
-     "<dir> " {
-       set DirList($w:$f:icon) folder
-       set DirList($w:$f:popup) svndir_pop
-     }
-     "<dir> Up-to-date" {
-       set DirList($w:$f:icon) dir_ok
-       set DirList($w:$f:popup) svndir_pop
-     }
-     "<dir> Property Modified" {
-       set DirList($w:$f:icon) dir_mod
-       set DirList($w:$f:popup) svndir_pop
-     }
-     "<dir> Not managed*" {
-       set DirList($w:$f:icon) dir
-       set DirList($w:$f:popup) svndir_pop
-     }
-     "<dir> Locally Added" {
-       set DirList($w:$f:icon) dir_plus
-       set DirList($w:$f:popup) svndir_pop
-     }
-     "<dir> Locally Removed" {
-       set DirList($w:$f:icon) dir_minus
-       set DirList($w:$f:popup) svndir_pop
-     }
-     "<link> " {
-	 set DirList($w:$f:icon) link
-	 set DirList($w:$f:popup) paper_pop
-     }
-     "<link> Not managed by SVN" {
-	 set DirList($w:$f:icon) link
-	 set DirList($w:$f:popup) paper_pop
-     }
-     "<link> Up-to-date" {
-	 set DirList($w:$f:icon) link_ok
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<link> Up-to-date/Locked" {
-	 set DirList($w:$f:icon) link_okol
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<link> Up-to-date/HaveLock" {
-	 set DirList($w:$f:icon) link_okml
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<link> Locally Modified" {
-	 set DirList($w:$f:icon) link_mod
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<link> Locally Modified/Locked" {
-	 set DirList($w:$f:icon) link_modol
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<link> Locally Modified/HaveLock" {
-	 set DirList($w:$f:icon) link_modml
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<link> Locally Added" {
-	 set DirList($w:$f:icon) link_plus
-	 set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "<directory>" {
-       set DirList($w:$f:icon) folder
-       switch -- $rtype {
-         "CVS" {
-            set DirList($w:$f:popup) incvs_folder_pop
-          }
-          default {
-            set DirList($w:$f:popup) folder_pop
-          }
-        }
-      }
-     "<directory:???>" {
-       regexp {<directory:(...)>} $DirList($w:$f:status) null vcs
-       set DirList($w:$f:icon) folder
-       set DirList($w:$f:popup) folder_pop
-       # What VCS controls the folder? Determines the icon
-       switch -- $vcs {
-         "CVS" {
-            set DirList($w:$f:icon) cvsdir
-            set DirList($w:$f:popup) cvsrelease_pop
-          }
-         "SVN" {
-            set DirList($w:$f:icon) svndir
-          }
-         "GIT" {
-            set DirList($w:$f:icon) gitdir
-          }
-         "RCS" {
-            set DirList($w:$f:icon) rcsdir
-          }
-       }
-       # Are we in that VCS now? Determines the popop menu
-       switch -- $rtype {
-         "CVS" {
-            set DirList($w:$f:popup) cvsdir_pop
-          }
-         "SVN" {
-            set DirList($w:$f:popup) svndir_pop
-          }
-         "GIT" {
-            set DirList($w:$f:popup) gitdir_pop
-          }
-         "RCS" {
-            set DirList($w:$f:popup) folder_pop
-          }
-        }
-      }
-     "Up-to-date" {
-       set DirList($w:$f:icon) stat_ok
-       switch -- $rtype {
-          "CVS" {
-            set DirList($w:$f:popup) stat_cvsok_pop
-            if {[string match "*-kb*" $DirList($w:$f:option)]} {
-              set DirList($w:$f:icon) stat_kb
-            }
-          }
-          "SVN" {
-            set DirList($w:$f:popup) stat_svnok_pop
-          }
-          "GIT" {
-            set DirList($w:$f:popup) stat_gitok_pop
-          }
-          default {
-            set DirList($w:$f:popup) paper_pop
-          }
-        }
-      }
-     "Up-to-date/HaveLock" {
-       set DirList($w:$f:icon) stat_okml
-       set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "Up-to-date/Locked" {
-       set DirList($w:$f:icon) stat_okol
-       set DirList($w:$f:popup) stat_svnok_pop
-     }
-     "Missing*" {
-        set DirList($w:$f:icon) stat_ex
-       switch -- $rtype {
-          "CVS" {
-            set DirList($w:$f:popup) stat_cvsood_pop
-          }
-          "SVN" {
-            set DirList($w:$f:popup) stat_svnood_pop
-          }
-        }
-      }
-     "Needs Checkout" {
-       # Prepending ./ to the filename prevents tilde expansion
-       if {[file exists ./$f]} {
-         set DirList($w:$f:icon) stat_ood
-        } else {
-         set DirList($w:$f:icon) stat_ex
-        }
-        set DirList($w:$f:popup) stat_cvsood_pop
-      }
-      "Needs Patch" {
-       set DirList($w:$f:icon) stat_ood
-       set DirList($w:$f:popup) stat_cvsood_pop
-      }
-      "<dir> Out-of-date" {
-       set DirList($w:$f:icon) dir_ood
-       switch -- $rtype {
-          "CVS" {
-            set DirList($w:$f:popup) stat_cvsood_pop
-          }
-          "SVN" {
-            set DirList($w:$f:popup) stat_svnood_pop
-          }
-          "GIT" {
-            set DirList($w:$f:popup) stat_gitood_pop
-          }
-        }
-      }
-      "Out-of-date" {
-       set DirList($w:$f:icon) stat_ood
-       switch -- $rtype {
-          "CVS" {
-            set DirList($w:$f:popup) stat_cvsood_pop
-          }
-          "SVN" {
-            set DirList($w:$f:popup) stat_svnood_pop
-          }
-          "GIT" {
-            set DirList($w:$f:popup) stat_gitood_pop
-          }
-        }
-      }
-      "Needs Merge" {
-       set DirList($w:$f:icon) stat_merge
-       set DirList($w:$f:popup) stat_merge_pop
-      }
-      "Locally Modified" {
-       set DirList($w:$f:icon) stat_mod
-       switch -- $rtype {
-          "CVS" {
-             set DirList($w:$f:popup) stat_cvsmod_pop
-          }
-          "SVN" {
-             set DirList($w:$f:popup) stat_svnmod_pop
-          }
-        }
-      }
-      "Locally Modified/HaveLock" {
-       set DirList($w:$f:icon) stat_modml
-       set DirList($w:$f:popup) stat_cvsmod_pop
-      }
-      "Locally Modified/Locked" {
-       set DirList($w:$f:icon) stat_modol
-       set DirList($w:$f:popup) stat_cvsmod_pop
-      }
-       "Locally Added" {
-       set DirList($w:$f:icon) stat_plus
-       switch -- $rtype {
-          "CVS" {
-             if {[string match "*-kb*" $DirList($w:$f:option)]} {
-               set DirList($w:$f:icon) stat_cvsplus_kb
-             }
-             set DirList($w:$f:popup) stat_cvsplus_pop
-          }
-          "SVN" {
-             set DirList($w:$f:popup) stat_svnplus_pop
-          }
-        }
-      }
-      "Added" {
-       set DirList($w:$f:icon) stat_plus
-       set DirList($w:$f:popup) stat_gitplus_pop
-      }
-      "Added, missing" {
-       set DirList($w:$f:icon) stat_ex
-       set DirList($w:$f:popup) stat_gitplus_pop
-      }
-      "Modified, unstaged" {
-       set DirList($w:$f:icon) stat_mod_red
-       set DirList($w:$f:popup) stat_gitmod_pop
-      }
-      "Modified, staged" {
-       set DirList($w:$f:icon) stat_mod_green
-       set DirList($w:$f:popup) stat_gitmod_pop
-      }
-      "Removed" {
-       set DirList($w:$f:icon) stat_minus
-       set DirList($w:$f:popup) stat_gitminus_pop
-      }
-      "Locally Removed" {
-       set DirList($w:$f:icon) stat_minus
-       switch -- $rtype {
-          "CVS" {
-             set DirList($w:$f:popup) stat_cvsminus_pop
-          }
-          "SVN" {
-             set DirList($w:$f:popup) stat_svnminus_pop
-          }
-          "GIT" {
-             set DirList($w:$f:popup) stat_gitminus_pop
-          }
-       }
-      }
-      "*onflict*" {
-       set DirList($w:$f:icon) stat_conf
-       switch -- $rtype {
-          "CVS" {
-            set DirList($w:$f:popup) cvs_conf_pop
-          }
-          "SVN" {
-            set DirList($w:$f:popup) svn_conf_pop
-          }
-          "GIT" {
-            set DirList($w:$f:popup) git_conf_pop
-          }
-        }
-      }
-      "Not managed*" {
-       set DirList($w:$f:icon) stat_ques
-       set DirList($w:$f:popup) stat_local_pop
-      }
-      "RCS Up-to-date" {
-       set DirList($w:$f:icon) stat_ok
-       set DirList($w:$f:popup) rcs_pop
-      }
-      "RCS Up-to-date/HaveLock" {
-       set DirList($w:$f:icon) stat_okml
-       set DirList($w:$f:popup) rcs_pop
-      }
-      "RCS Up-to-date/Locked" {
-       set DirList($w:$f:icon) stat_okol
-       set DirList($w:$f:popup) rcs_pop
-      }
-      "RCS Modified" {
-       set DirList($w:$f:icon) stat_mod
-       set DirList($w:$f:popup) rcs_pop
-      }
-      "RCS Modified/HaveLock" {
-       set DirList($w:$f:icon) stat_modml
-       set DirList($w:$f:popup) rcs_pop
-      }
-      "RCS Modified/Locked" {
-       set DirList($w:$f:icon) stat_modol
-       set DirList($w:$f:popup) rcs_pop
-      }
-      "RCS Needs Checkout" {
-       set DirList($w:$f:icon) stat_ex
-       set DirList($w:$f:popup) rcs_pop
-      }
-      default {
-       set DirList($w:$f:icon) paper
-       set DirList($w:$f:popup) paper_pop
-      }
-    }
-
-    # Easy way to unselect everything by clicking in a blank area
-    bind $w.filecol.list <1> "DirCanvas:unselectall $w 0"
-    bind $w.filecol.list <Shift-1> " "
-    # For columns except filecol, this breaks selecting the text item.  Why??
-    #bind $w.datecol.list <1> "DirCanvas:unselectall $w 0"
-
-    # In the bindings, filenames need any single percents replaced with
-    # double to avoid interpretation as an event field
-    regsub -all {\%} $f {%%} fn
-    regsub -all {\$} $fn {\$} fn
-
-    # Draw the icon
-    set k [$w.filecol.list create image $x $y -image $DirList($w:$f:icon) \
-      -anchor w -tags [list $y] ]
-    $w.filecol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-    $w.filecol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-    $w.filecol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-    $w.filecol.list bind $k <Double-1> {workdir_edit_file [workdir_list_files]}
-
-    # Draw the label
-    $w.filecol.list create text $lblx $y  -text $f -font $cvscfg(listboxfont) \
-      -anchor w -tags [list $w.filecol.list.tx$y $y $fn] -fill $lblfg
-    $w.filecol.list bind $w.filecol.list.tx$y <1> "DirCanvas:setselection $w $y \"$fn\""
-    $w.filecol.list bind $w.filecol.list.tx$y <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-    $w.filecol.list bind $w.filecol.list.tx$y <Enter> "DirCanvas:flash $w $y"
-    $w.filecol.list bind $w.filecol.list.tx$y <Leave> "DirCanvas:unflash $w $y"
-    $w.filecol.list bind $w.filecol.list.tx$y <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-    $w.filecol.list bind $w.filecol.list.tx$y <Double-1> {workdir_edit_file [workdir_list_files]}
-    $w.filecol.list bind $w.filecol.list.tx$y <2> " DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
-    $w.filecol.list bind $w.filecol.list.tx$y <3> " DirCanvas:popup $w.filecol.list $y %X %Y \"$fn\""
-
-    set DirList($w:$f:y) $y
-    set DirList($w.filecol.list:$y) $f
-
-    set status $DirList($w:$f:status)
-    set k [$w.statcol.list create text 8 $y -text $status \
-      -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
-      -tags [list $w.filecol.list.tx$y $y $fn]]
-    $w.statcol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-    $w.statcol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-    $w.statcol.list bind $k <Enter> "DirCanvas:flash $w $y"
-    $w.statcol.list bind $k <Leave> "DirCanvas:unflash $w $y"
-    $w.statcol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-    set slen [string length $status]
-    if {$slen > $maxstat} {
-      set maxstat $slen
-      set longstat $status
-    }
-
-    set date $DirList($w:$f:date)
-    set k [$w.datecol.list create text 4 $y -text $date \
-      -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
-      -tags [list $w.filecol.list.tx$y $y $fn]]
-    $w.datecol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-    $w.datecol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-    $w.datecol.list bind $k <Enter> "DirCanvas:flash $w $y"
-    $w.datecol.list bind $k <Leave> "DirCanvas:unflash $w $y"
-    $w.datecol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-    set dlen [string length $date]
-    if {$dlen > $maxdate} {
-      set maxdate $dlen
-      set longdate $date
-    }
-
-    if {[info exists DirList($w:$f:sticky)]} {
-      set tag $DirList($w:$f:sticky)
-      set k [$w.wrevcol.list create text 4 $y -text $tag \
-        -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
-        -tags [list $w.filecol.list.tx$y $y $fn]]
-      $w.wrevcol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-      $w.wrevcol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-      $w.wrevcol.list bind $k <Enter> "DirCanvas:flash $w $y"
-      $w.wrevcol.list bind $k <Leave> "DirCanvas:unflash $w $y"
-      $w.wrevcol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-      set tlen [string length $tag]
-      if {$tlen > $maxtag} {
-        set maxtag $tlen
-        set longtag $tag
-      }
-    }
-
-    set editors $DirList($w:$f:editors)
-    set k [$w.editcol.list create text 4 $y -text $editors \
-      -font $cvscfg(listboxfont) -fill $cvsglb(fg) -anchor w \
-      -tags [list $w.filecol.list.tx$y $y $fn]]
-    $w.editcol.list bind $k <1> "DirCanvas:setselection $w $y \"$fn\""
-    $w.editcol.list bind $k <Shift-1> "DirCanvas:addrange $w $y \"$fn\""
-    $w.editcol.list bind $k <Enter> "DirCanvas:flash $w $y"
-    $w.editcol.list bind $k <Leave> "DirCanvas:unflash $w $y"
-    $w.editcol.list bind $k <Control-1> "DirCanvas:addselection $w $y \"$fn\""
-    set edlen [string length $editors]
-    if {$edlen > $maxed} {
-      set maxed $edlen
-      set longed $editors
+  set col [lindex $cvscfg(sort_pref) 0]
+  set sense [lindex $cvscfg(sort_pref) 1]
+  gen_log:log D "[$wt configure -displaycolumns]"
+  # The file column is mandatory
+  set displayed_columns {filecol}
+  # These columns are always possible
+  foreach column {statcol datecol} {
+    if {$cvscfg(show$column)} {
+      lappend displayed_columns $column
     }
   }
 
-  # Set a minimum width for the labels.  Otherwise ".." can be hard to select.
-  set minlabel 6
-  foreach labl [$w.filecol.list find withtag lbl] {
-    set itags [$w.filecol.list gettags $labl]
-    set iy [lindex $itags 1]
-    if {[string length $DirList($w.filecol.list:$iy)] < $minlabel} {
-      $w.filecol.list.tx$iy configure -width $minlabel
+  # Deciding whether to show the editcol is complicated.
+  # We don't do it if we're not in a VCS, obviously.
+  # But we also don't do it if we're in Git but not showing gitdetail,
+  # or if we're in CVS but not doing econtrol or locking.
+  set can_show(editcol) 0
+  set can_show(wrevcol) 0
+  if { ($inrcs || $insvn ) } {
+    set can_show(editcol) 1
+    set can_show(wrevcol) 1
+  }
+  if {$ingit && $cvscfg(gitdetail)} {
+    set can_show(editcol) 1
+    set can_show(wrevcol) 1
+  }
+  if {$incvs} {
+    set can_show(wrevcol) 1
+    if {$cvscfg(econtrol) || $cvscfg(cvslock)} {
+      set can_show(editcol) 1
     }
   }
-
-  # Scroll to the top of the lists
-  set fbbox [$w.filecol.list bbox all]
-  #gen_log:log D "fbbox   \"$fbbox\""
-  if {[llength $fbbox] == 4} {
-    set ylen [expr {[lindex $fbbox 3] - [lindex $fbbox 1]}]
-
-    set wview [winfo height $w.filecol.list]
-    $w.yscroll set 0 [expr ($wview * 1.0) / ($ylen * 1.0)]
-    update idletasks
-
-    $w.filecol.list config -scrollregion $fbbox
-    $w.filecol.list yview moveto 0
-
-    if {$cvscfg(showdatecol)} {
-      $w.datecol.list config -scrollregion [$w.datecol.list bbox all]
-      $w.datecol.list yview moveto 0
-    }
-
-    if {$incvs || $insvn || $inrcs || $ingit} {
-      $w.wrevcol.list config -scrollregion [$w.wrevcol.list bbox all]
-      $w.wrevcol.list yview moveto 0
-
-      if {$cvscfg(showstatcol)} {
-        $w.statcol.list config -scrollregion [$w.statcol.list bbox all]
-        $w.statcol.list yview moveto 0
-      }
-
-      if {$cvscfg(showeditcol)} {
-        $w.editcol.list config -scrollregion [$w.editcol.list bbox all]
-        $w.editcol.list yview moveto 0
+  foreach column {wrevcol editcol} {
+    if {$can_show($column)} {
+      if {$cvscfg(show$column)} {
+        lappend displayed_columns $column
       }
     }
   }
-  #gen_log:log D "[array names DirList $w:*:selected]"
+  $wt configure -displaycolumns $displayed_columns
+  gen_log:log D "$displayed_columns"
+
+  DirCanvas:adjust_columnwidths $wt
+
   gen_log:log T "LEAVE"
 }
 
-# Internal use only
-# Call DirCanvas:build the next time we're idle
-proc DirCanvas:buildwhenidle {w} {
-  global DirList
-
-  if {![info exists DirList($w:buildpending)]} {
-    set DirList($w:buildpending) 1
-    after idle "DirCanvas:build $w"
-  }
-}
-
-# For restoring the scroll positions after re-scanning the directory
-proc DirCanvas:yview_windows {w yview} {
-  global cvscfg
-
-  gen_log:log T "ENTER YVIEW $yview"
-  eval $w.filecol.list yview moveto $yview
-  if {[winfo exists  $w.datecol.list]} {
-    eval $w.datecol.list yview moveto $yview
-  }
-  if {[winfo exists $w.revcol.list]} {
-    eval $w.wrevcol.list yview moveto $yview
-  }
-  if {[winfo exists $w.statcol.list]} {
-    eval $w.statcol.list yview moveto $yview
-  }
-  if {[winfo exists $w.editcol.list]} {
-    eval $w.editcol.list yview moveto $yview
-  }
-}
-
-proc DirCanvas:scroll_windows {w args} {
-  global cvscfg
-  global incvs insvn inrcs ingit
-
-  #gen_log:log T "ENTER ($w $args)"
-  set way [lindex $args 1]
-  set units [lindex $args 2]
-  set yget [$w.yscroll get]
-  set first [lindex $yget 0]
-  set last [lindex $yget 1]
-
-  eval $w.filecol.list yview $args
-  if {$cvscfg(showdatecol)} {
-    eval $w.datecol.list yview $args
-  }
-  if {$incvs || $insvn || $inrcs || $ingit} {
-    eval $w.wrevcol.list yview $args
-    if {$cvscfg(showstatcol)} {
-      eval $w.statcol.list yview $args
-    }
-    if {$cvscfg(showeditcol)} {
-      eval $w.editcol.list yview $args
-    }
-  }
-}
-
-proc DirCanvas:drag_windows {w W y} {
-#Scrolling caused by dragging
-  global cvscfg
-  global cvsglb
-  global incvs insvn inrcs ingit
-
-  set height [$W cget -height]
-  #gen_log:log D "$w %y $height"
-  if {$y < 0} {set y 0}
-  if {$y > $height} {set y $height}
-  set yfrac [expr {double($y) / $height}]
-
-  eval $w.filecol.list yview moveto $yfrac
-  if {$cvscfg(showdatecol)} {
-    eval $w.datecol.list yview moveto $yfrac
-  }
-  if {$incvs || $insvn || $inrcs || $ingit} {
-    eval $w.wrevcol.list yview moveto $yfrac
-    if {$cvscfg(showstatcol)} {
-      eval $w.statcol.list yview moveto $yfrac
-    }
-    if {$cvscfg(showeditcol)} {
-      eval $w.editcol.list yview moveto $yfrac
-    }
-  }
-}
-
-proc DirCanvas:sort_by_col {w col sense} {
+proc DirCanvas:sort_by_col {wt col sense} {
   global DirList
   global cvscfg
-  global arr
 
-  gen_log:log T "ENTER ($w $col $sense)"
-  foreach a [array names arr] {
-    catch "$arr($a) configure -image arr_dn"
+  gen_log:log T "ENTER ($wt $col $sense)"
+
+  set all_columns [lindex [$wt configure -columns] end]
+  set displayed_columns [lindex [$wt configure -displaycolumns] end]
+  if {$displayed_columns eq "#all"} {
+    set displayed_columns $all_columns
   }
-  set cvscfg(sort_pref) [list $col $sense]
+
+  # Always start with a list sorted by filename.  Collects the values from the
+  # filename column, together with the row index
+  set list_by_name {}
+  foreach item [$wt children {}] {
+    lappend list_by_name [list [$wt set $item filecol] $item]
+  }
+  set list_by_name [lsort -index 0 $list_by_name]
+
+  # Collects the values from the column we want to sort by, together
+  # with the row index
+  set ID_by_name {}
+  foreach item $list_by_name {
+    lappend ID_by_name [lindex $item 1]
+  }
+  set column_items {}
+  foreach item $ID_by_name {
+    lappend column_items [list [$wt set $item $col] $item]
+  }
+
+  # Re-orders the rows in the order obtained above
+  set r -1
+  foreach info [lsort $sense -index 0 $column_items] {
+    $wt move [lindex $info 1] {} [incr r]
+  }
+
+  # Fix up the arrows, and
+  # if it's the currently sorted column, reverse the direction.
+  foreach a $displayed_columns {
+    $wt heading $a -image ""
+  }
+  $wt heading #0 -image ""
 
   if {[string match "-inc*" $sense]} {
-    gen_log:log D "sort column $col -increasing"
-    $arr($col) configure -image arh_up
-    if {$col == "statcol"} {$arr(filestatcol) configure -image arh_up}
-  } else {
-    gen_log:log D "sort column $col -decreasing"
-    $arr($col) configure -image arh_dn
-    if {$col == "statcol"} {$arr(filestatcol) configure -image arh_dn}
-  }
-  if {$col != "statcol"} {
-    $arr(filestatcol) configure -image arr_dn
-  }
-
-  DirCanvas:build $w
-  gen_log:log T "LEAVE"
-}
-
-proc DirCanvas:toggle_col {w col} {
-  global cvscfg
-
-  gen_log:log T "ENTER ($col)"
-  set cur_col [lindex $cvscfg(sort_pref) 0]
-  set cur_sense [lindex $cvscfg(sort_pref) 1]
-
-  if {$col == $cur_col} {
-    # if it's the currently sorted column, reverse the direction.
-    if {[string match "-incr*" $cur_sense]} {
-      set sense "-decreasing"
-    } else {
-      set sense "-increasing"
+    $wt heading $col -image arr_dn -command "DirCanvas:sort_by_col $wt $col -decreasing"
+    if {$col == "statcol"} {
+      $wt heading #0 -image arr_dn -command "DirCanvas:sort_by_col $wt $col -decreasing"
     }
   } else {
-    # Otherwise, default to decreasing (down)
-    set sense "-decreasing"
+    $wt heading $col -image arr_up -command "DirCanvas:sort_by_col $wt $col -increasing" 
+    if {$col == "statcol"} {
+      $wt heading #0 -image arr_up -command "DirCanvas:sort_by_col $wt $col -increasing"
+    }
   }
 
-  gen_log:log D "sort column $col $sense"
-  DirCanvas:sort_by_col $w $col $sense
+  # Set sort_pref to new sort value
+  set cvscfg(sort_pref) [list $col $sense]
+  gen_log:log D "$col $sense"
+
+  DirCanvas:adjust_columnwidths $wt
 
   gen_log:log T "LEAVE"
 }
 
-# Context-sensitive popups for list items
-# We build them all at once here, then bind canvas items to them as appropriate
+proc DirCanvas:adjust_columnwidths {wt} {
+  global cvscfg
+
+  gen_log:log T "ENTER ($wt)"
+
+  set displayed_columns [lindex [$wt configure -displaycolumns] end]
+  gen_log:log D "$displayed_columns"
+  # Try to adjust the width of the columns suitably
+  # First, find the longest string in each column
+  foreach c $displayed_columns {
+    set maxlen($c) 0
+    set maxstr($c) " "
+    foreach item [$wt children {}] {
+      set string [$wt set $item $c]
+      set item_len [string length $string]
+      if {$item_len > $maxlen($c)} {
+        set maxlen($c) $item_len
+        set maxstr($c) $string
+      }
+    }
+    gen_log:log D "maxstr($c) $maxstr($c)  $maxlen($c)"
+  }
+  # Now use the string lengths to do a font measure and find the desired width
+  # of each column
+  set n_cols [llength $displayed_columns]
+  set tot_colwid 0
+  foreach c [array names maxstr] {
+    set colwid($c) [font measure $cvscfg(listboxfont) "$maxstr($c)mm"]
+    incr tot_colwid $colwid($c)
+  }
+  set col0_w [$wt column #0 -width]
+  set winwid [expr {[winfo width $wt] - $col0_w}]
+  gen_log:log D "winwid $winwid"
+  # The difference. This can be negative. Divvy it up equqlly.
+  set whole_diff [expr {$winwid - $tot_colwid}]
+  set col_diff [expr {$whole_diff / $n_cols}]
+  foreach c $displayed_columns {
+    $wt column $c -width [expr {$colwid($c) + $col_diff}]
+    gen_log:log D "new $c width  [expr {$colwid($c) + $col_diff}]"
+  }
+
+  gen_log:log T "LEAVE"
+}
+
+# menu binding for right-cliwinwid on an item. We have to explicitly
+# set the selection.
+proc DirCanvas:popup {w x y X Y} {
+  global DirList
+
+  gen_log:log T "ENTER ($w $x $y $X $Y)"
+  set item [$w.tree identify item $x $y]
+  $w.tree selection set $item
+  update
+  set f [$w.tree set $item filecol]
+  gen_log:log D "$DirList($w:$f:popup)"
+  set pop $DirList($w:$f:popup)
+  tk_popup $w.$pop $X $Y
+  gen_log:log T "LEAVE"
+}
+
+proc DirCanvas:bindings {w} {
+  bind $w.tree <1> "DirCanvas:unselectall $w"
+  $w.tree tag bind fileobj <2> "DirCanvas:popup $w %x %y %X %Y"
+  $w.tree tag bind fileobj <3> "DirCanvas:popup $w %x %y %X %Y"
+  $w.tree tag bind fileobj <Double-1> {workdir_edit_file [workdir_list_files]}
+}
+
+# Context-sensitive popups for list items.  We build them all at once here,
+# then bind canvas items to them as appropriate
 proc DirCanvas:makepopup {w} {
   gen_log:log T "ENTER ($w)"
 
@@ -1459,20 +620,352 @@ proc DirCanvas:makepopup {w} {
   gen_log:log T "LEAVE"
 }
 
-proc DirCanvas:popup {w y X Y f} {
+# Pick an icon for the file status. There are way too many of these.
+proc DirCanvas:choose_icon {w f rtype} {
   global DirList
+  global incvs insvn inrcs ingit
 
-  gen_log:log T "ENTER ($w $y $X $Y $f)"
-  set parent [winfo parent [winfo parent $w]]
-  DirCanvas:setselection $parent $y $f
-  tk_popup $parent.$DirList($parent:$f:popup) $X $Y
-  gen_log:log T "LEAVE"
-}
+  # Up-to-date
+  #  The file is identical with the latest revision in the repository for the
+  #    branch in use
+  # Locally Modified
+  #  You have edited the file, and not yet committed your changes.
+  # Locally Added
+  #  You have added the file with add, and not yet committed your changes.
+  # Locally Removed
+  #  You have removed the file with remove, and not yet committed your changes
+  # Needs Checkout
+  #  Someone else has committed a newer revision to the repository. The name
+  #    is slightly misleading; you will ordinarily use update rather than
+  #    checkout to get that newer revision.
+  # Needs Patch
+  #  Like Needs Checkout, but the CVS server will send a patch rather than the
+  #    entire file. Sending a patch or sending an entire file accomplishes
+  #    the same thing.
+  # Needs Merge
+  #  Someone else has committed a newer revision to the repository, and you
+  #    have also made modifications to the file.
+  # Unresolved Conflict
+  #  This is like Locally Modified, except that a previous update command gave
+  #    a conflict. You need to resolve the conflict as described in section
+  #    Conflicts example.
+  # Unknown
+  #  CVS doesn't know anything about this file. For example, you have created
+  #     a new file and have not run add.
 
-proc DirCanvas:destroy {w} {
-  foreach u [winfo children $w] {
-    catch {destroy $u}
+  switch -glob -- $DirList($w:$f:status) {
+   "<file>" {
+     set DirList($w:$f:icon) paper
+     set DirList($w:$f:popup) paper_pop
+    }
+   "<dir> " {
+     set DirList($w:$f:icon) dir
+     set DirList($w:$f:popup) svndir_pop
+   }
+   "<dir> Up-to-date" {
+     set DirList($w:$f:icon) dir_ok
+     set DirList($w:$f:popup) svndir_pop
+   }
+   "<dir> Property Modified" {
+     set DirList($w:$f:icon) dir_mod
+     set DirList($w:$f:popup) svndir_pop
+   }
+   "<dir> Not managed*" {
+     set DirList($w:$f:icon) dir
+     set DirList($w:$f:popup) svndir_pop
+   }
+   "<dir> Locally Added" {
+     set DirList($w:$f:icon) dir_plus
+     set DirList($w:$f:popup) svndir_pop
+   }
+   "<dir> Locally Removed" {
+     set DirList($w:$f:icon) dir_minus
+     set DirList($w:$f:popup) svndir_pop
+   }
+   "<link> " {
+     set DirList($w:$f:icon) link
+     set DirList($w:$f:popup) paper_pop
+   }
+   "<link> Not managed by SVN" {
+     set DirList($w:$f:icon) link
+     set DirList($w:$f:popup) paper_pop
+   }
+   "<link> Up-to-date" {
+     set DirList($w:$f:icon) link_ok
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<link> Up-to-date/Locked" {
+     set DirList($w:$f:icon) link_okol
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<link> Up-to-date/HaveLock" {
+     set DirList($w:$f:icon) link_okml
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<link> Locally Modified" {
+     set DirList($w:$f:icon) link_mod
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<link> Locally Modified/Locked" {
+     set DirList($w:$f:icon) link_modol
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<link> Locally Modified/HaveLock" {
+     set DirList($w:$f:icon) link_modml
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<link> Locally Added" {
+     set DirList($w:$f:icon) link_plus
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "<directory>" {
+     set DirList($w:$f:icon) dir
+     switch -- $rtype {
+       "CVS" {
+          set DirList($w:$f:popup) incvs_folder_pop
+        }
+        default {
+          set DirList($w:$f:popup) folder_pop
+        }
+      }
+    }
+   "<directory:???>" {
+     regexp {<directory:(...)>} $DirList($w:$f:status) null vcs
+     set DirList($w:$f:icon) dir
+     set DirList($w:$f:popup) folder_pop
+     # What VCS controls the folder? Determines the icon
+     switch -- $vcs {
+       "CVS" {
+          set DirList($w:$f:icon) cvsdir
+          set DirList($w:$f:popup) cvsrelease_pop
+        }
+       "SVN" {
+          set DirList($w:$f:icon) svndir
+        }
+       "GIT" {
+          set DirList($w:$f:icon) gitdir
+        }
+       "RCS" {
+          set DirList($w:$f:icon) rcsdir
+        }
+     }
+     # Are we in that VCS now? Determines the popop menu
+     switch -- $rtype {
+       "CVS" {
+          set DirList($w:$f:popup) cvsdir_pop
+        }
+       "SVN" {
+          set DirList($w:$f:popup) svndir_pop
+        }
+       "GIT" {
+          set DirList($w:$f:popup) gitdir_pop
+        }
+       "RCS" {
+          set DirList($w:$f:popup) folder_pop
+        }
+      }
+    }
+   "Up-to-date" {
+     set DirList($w:$f:icon) stat_ok
+     switch -- $rtype {
+        "CVS" {
+          set DirList($w:$f:popup) stat_cvsok_pop
+          if {[string match "*-kb*" $DirList($w:$f:option)]} {
+            set DirList($w:$f:icon) stat_kb
+          }
+        }
+        "SVN" {
+          set DirList($w:$f:popup) stat_svnok_pop
+        }
+        "GIT" {
+          set DirList($w:$f:popup) stat_gitok_pop
+        }
+        default {
+          set DirList($w:$f:popup) paper_pop
+        }
+      }
+    }
+   "Up-to-date/HaveLock" {
+     set DirList($w:$f:icon) stat_okml
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "Up-to-date/Locked" {
+     set DirList($w:$f:icon) stat_okol
+     set DirList($w:$f:popup) stat_svnok_pop
+   }
+   "Missing*" {
+      set DirList($w:$f:icon) stat_ex
+     switch -- $rtype {
+        "CVS" {
+          set DirList($w:$f:popup) stat_cvsood_pop
+        }
+        "SVN" {
+          set DirList($w:$f:popup) stat_svnood_pop
+        }
+      }
+    }
+   "Needs Checkout" {
+     # Prepending ./ to the filename prevents tilde expansion
+     if {[file exists ./$f]} {
+       set DirList($w:$f:icon) stat_ood
+      } else {
+       set DirList($w:$f:icon) stat_ex
+      }
+      set DirList($w:$f:popup) stat_cvsood_pop
+    }
+    "Needs Patch" {
+     set DirList($w:$f:icon) stat_ood
+     set DirList($w:$f:popup) stat_cvsood_pop
+    }
+    "<dir> Out-of-date" {
+     set DirList($w:$f:icon) dir_ood
+     switch -- $rtype {
+      "CVS" {
+          set DirList($w:$f:popup) stat_cvsood_pop
+        }
+        "SVN" {
+          set DirList($w:$f:popup) stat_svnood_pop
+        }
+        "GIT" {
+          set DirList($w:$f:popup) stat_gitood_pop
+        }
+      }
+    }
+    "Out-of-date" {
+     set DirList($w:$f:icon) stat_ood
+     switch -- $rtype {
+        "CVS" {
+          set DirList($w:$f:popup) stat_cvsood_pop
+        }
+        "SVN" {
+          set DirList($w:$f:popup) stat_svnood_pop
+        }
+        "GIT" {
+          set DirList($w:$f:popup) stat_gitood_pop
+        }
+      }
+    }
+    "Needs Merge" {
+     set DirList($w:$f:icon) stat_merge
+     set DirList($w:$f:popup) stat_merge_pop
+    }
+    "Locally Modified" {
+     set DirList($w:$f:icon) stat_mod
+     switch -- $rtype {
+        "CVS" {
+           set DirList($w:$f:popup) stat_cvsmod_pop
+        }
+        "SVN" {
+           set DirList($w:$f:popup) stat_svnmod_pop
+        }
+      }
+    }
+    "Locally Modified/HaveLock" {
+     set DirList($w:$f:icon) stat_modml
+     set DirList($w:$f:popup) stat_cvsmod_pop
+    }
+    "Locally Modified/Locked" {
+     set DirList($w:$f:icon) stat_modol
+     set DirList($w:$f:popup) stat_cvsmod_pop
+    }
+     "Locally Added" {
+     set DirList($w:$f:icon) stat_plus
+     switch -- $rtype {
+        "CVS" {
+           if {[string match "*-kb*" $DirList($w:$f:option)]} {
+             set DirList($w:$f:icon) stat_cvsplus_kb
+           }
+           set DirList($w:$f:popup) stat_cvsplus_pop
+        }
+        "SVN" {
+           set DirList($w:$f:popup) stat_svnplus_pop
+        }
+      }
+    }
+    "Added" {
+     set DirList($w:$f:icon) stat_plus
+     set DirList($w:$f:popup) stat_gitplus_pop
+    }
+    "Added, missing" {
+     set DirList($w:$f:icon) stat_ex
+     set DirList($w:$f:popup) stat_gitplus_pop
+    }
+    "Modified, unstaged" {
+     set DirList($w:$f:icon) stat_mod_red
+     set DirList($w:$f:popup) stat_gitmod_pop
+    }
+    "Modified, staged" {
+     set DirList($w:$f:icon) stat_mod_green
+     set DirList($w:$f:popup) stat_gitmod_pop
+    }
+    "Removed" {
+     set DirList($w:$f:icon) stat_minus
+     set DirList($w:$f:popup) stat_gitminus_pop
+    }
+    "Locally Removed" {
+     set DirList($w:$f:icon) stat_minus
+     switch -- $rtype {
+        "CVS" {
+           set DirList($w:$f:popup) stat_cvsminus_pop
+        }
+        "SVN" {
+           set DirList($w:$f:popup) stat_svnminus_pop
+        }
+        "GIT" {
+           set DirList($w:$f:popup) stat_gitminus_pop
+        }
+      }
+    }
+    "*onflict*" {
+     set DirList($w:$f:icon) stat_conf
+     switch -- $rtype {
+        "CVS" {
+          set DirList($w:$f:popup) cvs_conf_pop
+        }
+        "SVN" {
+          set DirList($w:$f:popup) svn_conf_pop
+        }
+        "GIT" {
+          set DirList($w:$f:popup) git_conf_pop
+        }
+      }
+    }
+    "Not managed*" {
+     set DirList($w:$f:icon) stat_ques
+     set DirList($w:$f:popup) stat_local_pop
+    }
+    "RCS Up-to-date" {
+     set DirList($w:$f:icon) stat_ok
+     set DirList($w:$f:popup) rcs_pop
+    }
+    "RCS Up-to-date/HaveLock" {
+     set DirList($w:$f:icon) stat_okml
+     set DirList($w:$f:popup) rcs_pop
+    }
+    "RCS Up-to-date/Locked" {
+     set DirList($w:$f:icon) stat_okol
+     set DirList($w:$f:popup) rcs_pop
+    }
+    "RCS Modified" {
+     set DirList($w:$f:icon) stat_mod
+     set DirList($w:$f:popup) rcs_pop
+    }
+    "RCS Modified/HaveLock" {
+     set DirList($w:$f:icon) stat_modml
+     set DirList($w:$f:popup) rcs_pop
+    }
+    "RCS Modified/Locked" {
+     set DirList($w:$f:icon) stat_modol
+     set DirList($w:$f:popup) rcs_pop
+    }
+    "RCS Needs Checkout" {
+     set DirList($w:$f:icon) stat_ex
+     set DirList($w:$f:popup) rcs_pop
+    }
+    default {
+     set DirList($w:$f:icon) paper
+     set DirList($w:$f:popup) paper_pop
+    }
   }
 }
-
 

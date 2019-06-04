@@ -313,6 +313,9 @@ addfile Ftrunk.txt trunk
 commit "First revision on trunk"
 tag "tagA" "."
 tag "tagC" "."
+foreach t {one ten one_hundred one_thousand ten_thousand one_hundred_thousand} {
+  tag "tag_$t" File1.txt
+}
 cd $WD
 
 if {$branching_desired} {

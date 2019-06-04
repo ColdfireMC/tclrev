@@ -6,10 +6,6 @@
 # Smallish dialogs - add, tag
 #
 
-if {[catch "image type arr_dn"]} {
-  workdir_images
-}
-
 # Creates the widgets for the dynamic forms called from the module browser
 proc dialog_FormCreate { title form_data } {
   global cvscfg
@@ -782,13 +778,13 @@ proc subtract_dialog {args} {
     .subtract.down.remove configure -command {
       grab release .subtract
       destroy .subtract
-      cvs_remove [workdir_list_files]
+      cvs_remove_file [workdir_list_files]
     }
   } elseif {$insvn} {
     .subtract.down.remove configure -command {
       grab release .subtract
       destroy .subtract
-      svn_remove [workdir_list_files]
+      svn_remove_file [workdir_list_files]
     }
   } elseif {$ingit} {
     .subtract.down.remove configure -command {

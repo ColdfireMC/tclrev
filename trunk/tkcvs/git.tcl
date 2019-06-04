@@ -443,7 +443,7 @@ proc git_status {detail args} {
   }
   switch -- $detail {
     terse {
-      append flags " --short"
+      append flags " --porcelain"
     }
     summary {
       append flags " --long"
@@ -452,7 +452,8 @@ proc git_status {detail args} {
       append flags " --verbose"
     }
   }
-  append flags " --no-color"
+  # There doesn't seem to be a way to suppress color. This option is invalid.
+  #append flags " --no-color"
   set stat_cmd [viewer::new $title]
   set commandline "git status $flags $filelist"
   $stat_cmd\::do "$commandline" 0
@@ -1156,11 +1157,13 @@ namespace eval ::git_branchlog {
         set branches [linsert $branches 0 $trunk]
 
         # Prepare to draw something on the canvas so user knows we're working
-        $lc.canvas yview moveto 0
-        $lc.canvas dtag temporary
+      
         set cnv_y 20
         set yspc  15
-        set cnv_w [winfo width $lc]
+        set cnv_h [winfo height $lc.canvas]
+        set cnv_w [winfo width $lc.canvas]
+        # This is necessary to reset the view after clearing the canvas
+        $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
         set cnv_x [expr {$cnv_w / 2- 8}]
         $lc.canvas create text $cnv_x $cnv_y -text "Getting the LOG" -tags {temporary}
         set cnv_y [expr {$cnv_y + $yspc}]
