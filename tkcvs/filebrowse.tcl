@@ -63,10 +63,6 @@ proc browse_files {module} {
   #
   # Create buttons
   #
-  if {[catch "image type Fileview"]} {
-    workdir_images
-  }
-
   button $filebrowse.view -image Fileview \
     -command "module_fileview $filebrowse $module"
   button $filebrowse.log -image Log \

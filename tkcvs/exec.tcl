@@ -384,13 +384,13 @@ namespace eval ::viewer {
         set ansi(35m) magenta
         set ansi(36m) cyan
         set ansi(37m) white
-        set ansi(1\;30) darkgray
-        set ansi(1\;31) lightred
-        set ansi(1\;32) lightgreen
-        set ansi(1\;33) yellow
-        set ansi(1\;34) lightblue
-        set ansi(1\;35) lightpurple
-        set ansi(1\;36) lightcyan
+        #set ansi(1\;30) darkgray
+        #set ansi(1\;31) lightred
+        #set ansi(1\;32) lightgreen
+        #set ansi(1\;33) yellow
+        #set ansi(1\;34) lightblue
+        #set ansi(1\;35) lightpurple
+        #set ansi(1\;36) lightcyan
         set ansi(m) none
         # Bold etc, which let's not do for now
         set ansi(1m) "" ;#bold

@@ -387,11 +387,25 @@ proc modbrowse_run {} {
 
 
   gen_log:log T "ENTER ()"
+  gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
   gen_log:log D "cvsglb(root) $cvsglb(root)"
-  gen_log:log D "cvsglb(vcs) $cvsglb(vcs)"
   catch {unset modval}
   catch {unset modtitle}
   set modbrowse_module ""
+
+  if {$incvs} {
+    set cvsglb(vcs) cvs
+  } elseif {$insvn} {
+    set cvsglb(vcs) svn
+  } elseif {$ingit} { 
+    set cvsglb(vcs) git
+  } elseif {$inrcs} { 
+    set cvsglb(vcs) ""
+  } else {
+    set cvsglb(vcs) [modbrowse_guess_vcs]
+  }
+  gen_log:log D "cvsglb(vcs) $cvsglb(vcs)"
+
 
   if {! [winfo exists .modbrowse]} {
     modbrowse_setup
@@ -402,8 +416,6 @@ proc modbrowse_run {} {
 
   ModTree:destroy .modbrowse.treeframe
   busy_start .modbrowse
-
-  set cvsglb(vcs) [modbrowse_guess_vcs]
 
   switch $cvsglb(vcs) {
     svn {
@@ -652,47 +664,6 @@ proc module_exit { } {
   catch {destroy .tooltips_wind}
   exit_cleanup 0
 
-  gen_log:log T "LEAVE"
-}
-
-proc module_changedir {new_dir} {
-# Make sure a directory exists before trying to cd to it
-  global cwd
-  global cvscfg
-  global cvsglb
-  global incvs insvn inrcs ingit
-
-  gen_log:log T "ENTER ($new_dir)"
-  if {[file exists $new_dir]} {
-    cd $new_dir
-    set cwd $new_dir
-    gen_log:log F "CD [pwd]"
-
-    lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
-
-    # If this directory has a different cvsroot, redo the tree
-    if {$incvs} {
-      set cvsglb(root) $cvscfg(cvsroot)
-      set cvsglb(vcs) cvs
-      modbrowse_run
-    } elseif {$insvn} {
-      set cvsglb(root) $cvscfg(svnroot)
-      set cvsglb(vcs) svn
-      modbrowse_run
-    } elseif {$ingit} {
-      set cvsglb(root) $cvscfg(url)
-      set cvsglb(vcs) git
-      modbrowse_run
-    }
-    # If the working directory browser is up, refresh it
-    if {[winfo exists .workdir]} {
-      setup_dir
-    }
-  } else {
-    set cwd [pwd]
-    cvsfail "Directory $new_dir doesn\'t exist!" .modbrowse
-  }
-  gen_log:log F "$cwd"
   gen_log:log T "LEAVE"
 }
 

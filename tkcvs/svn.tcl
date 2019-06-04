@@ -692,16 +692,6 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
   return
 }
 
-# Called from module browser filebrowse button
-proc svn_list {module} {
-  global cvscfg
-
-  gen_log:log T "ENTER ($module)"
-  set v [viewer::new "SVN list -R"]
-  $v\::do "svn list -Rv \"$cvscfg(svnroot)/$module\""
-  gen_log:log T "LEAVE"
-}
-
 # Called from the module browser
 proc svn_delete {root path} {
 
@@ -819,11 +809,11 @@ proc svn_jit_dircmd { parent dir } {
   # and be openable
   if {$dirs == {} && $fils == {}} {
     # Empty, so no placeholder
-    gen_log:log D "$tv insert $parent end -id $parent/$dir -image folder -values {$lbl $exp}"
-    $tv insert "$parent" end -id "$parent/$dir" -image folder -values [list "$lbl" "$exp"]
+    gen_log:log D "$tv insert $parent end -id $parent/$dir -image dir -values {$lbl $exp}"
+    $tv insert "$parent" end -id "$parent/$dir" -image dir -values [list "$lbl" "$exp"]
   } else {
-    gen_log:log D "$tv insert $parent end -id $parent/$dir -image folder -values {$lbl $exp}"
-    $tv insert "$parent" end -id "$parent/$dir" -image folder -values [list "$lbl" "$exp"]
+    gen_log:log D "$tv insert $parent end -id $parent/$dir -image dir -values {$lbl $exp}"
+    $tv insert "$parent" end -id "$parent/$dir" -image dir -values [list "$lbl" "$exp"]
     # Placeholder so that folder is openable
     gen_log:log D "$tv insert $parent/$dir end -id $parent/$dir/placeholder -values {placeholder \"\"}"
     $tv insert "$parent/$dir" end -id "$parent/$dir/placeholder" -values [list "placeholder" ""]
@@ -1659,7 +1649,10 @@ namespace eval ::svn_branchlog {
         # Prepare to draw something on the canvas so user knows we're working
         set cnv_y 20
         set yspc  15
-        set cnv_w [winfo width $lc]
+        set cnv_h [winfo height $lc.canvas]
+        set cnv_w [winfo width $lc.canvas]
+        # This is necessary to reset the view after clearing the canvas
+        $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
         set cnv_x [expr {$cnv_w / 2 - 8}]
         # Branches
         # Get a list of the branches from the repository

@@ -29,7 +29,7 @@ proc workdir_setup {} {
   }
 
   # Make a new toplevel and unmap . so that the working directory browser
-  # the module browser are equal
+  # the module browser are not in a parent-child relation
   toplevel .workdir
   wm title .workdir "TkCVS $cvscfg(version) -- Working Directory"
   wm iconname .workdir "TkCVS"
@@ -179,9 +179,9 @@ proc workdir_setup {} {
      -command cvs_joincanvas
 
   button .workdir.bottom.buttons.oddfuncs.bcvsedit_files -image Edit \
-     -command { cvs_edit [workdir_list_files] }
+     -command { edit_dialog [workdir_list_files] }
   button .workdir.bottom.buttons.oddfuncs.bunedit_files -image Unedit \
-     -command { cvs_unedit [workdir_list_files] }
+     -command { unedit_dialog [workdir_list_files] }
   button .workdir.bottom.buttons.oddfuncs.block -image Lock
   button .workdir.bottom.buttons.oddfuncs.bunlock -image UnLock
   button .workdir.bottom.buttons.oddfuncs.bpush -image Checkin \
@@ -197,47 +197,31 @@ proc workdir_setup {} {
       }
 
   # These buttons work in any directory
-  grid .workdir.bottom.buttons.funcs.bdelete_file -column 0 -row 0 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.funcs.bedit_files -column 1 -row 0 \
-     -ipadx 4
-  grid .workdir.bottom.buttons.funcs.bmkdir -column 0 -row 1 \
-     -ipadx 4
-  grid .workdir.bottom.buttons.funcs.bview_files -column 1 -row 1 \
-     -ipadx 4
+  grid .workdir.bottom.buttons.funcs.bdelete_file     -column 0 -row 0 -ipadx 4
+  grid .workdir.bottom.buttons.funcs.bedit_files      -column 1 -row 0 -ipadx 4
+  grid .workdir.bottom.buttons.funcs.bmkdir           -column 0 -row 1 -ipadx 4
+  grid .workdir.bottom.buttons.funcs.bview_files      -column 1 -row 1 -ipadx 4
 
   # Directory functions
   grid rowconf .workdir.bottom.buttons.dirfuncs 0 -weight 1
-  grid .workdir.bottom.buttons.dirfuncs.brefresh       -column 0 -row 0 \
-     -ipadx 4 -ipady 4
-  grid .workdir.bottom.buttons.dirfuncs.bcheckdir      -column 1 -row 0 \
-     -ipadx 4 -ipady 4
+  grid .workdir.bottom.buttons.dirfuncs.brefresh      -column 0 -row 0 -ipadx 4 -ipady 4
+  grid .workdir.bottom.buttons.dirfuncs.bcheckdir     -column 1 -row 0 -ipadx 4 -ipady 4
 
   # Revcontrol functions
-  grid .workdir.bottom.buttons.cvsfuncs.blogfile      -column 0 -row 0 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.cvsfuncs.bjoin         -column 0 -row 1 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.cvsfuncs.bdiff         -column 1 -row 0 \
-    -ipadx 2
-  grid .workdir.bottom.buttons.cvsfuncs.bconflict     -column 1 -row 1 \
-    -ipadx 2
+  grid .workdir.bottom.buttons.cvsfuncs.blogfile      -column 0 -row 0 -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bjoin         -column 0 -row 1 -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bdiff         -column 1 -row 0 -ipadx 2
+  grid .workdir.bottom.buttons.cvsfuncs.bconflict     -column 1 -row 1 -ipadx 2
   grid .workdir.bottom.buttons.cvsfuncs.bfilelog      -column 2 -row 0
   grid .workdir.bottom.buttons.cvsfuncs.bannotate     -column 2 -row 1
-  grid .workdir.bottom.buttons.cvsfuncs.bupdate       -column 3 -row 0 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.cvsfuncs.bcheckin      -column 3 -row 1 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.cvsfuncs.bupdateopts   -column 4 -row 0 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.cvsfuncs.brevert       -column 4 -row 1 \
-    -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bupdate       -column 3 -row 0 -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bcheckin      -column 3 -row 1 -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bupdateopts   -column 4 -row 0 -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.brevert       -column 4 -row 1 -ipadx 4
   grid .workdir.bottom.buttons.cvsfuncs.badd_files    -column 5 -row 0
   grid .workdir.bottom.buttons.cvsfuncs.bremove       -column 5 -row 1
-  grid .workdir.bottom.buttons.cvsfuncs.btag          -column 6 -row 0 \
-    -ipadx 4
-  grid .workdir.bottom.buttons.cvsfuncs.bbranchtag    -column 6 -row 1 \
-    -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.btag          -column 6 -row 0 -ipadx 4
+  grid .workdir.bottom.buttons.cvsfuncs.bbranchtag    -column 6 -row 1 -ipadx 4
   grid .workdir.bottom.buttons.oddfuncs.block          -column 0 -row 0
   grid .workdir.bottom.buttons.oddfuncs.bunlock        -column 0 -row 1
   grid .workdir.bottom.buttons.oddfuncs.bcvsedit_files -column 1 -row 0
@@ -491,32 +475,21 @@ proc workdir_menus {} {
      -variable cvscfg(confirm_prompt) -onvalue true -offvalue false
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Git Detailed Status" \
-     -variable cvscfg(gitdetail) -onvalue true -offvalue false
+     -variable cvscfg(gitdetail) -onvalue true -offvalue false \
+     -command { setup_dir }
   .workdir.menubar.options add separator
-  .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
-     -variable cvscfg(showeditcol) -onvalue true -offvalue false \
-     -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showeditcol)} {
-                  DirCanvas:build .workdir.main
-                } else {
-                  DirCanvas:unmap_column .workdir.main editcol
-                }
-              }
   .workdir.menubar.options add checkbutton -label "Status Column" \
      -variable cvscfg(showstatcol) -onvalue true -offvalue false \
-     -command { if {($incvs || $insvn || $inrcs || $ingit) && $cvscfg(showstatcol)} {
-                  DirCanvas:build .workdir.main
-                } else {
-                  DirCanvas:unmap_column .workdir.main statcol
-                }
-              }
+     -command { DirCanvas:displaycolumns .workdir.main.tree }
   .workdir.menubar.options add checkbutton -label "Date Column" \
      -variable cvscfg(showdatecol) -onvalue true -offvalue false \
-     -command { if {$cvscfg(showdatecol)} {
-                  DirCanvas:build .workdir.main
-                } else {
-                  DirCanvas:unmap_column .workdir.main datecol
-                }
-              }
+     -command { DirCanvas:displaycolumns .workdir.main.tree }
+  .workdir.menubar.options add checkbutton -label "Revision/Hash Column" \
+     -variable cvscfg(showwrevcol) -onvalue true -offvalue false \
+     -command { DirCanvas:displaycolumns .workdir.main.tree }
+  .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
+     -variable cvscfg(showeditcol) -onvalue true -offvalue false \
+     -command { DirCanvas:displaycolumns .workdir.main.tree }
   .workdir.menubar.options add separator
   .workdir.menubar.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
@@ -567,20 +540,24 @@ proc workdir_menus {} {
   gen_log:log T "LEAVE"
 }
 
+# Returns a list of the selected file names. This is where the arg-list comes
+# from for most of the UI buttons and menus.
 proc workdir_list_files {} {
-  global cvscfg
+  global DirList
   global cvsglb
 
   gen_log:log T "ENTER (cvsglb(current_selection) = $cvsglb(current_selection))"
 
-  for {set i 0} {$i < [llength $cvsglb(current_selection)]} {incr i} {
-    set item [lindex $cvsglb(current_selection) $i]
-    regsub {^no file } $item "" item
-    # regsub here causes file isfile to return 0.  You have to do it in each
-    # proc, just before the cvs command, after file tests have been done.
-    #regsub -all {\$} $item {\$} item
-    set cvsglb(current_selection) [lreplace $cvsglb(current_selection) $i $i $item]
+  set wt .workdir.main.tree
+  set cvsglb(current_selection {}
+  set DirList($wt:selection) {}
+  set selected_items [$wt selection]
+  foreach s $selected_items {
+    set f [$wt set $s filecol]
+    lappend DirList($wt:selection) "$f"
   }
+  set cvsglb(current_selection) $DirList($wt:selection)
+  
   gen_log:log T "LEAVE -- ($cvsglb(current_selection))"
   return $cvsglb(current_selection)
 }
@@ -783,7 +760,7 @@ proc change_dir {new_dir} {
   set cwd $new_dir
   # Deleting the tree discards the saved scroll position
   # so we start with yview 0 in a new directory
-  DirCanvas:deltree .workdir.main
+  DirCanvas:deltree .workdir.main.tree
   setup_dir
 
   gen_log:log T "LEAVE"
@@ -822,9 +799,9 @@ proc setup_dir { } {
     if {[winfo exists .workdir.main.filecol.list]} {
       set savyview [lindex [.workdir.main.filecol.list yview] 0]
     }
-    DirCanvas:deltree .workdir.main
+    DirCanvas:deltree .workdir.main.tree
   }
-  gen_log:log D "YVIEW $savyview"
+  #gen_log:log D "YVIEW $savyview"
 
   if {![file isdirectory $cwd]} {
     gen_log:log D "$cwd is not a directory"
@@ -1062,10 +1039,8 @@ proc setup_dir { } {
     grid .workdir.bottom.buttons.oddfuncs.bcvsedit_files -column 1 -row 0
     grid .workdir.bottom.buttons.oddfuncs.bunedit_files  -column 1 -row 1
     if {$cvscfg(econtrol)} {
-      .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal \
-        -command { cvs_edit [workdir_list_files] }
-      .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal \
-        -command { cvs_edit [workdir_list_files] }
+      .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state normal
+      .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state normal
     } else {
       .workdir.bottom.buttons.oddfuncs.bcvsedit_files configure -state disabled
       .workdir.bottom.buttons.oddfuncs.bunedit_files configure -state disabled
@@ -1221,7 +1196,6 @@ proc setup_dir { } {
   directory_list $filelist
   # Update, otherwise it won't be mapped before we restore the scroll position
   update
-  DirCanvas:yview_windows .workdir.main $savyview
 
   gen_log:log T "LEAVE"
 }
@@ -1302,23 +1276,32 @@ proc directory_list { filenames } {
 
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
   if {$incvs} {
-    DirCanvas:headtext .workdir.main editcol "editors"
+    .workdir.main.tree heading wrevcol -text "Revision"
+    if {$cvscfg(econtrol)} {
+      .workdir.main.tree heading editcol -text "Editors"
+    } elseif {$cvscfg(cvslock)} {
+      .workdir.main.tree heading editcol -text "Locked by"
+    } else {
+      .workdir.main.tree heading editcol -text "Author"
+    }
     cvs_workdir_status
   }
 
   if {$inrcs} {
-    DirCanvas:headtext .workdir.main editcol "locked by"
+    .workdir.main.tree heading wrevcol -text "Revision"
+    .workdir.main.tree heading editcol -text "Locked by"
     rcs_workdir_status
   }
 
   if {$insvn} {
-    DirCanvas:headtext .workdir.main editcol "author"
+    .workdir.main.tree heading wrevcol -text "Revision"
+    .workdir.main.tree heading editcol -text "Author"
     svn_workdir_status
   }
 
   if {$ingit} {
-    DirCanvas:headtext .workdir.main wrevcol "hash"
-    DirCanvas:headtext .workdir.main editcol "committer"
+    .workdir.main.tree heading wrevcol -text "Commit ID"
+    .workdir.main.tree heading editcol -text "Committer"
     git_workdir_status
   }
 
@@ -1332,6 +1315,11 @@ proc directory_list { filenames } {
     }
     DirCanvas:newitem .workdir.main "$j"
   }
+  DirCanvas:bindings .workdir.main
+
+  set col [lindex $cvscfg(sort_pref) 0]
+  set sense [lindex $cvscfg(sort_pref) 1]
+  DirCanvas:sort_by_col .workdir.main.tree $col $sense
 
   busy_done .workdir.main
 
@@ -1661,7 +1649,7 @@ proc save_options { } {
 
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
-                 gitdetail showstatcol showdatecol showeditcol auto_tag \
+                 gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums }
   set STRGopts { file_filter ignore_file_filter clean_these \
                  gitlog_opts gitmaxhist printer log_classes lastdir sort_pref editor editorargs \

@@ -23,13 +23,6 @@ namespace eval ::logcanvas {
     variable sys
     variable loc
 
-    if {[catch "image type Modules"]} {
-      workdir_images
-    }
-    if {[catch "image type Workdir"]} {
-      modbrowse_images
-    }
-
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       set how [uplevel {concat $how}]
@@ -241,6 +234,7 @@ namespace eval ::logcanvas {
                  if {$fromtag == ""} {
                    foreach brev [array names revbtags] {
                      set b $revbtags($brev)
+                     if {$b == ""} continue
                      foreach r $branchrevs($b) {
                        if {$r == $fromrev} {
                          set fromtag $b
@@ -394,44 +388,57 @@ namespace eval ::logcanvas {
         }
       }
 
-      proc PopupTags { x y } {
-      #
       # Pop up a transient window with a listbox of the tags for a specific
       # revision
-      #
+      proc PopupTags { x y } {
         global cvscfg
+        global cvsglb
         variable logcanvas
         variable revtags
+
+        gen_log:log T "ENTER ($x $y)"
+
+        # We tagged the "more..." text with R$revision
         foreach tag [$logcanvas.canvas gettags current] {
           if {[string index $tag 0] == {R}} {
             set rev [string range $tag 1 end]
+            lassign [$logcanvas.canvas coords $tag] rev_x rev_y
+            gen_log:log D "item $tag coords: $rev_x $rev_y"
             break
           }
         }
-        set mname "$logcanvas.[join [split $rev {.}] {_}]"
-        if {[winfo exists $mname]} {
-          # Don't let them hit the button twice
-          wm deiconify $mname
-          raise $mname
-        } else {
-          toplevel $mname
-          wm title $mname "Tags: $rev"
-          wm transient $mname $logcanvas.canvas
+        set mname "$logcanvas.canvas.[join [split $rev {.}] {_}]"
+        if {! [winfo exists $mname]} {
           set ntags [llength $revtags($rev)]
-          set h [expr {400 / [font metrics $cvscfg(listboxfont)\
-              -displayof $mname -linespace]}]
-          if {$h > $ntags} {
-            set h $ntags
+          if {$ntags > 20} {set ntags 20}
+          set line_h [font metrics $cvscfg(listboxfont) -displayof $logcanvas -linespace]
+          gen_log:log D "line height: $line_h"
+          set h [expr {$ntags * $line_h}]
+          gen_log:log D "height for $ntags tags: $h"
+          incr h $line_h
+          set maxlen 0
+          foreach t $revtags($rev) {
+            set len [string length $t]
+            if {$len > $maxlen} {
+              set maxlen $len
+              set maxtag $t
+            }
           }
+          set w [font measure $cvscfg(listboxfont) -displayof $logcanvas "$maxtag  "]
+          gen_log:log D "width from $maxtag: $w"
+          frame $mname -relief raised -bd 2 -bg $cvsglb(hlbg)
           listbox $mname.lbx -font $cvscfg(listboxfont) \
-            -width 0 -height $h \
+            -yscroll "$mname.yscr set" \
             -listvar [namespace current]::revtags($rev)
-          # Always have a scroll bar because a reload of the log might find
-          # more tags and the list might not fit in the window any longer.
-          scrollbar $mname.scroll -command "$mname.lbx yview"
-          $mname.lbx configure -yscroll "$mname.scroll set"
-          pack $mname.scroll -side right -fill y
-          pack $mname.lbx -ipadx 10 -ipady 10 -expand y -fill both
+          scrollbar $mname.yscr -orient vertical -command "$mname.lbx yview"
+          button $mname.but -text "Close" -command "$logcanvas.canvas delete lbx"
+          incr w [winfo reqwidth $mname.yscr]
+          incr h [winfo reqheight $mname.but]
+          $logcanvas.canvas create window $rev_x $rev_y -anchor w \
+            -height $h -width $w -window $mname -tags lbx
+          pack $mname.but -in $mname -side bottom
+          pack $mname.yscr -in $mname -side right -fill y
+          pack $mname.lbx -in $mname -side left -expand yes -fill both
           bind $mname.lbx <Button-1> [namespace code "
                 variable revtags
                 set i \[$mname.lbx nearest %y\]
@@ -450,31 +457,10 @@ namespace eval ::logcanvas {
                 SetSelection B \[lindex \$revtags($rev) \$i\] $rev
                 $mname.lbx selection clear 0 end
                 $mname.lbx selection set \$i"]
-          # FIXME: add capability to delete a tag here?
-          # We need it to get laid out before we query its geometry.
-          update
+        } else {
+          gen_log:log D "$mname already exists"
         }
-        # Centre the pop up on the cursor position then adjust so it doesn't
-        # run off the edge of the screen (if possible!).
-        set w [winfo width $mname]
-        set h [winfo height $mname]
-        set x [expr {$x - $w/2}]
-        set y [expr {$y - $h/2}]
-        set sx [expr {[winfo vrootx $mname] + [winfo vrootwidth $mname]}]
-        if {[expr {$x + $w}] >= $sx} {
-          set x [expr {$sx - $w}]
-        }
-        if {$x < 0} {
-          set x 0
-        }
-        set sy [expr {[winfo vrooty $mname] + [winfo vrootheight $mname]}]
-        if {[expr {$y + $h}] >= $sy} {
-          set y [expr {$sy - $h}]
-        }
-        if {$y < 0} {
-          set y 0
-        }
-        wm geometry $mname +$x+$y
+        gen_log:log T "LEAVE"
         return
       }
 
@@ -2019,7 +2005,7 @@ namespace eval ::logcanvas {
 
 
       $logcanvas.canvas bind tag <Button-1> \
-        [namespace code "PopupTags %X %Y"]
+        [namespace code "PopupTags %x %y"]
 
       $logcanvas.canvas bind box <ButtonPress-1> \
         [namespace code "RevSelect A"]

@@ -10,10 +10,6 @@ proc cvs_notincvs {} {
   cvsfail "This directory is not in CVS." .workdir
 }
 
-proc cvs_incvs {} {
-  cvsfail "You can\'t do that here because this directory is already in CVS." .workdir
-}
-
 # Create a temporary directory
 # cd to that directory
 # run the CVS command in that directory
@@ -243,7 +239,7 @@ proc cvs_workdir_status {} {
 
 # This deletes a file from the directory and the repository,
 # asking for confirmation first.
-proc cvs_remove {args} {
+proc cvs_remove_file {args} {
   global cvs
   global incvs
   global cvscfg
@@ -1711,7 +1707,7 @@ proc cvs_commit_dialog {} {
   gen_log:log T "LEAVE"
 }
 
-# This converts a binary file to ASCII
+# This changes a binary flag to ASCII
 proc cvs_ascii { args } {
   global cvs
   global cvscfg
