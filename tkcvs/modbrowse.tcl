@@ -498,6 +498,8 @@ proc modbrowse_run {} {
 
   # Maybe this root is new to us?
   picklist_used cvsroot "$cvsglb(root)"
+  # Have to do this to display the new value in the list
+  .modbrowse.top.troot configure -values $cvsglb(cvsroot)
 
   # Start without revision-control menu
   gen_log:log D "CONFIGURE VCS MENUS"

@@ -292,10 +292,14 @@ option add *Dialog.msg.font $cvscfg(dialogfont) userDefault
 # Sometimes we'll want to override this but let's set a default
 option add *Message.font $cvscfg(dialogfont) userDefault
 
+if {$WSYS eq "x11"} {
+  ttk::style configure TCombobox -arrowsize 16
+  # Header padding has no effect on aqua, but it works on X11
+  ttk::style configure Treeview.Heading -padding {4 2}
+}
 ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
     -fieldbackground $cvsglb(canvbg)
-# Padding has no effect on aqua, but it works on X11
-ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg) -padding {4 2}
+ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg)
 ttk::style configure Treeview.Cell -padding {2 0}
 
 # Initialize logging (classes are C,F,T,D)

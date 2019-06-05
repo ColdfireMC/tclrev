@@ -814,8 +814,6 @@ proc setup_dir { } {
 
   set module_dir ""
   set current_tagname ""
-  picklist_used directory "[pwd]"
-  picklist_used cvsroot "$cvsglb(root)"
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
@@ -932,7 +930,7 @@ proc setup_dir { } {
     .workdir.top.ltagname configure -text "Tag"
     .workdir.top.lcvsroot configure -text "SVN URL"
     .workdir.top.tcvsroot configure -textvariable cvscfg(url)
-    set cvsglb(root) $cvscfg(svnroot)
+    set cvsglb(root) $cvscfg(url)
     set cvsglb(vcs) svn
     # Buttons
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
@@ -1160,6 +1158,13 @@ proc setup_dir { } {
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
     .workdir.menubar.reports entryconfigure "Report Recursively" -state disabled
   }
+
+  picklist_used directory "[pwd]"
+  # Have to do this to display the new value in the list
+  .workdir.top.tcwd configure -values $cvsglb(directory)
+  # We don't have the CVSROOT picklist in this browser, but we
+  # do want to update the stored visits
+  picklist_used cvsroot "$cvsglb(root)"
 
   DirCanvas:create .workdir.main
   pack .workdir.main.pw -side bottom -fill both -expand yes
