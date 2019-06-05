@@ -244,12 +244,16 @@ proc picklist_used {var_name value} {
   }
   if {[info exists cvsglb($var_name)]} {
     if {[set i [lsearch -exact $cvsglb($var_name) "$value"]] >= 0} {
+      gen_log:log D "$value is already in cvsglb($var_name). Removing to change position"
       set cvsglb($var_name) [lreplace $cvsglb($var_name) $i $i]
     }
     # The value might have spaces. That's what the concat list is about.
     set cvsglb($var_name) [lrange [concat [list "$value"] $cvsglb($var_name)] 0 50]
+    gen_log:log D "appending $value to cvsglb($var_name)"
+    #lappend cvsglb($var_name) "$value"
   } else {
-    lappend cvsglb($var_name) "$value"
+    gen_log:log D "Initializing variable cvsglb($var_name)!"
+    set cvsglb($var_name) [concat [list "$value"]]
   }
 }
 
