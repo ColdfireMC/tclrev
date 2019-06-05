@@ -93,7 +93,6 @@ proc DirCanvas:newitem {w f} {
   } elseif {$ingit} {
     set rtype "GIT"
   }
-  gen_log:log D "Directory Type: $rtype"
 
   set DirList($w:$f:name) $f
   gen_log:log D "Newitem $f status $Filelist($f:status)"
@@ -277,7 +276,6 @@ proc DirCanvas:adjust_columnwidths {wt} {
   gen_log:log T "ENTER ($wt)"
 
   set displayed_columns [lindex [$wt configure -displaycolumns] end]
-  gen_log:log D "$displayed_columns"
   # Try to adjust the width of the columns suitably
   # First, find the longest string in each column
   foreach c $displayed_columns {
@@ -291,7 +289,6 @@ proc DirCanvas:adjust_columnwidths {wt} {
         set maxstr($c) $string
       }
     }
-    gen_log:log D "maxstr($c) $maxstr($c)  $maxlen($c)"
   }
   # Now use the string lengths to do a font measure and find the desired width
   # of each column
@@ -308,8 +305,9 @@ proc DirCanvas:adjust_columnwidths {wt} {
   set whole_diff [expr {$winwid - $tot_colwid}]
   set col_diff [expr {$whole_diff / $n_cols}]
   foreach c $displayed_columns {
-    $wt column $c -width [expr {$colwid($c) + $col_diff}]
-    gen_log:log D "new $c width  [expr {$colwid($c) + $col_diff}]"
+    set col_wid($c) [expr {$colwid($c) + $col_diff}]
+    $wt column $c -width $col_wid($c)
+    gen_log:log D "$c: \"$maxstr($c)\" $maxlen($c) chars, width $col_wid($c)"
   }
 
   gen_log:log T "LEAVE"
