@@ -1651,10 +1651,13 @@ namespace eval ::svn_branchlog {
         set yspc  15
         set cnv_h [winfo height $lc.canvas]
         set cnv_w [winfo width $lc.canvas]
+        # subtract scrollbars etc
+        incr cnv_h -20
+        incr cnv_w -20
         # This is necessary to reset the view after clearing the canvas
         $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
         set cnv_x [expr {$cnv_w / 2 - 8}]
-        # Branches
+        # Branche
         # Get a list of the branches from the repository
         # Draw something on the canvas so the user knows we're working
         $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}

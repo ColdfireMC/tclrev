@@ -62,11 +62,11 @@ proc workdir_setup {} {
     -command {change_dir ..}
 
   label .workdir.top.lmodule -text "Path"
-  label .workdir.top.tmodule -textvariable module_dir -anchor w -relief groove
+  label .workdir.top.tmodule -textvariable module_dir -anchor w -relief groove -bd 2
 
   label .workdir.top.ltagname -text "Tag"
   label .workdir.top.ttagname -textvariable current_tagname \
-     -anchor w -relief groove
+     -anchor w -relief groove -bd 2
 
   # Make the Repository Browser button prominent
   button .workdir.top.bmodbrowse -image Modules -command modbrowse_run
