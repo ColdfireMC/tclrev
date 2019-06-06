@@ -330,6 +330,7 @@ proc DirCanvas:popup {w x y X Y} {
 }
 
 proc DirCanvas:bindings {w} {
+  #bind $w.tree <Configure> {puts "Resize requested"}
   bind $w.tree <1> "DirCanvas:unselectall $w"
   $w.tree tag bind fileobj <2> "DirCanvas:popup $w %x %y %X %Y"
   $w.tree tag bind fileobj <3> "DirCanvas:popup $w %x %y %X %Y"

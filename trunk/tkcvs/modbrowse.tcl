@@ -440,7 +440,9 @@ proc modbrowse_run {} {
       }
 
       # parse_svnmodules does svn list of the repository
-      parse_svnmodules $cvsglb(root)
+      # For SVN, the URL changes depending on what directory we're in, so use
+      # svnroot instead of cvsglb(root)
+      parse_svnmodules $cvscfg(svnroot)
     }
     cvs {
       .modbrowse.top.lroot configure -text "CVSROOT"
@@ -462,7 +464,7 @@ proc modbrowse_run {} {
       }
 
       # parse_cvsmodules will check out CVSROOT/modules and post what it finds
-      parse_cvsmodules $cvsglb(root)
+      parse_cvsmodules $cvscfg(root)
     }
     git {
       .modbrowse.top.lroot configure -text "Origin"
