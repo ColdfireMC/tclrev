@@ -346,6 +346,15 @@ if {$branching_desired} {
   commit "Changes on Branch AA"
   cd $WD
 
+  # Make another revision on branchA after
+  # branchAA has branched off
+  puts "==============================="
+  puts "Third revision on Branch A"
+  cd $WD/svn_test_branchA
+  modfiles "BranchA 3"
+  commit "Third revision on Branch A"
+  cd $WD
+
   # Branch B
   puts "==============================="
   puts "MAKING BRANCH B"
