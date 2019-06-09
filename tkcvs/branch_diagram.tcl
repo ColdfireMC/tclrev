@@ -1042,9 +1042,8 @@ namespace eval ::logcanvas {
                 set last_rev [lindex $branchrevs($b) 1]
               }
             }
-            # For Git, now we draw the root box at the top
             if {! $ingit} {
-              DrawRoot $bx $by $bw $tip_height $revision $b
+              DrawRoot $bx $by $bw $bot_height $revision $b
             }
             # Arrow connecting the branch root box to its parent
             if {$ingit} {
@@ -1095,6 +1094,7 @@ namespace eval ::logcanvas {
         if {$ingit} {
           if {$last_y != {} } {
             set gy [expr {$top_y - $height + $tip_height - $curr(spcy)}]
+            # For Git, now we draw the root box at the top
             DrawRoot $x $gy $box_width $tip_height [lindex $branchrevs($branch) end] $branch
             $logcanvas.canvas lower [ \
               $logcanvas.canvas create line \
@@ -1112,6 +1112,7 @@ namespace eval ::logcanvas {
       }
 
       proc UpdateBndBox {} {
+        global ingit
         variable logcanvas
         variable font_bold
         variable view_xoff
@@ -1121,11 +1122,21 @@ namespace eval ::logcanvas {
 
         #gen_log:log T "ENTER ()"
         lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
-        $logcanvas.canvas configure \
-          -scrollregion [list \
-            [expr {$x1 - 5}] [expr {$y1 - 5}] \
-            [expr {$x2 + 5}] [expr {$y2 + 5}]
-          ]
+        if {! $ingit} {
+          $logcanvas.canvas configure \
+            -scrollregion [list \
+              [expr {$x1 - 5}] [expr {$y1 - 5}] \
+              [expr {$x2 + 5}] [expr {$y2 + 5}]
+            ]
+        } else {
+          # Ih git, we may have merge arrows to the left of the first column.
+          # tk doesn't include these in the bounding box, for some reason
+          $logcanvas.canvas configure \
+            -scrollregion [list \
+              [expr {$x1 - 25}] [expr {$y1 - 5}] \
+              [expr {$x2 + 5}] [expr {$y2 + 5}]
+            ]
+        }
 
         if {[info exists curr_x]} {
           set canv_width [$logcanvas.canvas cget -width]
