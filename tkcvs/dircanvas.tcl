@@ -34,9 +34,9 @@ proc DirCanvas:create {w} {
   }
   foreach col {filecol statcol datecol wrevcol editcol} {
     $w.tree column $col -width $beginwid
-    $w.tree heading $col -image "" -command "DirCanvas:sort_by_col $w.tree $col [lindex $cvscfg(sort_pref) 1]"
+    $w.tree heading $col -image "" -command "DirCanvas:sort_by_col $w.tree $col -increasing"
   }
-  $w.tree heading #0 -image "" -command "DirCanvas:sort_by_col $w.tree statcol [lindex $cvscfg(sort_pref) 1]"
+  $w.tree heading #0 -image "" -command "DirCanvas:sort_by_col $w.tree statcol -increasing"
 
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
 
@@ -211,6 +211,9 @@ proc DirCanvas:sort_by_col {wt col sense} {
 
   gen_log:log T "ENTER ($wt $col $sense)"
 
+  set old_columnpref [lindex $cvscfg(sort_pref) 0]
+  set old_sensepref [lindex $cvscfg(sort_pref) 1]
+
   set all_columns [lindex [$wt configure -columns] end]
   set displayed_columns [lindex [$wt configure -displaycolumns] end]
   if {$displayed_columns eq "#all"} {
@@ -225,7 +228,7 @@ proc DirCanvas:sort_by_col {wt col sense} {
   }
   set list_by_name [lsort -index 0 $list_by_name]
 
-  # Collects the values from the column we want to sort by, together
+  # Collect the values from the column we want to sort by, together
   # with the row index
   set ID_by_name {}
   foreach item $list_by_name {
@@ -236,35 +239,37 @@ proc DirCanvas:sort_by_col {wt col sense} {
     lappend column_items [list [$wt set $item $col] $item]
   }
 
-  # Re-orders the rows in the order obtained above
+  # Re-order the rows in the order obtained above
   set r -1
   foreach info [lsort $sense -index 0 $column_items] {
     $wt move [lindex $info 1] {} [incr r]
   }
 
-  # Fix up the arrows, and
-  # if it's the currently sorted column, reverse the direction.
+  # Fix up the arrows
   foreach a $displayed_columns {
     $wt heading $a -image ""
   }
   $wt heading #0 -image ""
 
+  # Reset the columns other than the current one. We're heavily favoring defaulting
+  # to increasing sorting order here. This is the way I like it to work, although
+  # others might argue. -dar
+  foreach c {filecol statcol datecol wrevcol editcol} {
+    $wt heading $c -image "" -command "DirCanvas:sort_by_col $wt $c -increasing"
+  }
+  $wt heading #0 -image "" -command "DirCanvas:sort_by_col $wt statcol -increasing"
+  # Then toggle the current column's arrow
   if {[string match "-inc*" $sense]} {
     $wt heading $col -image arr_dn -command "DirCanvas:sort_by_col $wt $col -decreasing"
     if {$col == "statcol"} {
       $wt heading #0 -image arr_dn -command "DirCanvas:sort_by_col $wt $col -decreasing"
     }
   } else {
-    $wt heading $col -image arr_up -command "DirCanvas:sort_by_col $wt $col -increasing" 
+    $wt heading $col -image arr_up
     if {$col == "statcol"} {
-      $wt heading #0 -image arr_up -command "DirCanvas:sort_by_col $wt $col -increasing"
+      $wt heading #0 -image arr_up
     }
   }
-
-  # Set sort_pref to new sort value
-  set cvscfg(sort_pref) [list $col $sense]
-  gen_log:log D "$col $sense"
-
   DirCanvas:adjust_columnwidths $wt
 
   gen_log:log T "LEAVE"
@@ -330,7 +335,6 @@ proc DirCanvas:popup {w x y X Y} {
 }
 
 proc DirCanvas:bindings {w} {
-  #bind $w.tree <Configure> {puts "Resize requested"}
   bind $w.tree <1> "DirCanvas:unselectall $w"
   $w.tree tag bind fileobj <2> "DirCanvas:popup $w %x %y %X %Y"
   $w.tree tag bind fileobj <3> "DirCanvas:popup $w %x %y %X %Y"

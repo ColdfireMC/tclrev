@@ -1268,7 +1268,7 @@ proc directory_list { filenames } {
         if {$ingit} {
           # In case we're not doing gitdetail, set the file as up-to-date
           # and it will be overwritten otherwise
-          set Filelist($i:status) "Up-to-Date"
+          set Filelist($i:status) "Up-to-date"
         } else {
           set Filelist($i:status) "<file>"
         }
