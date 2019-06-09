@@ -46,7 +46,7 @@ proc DirCanvas:create {w} {
   set sense [lindex $cvscfg(sort_pref) 1]
   # If we aren't in a VCS and therefore don't have editcol or wrevcol, sort by filename
   if { (! ($incvs || $inrcs || $insvn || $ingit))  && ( $col == "editcol" || $col == "wrevcol") } {
-    gen_log:log T "setting sort to column \"filecol!\""
+    gen_log:log D "setting sort to column \"filecol!\""
     set col "filecol"
     set sense "-increasing"
   }
@@ -211,6 +211,7 @@ proc DirCanvas:sort_by_col {wt col sense} {
 
   gen_log:log T "ENTER ($wt $col $sense)"
 
+  gen_log:log D "old sort prefs $cvscfg(sort_pref)"
   set old_columnpref [lindex $cvscfg(sort_pref) 0]
   set old_sensepref [lindex $cvscfg(sort_pref) 1]
 
@@ -270,6 +271,8 @@ proc DirCanvas:sort_by_col {wt col sense} {
       $wt heading #0 -image arr_up
     }
   }
+  set cvscfg(sort_pref) [list $col $sense]
+  gen_log:log D "new sort prefs $cvscfg(sort_pref)"
   DirCanvas:adjust_columnwidths $wt
 
   gen_log:log T "LEAVE"
