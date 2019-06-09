@@ -292,6 +292,8 @@ proc modbrowse_menus {} {
   .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.file] -label "File" -underline 0
   .modbrowse.menubar add cascade -menu [menu .modbrowse.menubar.options] -label "Options" -underline 0
 
+  # The help menu
+  menu_std_help .modbrowse.menubar
   # Have to do this after the .apple menu
   .modbrowse configure -menu .modbrowse.menubar
 
@@ -365,8 +367,6 @@ proc modbrowse_menus {} {
   .modbrowse.menubar.options add checkbutton -label "Tracing On/Off" \
      -variable cvscfg(logging) -onvalue true -offvalue false \
      -command log_toggle
-
-  menu_std_help .modbrowse.menubar
 
   #gen_log:log T "LEAVE"
 }

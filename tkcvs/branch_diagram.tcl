@@ -1650,11 +1650,21 @@ namespace eval ::logcanvas {
       # So you have to configure it.
         $logcanvas.menubar add cascade -label "TkCVS" -menu [menu $logcanvas.menubar.apple]
       }
+      $logcanvas.menubar add cascade -label "File"\
+         -menu [menu $logcanvas.menubar.file] -underline 0
+      $logcanvas.menubar add cascade -label "View"\
+         -menu [menu $logcanvas.menubar.view] -underline 0
+      if {$ingit} {
+        $logcanvas.menubar add cascade -label "Git Options"\
+           -menu [menu $logcanvas.menubar.git_opts]
+      }
+
+      # The help menu
+      menu_std_help $logcanvas.menubar
       # Have to do this after the .apple menu
       $logcanvas configure -menu $logcanvas.menubar
 
-      $logcanvas.menubar add cascade -label "File"\
-         -menu [menu $logcanvas.menubar.file] -underline 0
+      # File
       $logcanvas.menubar.file add command -label "Shell window" -underline 0 \
         -command {exec::new $cvscfg(shell)}
       $logcanvas.menubar.file add separator
@@ -1662,15 +1672,10 @@ namespace eval ::logcanvas {
         -command [namespace code {$logcanvas.close invoke}]
       $logcanvas.menubar.file add command -label "Exit" -underline 1 \
         -command { exit_cleanup 1 }
-      $logcanvas.menubar add cascade -label "View"\
-         -menu [menu $logcanvas.menubar.view] -underline 0
       $logcanvas.menubar.view add cascade -label "Update When Drawing" \
         -menu $logcanvas.menubar.view.update
-      if {$ingit} {
-        $logcanvas.menubar add cascade -label "Git Options"\
-           -menu [menu $logcanvas.menubar.git_opts]
-      }
 
+      # View
       menu $logcanvas.menubar.view.update
       $logcanvas.menubar.view.update add radiobutton -label "Every Revision" \
         -variable [namespace current]::opt(update_drawing) -value 0
@@ -1791,7 +1796,7 @@ namespace eval ::logcanvas {
                gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
            }
         }
-       foreach go { "--first-parent" "--full-history" "--sparse" } {
+       foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
          if {$go in $cvscfg(gitlog_opts)} {
            set git_menubar_opt($go) 1
          } else {
@@ -1800,7 +1805,6 @@ namespace eval ::logcanvas {
         }
       }
 
-      menu_std_help $logcanvas.menubar
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $logcanvas @$cvscfg(bitmapdir)/branch.xbm
         wm iconphoto $logcanvas -default Tclfish64
