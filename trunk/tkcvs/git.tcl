@@ -253,7 +253,11 @@ proc git_push {} {
             $cvsglb(push_origin) $cvsglb(push_url).\n\n Are you sure?"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
-    set cmd(git_push) [exec::new "git push"]
+    set commandline "git push"
+    set v [viewer::new "Push"]
+    $v\::do "$commandline"
+    $v\::wait
+    $v\::clean_exec
   }
 
   gen_log:log T "LEAVE"
@@ -268,7 +272,11 @@ proc git_fetch {} {
             $cvsglb(fetch_origin) $cvsglb(fetch_url).\n\n Are you sure?"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
-    set cmd(git_fetch) [exec::new "git fetch"]
+    set commandline "git fetch"
+    set v [viewer::new "Fetch"]
+    $v\::do "$commandline"
+    $v\::wait
+    $v\::clean_exec
   }
 
   gen_log:log T "LEAVE"
@@ -1056,6 +1064,7 @@ namespace eval ::git_branchlog {
         catch {unset branches}
         catch {unset logged_branches}
         catch {unset reachable_branches}
+        catch {unset remote_branches}
 
         # Most efficient way I can think of to collect branch, tag, and parent information
         set command1 "git log --all -$cvscfg(gitmaxhist) $cvscfg(gitlog_opts) --date-order --format=%h:%p:%d -- \"$filename\""
@@ -1081,8 +1090,20 @@ namespace eval ::git_branchlog {
           if {[regexp {detached} $line]} continue
           lappend reachable_branches [lindex $line 0]
         }
+        # We aren't necessarily interested in all the remote branches, but we
+        # may want to know if master is one of them
+        set cmd(git_rbranch) [exec::new "git branch -r --format=%(refname:short)"]
+        set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
+        foreach line $branch_lines {
+          if {[string length $line] < 1} continue
+          lappend remote_branches [lindex $line 0]
+        }
+        if {![info exists logged_branches]} { set logged_branches {} }
+        if {![info exists reachable_branches]} { set reachable_branches {} }
+        if {![info exists remote_branches]} { set remote_branches {} }
+        gen_log:log D "Logged branches:    $logged_branches"
         gen_log:log D "Reachable branches: $reachable_branches"
-        gen_log:log D "Logged branches: $logged_branches"
+        gen_log:log D "Remote branches:    $reachable_branches"
 
         # Collect and de-duplicate the branch list
         set branches $reachable_branches
@@ -1146,10 +1167,19 @@ namespace eval ::git_branchlog {
           }
         }
         if {! $trunk_found} {
+          set m [lsearch -glob $remote_branches {*/master}]
+          if {$m > -1} {
+            set trunk [lindex $remote_branches $m]
+            gen_log:log D "*/master is in remote branches, trunk=$trunk"
+            set trunk_found 1
+          }
+        }
+        if {! $trunk_found} {
           # since we did the branch detection in date-order, newest to oldest, the
           # oldest branch may be at the end of the list?
-          gen_log:log D "Using the end of logged branches"
-          set trunk [lindex $logged_branches end]
+          # No, not if we've done more recent work on the older branch
+          gen_log:log D "Using the first one returned by git branch"
+          set trunk [lindex $reachable_branches 0]
         }
         gen_log:log D "TRUNK: $trunk"
         # Make sure the trunk is the first in the branchlist
@@ -1158,7 +1188,6 @@ namespace eval ::git_branchlog {
         set branches [linsert $branches 0 $trunk]
 
         # Prepare to draw something on the canvas so user knows we're working
-      
         set cnv_y 20
         set yspc  15
         set cnv_h [winfo height $lc.canvas]
@@ -1299,7 +1328,7 @@ namespace eval ::git_branchlog {
             # up. This may happen if the directory had checkins that didn't
             # affect the file or the file is newly added
             if {! [info exists revcomment($parent)] } {
-              #gen_log:log D "MISSING INFO for PARENT $parent of $branch"
+              gen_log:log D "MISSING INFO for PARENT $parent of $branch"
               #load_mystery_info $revparent($base) .
               # Draw it differently because it may not be reachable
               set revpath($parent) $relpath
@@ -1319,8 +1348,10 @@ namespace eval ::git_branchlog {
 
             # We got the parent settled one way or another
             if {! [info exists revbranches($parent)] } {
+              gen_log:log D "set revbranches($parent) $branchroot($branch)"
               set revbranches($parent) $branchroot($branch)
             } elseif {$branchroot($branch) ni $revbranches($parent)} {
+              gen_log:log D "lappend revbranches($parent) $branchroot($branch)"
               lappend revbranches($parent) $branchroot($branch)
             }
 
@@ -1361,18 +1392,23 @@ namespace eval ::git_branchlog {
             gen_log:log D " in $a ONLY: $inAonly"
             gen_log:log D " in $b ONLY: $inBonly"
 
-            if {[llength $inBonly] > 0} {
-              # branch $b is the first branch. $a is a sub-branch of $b
-              # so we re-configure $a
-              set stockbranch $a
-              set subbranch $b
-            } elseif {[llength $inAonly] > 0} {
+            if {[llength $inAonly] > 0} {
               # branch $a is the first branch. $b is a sub-branch of $a
               # so we re-configure $b
               set stockbranch $b
               set subbranch $a
+            } elseif {[llength $inBonly] > 0} {
+              # branch $b is the first branch. $a is a sub-branch of $b
+              # so we re-configure $a
+              set stockbranch $a
+              set subbranch $b
             } else {
               gen_log:log D "BRANCHES $a and $b have identical revs!"
+              # remove the duplicate? (not good but I can't think of anything better
+              set idx [lsearch $branches $b]
+              set branches [lreplace $branches $idx $idx]
+              gen_log:log D "Removing $b from further treatment"
+              break
             }
             # Now we know who's who.
             # Shorten the sub-branch revlist to revs not on the stock branch
@@ -1402,25 +1438,13 @@ namespace eval ::git_branchlog {
 
             # Add the new sub-branch to its new parent's revbranches list
             if {! [info exists revbranches($sub_new_branchparent)]} {
+              gen_log:log D "set revbranches($sub_new_branchparent) $branchroot($subbranch)"
               set revbranches($sub_new_branchparent) $branchroot($subbranch)
             } elseif {$branchroot($subbranch) ni $revbranches($sub_new_branchparent)} {
+              gen_log:log D "lappend revbranches($sub_new_branchparent) $branchroot($subbranch)"
               lappend revbranches($sub_new_branchparent) $branchroot($subbranch)
             }
-
             gen_log:log D "NEW $subbranch parent branchlist after fixing:  $revbranches($sub_new_branchparent)"
-
-            # The parent for the stock branch may not actually exist in our data
-            # for reasons having nothing to do with this process. Let's try to
-            # get the data.
-            if {! [info exists revcomment($stock_old_branchparent)] } {
-              #gen_log:log D "MISSING info for PARENT $stock_old_branchparent of MAYBE SUB-BRANCH $stockbranch"
-              #load_mystery_info $stock_old_branchparent .
-              if {! [info exists revbranches($parent)]} {
-                set revbranches($parent) $stock_old_branchroot
-              } elseif {$stock_old_branchroot ni $revbranches($parent)} {
-                lappend revbranches($parent) $stock_old_branchroot
-              }
-            }
 
             set stockroot $branchroot($stockbranch)
             set subroot   $branchroot($subbranch)
@@ -1450,6 +1474,7 @@ namespace eval ::git_branchlog {
             gen_log:log D "No revbtags($rootrev)!"
             set root_ok 0
           }
+
           # If we have children for this, it's a perfectly good root
           if {[info exists revchildren($rootrev)]} {
             gen_log:log D "revchildren($rootrev) $revchildren($rootrev)"

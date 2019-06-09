@@ -886,20 +886,20 @@ namespace eval ::logcanvas {
           lassign [CalcCurrent $branch] box_width cur_height
         } else {
           lassign [CalcRoot $branch] rtw box_width bot_height
-        }
-        # In Git, we replace the blue box at the base with one at the tip.
-        # We need to carry that spacer through our calculations, as lbl_height
-        if {$ingit} {
-          set tip_height $bot_height
-          set bot_height 0
-          set lbl_height $tip_height
-        } else {
-          set tip_height 0
-          set lbl_height $bot_height
-        }
-        gen_log:log D "set lbl_height ($lbl_height)"
-        if {$rtw > $tag_width} {
-          set tag_width $rtw
+          # In Git, we replace the blue box at the base with one at the tip.
+          # We need to carry that spacer through our calculations, as lbl_height
+          if {$ingit} {
+            set tip_height $bot_height
+            set bot_height 0
+            set lbl_height $tip_height
+          } else {
+            set tip_height 0
+            set lbl_height $bot_height
+          }
+          gen_log:log D "set lbl_height ($lbl_height)"
+          if {$rtw > $tag_width} {
+            set tag_width $rtw
+          }
         }
         set height [expr {$lbl_height + $curr(spcy)}]
         # calculate the size of each revision in the branch, and keep
@@ -1042,9 +1042,9 @@ namespace eval ::logcanvas {
                 set last_rev [lindex $branchrevs($b) 1]
               }
             }
-            # Now we actually do draw the root box
+            # For Git, now we draw the root box at the top
             if {! $ingit} {
-              DrawRoot $bx $by $bw $bot_height $revision $b
+              DrawRoot $bx $by $bw $tip_height $revision $b
             }
             # Arrow connecting the branch root box to its parent
             if {$ingit} {
@@ -1774,7 +1774,7 @@ namespace eval ::logcanvas {
 
      if {$ingit} {
        global git_menubar_opt
-       foreach go { "--first-parent" "--full-history" "--sparse" } {
+       foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
          $logcanvas.menubar.git_opts add checkbutton -label $go \
            -variable git_menubar_opt($go) -onvalue 1 -offvalue 0 \
            -command {
