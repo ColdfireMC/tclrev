@@ -1162,9 +1162,6 @@ proc setup_dir { } {
   picklist_used directory "[pwd]"
   # Have to do this to display the new value in the list
   .workdir.top.tcwd configure -values $cvsglb(directory)
-  # We don't have the CVSROOT picklist in this browser, but we
-  # do want to update the stored visits
-  picklist_used cvsroot "$cvsglb(root)"
 
   DirCanvas:create .workdir.main
   pack .workdir.main.pw -side bottom -fill both -expand yes
