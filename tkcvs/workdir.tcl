@@ -1265,7 +1265,13 @@ proc directory_list { filenames } {
       if {$incvs} {
         set Filelist($i:status) "Not managed by CVS"
       } else {
-        set Filelist($i:status) "<file>"
+        if {$ingit} {
+          # In case we're not doing gitdetail, set the file as up-to-date
+          # and it will be overwritten otherwise
+          set Filelist($i:status) "Up-to-Date"
+        } else {
+          set Filelist($i:status) "<file>"
+        }
       }
     }
     #set Filelist($i:wrev) ""

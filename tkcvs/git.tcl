@@ -110,7 +110,8 @@ proc git_workdir_status {} {
        }
     }
     # So they're not undefined
-    set Filelist($f:date) ""
+    catch {set Filelist($f:date) \
+       [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
     set Filelist($f:stickytag) ""
     set Filelist($f:editors) ""
   }
