@@ -350,7 +350,7 @@ if {$branching_desired} {
   modfiles "BranchC 1"
   writefile FbranchC.txt "BranchC 1"
   addfile FbranchC.txt branchC
-  commit "Add file FC on Branch B"
+  commit "Add file FC on Branch C"
   cd $WD
 
   puts "==============================="
@@ -386,6 +386,15 @@ if {$branching_desired} {
   addfile FbranchAA.txt branchAA
   delfile Ftrunk.txt branchAA
   commit "Changes on Branch AA"
+  cd $WD
+
+  # Make another revision on branchA after
+  # branchAA has branched off
+  puts "==============================="
+  puts "Third revision on Branch A"
+  cd $WD/cvs_test_branchA
+  modfiles "BranchA 3"
+  commit "Third revision on Branch A"
   cd $WD
 
   # Branch B

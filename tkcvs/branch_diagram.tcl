@@ -408,23 +408,23 @@ namespace eval ::logcanvas {
           }
         }
         set mname "$logcanvas.canvas.[join [split $rev {.}] {_}]"
-        if {! [winfo exists $mname]} {
-          set ntags [llength $revtags($rev)]
-          if {$ntags > 20} {set ntags 20}
-          set line_h [font metrics $cvscfg(listboxfont) -displayof $logcanvas -linespace]
-          gen_log:log D "line height: $line_h"
-          set h [expr {$ntags * $line_h}]
-          gen_log:log D "height for $ntags tags: $h"
-          incr h $line_h
-          set maxlen 0
-          foreach t $revtags($rev) {
-            set len [string length $t]
-            if {$len > $maxlen} {
-              set maxlen $len
-              set maxtag $t
-            }
+        set ntags [llength $revtags($rev)]
+        if {$ntags > 20} {set ntags 20}
+        set line_h [font metrics $cvscfg(listboxfont) -displayof $logcanvas -linespace]
+        gen_log:log D "line height: $line_h"
+        set h [expr {$ntags * $line_h}]
+        gen_log:log D "height for $ntags tags: $h"
+        incr h $line_h
+        set maxlen 0
+        foreach t $revtags($rev) {
+          set len [string length $t]
+          if {$len > $maxlen} {
+            set maxlen $len
+            set maxtag $t
           }
+        }
           set w [font measure $cvscfg(listboxfont) -displayof $logcanvas "$maxtag  "]
+        if {! [winfo exists $mname]} {
           gen_log:log D "width from $maxtag: $w"
           frame $mname -relief raised -bd 2 -bg $cvsglb(hlbg)
           listbox $mname.lbx -font $cvscfg(listboxfont) \
@@ -459,6 +459,8 @@ namespace eval ::logcanvas {
                 $mname.lbx selection set \$i"]
         } else {
           gen_log:log D "$mname already exists"
+          $logcanvas.canvas create window $rev_x $rev_y -anchor w \
+            -height $h -width $w -window $mname -tags lbx
         }
         gen_log:log T "LEAVE"
         return

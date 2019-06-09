@@ -473,6 +473,16 @@ if {$branching_desired} {
   commit "Second changes on Branch AA"
   cd $WD
 
+  # Make another revision on branchA after
+  # branchAA has branched off
+  puts "==============================="
+  puts "Third revision on Branch A"
+  cd $WD/git_test_branchA
+  modfiles "BranchA 3"
+  stage
+  commit "Third revision on Branch A"
+  cd $WD
+
   # Branch B
   puts "==============================="
   puts "MAKING BRANCH B"
