@@ -1672,8 +1672,8 @@ namespace eval ::svn_branchlog {
         set branches [grep_filter {/$} $branches]
 
         foreach branch $branches {
-          gen_log:log D "$branch"
           set branch [string trimright $branch "/"]
+          gen_log:log D "========= $branch =========="
           # Draw something on the canvas so the user knows we're working
           $lc.canvas create text $cnv_x $cnv_y -text $branch -tags {temporary} -fill $cvscfg(colourB)
           set cnv_y [expr {$cnv_y + $yspc}]
@@ -1686,11 +1686,8 @@ namespace eval ::svn_branchlog {
             set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
           }
           # Do stop-on-copy to find the base of the branch
-          set command "svn log "
-          if {$cvsglb(svn_mergeinfo_works)} {
-            append command "-g "
-          }
-          append command "--stop-on-copy $path"
+          set command "svn log --use-merge-history"
+          append command " --stop-on-copy $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
           $cmd_log\::destroy
@@ -1728,7 +1725,7 @@ namespace eval ::svn_branchlog {
           lappend revbtags($rb) $branch
           set revpath($rb) $path
 
-          set command "svn log -q $path"
+          set command "svn log -q --use-merge-history $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
           $cmd_log\::destroy
@@ -1747,14 +1744,18 @@ namespace eval ::svn_branchlog {
             incr idx -1
           }
           set bp [lindex $allrevs($branch) $idx]
+          gen_log:log D "$allrevs($branch)"
+          gen_log:log D " BRANCHPOINT for $branch: $bp"
           if {$bp == ""} {
-            gen_log:log E "allrevs same as branchrevs: decrementing branchpoint"
+            gen_log:log D "allrevs same as branchrevs: decrementing branchpoint"
             set bp [lindex $branchrevs($branch) end]
             set bpn [string trimleft $bp "r"]
             incr bpn -1
             set bp "r${bpn}"
+            gen_log:log D " NEW BRANCHPOINT for $branch: $bp"
           }
           lappend revbranches($bp) $rb
+          gen_log:log D "========= finished $branch =========="
         }
         # Tags
         # Get a list of the tags from the repository
@@ -1809,7 +1810,7 @@ namespace eval ::svn_branchlog {
             }
             # Do log with stop-on-copy to find the actual revision that was tagged.
             # The tag itself created a rev which may be much higher.
-            set command "svn log --stop-on-copy $path"
+            set command "svn log --use-merge-history --stop-on-copy $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
@@ -1905,15 +1906,6 @@ namespace eval ::svn_branchlog {
               break
             }
             incr subbrn
-          }
-          if {$foundinrevbr<=0 && $subbrwithrevsnum!=0} {
-            # we only want to attach a branch & not a rev that a branch is attached
-            if { $revkind($br) eq "branch" } {
-              gen_log:log D "   put $br in revbranches of $subbrwithrevs"
-              lappend revbranches($subbrwithrevs) $br
-            } else {
-              gen_log:log D "   branch $br not attached because not a real branch"
-            }
           }
           incr brn
         }

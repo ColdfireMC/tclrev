@@ -298,6 +298,7 @@ if {$branching_desired} {
   cd $WD/svn_test_branchA
   modfiles "BranchA 2"
   commit "Second revision on branch A"
+  tag $SVNROOT "tagAA"
   cd $WD
 
   # Branch C
