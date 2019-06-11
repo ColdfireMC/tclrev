@@ -1,7 +1,18 @@
 # Find where we are in path
 proc read_git_dir {dirname} {
   global cvsglb
+  global current_tagname
 
+  # See what branch we're on
+  set cmd(git_branch) [exec::new "git branch --no-color"]
+  set branch_lines [split [$cmd(git_branch)\::output] "\n"]
+  foreach line $branch_lines {
+    if [string match {\* *} $line] {
+      # Could be something like (HEAD detached at 960c171)
+      set current_tagname [join [lrange $line 1 end]]
+      gen_log:log D "current_tagname=$current_tagname"
+    }
+  }
   # What's the top level, and where are we relative to it?
   set cmd(find_top) [exec::new "git rev-parse --show-toplevel"]
   set cvsglb(repos_top) [lindex [$cmd(find_top)\::output] 0]
@@ -19,16 +30,6 @@ proc git_workdir_status {} {
   global module_dir
 
   gen_log:log T "ENTER"
-  # See what branch we're on
-  set cmd(git_branch) [exec::new "git branch --no-color"]
-  set branch_lines [split [$cmd(git_branch)\::output] "\n"]
-  foreach line $branch_lines {
-    if [string match {\* *} $line] {
-      # Could be something like (HEAD detached at 960c171)
-      set current_tagname [join [lrange $line 1 end]]
-      gen_log:log D "current_tagname=$current_tagname"
-    }
-  }
 
   read_git_dir [pwd]
   set module_dir $cvsglb(relpath)
@@ -1270,7 +1271,6 @@ namespace eval ::git_branchlog {
             if {$branchtip($branch) ne $branchroot($branch)} {
               catch {unset revbtags($branchtip($branch))}
             }
-
             continue
           }
           
@@ -1405,10 +1405,14 @@ namespace eval ::git_branchlog {
               set subbranch $b
             } else {
               gen_log:log D "BRANCHES $a and $b have identical revs!"
-              # remove the duplicate? (not good but I can't think of anything better
-              set idx [lsearch $branches $b]
-              set branches [lreplace $branches $idx $idx]
-              gen_log:log D "Removing $b from further treatment"
+              # Should we plot both of them? One of them might be current_tagname, so
+              # we can't ignore that one, for sure
+              foreach z [list $a $b] {
+                if {$z ni $revbtags($branchroot($z))} {
+                  gen_log:log D " appending $z to revbtags($branchroot($z))"
+                  lappend revbtags($branchroot($z)) $z
+                }
+              }
               break
             }
             # Now we know who's who.

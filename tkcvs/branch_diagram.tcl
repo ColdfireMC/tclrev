@@ -889,21 +889,22 @@ namespace eval ::logcanvas {
         } else {
           lassign [CalcRoot $branch] rtw box_width bot_height
           # In Git, we replace the blue box at the base with one at the tip.
-          # We need to carry that spacer through our calculations, as lbl_height
+          # We need to carry that spacer through our calculations, in the
+          #  lbl_height array
           if {$ingit} {
             set tip_height $bot_height
             set bot_height 0
-            set lbl_height $tip_height
+            set lbl_height($branch) $tip_height
           } else {
             set tip_height 0
-            set lbl_height $bot_height
+            set lbl_height($branch) $bot_height
           }
-          gen_log:log D "set lbl_height ($lbl_height)"
+          gen_log:log D "set lbl_height($branch) ($lbl_height($branch))"
           if {$rtw > $tag_width} {
             set tag_width $rtw
           }
         }
-        set height [expr {$lbl_height + $curr(spcy)}]
+        set height [expr {$lbl_height($branch) + $curr(spcy)}]
         # calculate the size of each revision in the branch, and keep
         # track of the largest x and y dimensions, which we will use
         # for all when drawing
@@ -1045,7 +1046,7 @@ namespace eval ::logcanvas {
               }
             }
             if {! $ingit} {
-              DrawRoot $bx $by $bw $bot_height $revision $b
+              DrawRoot $bx $by $bw $lbl_height($b) $revision $b
             }
             # Arrow connecting the branch root box to its parent
             if {$ingit} {
@@ -1095,9 +1096,9 @@ namespace eval ::logcanvas {
 
         if {$ingit} {
           if {$last_y != {} } {
-            set gy [expr {$top_y - $height + $tip_height - $curr(spcy)}]
+            set gy [expr {$top_y - $height}]
             # For Git, now we draw the root box at the top
-            DrawRoot $x $gy $box_width $tip_height [lindex $branchrevs($branch) end] $branch
+            DrawRoot $x $gy $box_width $lbl_height($branch) [lindex $branchrevs($branch) end] $branch
             $logcanvas.canvas lower [ \
               $logcanvas.canvas create line \
                $midx $gy $midx [expr {$gy + $curr(spcy)}] \
@@ -1108,9 +1109,9 @@ namespace eval ::logcanvas {
         if {$opt(update_drawing) < 2} {
           UpdateBndBox
         }
-        set new_y [expr {$y + $lbl_height + $curr(spcy)}]
-        gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height $last_y)"
-        return [list $x $new_y $box_width $lbl_height $last_y]
+        set new_y [expr {$y + $lbl_height($branch) + $curr(spcy)}]
+        gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height($branch) $last_y)"
+        return [list $x $new_y $box_width $lbl_height($branch) $last_y]
       }
 
       proc UpdateBndBox {} {
@@ -1399,7 +1400,7 @@ namespace eval ::logcanvas {
 
             if {! $ingit} {
               # This is the blue box at the bottom of the trunk
-              DrawRoot $lx $y2 $lbw $bot_height $trunkrev $trunkrev
+              DrawRoot $lx $y2 $lbw $lbl_height($trunkrev) $trunkrev $trunkrev
               # This is the arrow at the base of the trunk
               $logcanvas.canvas lower [ \
                 $logcanvas.canvas create line \
@@ -1425,17 +1426,17 @@ namespace eval ::logcanvas {
             if {$ingit} {
               set tip_height $bot_height
               set bot_height 0
-              set lbl_height $tip_height
+              set lbl_height($basebranch) $tip_height
             } else {
               set tip_height 0
-              set lbl_height $bot_height
+              set lbl_height($basebranch) $bot_height
             }
             if {! $ingit} {
               $logcanvas.canvas create line \
-                $mx $ry $mx [expr {$by - $rh}] \
+                $mx $by $mx [expr {$by - $rh}] \
                 -arrow last -arrowshape $curr(arrowshape) \
                 -width $curr(width)
-              DrawRoot $lx $y2 $lbw $bot_height $basebranch $basebranch
+              DrawRoot $lx $y2 $lbw $lbl_height($basebranch) $basebranch $basebranch
             }
             UpdateBndBox
           }
