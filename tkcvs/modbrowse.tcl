@@ -440,7 +440,7 @@ proc modbrowse_run {} {
       }
 
       # parse_svnmodules does svn list of the repository
-      # For SVN, the URL changes depending on what directory we're in, so use
+      # For SVN. The URL changes depending on what directory we're in, so use
       # svnroot instead of cvsglb(root)
       parse_svnmodules $cvscfg(svnroot)
     }

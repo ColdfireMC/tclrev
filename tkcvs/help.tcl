@@ -571,7 +571,7 @@ The log browser window has three components. These are the file name and version
 
 The main log display is fairly self explanatory. It shows a group of boxes connected by lines indicating the main trunk of the file development (on the left hand side) and any branches that the file has (which spread out to the right of the main trunk).
 
-Each box contains the version number, author of the version, and other information determined by the menu View -> Revision Layout.
+Each box contains the version number, author of the version, and other information determined by the menu Diagram -> Revision Layout.
 
 Constructing the branch diagram from Subversion is inefficient, so the Log Browser counts the tags when doing a Subversion diagram and pops up a dialog giving you a chance to skip the tag step if there are too many tags (where "many" arbitrarily equals 10.) 
 
@@ -621,8 +621,8 @@ This button lists all the tags applied to the file in a searchable text window.
 <itl>Close:</itl>
 This button closes the Log Browser. If no other windows are open, TkCVS exits.
 
-<h2>The View Options Menu</h2>
-The View Menu allows you to control what you see in the branch diagram.  You can choose how much information to show in the boxes, whether to show empty revisions, and whether to show tags.  You can even control the size of the boxes.  If you are using Subversion, you may wish to turn the display of tags off.  If they aren't asked for they won't be read from the repository, which can save a lot of time.
+<h2>The Diagram Menu</h2>
+The Diagram Menu allows you to control what you see in the branch diagram.  You can choose how much information to show in the boxes, whether to show empty revisions, and whether to show tags.  You can even control the size of the boxes.  If you are using Subversion, you may wish to turn the display of tags off.  If they aren't asked for they won't be read from the repository, which can save a lot of time.
   }
 }
 
