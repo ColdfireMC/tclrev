@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.1"
+set cvscfg(version) "9.1.1"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -132,7 +132,6 @@ if {[info exists cvsglb(cvsroot)]} {
 # Set some defaults
 set cvsglb(commit_comment) ""
 set cvsglb(cvs_version) ""
-set cvsglb(svn_version) ""
 
 if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
   cvserror "cvscfg(terminal) is required if cvscfg(use_cvseditor) is set"

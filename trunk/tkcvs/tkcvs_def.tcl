@@ -26,7 +26,9 @@ set cvscfg(sort_pref) {filecol -increasing}
 # If you want to see hash and author in Git workdir
 set cvscfg(gitdetail) false
 # Max number of revs to go back in a git branch diagram
-set cvscfg(gitmaxhist) 250
+set cvscfg(gitmaxhist) 500
+# Max number of branches in a git branch diagram
+set cvscfg(gitmaxbranch) 100
 # Which git log options to use for the branch diagram
 set cvscfg(gitlog_opts) "--first-parent"
 

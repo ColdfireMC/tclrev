@@ -1101,11 +1101,11 @@ namespace eval ::git_branchlog {
           lappend remote_branches [lindex $line 0]
         }
         if {![info exists logged_branches]} { set logged_branches {} }
-        if {![info exists reachable_branches]} { set reachable_branches {} }
+        if {![info exists reachable_branches]} { set hreachable_branches {} }
         if {![info exists remote_branches]} { set remote_branches {} }
-        gen_log:log D "Logged branches:    $logged_branches"
-        gen_log:log D "Reachable branches: $reachable_branches"
-        gen_log:log D "Remote branches:    $reachable_branches"
+        gen_log:log D "Logged branches ([llength $logged_branches]):    $logged_branches"
+        gen_log:log D "Reachable branches ([llength $reachable_branches]): $reachable_branches"
+        gen_log:log D "Remote branches ([llength $remote_branches]):    $remote_branches"
 
         # Collect and de-duplicate the branch list
         set branches $reachable_branches
@@ -1113,6 +1113,7 @@ namespace eval ::git_branchlog {
           set branches [concat $reachable_branches $logged_branches]
         }
         set branches [prune_branchlist $branches]
+        set branches [lrange $branches 0 $cvscfg(gitmaxbranch)]
 
         # De-duplicate the tags, while we're thinking of it.
         foreach a [array names revtags] {

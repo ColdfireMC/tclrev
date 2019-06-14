@@ -886,6 +886,7 @@ namespace eval ::logcanvas {
         if {$branch == {current}} {
           set rtw 0
           lassign [CalcCurrent $branch] box_width cur_height
+          set lbl_height(current) $cur_height
         } else {
           lassign [CalcRoot $branch] rtw box_width bot_height
           # In Git, we replace the blue box at the base with one at the tip.
@@ -913,6 +914,7 @@ namespace eval ::logcanvas {
           if {$revision == {current}} {
             set rtw 0
             lassign [CalcCurrent $revision] rbw cur_height
+            set lbl_height(current) $cur_height
           } else {
             lassign [CalcRevision $revision] rtw rbw rev_height
           }
@@ -1666,7 +1668,7 @@ namespace eval ::logcanvas {
       }
       $logcanvas.menubar add cascade -label "File"\
          -menu [menu $logcanvas.menubar.file] -underline 0
-      $logcanvas.menubar add cascade -label "View"\
+      $logcanvas.menubar add cascade -label "Diagram"\
          -menu [menu $logcanvas.menubar.view] -underline 0
       if {$ingit} {
         $logcanvas.menubar add cascade -label "Git Options"\
@@ -1689,7 +1691,7 @@ namespace eval ::logcanvas {
       $logcanvas.menubar.view add cascade -label "Update When Drawing" \
         -menu $logcanvas.menubar.view.update
 
-      # View
+      # Diagram
       menu $logcanvas.menubar.view.update
       $logcanvas.menubar.view.update add radiobutton -label "Every Revision" \
         -variable [namespace current]::opt(update_drawing) -value 0

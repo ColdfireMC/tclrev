@@ -1,21 +1,3 @@
-proc svn_version {} {
-  global cvsglb
-
-  gen_log:log T "ENTER"
-
-  set commandline "svn log -g -l 1"
-  gen_log:log C $commandline"
-  set ret [catch {eval "exec $commandline"} output]
-  if {$ret == 0} {
-    set cvsglb(svn_mergeinfo_works) 1
-    gen_log:log D "svn mergeinfo works"
-  } else {
-    set cvsglb(svn_mergeinfo_works) 0
-    #gen_log:log E "$output"
-    gen_log:log D "svn mergeinfo doesn't work"
-  }
-  gen_log:log T "LEAVE"
-}
 
 # Find SVN URL and where we are in path
 proc read_svn_dir {dirname} {
@@ -27,9 +9,6 @@ proc read_svn_dir {dirname} {
 
   gen_log:log T "ENTER ($dirname)"
   set cvsglb(vcs) svn
-  # Whether mergeinfo works depends on the server as well as the local svn
-  # program, so it may work for us in one repository but not another
-  svn_version
   # svn info gets the URL
   # Have to do eval exec because we need the error output
   set command "svn info"
@@ -95,7 +74,7 @@ proc read_svn_dir {dirname} {
         }
       }
       set cvscfg(svnroot) [string trimright $root "/"]
-      set cvsglb(root) $cvscfg(svnroot)
+      #set cvsglb(root) $cvscfg(svnroot)
       gen_log:log D "SVN URL: $cvscfg(url)"
       gen_log:log D "svnroot: $cvscfg(svnroot)"
       set cvsglb(relpath) [join $relp {/}]
@@ -715,7 +694,7 @@ proc svn_jit_listdir {} {
   global cvsglb
 
   gen_log:log T "ENTER"
-  set cvscfg(svnroot) $cvsglb(root)
+  gen_log:log D "svnroot: $cvscfg(svnroot)"
   set tv .modbrowse.treeframe.pw
   set opendir [$tv selection]
   # It might be a string like {/trunk/Dir 2}
@@ -832,7 +811,6 @@ proc parse_svnmodules {svnroot} {
   gen_log:log T "ENTER ($svnroot)"
 
   set tv .modbrowse.treeframe.pw
-  set cvscfg(svnroot) $svnroot
   set command "svn list -v $svnroot"
   set cmd(svnlist) [exec::new "$command"]
   if {[info exists cmd(svnlist)]} {
@@ -912,14 +890,8 @@ proc svn_log {detail args} {
        append flags "-q "
      }
   }
-  # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
-  # as well as the client, so we can't go by version number.  we
-  # just have to see if it works.
-  # Do we want to do -g for all detail levels?  Probably not for summary.
-  if {$cvsglb(svn_mergeinfo_works)} {
-    if {$detail ne "summary"} {
-      append flags "-g "
-    }
+  if {$detail ne "summary"} {
+    append flags "-g "
   }
 
   set v [viewer::new "$title"]
@@ -941,13 +913,7 @@ proc svn_log_rev {filepath} {
 
   gen_log:log T "ENTER ($filepath)"
 
-  set svncommand "svn log "
-  # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
-  # as well as the client, so we can't go by version number.  we
-  # just have to see if it works.
-  if {$cvsglb(svn_mergeinfo_works)} {
-    append svncommand "-g "
-  }
+  set svncommand "svn log -g "
   if {[regexp {/} $filepath]} {
     append svncommand "--stop-on-copy "
   }
@@ -1353,13 +1319,7 @@ proc svn_filelog {root path title} {
 
   gen_log:log T "ENTER ($root $path $title)"
 
-  set command "svn log "
-  # svn -g (mergeinfo) appeared in 1.5.  It depends on the server
-  # as well as the client, so we can't go by version number.  we
-  # just have to see if it works.
-  if {$cvsglb(svn_mergeinfo_works)} {
-    append command "-g "
-  }
+  set command "svn log -g "
 
   set url [safe_url $root/$path]
   append command "\"$url\""
@@ -1595,11 +1555,9 @@ namespace eval ::svn_branchlog {
         # to use a range from r1 that case, to find it
         set range "${highest_revision}:1"
         set command "svn log "
-        if {$cvsglb(svn_mergeinfo_works)} {
-          # The -g option causes revs that aren't on a branch but are merged
-          # with it to appear in the list, which is bad
-          append command "-g "
-        }
+        # The -g option causes revs that aren't on a branch but are merged
+        # with it to appear in the list, which is bad in this case
+        append command "-g "
         append command "-r $range $path"
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
@@ -1686,7 +1644,7 @@ namespace eval ::svn_branchlog {
             set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
           }
           # Do stop-on-copy to find the base of the branch
-          set command "svn log --use-merge-history"
+          set command "svn log -g"
           append command " --stop-on-copy $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
@@ -1725,7 +1683,7 @@ namespace eval ::svn_branchlog {
           lappend revbtags($rb) $branch
           set revpath($rb) $path
 
-          set command "svn log -q --use-merge-history $path"
+          set command "svn log -q -g $path"
           set cmd_log [exec::new $command {} 0 {} 1]
           set log_output [$cmd_log\::output]
           $cmd_log\::destroy
@@ -1740,7 +1698,7 @@ namespace eval ::svn_branchlog {
           # You Are Here box, so the branchpoint would be too low
           set idx [llength $branchrevs($branch)]
           if {$curr} {
-            gen_log:log E "Currently at Top"
+            gen_log:log D "Currently at Top"
             incr idx -1
           }
           set bp [lindex $allrevs($branch) $idx]
@@ -1810,7 +1768,7 @@ namespace eval ::svn_branchlog {
             }
             # Do log with stop-on-copy to find the actual revision that was tagged.
             # The tag itself created a rev which may be much higher.
-            set command "svn log --use-merge-history --stop-on-copy $path"
+            set command "svn log -g --stop-on-copy $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
