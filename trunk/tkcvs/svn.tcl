@@ -1803,6 +1803,7 @@ namespace eval ::svn_branchlog {
         # Tags
         # Get a list of the tags from the repository
         if {$show_tags} {
+          busy_start $lc
           # Draw something on the canvas so the user knows we're working
           set cnv_y [expr {$cnv_y + $yspc}]
           $lc.canvas create text $cnv_x $cnv_y -text "Getting TAGS" -tags {temporary}
@@ -1900,6 +1901,7 @@ namespace eval ::svn_branchlog {
           }
         }
 
+        busy_done $lc
         gen_log:log T "LEAVE"
         return
       }

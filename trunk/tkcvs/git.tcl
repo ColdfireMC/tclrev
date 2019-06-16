@@ -1129,9 +1129,22 @@ namespace eval ::git_branchlog {
            gen_log:log D "Only one branch to begin with! That was easy! trunk=$trunk"
         }
         if {! $trunk_found} {
-          # Now we go through the branches and eliminate the ones that this file
+          # Make a list of places to look for something to use as the trunk.
+          # We go through the branches and eliminate the ones that this file
           # doesn't inhabit
-          foreach br $branches {
+          set branches_checklist $branches
+          # master may or may not be in our list of branches. If it is, try to use it
+          if { "master" in $branches } {
+            gen_log:log D "master is in branches"
+            lappend branches_checklist "master"
+          }
+          # how about origin/master
+          set m [lsearch -glob $branches {*/master}]
+          if {$m > -1} {
+            gen_log:log D "*/master is in branches"
+            lappend branches_checklist [lindex $branches $m]
+          }
+          foreach br $branches_checklist {
             gen_log:log D "$br"
             set cmd(git_revtest) [exec::new "git rev-list -n 1 --abbrev-commit $br -- \"$filename\""]
             set revtest_lines [split [$cmd(git_revtest)\::output] "\n"]
@@ -1151,35 +1164,8 @@ namespace eval ::git_branchlog {
           }
         }
         if {! $trunk_found} {
-          # master may or may not be in our list of branches. If it is, try to use it
-          if { "master" in $branches } {
-            set trunk "master"
-            set trunk_found 1
-            gen_log:log D "master is in branches, trunk=$trunk"
-          }
-        }
-        if {! $trunk_found} {
-          set m [lsearch -glob $branches {*/master}]
-          if {$m > -1} {
-            set trunk [lindex $branches $m]
-            gen_log:log D "*/master is in branches, trunk=$trunk"
-            set trunk_found 1
-          }
-        }
-        if {! $trunk_found} {
-          set m [lsearch -glob $remote_branches {*/master}]
-          if {$m > -1} {
-            set trunk [lindex $remote_branches $m]
-            gen_log:log D "*/master is in remote branches, trunk=$trunk"
-            set trunk_found 1
-          }
-        }
-        if {! $trunk_found} {
-          # since we did the branch detection in date-order, newest to oldest, the
-          # oldest branch may be at the end of the list?
-          # No, not if we've done more recent work on the older branch
-          gen_log:log D "Using the first one returned by git branch"
           set trunk [lindex $reachable_branches 0]
+          gen_log:log D "Using the first branch returned by git branch. trunk=$trunk"
         }
         gen_log:log D "TRUNK: $trunk"
         # Make sure the trunk is the first in the branchlist
