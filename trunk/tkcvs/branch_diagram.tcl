@@ -605,7 +605,7 @@ namespace eval ::logcanvas {
         incr width $curr(padx,2)
         set height [expr {$curr(pady,2) + \
           [llength [subst $root_info]] * $font_norm_h}]
-        gen_log:log T "LEAVE (tag_width $tag_width  root_width $root_width height $height)"
+        gen_log:log T "LEAVE (tag_width $tag_width root_width $root_width height $height)"
         return [list $tag_width $root_width $height]
       }
 
@@ -634,7 +634,7 @@ namespace eval ::logcanvas {
 
         set tx [expr {$x + $rbox_width/2}]
         set ty [expr {$y - $curr(pady)}]
-        gen_log:log D "[subst $root_info]"
+        #gen_log:log D "[subst $root_info]"
         foreach s [subst $root_info] {
           $logcanvas.canvas create text \
             $tx $ty \
@@ -1114,6 +1114,42 @@ namespace eval ::logcanvas {
         set new_y [expr {$y + $lbl_height($branch) + $curr(spcy)}]
         gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height($branch) $last_y)"
         return [list $x $new_y $box_width $lbl_height($branch) $last_y]
+      }
+
+      proc DrawSideTree { x y root_rev } {
+        global ingit
+        variable logcanvas
+        variable curr
+        variable lbl_height
+
+        gen_log:log T "ENTER: ($x $y $root_rev)"
+        gen_log:log D "Drawing SideTree branch at $root_rev"
+        foreach {lx y2 lbw rh lly} [DrawBranch $x $y {} $root_rev] {
+          lappend bxys $lx $lbw $rh $lly
+          break
+        }
+        gen_log:log D "Drawing root for $root_rev SideTree"
+        lassign [CalcRoot $root_rev] rtw box_width box_height
+        set x2 [expr {$lx + $lbw + $curr(spcx)}]
+        set mx [expr {$lx + $lbw/2}]
+        set ry [expr {$y2 - $rh/4 - $curr(spcy)}]
+        set by [expr {$y2 - $curr(boff)}]
+        lassign [CalcRoot $root_rev] rtw box_width ignore
+
+        if {! $ingit} {
+          # This is the blue box at the bottom of the side branch
+          DrawRoot $lx $y2 $lbw $lbl_height($root_rev) $root_rev $root_rev
+          # This is the arrow at the base of the side branch
+          $logcanvas.canvas lower [ \
+            $logcanvas.canvas create line \
+              $mx $ry $mx [expr {$by - $rh}] \
+              -arrow last -arrowshape $curr(arrowshape) \
+              -width $curr(width)
+          ]
+        }
+        UpdateBndBox
+
+        gen_log:log T "LEAVE"
       }
 
       proc UpdateBndBox {} {

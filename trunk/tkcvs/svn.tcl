@@ -1431,15 +1431,12 @@ namespace eval ::svn_branchlog {
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
         set newlc [logcanvas::new . "SVN,loc" [namespace current]]
-        set ln [lindex $newlc 0]
-        set lc [lindex $newlc 1]
-        set show_tags 0
       } else {
         set newlc [logcanvas::new $filename "SVN,loc" [namespace current]]
-        set ln [lindex $newlc 0]
-        set lc [lindex $newlc 1]
-        set show_tags [set $ln\::opt(show_tags)]
       }
+      set ln [lindex $newlc 0]
+      set lc [lindex $newlc 1]
+      set show_tags [set $ln\::opt(show_tags)]
 
       # Implementation of Perl-like "grep {/re/} in_list"
       proc grep_filter { re in_list } {
@@ -1555,8 +1552,6 @@ namespace eval ::svn_branchlog {
         # to use a range from r1 that case, to find it
         set range "${highest_revision}:1"
         set command "svn log "
-        # The -g option causes revs that aren't on a branch but are merged
-        # with it to appear in the list, which is bad in this case
         append command "-g "
         append command "-r $range $path"
         set cmd_log [exec::new $command {} 0 {} 1]
@@ -1564,21 +1559,50 @@ namespace eval ::svn_branchlog {
         $cmd_log\::destroy
         set trunk_lines [split $log_output "\n"]
         set rootrev [parse_svnlog $trunk_lines trunk]
+        gen_log:log D "BASE/ROOT: $rootrev"
+
+        # We do a stop-on-copy too, to see where the trunk started, since the
+        # file may have been merged in from a branch
+        set command "svn log -g -q"
+        append command " --stop-on-copy $path"
+        set cmd_log [exec::new $command {} 0 {} 1]
+        set log_output [$cmd_log\::output]
+        $cmd_log\::destroy
+        if {$log_output == ""} {
+          continue
+        }
+        set loglines [split $log_output "\n"]
+        parse_q $loglines trunk
+        set rt [lindex $allrevs(trunk) end]
+        gen_log:log D "trunk: BASE $rt"
+        set branchroot(trunk) $rt
+        if {$rt ne $rootrev} {
+          set drawing_root $rt
+          lappend branchlist $rt
+          set branchrevs($rt) $allrevs(trunk)
+        } else {
+          set drawing_root $rootrev
+          set branchrevs($rootrev) $branchrevs(trunk)
+        }
+        set revbtags($drawing_root) "trunk"
+        set revpath($drawing_root) $path
+        set revkind($drawing_root) "root"
 
         # See if the current revision is on the trunk
         set curr 0
-        set brevs $branchrevs(trunk)
+        set brevs $branchrevs($drawing_root)
         set tip [lindex $brevs 0]
         set revpath($tip) $path
         set revkind($tip) "revision"
-        set brevs [lreplace $brevs 0 0]
         if {$tip == $revnum_current} {
           # If current is at end of trunk do this.
-          set branchrevs(trunk) [linsert $branchrevs(trunk) 0 {current}]
+          set branchrevs($drawing_root) [linsert $branchrevs($drawing_root) 0 {current}]
           set curr 1
         }
+        # We checked the tip, now check the rest while we assign revkind etc
+        set brevs [lrange $brevs 1 end-1]
         foreach r $brevs {
-          if {$r == $revnum_current} {
+          if {($curr == 0) && ($r == $revnum_current)} {
             # We need to make a new artificial branch off of $r
             lappend revbranches($r) {current}
           }
@@ -1594,11 +1618,6 @@ namespace eval ::svn_branchlog {
            {{} {} {} {} {} {} {}} \
            { break }
 
-        set branchrevs($rootrev) $branchrevs(trunk)
-        set revkind($rootrev) "root"
-        # revbtags is for DrawTree
-        set revbtags($rootrev) "trunk"
-        set revpath($rootrev) $path
 
         # if root is not empty added it to the branchlist
         if { $rootrev ne "" } {
@@ -1654,6 +1673,8 @@ namespace eval ::svn_branchlog {
           }
           set loglines [split $log_output "\n"]
           set rb [parse_svnlog $loglines $branch]
+          gen_log:log D "$branch: BASE $rb"
+          set branchroot($branch) $rb
           # See if the current revision is on this branch
           set curr 0
           set brevs $branchrevs($branch)
@@ -1703,18 +1724,20 @@ namespace eval ::svn_branchlog {
           }
           set bp [lindex $allrevs($branch) $idx]
           gen_log:log D "$allrevs($branch)"
-          gen_log:log D " BRANCHPOINT for $branch: $bp"
+          gen_log:log D " PARENT for $branch: $bp"
           if {$bp == ""} {
             gen_log:log D "allrevs same as branchrevs: decrementing branchpoint"
             set bp [lindex $branchrevs($branch) end]
             set bpn [string trimleft $bp "r"]
             incr bpn -1
             set bp "r${bpn}"
-            gen_log:log D " NEW BRANCHPOINT for $branch: $bp"
+            gen_log:log D " NEW PARENT for $branch: $bp"
           }
+          set revparent($rb) $bp
           lappend revbranches($bp) $rb
-          gen_log:log D "========= finished $branch =========="
-        }
+          gen_log:log D "===== finished $branch ======"
+        } ;# Finished branches
+
         # Tags
         # Get a list of the tags from the repository
         if {$show_tags} {
@@ -1806,73 +1829,44 @@ namespace eval ::svn_branchlog {
         }
 
         # sort the list in rev number order
-        set brlist [lsort -dictionary $branchlist]
+        set brlist [lsort -unique -dictionary $branchlist]
         gen_log:log D "init branches $brlist"
+        gen_log:log D "OLDEST ROOT $rootrev"
+        gen_log:log D "DRAWING ROOT $drawing_root"
         # rebuild the list
         set branchlist {}
         foreach br $brlist {
-          lappend branchlist $br
-          # add to the list any revs that are in the branch revs
-          # that also have revbranches
-          if {[info exists branchrevs($br)]} {
-            foreach r $branchrevs($br) {
-              if {[info exists revbranches($r)] } {
-                lappend branchlist $r
-              }
-            }
+          set btag $revbtags($br)
+          gen_log:log D "$br $btag"
+          if {[info exists branchroot($btag)]} {
+            gen_log:log D " base of $br is $branchroot($btag)"
+          } else {
+            gen_log:log D " base of $br is MISSING"
+          }
+          if {[info exists revparent($br)]} {
+            gen_log:log D " parent of $br is $revparent($br)"
+          } else {
+            gen_log:log D " parent of $br is MISSING"
           }
         }
-        set branchlist [lsort -dictionary $branchlist]
+        set branchlist $brlist
         gen_log:log D "branches $branchlist"
 
-        # add any branches that are not on a revbranches list to the one closest
-        # in numeric value
-
-        # counter of branches in the list
-        set brn 0
-        # get the length of the list so we can tell when we are done
-        set brlistlen [llength $branchlist]
-        while {$brn<$brlistlen} {
-          # get the branch name
-          set br [lindex $branchlist $brn]
-          gen_log:log D "  branch $brn is $br"
-          # look at all the branches up to branch $br
-          set subbrn 0
-          set subbrwithrevs r0
-          set subbrwithrevsnum 0
-          set foundinrevbr 0
-          while {$subbrn<$brn} {
-            set subbr [lindex $branchlist $subbrn]
-            # check each revbranch for this branch
-            if {[info exists revbranches($subbr)]} {
-              # remember the highest number rev with revbranches
-              set subbrnum [string trimleft $subbr "r"]
-              if { $subbrwithrevsnum < $subbrnum }  {
-                set subbrwithrevs  $subbr
-                set subbrwithrevsnum  $subbrnum
-              }
-              foreach r $revbranches($subbr) {
-                if {$r==$br} {
-                  # we found it in a revbranches
-                  incr foundinrevbr
-                  break
-                }
-              }
-            }
-            if {$foundinrevbr>0} {
-              gen_log:log D "   found $br in revbranch of $subbr"
-              break
-            }
-            incr subbrn
-          }
-          incr brn
-        }
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
 
         set branchrevs(current) {}
+        # In SVN, sort_it_all_out is mostly a report
         [namespace current]::svn_sort_it_all_out
+        $ln\::DrawTree now
+
+        # We chose a branch other than the oldest one for this file, as the root.
+        # Let's draw the branch that has the oldest rev for this file, too.
+        if {$rootrev ne $drawing_root} {
+          gen_log:log D "Adding UNROOTED branch: $rootrev"
+          $ln\::DrawSideTree 40 0 $rootrev
+        }
         gen_log:log T "LEAVE"
         return
       }
@@ -1987,9 +1981,9 @@ namespace eval ::svn_branchlog {
         foreach r [lsort -dictionary [array names revkind]] {
            gen_log:log D "revkind($r) $revkind($r)"
         }
-        foreach r [lsort -dictionary [array names revpath]] {
-           gen_log:log D "revpath($r) $revpath($r)"
-        }
+        #foreach r [lsort -dictionary [array names revpath]] {
+           #gen_log:log D "revpath($r) $revpath($r)"
+        #}
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
            gen_log:log D "branchrevs($a) $branchrevs($a)"
@@ -2016,9 +2010,6 @@ namespace eval ::svn_branchlog {
         }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
-        # Little pause before erasing the list of branches we temporarily drew
-        after 500
-        $ln\::DrawTree now
         gen_log:log T "LEAVE"
       }
 

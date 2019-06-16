@@ -965,15 +965,12 @@ namespace eval ::git_branchlog {
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
         set newlc [logcanvas::new . "GIT,loc" [namespace current]]
-        set ln [lindex $newlc 0]
-        set lc [lindex $newlc 1]
-        set show_tags 0
       } else {
         set newlc [logcanvas::new $filename "GIT,loc" [namespace current]]
-        set ln [lindex $newlc 0]
-        set lc [lindex $newlc 1]
-        set show_tags [set $ln\::opt(show_tags)]
       }
+      set ln [lindex $newlc 0]
+      set lc [lindex $newlc 1]
+      set show_tags [set $ln\::opt(show_tags)]
 
       proc abortLog { } {
         global cvscfg
@@ -1767,7 +1764,6 @@ namespace eval ::git_branchlog {
         variable filename
 
         gen_log:log T "ENTER ($branch)"
-        gen_log:log D "TRACK $branch"
 
         set base_guess1 [set base_guess2 ""]
         set base_hash1 [set base_hash2 ""]
@@ -1802,10 +1798,9 @@ namespace eval ::git_branchlog {
           set cmd_p2 [exec::new $command]
           set parent_guess2 [lindex [$cmd_p2\::output] 0]
         }
-        gen_log:log D "TRACK method 2: Base: $base_guess2 ($base_hash2)  Parent: $parent_guess2"
         set base $base_hash2
         set parent $parent_guess2
-        gen_log:log D "TRACK returning for $branch: BASE $base  PARENT $parent"
+        gen_log:log D "$branch: BASE $base PARENT $parent"
         gen_log:log T "return ($base $parent)"
         return [list $base $parent]
       }

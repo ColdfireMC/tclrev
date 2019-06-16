@@ -87,7 +87,7 @@ namespace eval ::exec {
         if {[gets $procout line] < 0} {
           # [close] blocks until child process completes
           if {[catch {close $procout} res]} {
-            gen_log:log E "  Close Failed - errorCode $errorCode"
+            #gen_log:log E "  Close Failed - errorCode $errorCode"
             set ExecDone [list 1 $res $errorCode]
             gen_log:log E "  ExecDone $ExecDone"
             if {$errmsg == ""} { set errmsg $res }
@@ -178,7 +178,7 @@ namespace eval ::exec {
         if {[tell $procerr] != $errpos} {
           seek $procerr $errpos start
           while {[gets $procerr erline] != -1} {
-            append errmsg "\n$erline"
+            append errmsg "$erline\n"
             set errpos [tell $procerr]
           }
           gen_log:log E "$errmsg"
