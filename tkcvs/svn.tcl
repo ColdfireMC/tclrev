@@ -1738,6 +1738,68 @@ namespace eval ::svn_branchlog {
           gen_log:log D "===== finished $branch ======"
         } ;# Finished branches
 
+        # In Subversion, it takes a long toime to gather the tags, so we draw the
+        # branches and keep going
+        # sort the list in rev number order
+        set brlist [lsort -unique -dictionary $branchlist]
+        gen_log:log D "BRANCHES $brlist"
+        gen_log:log D "OLDEST ROOT $rootrev"
+        gen_log:log D "DRAWING ROOT $drawing_root"
+        if {! [info exists revbtags($rootrev)]} {
+          gen_log:log D " revbtags($rootrev) is MISSING! Restoring original root"
+          #Oops, I guess stop-on-copy quit on a tag instead of a branch.
+          set revkind($rootrev) "root"
+          set revkind($drawing_root) "revision"
+          set revbtags($rootrev) "trunk"
+          #set revpath($rootrev) $path
+          set branchrevs($rootrev) $branchrevs(trunk)
+          if {"current" in $branchrevs($drawing_root)} {
+            set branchrevs($rootrev) [linsert $branchrevs($rootrev) 0 {current}]
+          }
+          catch {unset branchrevs($drawing_root)}
+          catch {unset revbtags($drawing_root)}
+          set btag $revbtags($rootrev)
+          set drawing_root $rootrev 
+        }
+
+        # This is mostly just a checkup
+        set branchlist {}
+        foreach br $brlist {
+          if {[info exists revbtags($br)]} {
+            set btag $revbtags($br)
+          } else {
+            continue
+          }
+          gen_log:log D "$br $btag"
+          if {[info exists branchroot($btag)]} {
+            gen_log:log D " base of $br is $branchroot($btag)"
+          } else {
+            gen_log:log D " base of $br is MISSING"
+          }
+          if {[info exists revparent($br)]} {
+            gen_log:log D " parent of $br is $revparent($br)"
+          } else {
+            gen_log:log D " parent of $br is MISSING"
+          }
+        }
+        set branchlist $brlist
+        gen_log:log D "branches $branchlist"
+
+        pack forget $lc.stop
+        pack $lc.close -in $lc.down.closefm -side right
+        $lc.close configure -state normal
+
+        set branchrevs(current) {}
+        # In SVN, sort_it_all_out is mostly a report
+        [namespace current]::svn_sort_it_all_out
+        $ln\::DrawTree now
+        # We chose a branch other than the oldest one for this file, as the root.
+        # Let's draw the branch that has the oldest rev for this file, too.
+        if {$rootrev ne $drawing_root} {
+          gen_log:log D "Adding UNROOTED branch: $rootrev"
+          $ln\::DrawSideTree 40 0 $rootrev
+        }
+
         # Tags
         # Get a list of the tags from the repository
         if {$show_tags} {
@@ -1826,47 +1888,18 @@ namespace eval ::svn_branchlog {
             gen_log:log D "   revtags($bp) $revtags($bp)"
             update idletasks
           }
-        }
-
-        # sort the list in rev number order
-        set brlist [lsort -unique -dictionary $branchlist]
-        gen_log:log D "init branches $brlist"
-        gen_log:log D "OLDEST ROOT $rootrev"
-        gen_log:log D "DRAWING ROOT $drawing_root"
-        # rebuild the list
-        set branchlist {}
-        foreach br $brlist {
-          set btag $revbtags($br)
-          gen_log:log D "$br $btag"
-          if {[info exists branchroot($btag)]} {
-            gen_log:log D " base of $br is $branchroot($btag)"
-          } else {
-            gen_log:log D " base of $br is MISSING"
-          }
-          if {[info exists revparent($br)]} {
-            gen_log:log D " parent of $br is $revparent($br)"
-          } else {
-            gen_log:log D " parent of $br is MISSING"
+          # In SVN, sort_it_all_out is mostly a report
+          [namespace current]::svn_sort_it_all_out
+          # Redraw
+          $ln\::DrawTree now
+          # We chose a branch other than the oldest one for this file, as the root.
+          # Let's draw the branch that has the oldest rev for this file, too.
+          if {$rootrev ne $drawing_root} {
+            gen_log:log D "Adding UNROOTED branch: $rootrev"
+            $ln\::DrawSideTree 40 0 $rootrev
           }
         }
-        set branchlist $brlist
-        gen_log:log D "branches $branchlist"
 
-        pack forget $lc.stop
-        pack $lc.close -in $lc.down.closefm -side right
-        $lc.close configure -state normal
-
-        set branchrevs(current) {}
-        # In SVN, sort_it_all_out is mostly a report
-        [namespace current]::svn_sort_it_all_out
-        $ln\::DrawTree now
-
-        # We chose a branch other than the oldest one for this file, as the root.
-        # Let's draw the branch that has the oldest rev for this file, too.
-        if {$rootrev ne $drawing_root} {
-          gen_log:log D "Adding UNROOTED branch: $rootrev"
-          $ln\::DrawSideTree 40 0 $rootrev
-        }
         gen_log:log T "LEAVE"
         return
       }
