@@ -409,6 +409,7 @@ namespace eval ::logcanvas {
         }
         set mname "$logcanvas.canvas.[join [split $rev {.}] {_}]"
         set ntags [llength $revtags($rev)]
+        incr ntags
         if {$ntags > 20} {set ntags 20}
         set line_h [font metrics $cvscfg(listboxfont) -displayof $logcanvas -linespace]
         gen_log:log D "line height: $line_h"
@@ -423,7 +424,8 @@ namespace eval ::logcanvas {
             set maxtag $t
           }
         }
-          set w [font measure $cvscfg(listboxfont) -displayof $logcanvas "$maxtag  "]
+        set maxtag "mm$maxtag"
+        set w [font measure $cvscfg(listboxfont) -displayof $logcanvas "$maxtag"]
         if {! [winfo exists $mname]} {
           gen_log:log D "width from $maxtag: $w"
           frame $mname -relief raised -bd 2 -bg $cvsglb(hlbg)

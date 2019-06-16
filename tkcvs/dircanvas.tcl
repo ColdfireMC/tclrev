@@ -9,11 +9,12 @@ proc DirCanvas:create {w} {
 
   gen_log:log T "ENTER ($w)"
 
+  update
   set winwid [winfo width $w]
   set beginwid [expr {$winwid / 5}]
 
   if {! [winfo exists $w.tree] } {
-    frame $w.pw
+    frame $w.pw -width $winwid
     pack $w.pw -fill both -expand 1
 
     ttk::treeview $w.tree -columns {filecol statcol datecol wrevcol editcol} \
@@ -37,6 +38,7 @@ proc DirCanvas:create {w} {
     $w.tree heading $col -image "" -command "DirCanvas:sort_by_col $w.tree $col -increasing"
   }
   $w.tree heading #0 -image "" -command "DirCanvas:sort_by_col $w.tree statcol -increasing"
+  update
 
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
 
