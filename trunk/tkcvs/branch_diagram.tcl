@@ -625,7 +625,11 @@ namespace eval ::logcanvas {
         variable tlist
 
         gen_log:log T "ENTER ($x $y $rbox_width $rbox_height $cur_rev $root_rev)"
-        gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev at $cur_rev"
+        if {[info exists revbtags($root_rev)]} {
+          gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev at $cur_rev"
+        } else {
+          gen_log:log D "Drawing nameless root for $root_rev at $cur_rev"
+        }
 
         # draw the box
         $logcanvas.canvas create rectangle \
@@ -849,7 +853,11 @@ namespace eval ::logcanvas {
         variable revbtags
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
-        gen_log:log D "Drawing $revbtags($branch) $branch rooted at $root_rev ($x $y)"
+        if {[info exists revbtags($branch)]} {
+          gen_log:log D "Drawing $revbtags($branch) $branch rooted at $root_rev ($x $y)"
+        } else {
+          gen_log:log D "Drawing nameless branch rooted at $root_rev ($x $y)"
+        }
         # What revisions to show on this branch? Options may hide some
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
         if {$branchrevs($branch) == {}} {
