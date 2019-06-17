@@ -251,15 +251,35 @@ proc git_push {} {
 
   gen_log:log T "ENTER"
 
-  set mess "This will push your committed changes to\
-            $cvsglb(push_origin) $cvsglb(push_url).\n\n Are you sure?"
+  set command "git push --dry-run"
+  set ret [catch {eval "exec $command"} dryrun_output]
+  gen_log:log C "$dryrun_output"
 
-  if {[cvsconfirm $mess .workdir] == "ok"} {
-    set commandline "git push"
-    set v [viewer::new "Push"]
-    $v\::do "$commandline"
-    $v\::wait
-    $v\::clean_exec
+  # push will return "Everything up-to-date" if it is
+  if {! [string match "Everyt*" $dryrun_output]} {
+    set mess "This will push your committed changes to\
+            $cvsglb(push_origin) $cvsglb(push_url).\n"
+
+    append mess "\n$dryrun_output"
+    append mess "\n\n Are you sure?"
+
+    set title {Confirm!}
+    set answer [tk_messageBox \
+          -icon question \
+          -title $title \
+          -message $mess \
+          -parent .workdir \
+          -type okcancel]
+
+    if {$answer == {ok}} {
+      set commandline "git push"
+      set v [viewer::new "Push"]
+      $v\::do "$commandline"
+      $v\::wait
+      $v\::clean_exec
+    }
+  } else {
+    cvsok "$dryrun_output" .workdir
   }
 
   gen_log:log T "LEAVE"
@@ -270,15 +290,35 @@ proc git_fetch {} {
 
   gen_log:log T "ENTER"
 
-  set mess "This will fetch changes from\
-            $cvsglb(fetch_origin) $cvsglb(fetch_url).\n\n Are you sure?"
+  set command "git fetch --dry-run"
+  set ret [catch {eval "exec $command"} dryrun_output]
+  gen_log:log C "$dryrun_output"
 
-  if {[cvsconfirm $mess .workdir] == "ok"} {
-    set commandline "git fetch"
-    set v [viewer::new "Fetch"]
-    $v\::do "$commandline"
-    $v\::wait
-    $v\::clean_exec
+  # Fetch is just quiet if it's up to date
+  if {[llength $dryrun_output] > 1} {
+    set mess "This will fetch changes from\
+            $cvsglb(fetch_origin) $cvsglb(fetch_url).\n"
+
+    append mess "\n$dryrun_output"
+    append mess "\n\n Are you sure?"
+
+    set title {Confirm!}
+    set answer [tk_messageBox \
+          -icon question \
+          -title $title \
+          -message $mess \
+          -parent .workdir \
+          -type okcancel]
+
+    if {$answer == {ok}} {
+      set commandline "git fetch"
+      set v [viewer::new "Fetch"]
+      $v\::do "$commandline"
+      $v\::wait
+      $v\::clean_exec
+    }
+  } else {
+    cvsok "Everything up to date" .workdir
   }
 
   gen_log:log T "LEAVE"
@@ -1132,19 +1172,22 @@ namespace eval ::git_branchlog {
           # Make a list of places to look for something to use as the trunk.
           # We go through the branches and eliminate the ones that this file
           # doesn't inhabit
-          set branches_checklist $branches
           # master may or may not be in our list of branches. If it is, try to use it
-          if { "master" in $branches } {
+          set m [lsearch -exact $branches {master}]
+          if {$m > -1} {
             gen_log:log D "master is in branches"
-            lappend branches_checklist "master"
+            set branches [lreplace $branches $m $m]
+            set branches [concat "master" $branches]
           }
           # how about origin/master
           set m [lsearch -glob $branches {*/master}]
           if {$m > -1} {
-            gen_log:log D "*/master is in branches"
-            lappend branches_checklist [lindex $branches $m]
+            set match [lindex $branches $m]
+            gen_log:log D "$match is in branches"
+            set branches [lreplace $branches $m $m]
+            set branches [concat "$match" $branches]
           }
-          foreach br $branches_checklist {
+          foreach br $branches {
             gen_log:log D "$br"
             set cmd(git_revtest) [exec::new "git rev-list -n 1 --abbrev-commit $br -- \"$filename\""]
             set revtest_lines [split [$cmd(git_revtest)\::output] "\n"]
@@ -1164,8 +1207,8 @@ namespace eval ::git_branchlog {
           }
         }
         if {! $trunk_found} {
-          set trunk [lindex $reachable_branches 0]
-          gen_log:log D "Using the first branch returned by git branch. trunk=$trunk"
+          set trunk [lindex $branches 0]
+          gen_log:log D "Using trunk=$trunk"
         }
         gen_log:log D "TRUNK: $trunk"
         # Make sure the trunk is the first in the branchlist
