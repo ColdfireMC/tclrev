@@ -1,10 +1,13 @@
 Release 9.1.1 June, 2019
 
+- In Subversion, draw the branch diagram while the tags are still being
+  collected.
+
+= Also in Subversion, add the ability to draw separately rooted trees in
+  the branch browser when a file is added on a branch
+
 - Add confirmation dialogs to the git fetch and push procs containing the
   --dry-run output so user can confirm or cancel
-
-= For Subversion, add the ability to draw separately rooted trees in
-  the branch browser when a file is added on a branch
 
 - Change "View" menu on branch browser to "Diagram" so Apple doesn't mess with
   it and break it
