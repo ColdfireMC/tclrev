@@ -1569,7 +1569,7 @@ namespace eval ::svn_branchlog {
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
         if {$log_output == ""} {
-          continue
+          gen_log:log D "trunk is EMPTY"
         }
         set loglines [split $log_output "\n"]
         parse_q $loglines trunk
@@ -1656,7 +1656,6 @@ namespace eval ::svn_branchlog {
           set cnv_y [expr {$cnv_y + $yspc}]
           update
           # Can't use file join or it will mess up the URL
-          gen_log:log D "BRANCHES: RELPATH \"$relpath\""
           if { $relpath == {} } {
             set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$safe_filename"
           } else {
@@ -1715,24 +1714,16 @@ namespace eval ::svn_branchlog {
           set loglines [split $log_output "\n"]
           parse_q $loglines $branch
 
-          # If current is HEAD of branch, the count is one too high because of the
-          # You Are Here box, so the branchpoint would be too low
-          set idx [llength $branchrevs($branch)]
-          if {$curr} {
-            gen_log:log D "Currently at Top"
-            incr idx -1
+          # Deduce the parent of the branch by finding the last member of the
+          # long list that's not in the stop-on-copy list
+          set search_list [lreverse $allrevs($branch)]
+          set idx [lsearch $search_list $rb]
+          set bp [lindex $search_list $idx-1]
+          if {$bp < 0} {
+            gen_log:log D "$branch is EMPTY"
+            continue
           }
-          set bp [lindex $allrevs($branch) $idx]
-          gen_log:log D "$allrevs($branch)"
           gen_log:log D " PARENT for $branch: $bp"
-          if {$bp == ""} {
-            gen_log:log D "allrevs same as branchrevs: decrementing branchpoint"
-            set bp [lindex $branchrevs($branch) end]
-            set bpn [string trimleft $bp "r"]
-            incr bpn -1
-            set bp "r${bpn}"
-            gen_log:log D " NEW PARENT for $branch: $bp"
-          }
           set revparent($rb) $bp
           lappend revbranches($bp) $rb
           gen_log:log D "===== finished $branch ======"
