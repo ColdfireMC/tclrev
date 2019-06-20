@@ -1660,7 +1660,8 @@ proc save_options { } {
                  gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums }
   set STRGopts { file_filter ignore_file_filter clean_these \
-                 gitlog_opts gitmaxhist printer log_classes lastdir sort_pref editor editorargs \
+                 gitbranchgroups gitlog_opts gitmaxbranch gitmaxhist \
+                 printer log_classes lastdir sort_pref editor editorargs \
                  workgeom modgeom loggeom tracgeom }
 
   # Plus the logcanvas options
