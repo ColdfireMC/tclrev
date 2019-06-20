@@ -1,3 +1,13 @@
+Release 9.1.2 June, 2019
+
+- Add a new option for the git branchlog:
+  # Which groups of git branches to consider. F can't be excluded.
+  #  F    only those captured in the file log
+  #  L    local, found by "git branch"
+  #  R    remote, found by "git branch -r"
+  set cvscfg(gitbranchgroups) "FL"
+
+
 Release 9.1.1 June, 2019
 
 - In Subversion, draw the branch diagram while the tags are still being

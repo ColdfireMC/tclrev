@@ -1351,6 +1351,7 @@ namespace eval ::logcanvas {
         } else {
           set view_xoff [lindex [$logcanvas.canvas xview] 0]
           set view_yoff [lindex [$logcanvas.canvas yview] 0]
+          $logcanvas.canvas delete merge_arrows
           $logcanvas.canvas delete all
           # These put the names of variables into one variable to be passed.
           # Because they're in braces, we don't need to know about the
@@ -1515,7 +1516,6 @@ namespace eval ::logcanvas {
             foreach to [array names revmergefrom] {
               gen_log:log D "revmergefrom($to) $revmergefrom($to)"
               set from $revmergefrom($to)
-              gen_log:log D " from $from to $to"
               if [info exists xyw($from)] {
                 gen_log:log D " xyw($from) $xyw($from)"
               } else {
@@ -1552,7 +1552,7 @@ namespace eval ::logcanvas {
               }
               $logcanvas.canvas create line \
                   $xfrom $yfrom $xmid $ymid $xto $yto \
-                  -arrow first -smooth 1
+                  -arrow first -smooth 1 -tags merge_arrows
             }
           }
           # Reselect the previously selected revisions
@@ -1840,31 +1840,43 @@ namespace eval ::logcanvas {
         }]
 
      if {$ingit} {
-       global git_menubar_opt
-       foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
-         $logcanvas.menubar.git_opts add checkbutton -label $go \
-           -variable git_menubar_opt($go) -onvalue 1 -offvalue 0 \
+       global git_log_opt
+       $logcanvas.menubar.git_opts add command -label "Git log options"
+       foreach log_opt { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
+         $logcanvas.menubar.git_opts add checkbutton -label $log_opt \
+           -variable git_log_opt($log_opt) -onvalue 1 -offvalue 0 \
            -command {
                global cvscfg
-               global git_menubar_opt
+               global git_log_opt
 
-               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
-               set cvscfg(gitlog_opts) ""
-               foreach go [array names git_menubar_opt] {
-                 if {$git_menubar_opt($go)} {
-                   append cvscfg(gitlog_opts) "$go "
+               gen_log:log D "cvscfg(log_opt) $cvscfg(log_opt)"
+               set cvscfg(log_opt) ""
+               foreach go [array names git_log_opt] {
+                 if {$git_log_opt($go)} {
+                   append cvscfg(log_opt) "$go "
                  }
                }
-               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
-           }
+               gen_log:log D "cvscfg(log_opt) $cvscfg(log_opt)"
+          }
         }
-       foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
-         if {$go in $cvscfg(gitlog_opts)} {
-           set git_menubar_opt($go) 1
-         } else {
-           set git_menubar_opt($go) 0
-         }
+        foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
+          if {$go in $cvscfg(gitlog_opts)} {
+            set git_log_opt($go) 1
+          } else {
+            set git_log_opt($go) 0
+          }
         }
+        $logcanvas.menubar.git_opts add separator
+        $logcanvas.menubar.git_opts add command -label "Branches"
+        $logcanvas.menubar.git_opts add radiobutton -label " File-specific" \
+          -variable cvscfg(gitbranchgroups) -value "F" \
+          -command [namespace code { $scope\::reloadLog } ]
+        $logcanvas.menubar.git_opts add radiobutton -label " All Local" \
+          -variable cvscfg(gitbranchgroups) -value "FL" \
+          -command [namespace code { $scope\::reloadLog } ]
+        $logcanvas.menubar.git_opts add radiobutton -label " Local + Remote" \
+          -variable cvscfg(gitbranchgroups) -value "FLR" \
+          -command [namespace code { $scope\::reloadLog } ]
       }
 
       if {$tcl_platform(platform) != "windows"} {

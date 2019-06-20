@@ -27,6 +27,13 @@ set cvscfg(sort_pref) {filecol -increasing}
 set cvscfg(gitdetail) false
 # Max number of revs to go back in a git branch diagram
 set cvscfg(gitmaxhist) 500
+# Max number of git branches to process
+set cvscfg(gitmaxbranch) 100
+# Which groups of git branches to consider. F can't be excluded.
+#  F    only those captured in the file log
+#  L    local, found by "git branch"
+#  R    remote, found by "git branch -r"
+set cvscfg(gitbranchgroups) "FL"
 # Max number of branches in a git branch diagram
 set cvscfg(gitmaxbranch) 100
 # Which git log options to use for the branch diagram

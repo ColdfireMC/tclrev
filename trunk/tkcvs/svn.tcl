@@ -1371,15 +1371,14 @@ proc svn_branches {files} {
   gen_log:log T "ENTER ($files)"
   set filelist [join $files]
 
-  if {$files == {}} {
-    cvsfail "Please select one or more files!" .workdir
-    return
-  }
-
   gen_log:log D "Relative Path: $cvsglb(relpath)"
 
-  foreach file $files {
-    ::svn_branchlog::new $cvsglb(relpath) $file
+  if {$files == {}} {
+    ::svn_branchlog::new $cvsglb(relpath) .
+  } else {
+    foreach file $files {
+      ::svn_branchlog::new $cvsglb(relpath) $file
+    }
   }
 
   gen_log:log T "LEAVE"
@@ -1638,7 +1637,7 @@ namespace eval ::svn_branchlog {
         # Get a list of the branches from the repository
         # Draw something on the canvas so the user knows we're working
         $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
-        set cnv_y [expr {$cnv_y + $yspc}]
+        incr cnv_y $yspc
 
         set command "svn list $cvscfg(svnroot)/$cvscfg(svn_branchdir)"
         set cmd_log [exec::new $command {} 0 {} 1]
@@ -1653,8 +1652,9 @@ namespace eval ::svn_branchlog {
           gen_log:log D "========= $branch =========="
           # Draw something on the canvas so the user knows we're working
           $lc.canvas create text $cnv_x $cnv_y -text $branch -tags {temporary} -fill $cvscfg(colourB)
-          set cnv_y [expr {$cnv_y + $yspc}]
-          update
+          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
+          incr cnv_y $yspc
+          update idletasks
           # Can't use file join or it will mess up the URL
           if { $relpath == {} } {
             set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$safe_filename"
@@ -1796,9 +1796,8 @@ namespace eval ::svn_branchlog {
         if {$show_tags} {
           busy_start $lc
           # Draw something on the canvas so the user knows we're working
-          set cnv_y [expr {$cnv_y + $yspc}]
-          $lc.canvas create text $cnv_x $cnv_y -text "Getting TAGS" -tags {temporary}
-          set cnv_y [expr {$cnv_y + $yspc}]
+          #$lc.canvas create text $cnv_x $cnv_y -text "Getting TAGS" -tags {temporary}
+          #incr cnv_y $yspc
 
           set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
           set cmd_log [exec::new $command {} 0 {} 1]
@@ -1833,9 +1832,10 @@ namespace eval ::svn_branchlog {
             # Draw something on the canvas so the user knows we're working
             set tag [string trimright $tag "/"]
             # Draw something on the canvas so the user knows we're working
-            $lc.canvas create text $cnv_x $cnv_y -text $tag -tags {temporary} -fill $cvscfg(colourA)
-            set cnv_y [expr {$cnv_y + $yspc}]
-            update
+            #$lc.canvas create text $cnv_x $cnv_y -text $tag -tags {temporary} -fill $cvscfg(colourA)
+            #$lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
+            #incr cnv_y $yspc
+            #update idletasks
             # Can't use file join or it will mess up the URL
             gen_log:log D "TAGS: RELPATH \"$relpath\""
             if { $relpath == {} } {
