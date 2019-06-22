@@ -56,7 +56,6 @@ namespace eval ::logcanvas {
       variable search_lastpattern ""
       variable search_elements [list]
       variable search_index 0
-      variable search_lastfill ""
       variable search_lastcase 0
       variable search_nocase
       variable logcanvas ".logcanvas$my_idx"
@@ -636,6 +635,7 @@ namespace eval ::logcanvas {
           $x $y \
           [expr {$x + $rbox_width}] [expr {$y - $rbox_height}] \
           -width $curr(width) \
+          -tags box \
           -fill gray90 -outline blue
 
         set tx [expr {$x + $rbox_width/2}]
@@ -647,7 +647,7 @@ namespace eval ::logcanvas {
             -text $s \
             -anchor s \
             -font $font_norm -fill navy \
-            -tags [list R$root_rev]
+            -tags "R$root_rev"
           incr ty -$font_norm_h
         }
         gen_log:log T "LEAVE ()"
@@ -802,8 +802,8 @@ namespace eval ::logcanvas {
         set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
-          -width $curr(width) -fill gray90 \
-          -tags [list box R$revision rect$revision active]
+          -width $curr(width) -fill gray90 -outline black \
+          -tags [list box selectable R$revision rect$revision active]
         # ...and add the contents
         if {[info exists revstate($revision)]} {
           if {$revstate($revision) == {dead}} {
@@ -830,7 +830,7 @@ namespace eval ::logcanvas {
             -text $s \
             -anchor s \
             -font $font_norm \
-            -tags [list R$revision box active]
+            -tags [list selectable R$revision active]
           incr ty -$font_norm_h
         }
         gen_log:log T "LEAVE ()"
@@ -1604,49 +1604,63 @@ namespace eval ::logcanvas {
       # string "FOO". If you want to search all strings starting with "FOO", you have
       # to put "FOO*". For all strings containing "FOO", you must put "*FOO*".
       proc Search {} {
+        global cvscfg
         variable logcanvas
         variable font_bold
         variable search_elements
         variable search_index
-        variable search_lastfill
         variable search_lastpattern
         variable search_lastcase
         variable search_nocase
+        variable revwho
+        variable revdate
+        variable revtime
+        variable revcomment
+        variable revtags
+        variable revbtags
 
-        gen_log:log T "ENTER"
-        # Restore last fill color
-        if {[string length $search_lastfill] != 0} {
-          $logcanvas.canvas itemconfigure [lindex $search_elements $search_index] \
-          -fill $search_lastfill
-        }
+        gen_log:log T "ENTER search_index $search_index, search_elements $search_elements"
+
         # Read search pattern from entry box
         set pattern [string trim [$logcanvas.down.search.e get]]
-        gen_log:log D "pattern: $pattern"
         # Check if search pattern or nocase flag have been changed since the
         # last call
         if {([string equal $pattern $search_lastpattern] == 0) \
           ||($search_lastcase != $search_nocase)} {
+          # Restore box colors
+          foreach item [$logcanvas.canvas find withtag box] {
+            $logcanvas.canvas itemconfigure $item -fill gray90
+          }
+          $logcanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
+          $logcanvas.canvas itemconfigure SelB -fill $cvscfg(colourB)
           # Rebuild matching element list
           set search_lastpattern $pattern
           set search_lastcase $search_nocase
           set search_elements [list]
           # Ignore empty patterns
           if {[string length $pattern] != 0} {
-            # Loop over all elements in canvas that have text elements
-            foreach element [$logcanvas.canvas find withtag all] {
-              if {[catch {$logcanvas.canvas itemcget $element -text} text] == 0} {
-                # Check if text element matches search pattern
-                if {[string is true $search_nocase]} {
-                  if {[string match -nocase $pattern $text]} {
-                    # Add element to list of matching elements
-                    lappend search_elements $element
-                  }
-                } else {
-                  if {[string match $pattern $text]} {
-                    # Add element to list of matching elements
-                    lappend search_elements $element
-                    gen_log:log D " $pattern MATCHED $text"
-                  }
+            # Collect all the revision data
+            foreach r [array names revdate] {
+              set data "$r "
+              catch {append data "$revwho($r) "}
+              catch {append data "$revdate($r) "}
+              catch {append data "$revtime($r) "}
+              catch {append data "$revcomment($r) "}
+              catch {append data "$revtags($r) "}
+              catch {append data "$revbtags($r) "}
+
+              # Check if text element matches search pattern
+              if {$search_nocase} {
+                if {[string match -nocase "*$pattern*" $data]} {
+                  # Add element to list of matching elements
+                  lappend search_elements $r
+                  gen_log:log D "$pattern MATCHED $data"
+                }
+              } else {
+                if {[string match "*$pattern*" $data]} {
+                  # Add element to list of matching elements
+                  lappend search_elements $r
+                  gen_log:log D " $pattern MATCHED $data"
                 }
               }
             }
@@ -1660,38 +1674,75 @@ namespace eval ::logcanvas {
           incr search_index
           if {$search_index >= [llength $search_elements]} {
             set search_index 0
-            puts -nonewline "\a"
-            flush stdout
+          }
+          set rev [lindex $search_elements $search_index]
+          gen_log:log D "   $rev"
+          if {! [info exists revcomment($rev)]} {
+             set revcomment($rev) "*** empty log message ***"
+          }
+          $logcanvas.up.revA_rvers configure -text $rev
+          if {$rev != {} && [info exists revwho($rev)]} {
+            $logcanvas.up.revA_rwho configure -text $revwho($rev)
+            $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
+            $logcanvas.up.logA_rlogfm.rcomment configure -state normal
+            $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
+            $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
+            $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
           }
         }
         # Check if there are matching elements
         set length [llength $search_elements]
         if {$length > 0} {
-          $logcanvas.down.search.l configure -text "[expr {$search_index + 1}] / $length"
-          # Scroll to next matching element
-          set element [lindex $search_elements $search_index]
-          set scrollregion [$logcanvas.canvas cget -scrollregion]
-          set coords [$logcanvas.canvas bbox $element]
-          set sx1 [lindex $scrollregion 0]
-          set sy1 [lindex $scrollregion 1]
-          set sx2 [lindex $scrollregion 2]
-          set sy2 [lindex $scrollregion 3]
-          set ix1 [lindex $coords 0]
-          set iy1 [lindex $coords 1]
-          set ix2 [lindex $coords 2]
-          set iy2 [lindex $coords 3]
-          set xview [$logcanvas.canvas xview]
-          set yview [$logcanvas.canvas yview]
-          set vx1 [lindex $xview 0]
-          set vx2 [lindex $xview 1]
-          set vy1 [lindex $yview 0]
-          set vy2 [lindex $yview 1]
-          set x [expr {(double($ix1 - $sx1) / double($sx2 - $sx1)) -(($vx2 - $vx1) / 2)}]
-          set y [expr {(double($iy1 - $sy1) / double($sy2 - $sy1)) -(($vy2 - $vy1) / 2)}]
-          $logcanvas.canvas xview moveto $x
-          $logcanvas.canvas yview moveto $y
-          set search_lastfill [$logcanvas.canvas itemcget $element -fill]
-          $logcanvas.canvas itemconfigure $element -fill red
+          foreach matching_rev $search_elements {
+            # This is the counter in the status bar
+            $logcanvas.down.search.l configure -text "[expr {$search_index + 1}] / $length"
+            # Find canvas items with tag rect$r
+            foreach item [$logcanvas.canvas find withtag "box&&rect$matching_rev"] {
+              # Color the rectangle
+              $logcanvas.canvas itemconfigure $item -fill red
+            }
+          }
+          set rev [lindex $search_elements $search_index]
+          set item [$logcanvas.canvas find withtag "box&&rect$rev"]
+          # There may be a data item for $rev but it isn't drawn
+          if {$item != {}} {
+            # Scroll to next matching item
+            set scrollregion [$logcanvas.canvas cget -scrollregion]
+            set coords [$logcanvas.canvas bbox $item]
+            set sx1 [lindex $scrollregion 0]
+            set sy1 [lindex $scrollregion 1]
+            set sx2 [lindex $scrollregion 2]
+            set sy2 [lindex $scrollregion 3]
+            set ix1 [lindex $coords 0]
+            set iy1 [lindex $coords 1]
+            set ix2 [lindex $coords 2]
+            set iy2 [lindex $coords 3]
+            set xview [$logcanvas.canvas xview]
+            set yview [$logcanvas.canvas yview]
+            set vx1 [lindex $xview 0]
+            set vx2 [lindex $xview 1]
+            set vy1 [lindex $yview 0]
+            set vy2 [lindex $yview 1]
+            set x [expr {(double($ix1 - $sx1) / double($sx2 - $sx1)) -(($vx2 - $vx1) / 2)}]
+            set y [expr {(double($iy1 - $sy1) / double($sy2 - $sy1)) -(($vy2 - $vy1) / 2)}]
+            $logcanvas.canvas xview moveto $x
+            $logcanvas.canvas yview moveto $y
+          }
+          if {! [info exists revcomment($rev)]} {
+             set revcomment($rev) "*** empty log message ***"
+          }
+          $logcanvas.up.revA_rvers configure -text $rev
+          if {$rev != {} && [info exists revwho($rev)]} {
+            $logcanvas.up.revA_rwho configure -text $revwho($rev)
+            $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
+            $logcanvas.up.logA_rlogfm.rcomment configure -state normal
+            $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
+            if {$item == {}} {
+              $logcanvas.up.logA_rlogfm.rcomment insert end "*** not drawn ***\n"
+            }
+            $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
+            $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
+          }
         } else {
           $logcanvas.down.search.l configure -text "Not found"
         }
@@ -1849,14 +1900,14 @@ namespace eval ::logcanvas {
                global cvscfg
                global git_log_opt
 
-               gen_log:log D "cvscfg(log_opt) $cvscfg(log_opt)"
-               set cvscfg(log_opt) ""
+               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
+               set cvscfg(gitlog_opts) ""
                foreach go [array names git_log_opt] {
                  if {$git_log_opt($go)} {
-                   append cvscfg(log_opt) "$go "
+                   append cvscfg(gitlog_opts) "$go "
                  }
                }
-               gen_log:log D "cvscfg(log_opt) $cvscfg(log_opt)"
+               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
           }
         }
         foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
@@ -1953,7 +2004,7 @@ namespace eval ::logcanvas {
       pack $logcanvas.down -side bottom -fill x
 
       frame $logcanvas.down.search -relief sunk -bd 2
-      button $logcanvas.down.search.b -text "Find a Revision" -command [namespace code {Search}]
+      button $logcanvas.down.search.b -text "Search" -command [namespace code {Search}]
       entry $logcanvas.down.search.e
       bind $logcanvas.down.search.e <Return> [namespace code {Search}]
       label $logcanvas.down.search.l -anchor e -width 10 -text ""
@@ -2081,16 +2132,15 @@ namespace eval ::logcanvas {
       $logcanvas.canvas bind active <Leave> \
         "$logcanvas.canvas config -cursor {}"
 
-
       $logcanvas.canvas bind tag <Button-1> \
         [namespace code "PopupTags %x %y"]
 
-      $logcanvas.canvas bind box <ButtonPress-1> \
+      $logcanvas.canvas bind selectable <ButtonPress-1> \
         [namespace code "RevSelect A"]
       # Tcl/TK for Windows doesn't do Button 3, so we duplicate it on Button 2
-      $logcanvas.canvas bind box <ButtonPress-2> \
+      $logcanvas.canvas bind selectable <ButtonPress-2> \
         [namespace code "RevSelect B"]
-      $logcanvas.canvas bind box <ButtonPress-3> \
+      $logcanvas.canvas bind selectable <ButtonPress-3> \
         [namespace code "RevSelect B"]
 
       # Clicking in a blank part of the canvas unselects boxes
