@@ -436,6 +436,11 @@ puts "==============================="
 puts "Second revision on trunk"
 cd $WD/$Master
 fetch {--all}
+# Make two identical branches (OK in Git)
+set exec_cmd "git branch -c branchB branchC"
+puts "$exec_cmd"
+set ret [catch {eval "exec $exec_cmd"} out]
+
 modfiles "Main 2"
 stage
 commit "Second revision on trunk"
@@ -471,6 +476,16 @@ if {$branching_desired} {
   modfiles "BranchAA 2"
   stage
   commit "Second changes on Branch AA"
+  cd $WD
+
+  # Branch Y
+  puts "==============================="
+  puts "MAKING BRANCH Y"
+  worktree git_test_branchAA Y
+  cd $WD/git_test_branchY
+  modfiles "BranchY 1"
+  stage
+  commit "First changes on Branch Y"
   cd $WD
 
   # Make another revision on branchA after
