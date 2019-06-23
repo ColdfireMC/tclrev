@@ -45,7 +45,9 @@ proc workdir_setup {} {
     wm geometry .workdir $cvscfg(workgeom)
   }
 
-  workdir_menus
+  menubar_menus .workdir
+  workdir_menus .workdir
+  help_menu .workdir
 
   #
   # Top section - where we are, where the module is
@@ -298,248 +300,6 @@ proc workdir_setup {} {
   gen_log:log T "LEAVE"
 }
 
-proc workdir_menus {} {
-  global cvscfg
-  global cvsglb
-  global cvsmenu
-  global usermenu
-  global execmenu
-  global bookmarks
-
-  gen_log:log T "ENTER"
-  set startdir "[pwd]"
-
-  #.workdir configure -menu .workdir.menubar
-  menu .workdir.menubar
-
-  #
-  # Create the Menu bar
-  #
-  if {[tk windowingsystem] == "aqua"} {
-    # There's an extra menu in the first postion on apple, whether you like it or not.
-    # So you have to configure it.
-    .workdir.menubar add cascade -label "TkCVS" -menu [menu .workdir.menubar.apple]
-  }
-  .workdir.menubar add cascade -label "File" -menu [menu .workdir.menubar.file] -underline 0
-  .workdir.menubar add cascade -label "Reports" -menu [menu .workdir.menubar.reports] -underline 2
-  .workdir.menubar add cascade -label "Options" -menu [menu .workdir.menubar.options] -underline 0
-
-  if { [info exists cvsmenu] || \
-       [info exists usermenu] || \
-       [info exists execmenu]} {
-    .workdir.menubar add cascade -label "User Defined" -menu [menu .workdir.menubar.user] -underline 0
-    gen_log:log T "Adding user defined menu"
-  }
-  .workdir.menubar add cascade -label "Go" -menu [menu .workdir.menubar.goto] -underline 0
-
-  # Populate the help menu
-  menu_std_help .workdir.menubar
-  # Have to do this after the .apple menu
-  .workdir configure -menu .workdir.menubar
-
-  #
-  # Create the Menus
-  #
-
-  # File
-  .workdir.menubar.file add command -label "Open Selection" -underline 0 \
-     -command { workdir_edit_file [workdir_list_files] }
-  .workdir.menubar.file add command -label "Print Selected File" -underline 0 \
-     -command { workdir_print_file  [workdir_list_files ] }
-  .workdir.menubar.file add command -label "Make New Directory" -underline 0 \
-     -command { file_input_and_do "New Directory" workdir_newdir}
-  .workdir.menubar.file add separator
-  .workdir.menubar.file add command -label "Browse Modules" -underline 0 \
-     -command modbrowse_run
-  .workdir.menubar.file add command -label "Cleanup Directory" -underline 4 \
-     -command workdir_cleanup
-  .workdir.menubar.file add separator
-  .workdir.menubar.file add command -label "Shell window" -underline 0 \
-     -command { exec::new $cvscfg(shell) }
-  .workdir.menubar.file add separator
-  .workdir.menubar.file add command -label Close -underline 1 \
-     -command {.workdir.close invoke}
-  .workdir.menubar.file add command -label Exit -underline 1 \
-     -command { exit_cleanup 1 }
-
-  # CVS
-  menu .workdir.menubar.cvs
-  .workdir.menubar.cvs add command -label "Update" -underline 0 \
-     -command { \
-        cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Update with Options" -underline 13 \
-     -command cvs_update_options
-  .workdir.menubar.cvs add command -label "Commit/Checkin" -underline 5 \
-     -command cvs_commit_dialog
-  .workdir.menubar.cvs add command -label "Revert" -underline 3 \
-     -command cvs_revert
-  .workdir.menubar.cvs add command -label "Add Files" -underline 0 \
-     -command { add_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Add Recursively" \
-     -command { addir_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Remove Files" -underline 0 \
-     -command { subtract_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Remove Recursively" \
-     -command { subtractdir_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Tag" -underline 0 \
-     -command { tag_dialog }
-  .workdir.menubar.cvs add command -label "Branch" -underline 0 \
-     -command { branch_dialog }
-  .workdir.menubar.cvs add command -label "Join (Merge) Directory" \
-     -underline 0 -command { cvs_directory_merge }
-  .workdir.menubar.cvs add separator
-  .workdir.menubar.cvs add command -label "Release" \
-     -command { release_dialog [workdir_list_files] }
-  .workdir.menubar.cvs add command -label "Import CWD into Repository" \
-     -underline 0 -command import_run
-
-  # SVN
-  menu .workdir.menubar.svn
-  .workdir.menubar.svn add command -label "Update" -underline 0 \
-     -command {svn_update [workdir_list_files]}
-  .workdir.menubar.svn add command -label "Resolve (Un-mark Conflict)" \
-     -command {svn_resolve [workdir_list_files]}
-  .workdir.menubar.svn add command -label "Commit/Checkin" -underline 0 \
-     -command svn_commit_dialog
-  .workdir.menubar.svn add command -label "Revert" -underline 3 \
-     -command svn_revert
-  .workdir.menubar.svn add command -label "Add Files" -underline 0 \
-     -command { add_dialog [workdir_list_files] }
-  .workdir.menubar.svn add command -label "Remove Files" -underline 0 \
-     -command { subtract_dialog [workdir_list_files] }
-  .workdir.menubar.svn add command -label "Tag" -underline 0 \
-     -command { tag_dialog }
-  .workdir.menubar.svn add command -label "Branch" -underline 0 \
-     -command { branch_dialog }
-  .workdir.menubar.svn add separator
-  .workdir.menubar.svn add command -label "Import CWD into Repository" \
-     -underline 0 -command svn_import_run
-
-  # RCS
-  menu .workdir.menubar.rcs
-  .workdir.menubar.rcs add command -label "Checkout" -underline 6 \
-     -command { rcs_checkout [workdir_list_files] }
-  .workdir.menubar.rcs add command -label "Checkin" -underline 6 \
-     -command { rcs_commit_dialog [workdir_list_files] }
-  .workdir.menubar.rcs add command -label "Revert" -underline 3 \
-     -command rcs_revert
-
-  # GIT
-  menu .workdir.menubar.git
-  .workdir.menubar.git add command -label "Checkout/Update" -underline 6 \
-     -command {git_checkout [workdir_list_files]}
-  .workdir.menubar.git add command -label "Update with Options" -underline 13 \
-     -command { git_update_options }
-  .workdir.menubar.git add command -label "Commit/Checkin" -underline 5 \
-     -command git_commit_dialog
-  .workdir.menubar.git add command -label "Revert/Reset" -underline 3 \
-     -command git_reset
-  .workdir.menubar.git add command -label "Add Files" -underline 0 \
-     -command { add_dialog [workdir_list_files] }
-  .workdir.menubar.git add command -label "Remove Files" -underline 0 \
-     -command { subtract_dialog [workdir_list_files] }
-  .workdir.menubar.git add command -label "Tag" -underline 0 \
-     -command { tag_dialog }
-  .workdir.menubar.git add command -label "Branch" -underline 0 \
-     -command { branch_dialog }
-
-  # Status and log
-  .workdir.menubar.reports add command -label "Check Directory" -underline 0
-  .workdir.menubar.reports add cascade -label "Status" -underline 0 \
-     -menu .workdir.menubar.reports.status_detail
-  menu .workdir.menubar.reports.status_detail
-  menu .workdir.menubar.reports.log_detail
-  .workdir.menubar.reports.status_detail add command -label "Terse"
-  .workdir.menubar.reports.status_detail add command -label "Summary"
-  .workdir.menubar.reports.status_detail add command -label "Verbose"
-  .workdir.menubar.reports add cascade -label "Log" -underline 0 \
-     -menu .workdir.menubar.reports.log_detail
-  .workdir.menubar.reports.log_detail add command -label "Latest"
-  .workdir.menubar.reports.log_detail add command -label "Summary"
-  .workdir.menubar.reports.log_detail add command -label "Verbose"
-
-  .workdir.menubar.reports add command -label "Annotate/Blame" -underline 0
-  .workdir.menubar.reports add command -label "Info" -underline 0
-  .workdir.menubar.reports add separator
-  .workdir.menubar.reports add checkbutton -label "Report Unknown Files" \
-     -variable cvscfg(status_filter) -onvalue false -offvalue true
-  .workdir.menubar.reports add checkbutton -label "Report Recursively" \
-     -variable cvscfg(recurse) -onvalue true -offvalue false
-
-  .workdir.menubar.options add checkbutton -label "Show hidden files" \
-     -variable cvscfg(allfiles) -onvalue true -offvalue false \
-     -command setup_dir
-  .workdir.menubar.options add checkbutton -label "Automatic directory status" \
-     -variable cvscfg(auto_status) -onvalue true -offvalue false
-  .workdir.menubar.options add checkbutton -label "Confirmation Dialogs" \
-     -variable cvscfg(confirm_prompt) -onvalue true -offvalue false
-  .workdir.menubar.options add separator
-  .workdir.menubar.options add checkbutton -label "Git Detailed Status" \
-     -variable cvscfg(gitdetail) -onvalue true -offvalue false \
-     -command { setup_dir }
-  .workdir.menubar.options add separator
-  .workdir.menubar.options add checkbutton -label "Status Column" \
-     -variable cvscfg(showstatcol) -onvalue true -offvalue false \
-     -command { DirCanvas:displaycolumns .workdir.main.tree }
-  .workdir.menubar.options add checkbutton -label "Date Column" \
-     -variable cvscfg(showdatecol) -onvalue true -offvalue false \
-     -command { DirCanvas:displaycolumns .workdir.main.tree }
-  .workdir.menubar.options add checkbutton -label "Revision/Hash Column" \
-     -variable cvscfg(showwrevcol) -onvalue true -offvalue false \
-     -command { DirCanvas:displaycolumns .workdir.main.tree }
-  .workdir.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
-     -variable cvscfg(showeditcol) -onvalue true -offvalue false \
-     -command { DirCanvas:displaycolumns .workdir.main.tree }
-  .workdir.menubar.options add separator
-  .workdir.menubar.options add checkbutton -label "Tracing On/Off" \
-     -variable cvscfg(logging) -onvalue true -offvalue false \
-     -command log_toggle
-
-  .workdir.menubar.options add separator
-  .workdir.menubar.options add command -label "Save Options" -underline 0 \
-     -command save_options
-
-  .workdir.menubar.goto add command -label "Go Home" \
-     -command {change_dir $cvscfg(home)}
-  .workdir.menubar.goto add command -label "Add Bookmark" \
-     -command add_bookmark
-  .workdir.menubar.goto add command -label "Delete Bookmark" \
-     -command delete_bookmark_dialog
-  .workdir.menubar.goto add separator
-  foreach mark [lsort [array names bookmarks]] {
-    # Backward compatibility.  Value used to be a placeholder, is now a revsystem type
-    if {$bookmarks($mark) == "t"} {set bookmarks($mark) ""}
-    .workdir.menubar.goto add command -label "$mark $bookmarks($mark)" \
-       -command "change_dir \"$mark\""
-  }
-
-
-  #
-  # Add user commands to the menu.
-  #
-  if {[info exists cvsmenu]} {
-    foreach item [array names cvsmenu] {
-      .workdir.menubar.user add command -label $item \
-         -command "eval cvs_usercmd $cvsmenu($item) \[workdir_list_files\]"
-    }
-  }
-  if {[info exists usermenu]} {
-    .workdir.menubar.user add separator
-    foreach item [array names usermenu] {
-      .workdir.menubar.user add command -label $item \
-         -command "eval cvs_catchcmd $usermenu($item) \[workdir_list_files\]"
-    }
-  }
-  if {[info exists execmenu]} {
-    .workdir.menubar.user add separator
-    foreach item [array names execmenu] {
-      .workdir.menubar.user add command -label $item \
-         -command "eval cvs_execcmd $execmenu($item) \[workdir_list_files\]"
-    }
-  }
-  gen_log:log T "LEAVE"
-}
-
 # Returns a list of the selected file names. This is where the arg-list comes
 # from for most of the UI buttons and menus.
 proc workdir_list_files {} {
@@ -752,12 +512,13 @@ proc change_dir {new_dir} {
   global cwd
 
   gen_log:log T "ENTER ($new_dir)"
-  if {![file exists $new_dir]} {
-    set cwd [pwd]
-    cvsfail "Directory $new_dir doesn\'t exist!" .workdir
+  if {![file isdirectory $new_dir]} {
+    cvsfail "Directory $new_dir doesn\'t exist or isn't a directory" .workdir
     return
   }
+  cd $new_dir
   set cwd $new_dir
+  gen_log:log F "CD $cwd"
   # Deleting the tree discards the saved scroll position
   # so we start with yview 0 in a new directory
   DirCanvas:deltree .workdir.main.tree
@@ -801,16 +562,6 @@ proc setup_dir { } {
     }
     DirCanvas:deltree .workdir.main.tree
   }
-  #gen_log:log D "YVIEW $savyview"
-
-  if {![file isdirectory $cwd]} {
-    gen_log:log D "$cwd is not a directory"
-    gen_log:log T "LEAVE -- $cwd is not a directory"
-    return
-  }
-
-  cd $cwd
-  gen_log:log F "CD [pwd]"
 
   set module_dir ""
   set current_tagname ""
@@ -828,13 +579,12 @@ proc setup_dir { } {
 
   # Start without revision-control menu
   gen_log:log D "CONFIGURE VCS MENUS"
-  set rptmenu_idx [.workdir.menubar index "Reports"]
   foreach label {"RCS" "CVS" "SVN" "GIT"} {
     if {! [catch {set vcsmenu_idx [.workdir.menubar index "$label"]}]} {
       .workdir.menubar delete $vcsmenu_idx
     }
   }
-  set rptmenu_idx [.workdir.menubar index "Reports"]
+  set filemenu_idx [.workdir.menubar index "File"]
 
   # Disable report menu items
   .workdir.menubar.reports entryconfigure "Check Directory" -state disabled
@@ -875,7 +625,7 @@ proc setup_dir { } {
   if {$inrcs} {
     # Top
     gen_log:log D "CONFIGURE RCS MENUS"
-    .workdir.menubar insert $rptmenu_idx cascade -label "RCS" \
+    .workdir.menubar insert [expr {$filemenu_idx + 1}] cascade -label "RCS" \
       -menu .workdir.menubar.rcs
     .workdir.top.lcvsroot configure -text "RCS *,v Path"
     .workdir.top.tcvsroot configure -textvariable cvscfg(rcsdir)
@@ -923,7 +673,7 @@ proc setup_dir { } {
   } elseif {$insvn} {
     # Top
     gen_log:log D "CONFIGURE SVN MENUS"
-    .workdir.menubar insert $rptmenu_idx cascade -label "SVN" \
+    .workdir.menubar insert [expr {$filemenu_idx + 1}] cascade -label "SVN" \
       -menu .workdir.menubar.svn
     .workdir.top.bmodbrowse configure -image Modules_svn -command modbrowse_run
     .workdir.top.lmodule configure -text "Path"
@@ -996,7 +746,7 @@ proc setup_dir { } {
   } elseif {$incvs} {
     # Top
     gen_log:log D "CONFIGURE CVS MENUS"
-    .workdir.menubar insert $rptmenu_idx cascade -label "CVS" \
+    .workdir.menubar insert [expr {$filemenu_idx + 1}] cascade -label "CVS" \
       -menu .workdir.menubar.cvs
     .workdir.top.bmodbrowse configure -image Modules_cvs -command modbrowse_run
     .workdir.top.lmodule configure -text "Module"
@@ -1082,7 +832,7 @@ proc setup_dir { } {
   } elseif {$ingit} {
     # Top
     gen_log:log D "CONFIGURE GIT MENUS"
-    .workdir.menubar insert $rptmenu_idx cascade -label "GIT" \
+    .workdir.menubar insert [expr {$filemenu_idx + 1}] cascade -label "GIT" \
       -menu .workdir.menubar.git
     .workdir.top.bmodbrowse configure -image Modules_git -command modbrowse_run
     .workdir.top.lmodule configure -text "path"

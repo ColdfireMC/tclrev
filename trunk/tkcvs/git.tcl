@@ -471,7 +471,7 @@ proc git_reset {args} {
   $v\::do "$commandline"
   $v\::wait
   $v\::clean_exec
-  
+
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -1080,6 +1080,7 @@ namespace eval ::git_branchlog {
         $lc.stop configure -state normal
         busy_start $lc
 
+puts "\n$filename"
         # Start collecting information and initializing the
         # browser
         $ln\::ConfigureButtons $filename
@@ -1105,6 +1106,7 @@ namespace eval ::git_branchlog {
         catch {unset remote_branches}
 
         # Most efficient way I can think of to collect branch, tag, and parent information
+        # This doesn't necessarily pick up all, or any, of the locally reachable branches
         set command1 "git log --all -$cvscfg(gitmaxhist) $cvscfg(gitlog_opts) --date-order --format=%h:%p:%d -- \"$filename\""
         set branches_log1 [exec::new $command1 {} 0 {} 1]
         set log_output1 [$branches_log1\::output]
@@ -1114,11 +1116,15 @@ namespace eval ::git_branchlog {
         if {$h == ""} {
           set rootrev ""
         }
+        catch {unset log_output}
+        # Branches tend to come out of this in nearly reverse chronological order, which helps us
+        #set logged_branches [lindex $logresults1 1]
+        set logged_branches [lreverse [lindex $logresults1 1]]
+        if {$logged_branches != {}} {
+          set logged_branches [prune_branchlist $logged_branches]
+        }
 
-        set logged_branches [lindex $logresults1 1]
-        set logged_branches [prune_branchlist $logged_branches]
-
-        # That doesn't always pick up the locally reachable branches though
+        # This geta all the locally reachable branches
         if { [regexp {L} $cvscfg(gitbranchgroups)] } {
           set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
           set branch_lines [split [$cmd(git_branch)\::output] "\n"]
@@ -1128,6 +1134,12 @@ namespace eval ::git_branchlog {
             if {[string length $line] < 1} continue
             if {[regexp {detached} $line]} continue
             lappend local_branches [lindex $line 0]
+          }
+          catch {unset branch_lines}
+        } else {
+          # We always want the current branch, though
+          if {$current_tagname != ""} {
+            lappend local_branches $current_tagname
           }
         }
         # We aren't necessarily interested in all the remote branches, but we
@@ -1139,6 +1151,7 @@ namespace eval ::git_branchlog {
             if {[string length $line] < 1} continue
             lappend remote_branches [lindex $line 0]
           }
+          catch {unset branch_lines}
         }
         if {![info exists logged_branches]} { set logged_branches {} }
         if {![info exists local_branches]} { set local_branches {} }
@@ -1158,6 +1171,8 @@ namespace eval ::git_branchlog {
           set branches [prune_branchlist $branches]
         }
         set branches [lrange $branches 0 $cvscfg(gitmaxbranch)]
+        catch {unset logged_branches}
+        catch {unset local_branches}
 
         # De-duplicate the tags, while we're thinking of it.
         foreach a [array names revtags] {
@@ -1186,10 +1201,10 @@ namespace eval ::git_branchlog {
         foreach br $branches {
           # Draw something on the canvas so the user knows we're working
           $lc.canvas create text $cnv_x $cnv_y -text $br -tags {temporary} -fill $cvscfg(colourB)
-          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
-          $lc.canvas yview scroll 1 units
+          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
+          $lc.canvas yview moveto 1
           incr cnv_y $yspc
-          update idletasks
+          update
           set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) $br -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
@@ -1203,7 +1218,10 @@ namespace eval ::git_branchlog {
                  set revkind($ro) "revision"
               }
             }
+            catch {unset revlist_output}
+            catch {unset revlist_lines}
             gen_log:log D "$br has [llength $raw_revs($br)] revisions"
+            catch {unset revlist_lines}
           } else {
             gen_log:log D "branch $br is EMPTY. Removing from the list"
             # If it's empty, remove this branch from the list
@@ -1242,15 +1260,18 @@ namespace eval ::git_branchlog {
           }
         }
         if {! $trunk_found} {
-          set trunk [lindex $branches 0]
-          gen_log:log D "Using trunk=$trunk"
+          if {[llength $branches] > 0} {
+            set trunk [lindex $branches 0]
+            set trunk_found 1
+            gen_log:log D "Using first branch as trunk"
+          }
         }
         gen_log:log D "TRUNK: $trunk"
         # Make sure the trunk is the first in the branchlist
         set idx [lsearch $branches $trunk]
         set branches [lreplace $branches $idx $idx]
         set branches [linsert $branches 0 $trunk]
-
+        gen_log:log D "BRANCHES: $branches"
 
         # Get the info for all the revs.
         $lc.canvas create text $cnv_x $cnv_y -text "Collecting the LOG" -tags {temporary}
@@ -1261,6 +1282,8 @@ namespace eval ::git_branchlog {
         $cmd_log\::destroy
         set log_lines [split $log_output "\n"]
         parse_gitlog $log_lines
+        catch {unset log_output}
+        catch {unset log_lines}
 
         # Get rev lists for the branches
         catch {unset branch_matches}
@@ -1272,8 +1295,10 @@ namespace eval ::git_branchlog {
         foreach branch $branches {
           $lc.canvas create text $cnv_x $cnv_y -text "$branch" -tags {temporary} -fill green
           incr cnv_y $yspc
-          gen_log:log D "========= $branch =========="
+          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
+          $lc.canvas yview moveto 1
           update idletasks
+          gen_log:log D "========= $branch =========="
           if {$branch eq $trunk} {
             # sometimes we don't have raw_revs($trunk) if the file is added on branch,
             # but we should have guessed at a rootrev by now
@@ -1297,25 +1322,27 @@ namespace eval ::git_branchlog {
             if {$branchtip($branch) ne $branchroot($branch)} {
               catch {unset revbtags($branchtip($branch))}
             }
+            gen_log:log D "BASE of trunk $branch is $rootrev"
             continue
           }
-          
+
           # The root of a branch is the first one we get back that's only in the branch
           # and not in master
           if {[info exists raw_revs($branch)]} {
-            gen_log:log D "COMPARING $trunk (listA) vs $branch (listB)"
-            lassign [in_B_only $branchrevs($trunk) [lreverse $raw_revs($branch)]] inBonly inBoth
-            #lassign [list_comm $branchrevs($trunk) $raw_revs($branch)] inBonly inBoth
-            
+            gen_log:log D "COMPARING $trunk VS $branch"
+puts "COMPARING $trunk VS $branch"
+            #lassign [in_B_only $branchrevs($trunk) [lreverse $raw_revs($branch)]] inBonly inBoth
+            lassign [list_comm $branchrevs($trunk) $raw_revs($branch)] inBonly inBoth
             gen_log:log D "== ONLY IN $branch =="
             if {[llength $inBonly] < 1} {
               # If it's empty, remove this branch from the list
+              gen_log:log D "$branch is EMPTY. Removing"
               set idx [lsearch $branches $branch]
               set branches [lreplace $branches $idx $idx]
               continue
             }
             foreach h $inBonly {
-              gen_log:log D "$h"
+              #gen_log:log D "$h"
               set revkind($h) "revision"
             }
             set base [lindex $inBonly 0]
@@ -1324,8 +1351,7 @@ namespace eval ::git_branchlog {
             set branchroot($branch) [lindex $branchrevs($branch) end]
             if {$base eq ""} {
               gen_log:log D "BASE not found for $branch"
-              #set base [lindex $inBoth 0]
-              set base $inBoth
+              set base [lindex $inBoth 0]
               gen_log:log D "using $base"
             }
 
@@ -1341,24 +1367,28 @@ namespace eval ::git_branchlog {
               gen_log:log D "PARENT $revparent($base) of $branch determined by new git log %p"
             }
             # But it will very likely not be in our revlists, so always do this instead
-            set test_parent $inBoth
+            set test_parent [lindex $inBoth end]
             if {$test_parent != ""} {
               if {$test_parent ne $revparent($base)} {
                 gen_log:log D "PARENT $revparent($base) from log %p DOESN'T MATCH end of inBoth $test_parent for $branch"
               } else {
                 gen_log:log D "PARENT $revparent($base) from log %p MATCHES end of inBoth $test_parent for $branch"
               }
-              set parent $test_parent
-              set revparent($base) $parent
-              gen_log:log D "Using end of inBoth for PARENT $revparent($base) of $branch"
+              # NOPE NOPE NOPE prevent recursion
+              if {$base ne $test_parent} {
+                set parent $test_parent
+                set revparent($base) $parent
+                gen_log:log D "Using end of inBoth for PARENT $revparent($base) of $branch"
+              }
             }
+            update idletasks
 
             gen_log:log D "$branch: BASE $base PARENT $parent"
             # Sometimes we get back a parent that our log --all didn't pick
             # up. This may happen if the directory had checkins that didn't
             # affect the file or the file is newly added
             if {! [info exists revcomment($parent)] } {
-              gen_log:log D "MISSING INFO for PARENT $parent of $branch"
+              #gen_log:log D "MISSING INFO for PARENT $parent of $branch"
               #load_mystery_info $revparent($base) .
               # Draw it differently because it may not be reachable
               set revpath($parent) $relpath
@@ -1400,54 +1430,102 @@ namespace eval ::git_branchlog {
           # If two branches have the same root, one is likely
           # a sub-branch of the other. Let's see if we can disambiguate
           foreach t [array names branchroot] {
-            if {$t eq $branch} continue
+            if {$t eq $branch} {continue}
             if {$branchroot($branch) eq $branchroot($t)} {
               # Save the duplicates in a list to deal with next
               lappend branch_matches($branch) $t
             }
           }
-          gen_log:log D "========= finished $branch =========="
         }
 
         # Here's where we deal with the branch/sub-branch confusions
+        foreach a [array names branch_matches] {
+          gen_log:log D "OVERLAPPING BRANCH: $a -> $branch_matches($a)"
+        }
         # There should be only one because we take care of each as it appears, right?
         # so the foreach is unnecessary?
         foreach a [array names branch_matches] {
+puts "FOREACH $a"
           foreach b $branch_matches($a) {
+puts " FOREACH $b"
+
+puts "========================================== $a VS $b"
             gen_log:log D "BRANCHES $a and $b have the SAME ROOT $branchroot($a)=$branchroot($b)"
             gen_log:log D "COMPARING branchrevs($a) vs branchrevs($b)"
-            lassign [in_B_only $branchrevs($a) $branchrevs($b)] inBonly inBoth
-            #lassign [list_comm $branchrevs($a) $branchrevs($b)] inBonly inBoth
+            lassign [list_comm $branchrevs($a) $branchrevs($b)] inBonly inBoth
             gen_log:log D "COMPARING branchrevs($b) vs branchrevs($a)"
-            lassign [in_B_only $branchrevs($b) $branchrevs($a)] inAonly inBoth
-            #lassign [list_comm $branchrevs($b) $branchrevs($a)] inAonly inBoth
+            lassign [list_comm $branchrevs($b) $branchrevs($a)] inAonly inBoth
             gen_log:log D " in $a ONLY: $inAonly"
             gen_log:log D " in $b ONLY: $inBonly"
+            set lj [llength $inBoth]
+            set la [llength $inAonly]
+            set lb [llength $inBonly]
+puts "lj=$lj la=$la lb=$lb"
 
-            if {[llength $inAonly] > 0} {
-              # branch $a is the first branch. $b is a sub-branch of $a
-              # so we re-configure $b
-              set stockbranch $b
-              set subbranch $a
-            } elseif {[llength $inBonly] > 0} {
-              # branch $b is the first branch. $a is a sub-branch of $b
-              # so we re-configure $a
-              set stockbranch $a
-              set subbranch $b
-            } else {
-              gen_log:log D "BRANCHES $a and $b have identical revs!"
-              # Should we plot both of them? One of them might be current_tagname, so
-              # we can't ignore that one, for sure
+            if {$lj == 0} {
+              # Perhaps they've been processed already
+              gen_log:log D "BRANCHES $a and $b are disjuct"
+puts          "  BRANCHES $a and $b are disjuct"
+              continue
+            }
+            if {($la == 0) && ($lb == 0)} {
+              gen_log:log D "BRANCHES $a and $b are identical"
+puts          "  BRANCHES $a and $b are identical"
               foreach z [list $a $b] {
                 if {$z ni $revbtags($branchroot($z))} {
                   gen_log:log D " appending $z to revbtags($branchroot($z))"
                   lappend revbtags($branchroot($z)) $z
                 }
               }
-              break
+              continue
+            } elseif {($lb > 0) && ($la == 0)} {
+              # branch $a is the first branch. $b is a sub-branch of $a
+              # so we re-configure $b
+              set stockbranch $a
+              set subbranch $b
+puts "  $subbranch is a sub-branch of $stockbranch"
+            } elseif {($la > 0) && ($lb == 0)} {
+              # branch $b is the first branch. $a is a sub-branch of $b
+              # so we re-configure $a
+              set stockbranch $b
+              set subbranch $a
+puts "  $subbranch is a sub-branch of $stockbranch"
+            } else {
+              # Now what do we do? Comparing the date-and-time of the first
+              # unique rev might be informative, but not really decisive
+              set ra [lindex $inAonly 0]
+puts "in $a only: $ra  $revdate($ra) $revtime($ra)"
+              set date "$revdate($ra) $revtime($ra)"
+              set ret [catch {clock scan $date} ans]
+puts $ans
+              if {$ret == 0} {
+                set ja $ans
+              }
+              set rb [lindex $inBonly 0]
+puts "in $b only: $rb  $revdate($rb) $revtime($rb)"
+              set date "$revdate($rb) $revtime($rb)"
+              set ret [catch {clock scan $date} ans]
+puts $ans
+              if {$ret == 0} {
+                set jb $ans
+              }
+              if {$jb > $ja} {
+                set stockbranch $b
+                set subbranch $a
+  puts "  $subbranch is a sub-branch of older $stockbranch"
+              } else {
+              set stockbranch $a
+              set subbranch $b
+puts "  $subbranch is a sub-branch of older $stockbranch"
+              }
+              # This is wrong, but do it so we can keep going
+              #set stockbranch $b
+              #set subbranch $a
             }
             # Now we know who's who.
             # Shorten the sub-branch revlist to revs not on the stock branch
+
+#puts "  $subbranch is a sub-branch of $stockbranch"
             gen_log:log D "$stockbranch is the stock branch, $subbranch is the sub-branch"
             set stock_old_branchroot $branchroot($stockbranch)
             set stock_old_branchparent $revparent($stock_old_branchroot)
@@ -1459,9 +1537,8 @@ namespace eval ::git_branchlog {
 
             # Shorten the sub-branch revlist to revs not on the stock branch
             #gen_log:log D "ORIG $subbranch branchrevs $branchrevs($subbranch)"
-            lassign [in_B_only $branchrevs($stockbranch) $branchrevs($subbranch)] inBonly inBoth
-            #lassign [list_comm $branchrevs($stockbranch) $branchrevs($subbranch)] inBonly inBoth
-            set branchrevs($subbranch) [lreverse $inBonly]
+            lassign [list_comm $branchrevs($stockbranch) $branchrevs($subbranch)] inBonly inBoth
+            set branchrevs($subbranch) $inBonly
             gen_log:log D "NEW $subbranch revlist $branchrevs($subbranch)"
             set branchroot($subbranch) [lindex $branchrevs($subbranch) end]
             if {[info exists revparent($branchroot($subbranch))]} {
@@ -1517,6 +1594,7 @@ namespace eval ::git_branchlog {
             gen_log:log D "revchildren($rootrev) $revchildren($rootrev)"
             # But we may have to move the tag
             foreach a [array names revbtags] {
+              if {$a eq $trunk} {continue}
               if {$trunk in $revbtags($a)} {
                 gen_log:log D "$trunk is already in revbtags($a) $revbtags($a)"
                 gen_log:log D " take it out of revbtags($a)"
@@ -1594,9 +1672,55 @@ namespace eval ::git_branchlog {
             gen_log:log D "branchroot($branch) doesn't exist!"
           }
         }
-        # Make sure we have a root
+        # Make sure we have a root. We're doing this last in case
+        # revkind($rootrev) got overwritten
         set revkind($rootrev) "root"
 
+        set comp_done {}
+        foreach b [array names revbtags] {
+          foreach c [array names revbtags] {
+            if {$b eq $c} {continue}
+            #set bookkeep [concat [lsort [list $b $c]]]
+            #if {$bookkeep in $comp_done} {continue}
+            #lappend comp_done $bookkeep
+            if {$revbtags($b) eq $revbtags($c)} {
+              puts "TROUBLE: $revbtags($b) is in both $b and $c"
+            }
+          }
+        }
+
+        set unique_branches $branches
+        set comp_done {}
+        foreach b $branches {
+          foreach c $branches {
+            if {$b eq $c} {continue}
+            set bookkeep [concat [lsort [list $b $c]]]
+            if {$bookkeep in $comp_done} {continue}
+            lappend comp_done $bookkeep
+            if {$branchrevs($b) == $branchrevs($c)} {
+              puts "$b and $c are IDENTICAL"
+              set m [lsearch -exact $unique_branches $c]
+              set unique_branches [lreplace $unique_branches $m $m]
+            }
+          }
+        }
+        #puts "unique branches: $unique_branches"
+
+        set comp_done {}
+        foreach b $unique_branches {
+          foreach rev $branchrevs($b) {
+            foreach c $unique_branches {
+              if {$b eq $c} {continue}
+              set bookkeep [concat [lsort [list $b $c]]]
+              if {$bookkeep in $comp_done} {continue}
+              lappend comp_done $bookkeep
+               if {$rev in $branchrevs($c)} {
+                 puts "TROUBLE! rev $rev of branch $b is also in $c"
+                 continue
+              }
+            }
+          }
+        }
 
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
@@ -1793,53 +1917,6 @@ namespace eval ::git_branchlog {
         gen_log:log T "LEAVE"
       }
 
-      # Use git show-branch to find the first revision on a branch, and then
-      # its parent
-      proc identify_parent {branch} {
-        variable filename
-
-        gen_log:log T "ENTER ($branch)"
-
-        set base_guess1 [set base_guess2 ""]
-        set base_hash1 [set base_hash2 ""]
-        set parent_guess1 [set parent_guess2 ""]
-
-        # Second method of finding base of branch
-        set capture ""
-        set base ""
-        set parent ""
-        set savlist ""
-        set command2 "git show-branch --no-color --reflog $branch"
-        set cmd2 [exec::new $command2]
-        set cmd2_output [$cmd2\::output]
-        $cmd2\::destroy
-        foreach br_r_ln [split $cmd2_output "\n"] {
-          # Look for someting like "+ [branchB@{0}^] or "++ [branchA@{0}~2]"
-          # This time, we want the next to last match
-          if [regexp "^\\\++\\\s+\\\[$branch@\\\{\\\S+.*\\\]" $br_r_ln capture] {
-            lappend savlist $capture
-          }
-        }
-        # This time, we want the next to last match
-        set nextlast [lindex $savlist end-1]
-        # attempt to get the bit between the braces
-        if [regexp {^.*\[(\S+)\].*$} $nextlast null base_guess2] {
-          # Find the hash of the branch base we just identified
-          set command "git rev-parse --short $base_guess2 -- \"$filename\""
-          set cmd_p2 [exec::new $command]
-          set base_hash2 [lindex [$cmd_p2\::output] 0]
-          # Now find its immediate parent
-          set command "git rev-parse --short $base_guess2^ -- \"$filename\""
-          set cmd_p2 [exec::new $command]
-          set parent_guess2 [lindex [$cmd_p2\::output] 0]
-        }
-        set base $base_hash2
-        set parent $parent_guess2
-        gen_log:log D "$branch: BASE $base PARENT $parent"
-        gen_log:log T "return ($base $parent)"
-        return [list $base $parent]
-      }
-
       # We may have got a parent which the file log won't list
       # because it didn't affect the file in question.  Request that rev
       # without the filename.
@@ -1850,7 +1927,7 @@ namespace eval ::git_branchlog {
         variable revtags
         variable revtime
         variable revcomment
-  
+
         gen_log:log T "ENTER ($mystery $repos)"
         set command "git -C $repos log -n 1 --format=%h|%ai|%cn|%s|%D $mystery"
         set cmd_log [exec::new $command {} 0 {} 1]
@@ -1875,19 +1952,22 @@ namespace eval ::git_branchlog {
           }
         }
         set revparent($mystery) ""
-   
+
         gen_log:log D "Got info for mystery rev $mystery"
         gen_log:log T "LEAVE"
       }
 
       proc find_parent {base} {
         gen_log:log T "ENTER ($base)"
+        if {$base == ""} {
+          cvsfail "Null argument not allowed"
+        }
         set command "git log -n 1 --format=%p $base"
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
         set parent [string trim $log_output]
-        
+
         # If it's a merge, there can be more than one. Take the first one
         set parent [lindex $parent 0]
         gen_log:log T "LEAVE ($parent)"
@@ -1966,27 +2046,26 @@ namespace eval ::git_branchlog {
   }
 }
 
+# Expect two lists that are the same after some point.
+# Collect the items that are different, and the first
+# one that's the same
 proc in_B_only {listA listB} {
-  gen_log:log T "ENTER\n\t$listA\n\t$listB"
+  gen_log:log T "listA: ([llength $listA]) $listA"
+  gen_log:log T "listB: ([llength $listB]) $listB"
 
-  # We have two lists that are the same after some point.
-  # Collect the items that are different, and the first
-  # one that's the same
-  #set listA [lreverse $listA]
-  #set listB [lreverse $listB]
-  gen_log:log T "listA: $listA"
-  gen_log:log T "listB: $listB"
   set inBonly {}
   set firstsame ""
   foreach B $listB {
     if {$B ni $listA} {
       lappend inBonly $B
     } else {
+
       set firstsame $B
       break
     }
   }
   set inBonly [lreverse $inBonly]
+
   gen_log:log T "LEAVE (($inBonly) ($firstsame))"
   return [list $inBonly $B]
 }
@@ -1994,10 +2073,8 @@ proc in_B_only {listA listB} {
 proc list_comm {listA listB} {
   # Compare two lists. Return items in the second
   # that aren't in the first.
-
-  gen_log:log T "ENTER\n\t$listA\n\t$listB"
-  gen_log:log T "listA: $listA"
-  gen_log:log T "listB: $listB"
+  gen_log:log T "listA: ([llength $listA]) $listA"
+  gen_log:log T "listB: ([llength $listB]) $listB"
 
   set inA ""
   set inB ""
@@ -2022,7 +2099,8 @@ proc list_comm {listA listB} {
   #gen_log:log D "in listB only: $inB"
   #gen_log:log D "in Both:   $inBoth"
 
-  gen_log:log T "LEAVE (($inB) ($inBoth))"
+  gen_log:log T "LEAVE B only: ([llength $inB]) $inB"
+  gen_log:log T "LEAVE in Both: ([llength $inBoth]) $inBoth"
   return [list $inB $inBoth]
 }
 

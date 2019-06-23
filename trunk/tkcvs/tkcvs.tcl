@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.1.1"
+set cvscfg(version) "9.1.2"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -314,6 +314,8 @@ if { ! [info exists cvscfg(logging)] } {
 if {$cvscfg(logging)} {
   gen_log:init
 }
+# Detect whether we're in a revision-controlled directory
+lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
 
 #
 # Command line options
@@ -358,14 +360,21 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
       puts $usage
       exit 0
     }
-    {\w*} {
+    {^\.*\w*} {
       # If a filename is provided as an argument, assume -log
-      if [file isdirectory $arg] {
-        set dir $arg
-        cd $arg
-      } else {
+      # except if it's a directory and it's CVS, which doesn't
+      # version directories
+      if {($insvn || $ingit)} {
         set cvscfg(startwindow) log
         set lcfile $arg; incr i
+      } else {
+        if {[file isdirectory $arg]} {
+          set dir $arg
+          cd $arg
+        } else {
+          set cvscfg(startwindow) log
+          set lcfile $arg; incr i
+        }
       }
     }
     default {
@@ -400,7 +409,6 @@ set cvsglb(vcs) ""
 # Start with Module Browser
 if {[string match {mod*} $cvscfg(startwindow)]} {
   wm withdraw .
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   # If we're in a version-controlled directory, open that repository
   if {$insvn} {
     set cvsglb(root) $cvscfg(svnroot)
@@ -432,7 +440,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     exit 1
   }
   wm withdraw .
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     cvs_branches \"$lcfile"\
   } elseif {$inrcs} {
@@ -452,7 +459,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     puts "ERROR: $lcfile doesn't exist!"
     exit 1
   }
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   wm withdraw .
   if {$incvs} {
     cvs_annotate "" \"$lcfile"\
@@ -466,7 +472,6 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
 # Start with Directory Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
-  lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$incvs} {
     cvs_joincanvas
   } elseif {$insvn} {

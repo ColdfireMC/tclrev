@@ -330,7 +330,7 @@ namespace eval ::logcanvas {
            gen_log:log D "$infoline"
            # don't split infoline because comments like this break it:
            #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
-           set revnum_current [string range $infoline 0 6]
+           regsub { .*$} $infoline {} revnum_current
            gen_log:log D "revnum_current $revnum_current"
            if {! [info exists revnum_current]} {
              gen_log:log E "Warning: couldn't find current revision number!"
@@ -1173,6 +1173,10 @@ namespace eval ::logcanvas {
 
         #gen_log:log T "ENTER ()"
         lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
+        if {$x1 == ""} {
+          gen_log:log D "No BBOX"
+          return
+        }
         if {! $ingit} {
           $logcanvas.canvas configure \
             -scrollregion [list \
@@ -1180,7 +1184,7 @@ namespace eval ::logcanvas {
               [expr {$x2 + 5}] [expr {$y2 + 5}]
             ]
         } else {
-          # Ih git, we may have merge arrows to the left of the first column.
+          # In git, we may have merge arrows to the left of the first column.
           # tk doesn't include these in the bounding box, for some reason
           $logcanvas.canvas configure \
             -scrollregion [list \
@@ -1677,33 +1681,27 @@ namespace eval ::logcanvas {
           }
           set rev [lindex $search_elements $search_index]
           gen_log:log D "   $rev"
-          if {! [info exists revcomment($rev)]} {
-             set revcomment($rev) "*** empty log message ***"
-          }
-          $logcanvas.up.revA_rvers configure -text $rev
-          if {$rev != {} && [info exists revwho($rev)]} {
-            $logcanvas.up.revA_rwho configure -text $revwho($rev)
-            $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
-            $logcanvas.up.logA_rlogfm.rcomment configure -state normal
-            $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
-            $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
-            $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
-          }
         }
         # Check if there are matching elements
         set length [llength $search_elements]
         if {$length > 0} {
-          foreach matching_rev $search_elements {
+          foreach rev $search_elements {
             # This is the counter in the status bar
             $logcanvas.down.search.l configure -text "[expr {$search_index + 1}] / $length"
             # Find canvas items with tag rect$r
-            foreach item [$logcanvas.canvas find withtag "box&&rect$matching_rev"] {
+            foreach item [$logcanvas.canvas find withtag "box&&rect$rev"] {
               # Color the rectangle
               $logcanvas.canvas itemconfigure $item -fill red
             }
           }
           set rev [lindex $search_elements $search_index]
-          set item [$logcanvas.canvas find withtag "box&&rect$rev"]
+          # There should only be one match but things go wrong
+          set items [$logcanvas.canvas find withtag "box&&rect$rev"]
+          set il [llength $items]
+          if { $il > 1} {
+            gen_log:log D "$il ITEMS MATCH the tag rect$rev"
+          }
+          set item [lindex $items 0]
           # There may be a data item for $rev but it isn't drawn
           if {$item != {}} {
             # Scroll to next matching item
@@ -1727,26 +1725,27 @@ namespace eval ::logcanvas {
             set y [expr {(double($iy1 - $sy1) / double($sy2 - $sy1)) -(($vy2 - $vy1) / 2)}]
             $logcanvas.canvas xview moveto $x
             $logcanvas.canvas yview moveto $y
-          }
-          if {! [info exists revcomment($rev)]} {
-             set revcomment($rev) "*** empty log message ***"
-          }
-          $logcanvas.up.revA_rvers configure -text $rev
-          if {$rev != {} && [info exists revwho($rev)]} {
-            $logcanvas.up.revA_rwho configure -text $revwho($rev)
-            $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
-            $logcanvas.up.logA_rlogfm.rcomment configure -state normal
-            $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
-            if {$item == {}} {
-              $logcanvas.up.logA_rlogfm.rcomment insert end "*** not drawn ***\n"
+
+            if {! [info exists revcomment($rev)]} {
+               set revcomment($rev) "*** empty log message ***"
             }
-            $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
-            $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
+            $logcanvas.up.revA_rvers configure -text $rev
+            if {$rev != {} && [info exists revwho($rev)]} {
+              $logcanvas.up.revA_rwho configure -text $revwho($rev)
+              $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
+              $logcanvas.up.logA_rlogfm.rcomment configure -state normal
+              $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
+            if {$item == {}} {
+                $logcanvas.up.logA_rlogfm.rcomment insert end "*** not drawn ***\n"
+              }
+              $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
+              $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
+            }
           }
         } else {
           $logcanvas.down.search.l configure -text "Not found"
         }
-      }
+      } ;# End of Search proc
 
       # Collect the user options from the global set
       set opt(update_drawing) $logcfg(update_drawing)
@@ -1756,37 +1755,13 @@ namespace eval ::logcanvas {
       }
       toplevel $logcanvas
       wm title $logcanvas "TkCVS $cvscfg(version) -- $sys Log $filename"
-      menu $logcanvas.menubar
 
-      if {[tk windowingsystem] == "aqua"} {
-      # There's an extra menu in the first postion on apple, whether you like it or not.
-      # So you have to configure it.
-        $logcanvas.menubar add cascade -label "TkCVS" -menu [menu $logcanvas.menubar.apple]
-      }
-      $logcanvas.menubar add cascade -label "File"\
-         -menu [menu $logcanvas.menubar.file] -underline 0
-      $logcanvas.menubar add cascade -label "Diagram"\
+      menubar_menus $logcanvas
+      set filemenu_idx [$logcanvas.menubar index "File"]
+      $logcanvas.menubar insert [expr {$filemenu_idx + 1}] cascade -label "Diagram"\
          -menu [menu $logcanvas.menubar.view] -underline 0
-      if {$ingit} {
-        $logcanvas.menubar add cascade -label "Git Options"\
-           -menu [menu $logcanvas.menubar.git_opts]
-      }
 
-      # The help menu
-      menu_std_help $logcanvas.menubar
-      # Have to do this after the .apple menu
-      $logcanvas configure -menu $logcanvas.menubar
-
-      # File
-      $logcanvas.menubar.file add command -label "Shell window" -underline 0 \
-        -command {exec::new $cvscfg(shell)}
-      $logcanvas.menubar.file add separator
-      $logcanvas.menubar.file add command -label "Close" -underline 0 \
-        -command [namespace code {$logcanvas.close invoke}]
-      $logcanvas.menubar.file add command -label "Exit" -underline 1 \
-        -command { exit_cleanup 1 }
-      $logcanvas.menubar.view add cascade -label "Update When Drawing" \
-        -menu $logcanvas.menubar.view.update
+      help_menu $logcanvas
 
       # Diagram
       menu $logcanvas.menubar.view.update
@@ -1890,44 +1865,9 @@ namespace eval ::logcanvas {
           SaveOptions
         }]
 
-     if {$ingit} {
-       global git_log_opt
-       $logcanvas.menubar.git_opts add command -label "Git log options"
-       foreach log_opt { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
-         $logcanvas.menubar.git_opts add checkbutton -label $log_opt \
-           -variable git_log_opt($log_opt) -onvalue 1 -offvalue 0 \
-           -command {
-               global cvscfg
-               global git_log_opt
-
-               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
-               set cvscfg(gitlog_opts) ""
-               foreach go [array names git_log_opt] {
-                 if {$git_log_opt($go)} {
-                   append cvscfg(gitlog_opts) "$go "
-                 }
-               }
-               gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
-          }
-        }
-        foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
-          if {$go in $cvscfg(gitlog_opts)} {
-            set git_log_opt($go) 1
-          } else {
-            set git_log_opt($go) 0
-          }
-        }
-        $logcanvas.menubar.git_opts add separator
-        $logcanvas.menubar.git_opts add command -label "Branches"
-        $logcanvas.menubar.git_opts add radiobutton -label " File-specific" \
-          -variable cvscfg(gitbranchgroups) -value "F" \
-          -command [namespace code { $scope\::reloadLog } ]
-        $logcanvas.menubar.git_opts add radiobutton -label " All Local" \
-          -variable cvscfg(gitbranchgroups) -value "FL" \
-          -command [namespace code { $scope\::reloadLog } ]
-        $logcanvas.menubar.git_opts add radiobutton -label " Local + Remote" \
-          -variable cvscfg(gitbranchgroups) -value "FLR" \
-          -command [namespace code { $scope\::reloadLog } ]
+      if {$ingit} {
+        # The git options menu
+        git_options $logcanvas
       }
 
       if {$tcl_platform(platform) != "windows"} {

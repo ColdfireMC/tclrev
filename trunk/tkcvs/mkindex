@@ -23,6 +23,7 @@ auto_mkindex . \
   import2.tcl \
   joincanvas.tcl \
   load_images.tcl \
+  menubar.tcl \
   modbrowse.tcl \
   modules.tcl \
   picklist.tcl \
