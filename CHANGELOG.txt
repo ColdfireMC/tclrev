@@ -1,5 +1,8 @@
 Release 9.1.2 June, 2019
 
+- For SVN and GIT, you can now start the branch browser with no file selected.
+  It will diagram "."
+
 - Modified the search in the branch browser so it searches all the data for the
   revisions, not just the revision number. Several boxes may match a search.
   The current one is highlighted in a brighter color than the other matching
