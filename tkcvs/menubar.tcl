@@ -270,7 +270,16 @@ proc branch_menus {topwin} {
 # Preferences for Git
 proc git_options {topwin} {
   global cvscfg
-  global gitlog_opts
+  global git_log_opt
+
+  set all_gitlog_opts [list  "--first-parent" "--full-history" "--sparse" "--no-merges"]
+  foreach o $all_gitlog_opts {
+    if {$o in $cvscfg(gitlog_opts)} {
+      set git_log_opt($o) 1
+    } else {
+      set git_log_opt($o) 0
+    }
+  }
 
   $topwin.menubar.options add separator
   if {$topwin eq ".workdir"} {
@@ -278,10 +287,10 @@ proc git_options {topwin} {
        -variable cvscfg(gitdetail) -onvalue true -offvalue false \
        -command { setup_dir }
   }
-  $topwin.menubar.options add command -label "Git log options"
-   foreach log_opt { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
-     $topwin.menubar.options add checkbutton -label $log_opt \
-       -variable git_log_opt($log_opt) -onvalue 1 -offvalue 0 \
+  $topwin.menubar.options add cascade -label "Git log options" -menu [menu $topwin.menubar.options.gitlog]
+  foreach opt $all_gitlog_opts {
+     $topwin.menubar.options.gitlog add checkbutton -label $opt \
+       -variable git_log_opt($opt) -onvalue 1 -offvalue 0 \
        -command {
            global cvscfg
            global git_log_opt
@@ -296,19 +305,12 @@ proc git_options {topwin} {
            gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
       }
     }
-    foreach go { "--first-parent" "--full-history" "--sparse" "--no-merges" } {
-      if {$go in $cvscfg(gitlog_opts)} {
-        set git_log_opt($go) 1
-      } else {
-        set git_log_opt($go) 0
-      }
-    }
-    $topwin.menubar.options add command -label "Branches to include"
-    $topwin.menubar.options add radiobutton -label " File-specific" \
+    $topwin.menubar.options add cascade -label "Branches groups" -menu [menu $topwin.menubar.options.branches]
+    $topwin.menubar.options.branches add radiobutton -label " File-specific" \
       -variable cvscfg(gitbranchgroups) -value "F"
-    $topwin.menubar.options add radiobutton -label " All Local" \
+    $topwin.menubar.options.branches add radiobutton -label " All Local" \
       -variable cvscfg(gitbranchgroups) -value "FL"
-    $topwin.menubar.options add radiobutton -label " Local + Remote" \
+    $topwin.menubar.options.branches add radiobutton -label " Local + Remote" \
       -variable cvscfg(gitbranchgroups) -value "FLR"
 }
 
