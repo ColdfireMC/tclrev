@@ -569,6 +569,14 @@ proc setup_dir { } {
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
 
+  if {$ingit} {
+    # FIXME: once the git options cascades are added, they
+    # don't go away even if we cd out of a git directory.
+    if {! [winfo exists .workdir.options.gitlog]} {
+      git_options_menu .workdir
+    }
+  }
+
   .workdir.top.bmodbrowse configure -image Modules
   .workdir.top.lmodule configure -text "Path"
   .workdir.top.ltagname configure -text "Branch/Tag"
