@@ -5,7 +5,6 @@
 proc menubar_menus {topwin} {
   global cvscfg
   global cvsglb
-  global incvs insvn inrcs ingit
   global cvsmenu
   global usermenu
   global execmenu
@@ -15,17 +14,13 @@ proc menubar_menus {topwin} {
   gen_log:log T "ENTER"
   set startdir "[pwd]"
 
+  if [winfo exists $topwin.menubar] {
+    destroy $topwin.menubar
+  }
   menu $topwin.menubar
 
-  if {[tk windowingsystem] == "aqua"} {
-    # On Apple, the convention is to have the "about" stuff in the apple menu
-    $topwin.menubar add cascade -label "TkCVS" -menu [menu $topwin.menubar.apple]
-    set aboutmenu "$topwin.menubar.apple"
-  } else {
-    # Otherwise, put it in the Help menu
-    set aboutmenu "$topwin.menubar.help"
-  }
-  about_menus $aboutmenu
+  $topwin.menubar add cascade -label "TkCVS" -menu [menu $topwin.menubar.about]
+  about_menus $topwin.menubar.about
 
   $topwin.menubar add cascade -label "File" -menu [menu $topwin.menubar.file] -underline 0
   $topwin.menubar add cascade -label "Options" -menu [menu $topwin.menubar.options] -underline 0
@@ -61,7 +56,6 @@ proc menubar_menus {topwin} {
 proc workdir_menus {topwin} {
   global cvscfg
   global cvsglb
-  global incvs insvn inrcs ingit
   global cvsmenu
   global usermenu
   global execmenu
@@ -71,7 +65,6 @@ proc workdir_menus {topwin} {
   gen_log:log T "ENTER"
 
   # File menu
-  #$topwin.menubar.file insert 1 separator
   $topwin.menubar.file insert 1 command -label "Browse Modules" -underline 0 \
      -command modbrowse_run
   $topwin.menubar.file insert 1 separator
@@ -215,10 +208,6 @@ proc workdir_menus {topwin} {
      -command { DirCanvas:displaycolumns $topwin.main.tree }
   $topwin.menubar.options add separator
 
-  if {$ingit} {
-    git_options $topwin
-  }
-
   # User-defined commands
   if { [info exists cvsmenu] || \
        [info exists usermenu] || \
@@ -268,7 +257,7 @@ proc branch_menus {topwin} {
 }
 
 # Preferences for Git
-proc git_options {topwin} {
+proc git_options_menu {topwin} {
   global cvscfg
   global git_log_opt
 
@@ -326,7 +315,7 @@ proc help_menu {topwin} {
      -command current_directory
   $topwin.menubar.help add command -label "Module Browser" \
      -command module_browser
-  $topwin.menubar.help add command -label "Log Browser" \
+  $topwin.menubar.help add command -label "Branch Diagram Browser" \
      -command log_browser
   $topwin.menubar.help add command -label "Merge Tool" \
      -command directory_branch_viewer
