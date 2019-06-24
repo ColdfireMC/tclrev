@@ -270,6 +270,9 @@ proc git_options_menu {topwin} {
     }
   }
 
+  if [winfo exists $topwin.menubar.options.gitlog] {
+    return
+  }
   $topwin.menubar.options add separator
   if {$topwin eq ".workdir"} {
     $topwin.menubar.options add checkbutton -label "Git Detailed Status" \

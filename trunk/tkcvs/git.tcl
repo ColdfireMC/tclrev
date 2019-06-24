@@ -1456,9 +1456,28 @@ namespace eval ::git_branchlog {
         # so the foreach is unnecessary?
         foreach a [array names branch_matches] {
           foreach b $branch_matches($a) {
+            if {[info exists branch_matches($b)] && ($a in $branch_matches($b))} {
+              gen_log:log D "removing $a from branch_matches($b)"
+              set idx [lsearch $branch_matches($b) $a]
+              set branch_matches($b) [lreplace $branch_matches($b) $idx $idx]
+            }
+            if {$branchroot($a) ne $branchroot($b)} {
+              gen_log:log D "BRANCHES $a and $b now have DIFFERENT ROOTS"
+              continue
+            }
             gen_log:log D "BRANCHES $a and $b have the SAME ROOT $branchroot($a)=$branchroot($b)"
             gen_log:log D "COMPARING branchrevs($a) vs branchrevs($b)"
             lassign [list_comm $branchrevs($a) $branchrevs($b)] inBonly inBoth
+            if {$inBonly eq "IDENTICAL"} {
+              gen_log:log D "BRANCHES $a and $b are identical"
+              foreach z [list $a $b] {
+                if {$z ni $revbtags($branchroot($z))} {
+                  gen_log:log D " appending $z to revbtags($branchroot($z))"
+                  lappend revbtags($branchroot($z)) $z
+                }
+              }
+              continue
+            }
             gen_log:log D "COMPARING branchrevs($b) vs branchrevs($a)"
             lassign [list_comm $branchrevs($b) $branchrevs($a)] inAonly inBoth
             gen_log:log D " in $a ONLY: $inAonly"
@@ -1473,6 +1492,7 @@ namespace eval ::git_branchlog {
               continue
             }
             if {($la == 0) && ($lb == 0)} {
+              # We checked that above via special output, but just in case?
               gen_log:log D "BRANCHES $a and $b are identical"
               foreach z [list $a $b] {
                 if {$z ni $revbtags($branchroot($z))} {
@@ -1666,36 +1686,6 @@ namespace eval ::git_branchlog {
         # revkind($rootrev) got overwritten
         set revkind($rootrev) "root"
 
-        set comp_done {}
-        foreach b [array names revbtags] {
-          foreach c [array names revbtags] {
-            if {$b eq $c} {continue}
-            #set bookkeep [concat [lsort [list $b $c]]]
-            #if {$bookkeep in $comp_done} {continue}
-            #lappend comp_done $bookkeep
-            if {$revbtags($b) eq $revbtags($c)} {
-              puts "TROUBLE: $revbtags($b) is in both $b and $c"
-            }
-          }
-        }
-
-        set unique_branches $branches
-        set comp_done {}
-        foreach b $unique_branches {
-          foreach rev $branchrevs($b) {
-            foreach c $unique_branches {
-              if {$b eq $c} {continue}
-              set bookkeep [concat [lsort [list $b $c]]]
-              if {$bookkeep in $comp_done} {continue}
-              lappend comp_done $bookkeep
-               if {$rev in $branchrevs($c)} {
-                 puts "TROUBLE! rev $rev of branch $b is also in $c"
-                 continue
-              }
-            }
-          }
-        }
-
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
@@ -1725,7 +1715,7 @@ namespace eval ::git_branchlog {
         # merge commits look like
         # 95fe289:783ae78 226ff9b:
         foreach logline [split $lines "\n"] {
-#gen_log:log D "$logline"
+          #gen_log:log D "$logline"
           set splits [split $logline ':']
           set h [lindex $splits 0]
           set p [lindex $splits 1]
@@ -2084,6 +2074,7 @@ proc list_comm {listA listB} {
     set inB {}
     set inBoth $listA
     gen_log:log D "lists are IDENTICAL"
+    return "IDENTICAL"
   } else {
     foreach B $listB {
       if {$B in $listA} {

@@ -1730,18 +1730,18 @@ namespace eval ::logcanvas {
             if {! [info exists revcomment($rev)]} {
                set revcomment($rev) "*** empty log message ***"
             }
-            $logcanvas.up.revA_rvers configure -text $rev
-            if {$rev != {} && [info exists revwho($rev)]} {
-              $logcanvas.up.revA_rwho configure -text $revwho($rev)
-              $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
-              $logcanvas.up.logA_rlogfm.rcomment configure -state normal
-              $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
-            if {$item == {}} {
-                $logcanvas.up.logA_rlogfm.rcomment insert end "*** not drawn ***\n"
-              }
-              $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
-              $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
+          }
+          $logcanvas.up.revA_rvers configure -text $rev
+          if {$rev != {} && [info exists revwho($rev)]} {
+            $logcanvas.up.revA_rwho configure -text $revwho($rev)
+            $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
+            $logcanvas.up.logA_rlogfm.rcomment configure -state normal
+            $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
+          if {$item == {}} {
+              $logcanvas.up.logA_rlogfm.rcomment insert end "*** not drawn ***\n"
             }
+            $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
+            $logcanvas.up.logA_rlogfm.rcomment configure -state disabled
           }
         } else {
           $logcanvas.down.search.l configure -text "Not found"
