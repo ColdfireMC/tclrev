@@ -1682,6 +1682,7 @@ namespace eval ::git_branchlog {
         # Little pause before erasing the list of branches we temporarily drew
         after 500
         $ln\::DrawTree now
+if {0} {
         set sidetree_x 100
         if {$rootrev ne $oldest_rev} {
           gen_log:log D "Adding UNROOTED branch: $oldest_rev"
@@ -1697,6 +1698,7 @@ namespace eval ::git_branchlog {
           $ln\::DrawSideTree $sidetree_x 18 $newroot
           incr sidetree_x 100
         }
+}
 
         gen_log:log T "LEAVE"
         return
