@@ -625,9 +625,9 @@ namespace eval ::logcanvas {
 
         #gen_log:log T "ENTER ($x $y $rbox_width $rbox_height $cur_rev $root_rev)"
         if {[info exists revbtags($root_rev)]} {
-          gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev at $cur_rev"
+          gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev"
         } else {
-          gen_log:log D "Drawing nameless root for $root_rev at $cur_rev"
+          gen_log:log D "Drawing nameless root for $root_rev"
         }
 
         # draw the box
@@ -852,7 +852,11 @@ namespace eval ::logcanvas {
         variable revbranches
         variable revbtags
 
-        #gen_log:log T "ENTER ($x $y $root_rev $branch)"
+        gen_log:log T "ENTER ($x $y $root_rev $branch)"
+        gen_log:log T "level [info level]"
+        if {[info level] > 9} {
+          return [list $x $y 200 18 $y]
+        }
         if {[info exists revbtags($branch)]} {
           gen_log:log D "Drawing $revbtags($branch) $branch rooted at $root_rev ($x $y)"
         } else {
@@ -1064,9 +1068,12 @@ namespace eval ::logcanvas {
             if {$ingit} {
               # Curved line. I can't shorten the vertical height. The swoop makes
               # it look better, plus branching isn't as concrete in Git so it symbolizes that
-              $logcanvas.canvas create line \
-                $rx $ry $mx $ry $mx [expr {$by - $tip_height - $curr(boff)}] \
-                -arrow last -arrowshape $curr(arrowshape) -smooth 1
+              set ay [expr {$by - $tip_height - $curr(boff)}]
+              $logcanvas.canvas lower [ \
+                $logcanvas.canvas create line \
+                  $rx $ry $mx $ry $mx $ay \
+                  -arrow last -arrowshape $curr(arrowshape) -smooth 1
+              ]
             } else {
               # Blue elbow
               $logcanvas.canvas lower [ \
@@ -1122,7 +1129,7 @@ namespace eval ::logcanvas {
           UpdateBndBox
         }
         set new_y [expr {$y + $lbl_height($branch) + $curr(spcy)}]
-        #gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height($branch) $last_y)"
+        gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height($branch) $last_y)"
         return [list $x $new_y $box_width $lbl_height($branch) $last_y]
       }
 

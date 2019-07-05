@@ -423,6 +423,10 @@ if {$branching_desired} {
   addfile FbranchC.txt branchC
   stage
   commit "First changes on Branch C"
+  # Make two identical branches (OK in Git)
+  set exec_cmd "git branch -c branchC branchD"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
   cd $WD
 
   puts "==============================="
@@ -436,10 +440,6 @@ puts "==============================="
 puts "Second revision on trunk"
 cd $WD/$Master
 fetch {--all}
-# Make two identical branches (OK in Git)
-set exec_cmd "git branch -c branchB branchC"
-puts "$exec_cmd"
-set ret [catch {eval "exec $exec_cmd"} out]
 
 modfiles "Main 2"
 stage

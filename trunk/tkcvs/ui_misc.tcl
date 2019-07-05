@@ -19,7 +19,7 @@ proc scrollbindings {cnvs} {
 
 # Generic Copy popup for read-only text widgets
 proc copy_paste_popup {win X Y} {
-  gen_log:log T "ENTER ($win $X $Y)"
+  #gen_log:log T "ENTER ($win $X $Y)"
 
   if {! [winfo exists $win.copy_paste_pop] } {
     menu $win.copy_paste_pop

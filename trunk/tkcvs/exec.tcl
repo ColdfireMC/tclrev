@@ -362,6 +362,12 @@ namespace eval ::viewer {
         }
       }
 
+      proc width {width} {
+        variable w
+        $w.text configure -width $width
+        update idletasks
+      }
+
       # Call this proc to write arbitrary text to the viewer, possibly
       # with a tag to color it
       proc log { text {texttag {}} } {

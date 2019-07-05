@@ -15,7 +15,8 @@ Release 9.1.2 June, 2019
   #  R    remote, found by "git branch -r"
   set cvscfg(gitbranchgroups) "FL"
 
-- Worked on performance and accuracy of the branch diagram
+- Worked on performance and accuracy of the branch diagram. More protection
+  against looping.
 
 - Moved the menubars into a separate file so they're a little more modular
 
