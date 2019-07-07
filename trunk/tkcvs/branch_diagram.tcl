@@ -606,7 +606,39 @@ namespace eval ::logcanvas {
         incr width $curr(padx,2)
         set height [expr {$curr(pady,2) + \
           [llength [subst $root_info]] * $font_norm_h}]
-        #gen_log:log T "LEAVE (tag_width $tag_width root_width $root_width height $height)"
+        gen_log:log T "LEAVE (tag_width $tag_width root_width $root_width height $height)"
+        return [list $tag_width $root_width $height]
+      }
+
+      # Finds the dimensions including tags, but not the location, for the blue root box.
+      # That (tags on the root) can only happen in CVS, I think
+      proc CalcRootGit { root_rev } {
+        global cvscfg
+        variable opt
+        variable curr
+        variable box_height
+        variable font_bold
+        variable font_norm
+        variable font_norm_h
+        variable logcanvas
+        variable root_info
+        variable revbtags
+        variable tlist
+
+        #gen_log:log T "ENTER ($root_rev)"
+        set height 0
+        set root_width 0
+        set tag_width 0
+
+        set tlist($root_rev) {}
+        if {![info exists revbtags($root_rev)]} {set revbtags($root_rev) {}}
+        foreach s [subst $root_info] {
+          set w [font measure $font_norm -displayof $logcanvas.canvas " $s "]
+          if {$w > $root_width} {
+            set root_width $w
+          }
+        }
+        incr width $curr(padx,2)
         return [list $tag_width $root_width $height]
       }
 
@@ -628,6 +660,7 @@ namespace eval ::logcanvas {
           gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev"
         } else {
           gen_log:log D "Drawing nameless root for $root_rev"
+          set revbtags() {}
         }
 
         # draw the box
@@ -902,19 +935,14 @@ namespace eval ::logcanvas {
           lassign [CalcCurrent $branch] box_width cur_height
           set lbl_height(current) $cur_height
         } else {
-          lassign [CalcRoot $branch] rtw box_width bot_height
-          # In Git, we replace the blue box at the base with one at the tip.
-          # We need to carry that spacer through our calculations, in the
-          #  lbl_height array
           if {$ingit} {
-            set tip_height $bot_height
-            set bot_height 0
-            set lbl_height($branch) $tip_height
+            lassign [CalcRootGit $branch] rtw box_width bot_height
           } else {
-            set tip_height 0
-            set lbl_height($branch) $bot_height
+            lassign [CalcRoot $branch] rtw box_width bot_height
           }
+          set lbl_height($branch) $bot_height
           gen_log:log D "set lbl_height($branch) ($lbl_height($branch))"
+          set tip_height $lbl_height($branch)
           if {$rtw > $tag_width} {
             set tag_width $rtw
           }
@@ -1063,11 +1091,14 @@ namespace eval ::logcanvas {
             }
             if {! $ingit} {
               DrawRoot $bx $by $bw $lbl_height($b) $revision $b
+              $logcanvas.canvas create line \
+                $mx [expr {$by - $rh}] $mx [expr {$by - $rh - $curr(boff)}] \
+                -arrow last -arrowshape $curr(arrowshape) \
+                -width $curr(width)
             }
             # Arrow connecting the branch root box to its parent
             if {$ingit} {
-              # Curved line. I can't shorten the vertical height. The swoop makes
-              # it look better, plus branching isn't as concrete in Git so it symbolizes that
+              # Curved line.
               set ay [expr {$by - $tip_height - $curr(boff)}]
               $logcanvas.canvas lower [ \
                 $logcanvas.canvas create line \
@@ -1114,10 +1145,11 @@ namespace eval ::logcanvas {
         # Finished individual revisions and their branches
 
         if {$ingit} {
+          # For Git, now we draw the root box at the top
+          lassign [CalcRoot $branch] rtw ignore bot_height
           if {$last_y != {} } {
             set gy [expr {$top_y - $height}]
-            # For Git, now we draw the root box at the top
-            DrawRoot $x $gy $box_width $lbl_height($branch) [lindex $branchrevs($branch) end] $branch
+            DrawRoot [expr {$midx - ($box_width/2)}] $gy $box_width $bot_height [lindex $branchrevs($branch) end] $branch
             $logcanvas.canvas lower [ \
               $logcanvas.canvas create line \
                $midx $gy $midx [expr {$gy + $curr(spcy)}] \
@@ -1157,12 +1189,14 @@ namespace eval ::logcanvas {
           # This is the blue box at the bottom of the side branch
           DrawRoot $lx $y2 $lbw $lbl_height($root_rev) $root_rev $root_rev
           # This is the arrow at the base of the side branch
-          $logcanvas.canvas lower [ \
+          $logcanvas.canvas lower [\
             $logcanvas.canvas create line \
               $mx $ry $mx [expr {$by - $rh}] \
               -arrow last -arrowshape $curr(arrowshape) \
               -width $curr(width)
           ]
+        } else {
+          DrawRoot $lx $y2 $lbw 0 "" $root_rev
         }
         UpdateBndBox
 
@@ -1481,22 +1515,15 @@ namespace eval ::logcanvas {
             set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
             lassign [CalcRoot $basebranch] rtw box_width bot_height
-            # In Git, we replace the blue box at the base with one at the tip.
-            # We need to carry that spacer through our calculations, as lbl_height
-            if {$ingit} {
-              set tip_height $bot_height
-              set bot_height 0
-              set lbl_height($basebranch) $tip_height
-            } else {
-              set tip_height 0
-              set lbl_height($basebranch) $bot_height
-            }
+
             if {! $ingit} {
               $logcanvas.canvas create line \
                 $mx $by $mx [expr {$by - $rh}] \
                 -arrow last -arrowshape $curr(arrowshape) \
                 -width $curr(width)
               DrawRoot $lx $y2 $lbw $lbl_height($basebranch) $basebranch $basebranch
+            } else {
+              DrawRoot $lx $y2 $lbw 0 "" $basebranch
             }
             UpdateBndBox
           }
