@@ -1,4 +1,4 @@
-Release 9.1.2 June, 2019
+Release 9.1.2 July, 2019
 
 - For SVN and GIT, you can now start the branch browser with no file selected.
   It will diagram "."
