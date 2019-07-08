@@ -116,7 +116,7 @@ namespace eval ::exec {
             }
             ::exec::$my_idx\::abort
           } else {
-            gen_log:log D "  Close OK"
+            #gen_log:log D "  Close OK"
             # Many CVS commands write stderr without err exit
             if {[tell $procerr]} {
               seek $procerr 0
@@ -128,7 +128,7 @@ namespace eval ::exec {
               }
             }
             set ExecDone [list 0]
-            gen_log:log D "  ExecDone $ExecDone"
+            #gen_log:log D "  ExecDone $ExecDone"
             
           }
           catch {close $procerr}
