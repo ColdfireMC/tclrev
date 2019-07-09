@@ -657,6 +657,7 @@ namespace eval ::logcanvas {
 
         #gen_log:log T "ENTER ($x $y $rbox_width $rbox_height $cur_rev $root_rev)"
         if {[info exists revbtags($root_rev)]} {
+          #gen_log:log D "revbtags($root_rev) $revbtags($root_rev)"
           gen_log:log D "Drawing root for $revbtags($root_rev) $root_rev"
         } else {
           gen_log:log D "Drawing nameless root for $root_rev"
@@ -1173,7 +1174,7 @@ namespace eval ::logcanvas {
 
         gen_log:log T "ENTER: ($x $y $root_rev)"
         gen_log:log D "Drawing SideTree branch at $root_rev"
-        foreach {lx y2 lbw rh lly} [DrawBranch $x $y {} $root_rev] {
+        foreach {lx y2 lbw rh lly} [DrawBranch $x $y $root_rev $root_rev] {
           lappend bxys $lx $lbw $rh $lly
           break
         }
@@ -1195,8 +1196,6 @@ namespace eval ::logcanvas {
               -arrow last -arrowshape $curr(arrowshape) \
               -width $curr(width)
           ]
-        } else {
-          DrawRoot $lx $y2 $lbw 0 "" $root_rev
         }
         UpdateBndBox
 
@@ -1522,8 +1521,6 @@ namespace eval ::logcanvas {
                 -arrow last -arrowshape $curr(arrowshape) \
                 -width $curr(width)
               DrawRoot $lx $y2 $lbw $lbl_height($basebranch) $basebranch $basebranch
-            } else {
-              DrawRoot $lx $y2 $lbw 0 "" $basebranch
             }
             UpdateBndBox
           }
