@@ -1899,7 +1899,7 @@ namespace eval ::logcanvas {
 
       if {$ingit} {
         # The git options menu
-        git_options_menu $logcanvas
+        git_branch_menu $logcanvas $filename
       }
 
       if {$tcl_platform(platform) != "windows"} {

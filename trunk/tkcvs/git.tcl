@@ -1523,42 +1523,41 @@ if {1} {
         foreach m [array names branch_matches] {
           set family_base($m) $branchroot($m)
           set peers [concat $m $branch_matches($m)]
-          gen_log:log D "SORTING FAMILY $peers"
-          set list_of_lists ""
-          foreach n $peers {
-            lappend list_of_lists [list $n [lreverse $branchrevs($n)] ]
-          }
-          foreach o $list_of_lists {
-             gen_log:log D " $o"
-          }
+          gen_log:log D "FAMILY $peers"
+          #set list_of_lists ""
+          #foreach n $peers {
+            #lappend list_of_lists [list $n [lreverse $branchrevs($n)] ]
+          #}
+          #foreach o $list_of_lists {
+             #gen_log:log D " $o"
+          #}
           #gen_log:log D "SORTED"
           #foreach sorted [lsort -index 1 -command compare_nested_branches $list_of_lists] {
             #gen_log:log D " $sorted"
             #lappend ordered_peers [lindex $sorted 0]
           #}
           #set ordered_peers [lreverse $peers]
-          set ordered_peers $peers
+          #set ordered_peers $peers
           # Now we have them from tip-most to base-most, or something like it.  We proceed to compare
           # them in pairs, trimming their revlists and assigning their parents
-          gen_log:log D "ORDERED: $ordered_peers"
-          set limit [llength $ordered_peers]
+          #gen_log:log D "ORDERED: $ordered_peers"
+          set limit [llength $peers]
           for {set i 0} {$i < $limit} {incr i} {
             set j [expr {$i+1}]
             if {$j == $limit} {set j 0}
-            set peer1 [lindex $ordered_peers $i]
-            set peer2 [lindex $ordered_peers $j]
-            gen_log:log D "COMPARING $peer1 VS $peer2"
+            set peer1 [lindex $peers $i]
+            set peer2 [lindex $peers $j]
+            gen_log:log D " COMPARING $peer1 VS $peer2"
             lassign [list_comm $branchrevs($peer2) $branchrevs($peer1)] inBonly inBoth
-            gen_log:log D "== ONLY IN $peer1"
-            gen_log:log D " $inBonly"
+            gen_log:log D " == ONLY IN $peer1: $inBonly"
             if {$inBonly eq "IDENTICAL"} {
-              gen_log:log D "BRANCHES $peer1 and $peer2 are IDENTICAL"
+              gen_log:log D " BRANCHES $peer1 and $peer2 are IDENTICAL"
               set branchrevs($peer1) $branchrevs($peer2)
               set branchroot($peer1) $branchroot($peer2)
               set branchtip($branch) $branchtip($peer2)
               foreach z [list $peer1 $peer2] {
                 if {$z ni $revbtags($branchroot($z))} {
-                  gen_log:log D "Adding $z to revbtags for ($branchroot($z))"
+                  gen_log:log D " Adding $z to revbtags for ($branchroot($z))"
                   lappend revbtags($branchroot($z)) $z
                 }
               }
@@ -1570,13 +1569,16 @@ if {1} {
             set new_base $branchroot($peer1)
             set branchrevs($new_base) $inBonly
             set fork [lindex $inBoth 0]
-            gen_log:log D "NEW PARENT $fork and BASE $new_base of $peer1"
-            if {$fork eq ""} continue
+            if {$fork eq ""} {
+              gen_log:log D " $peer1 and $peer2 are now non-overlapping"
+              continue
+            }
+            gen_log:log D " NEW PARENT $fork and BASE $new_base of $peer1"
             set old_base [lindex $inBoth end]
             set revkind($new_base) "branch"
             # Move revbtags
             if {! [info exists revbtags($new_base)] || ($peer1 ni $revbtags($new_base))} {
-              gen_log:log D "Adding $peer1 to revbtags($new_base)"
+              gen_log:log D " Adding $peer1 to revbtags($new_base)"
               lappend revbtags($new_base) $peer1
             }
             if [info exists revbtags($old_base)] {
@@ -1586,11 +1588,12 @@ if {1} {
             }
             # Move revbranches
             if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
-              gen_log:log D "Adding new BASE $new_base to PARENT revbranches($fork)"
+              gen_log:log D " Adding new BASE $new_base to PARENT revbranches($fork)"
               lappend revbranches($fork) $new_base
             }
           }
         }
+        gen_log:log D "========================"
 }
 
         gen_log:log D "CURRENT BRANCH: $current_tagname"
@@ -1704,10 +1707,10 @@ if {1} {
           }
         }
 
-        gen_log:log D "Rootless branches"
+        gen_log:log D "Rootless branches: $rootless_branches"
         foreach rb $rootless_branches {
-          gen_log:log D "$rb $branchrevs($rb)"
-          gen_log:log D " BASE $branchroot($rb)"
+          gen_log:log D " $rb $branchrevs($rb)"
+          #gen_log:log D " BASE $branchroot($rb)"
           if {! [info exists branchrevs($branchroot($rb))]} {
             set branchrevs($branchroot($rb)) $branchrevs($rb)
           }
@@ -1997,31 +2000,35 @@ if {1} {
         gen_log:log T "ENTER"
 
         # Sort the revision and branch lists and remove duplicates
-        foreach r [lsort -dictionary [array names revkind]] {
-          gen_log:log D "revkind($r) $revkind($r)"
-        }
+        #foreach r [lsort -dictionary [array names revkind]] {
+          #gen_log:log D "revkind($r) $revkind($r)"
+        #}
         #foreach r [lsort -dictionary [array names revpath]] {
            #gen_log:log D "revpath($r) $revpath($r)"
         #}
-        gen_log:log D ""
-        foreach a [lsort -dictionary [array names branchrevs]] {
-          gen_log:log D "branchrevs($a) $branchrevs($a)"
-        }
-        foreach a [lsort -dictionary [array names revbranches]] {
-           gen_log:log D "revbranches($a) $revbranches($a)"
-        }
-        gen_log:log D ""
-        foreach a [lsort -dictionary [array names revbtags]] {
-         gen_log:log D "revbtags($a) $revbtags($a)"
-        }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revtags]] {
           gen_log:log D "revtags($a) $revtags($a)"
         }
         gen_log:log D ""
+        foreach a [lsort -dictionary [array names revbtags]] {
+          gen_log:log D "revbtags($a) $revbtags($a)"
+          foreach t $revbtags($a) {
+            if {$t ne ""} {lappend btags $t}
+          }
+        }
+        gen_log:log D ""
+        foreach a $btags {
+          gen_log:log D "branchrevs($a) $branchrevs($a)"
+        }
+        gen_log:log D ""
+        foreach a [lsort -dictionary [array names revbranches]] {
+           gen_log:log D "revbranches($a) $revbranches($a)"
+        }
+        gen_log:log D ""
         foreach a [lsort -dictionary [array names revmergefrom]] {
           ## Only take one from the list that you might have here
-          set revmergefrom($a) [lindex $revmergefrom($a) end]
+          #set revmergefrom($a) [lindex $revmergefrom($a) end]
           gen_log:log D "revmergefrom($a) $revmergefrom($a)"
         }
         gen_log:log D ""
