@@ -23,7 +23,11 @@ proc menubar_menus {topwin} {
   about_menus $topwin.menubar.about
 
   $topwin.menubar add cascade -label "File" -menu [menu $topwin.menubar.file] -underline 0
-  $topwin.menubar add cascade -label "Options" -menu [menu $topwin.menubar.options] -underline 0
+  if {$topwin eq ".workdir"} {
+    $topwin.menubar add cascade -label "Options" -menu [menu $topwin.menubar.options] -underline 0
+  } else {
+    $topwin.menubar add cascade -label "Git" -menu [menu $topwin.menubar.gitopts]
+  }
 
   $topwin.menubar add cascade -label "Go" -menu [menu $topwin.menubar.goto] -underline 0
   $topwin.menubar.goto add command -label "Go Home" \
@@ -146,6 +150,9 @@ proc workdir_menus {topwin} {
 
   # GIT - create it now, but place it later
   menu $topwin.menubar.git
+  $topwin.menubar.git add command -label "GiTk" \
+     -command {cvs_execcmd gitk [workdir_list_files]}
+  $topwin.menubar.git add separator
   $topwin.menubar.git add command -label "Checkout/Update" -underline 6 \
      -command {git_checkout [workdir_list_files]}
   $topwin.menubar.git add command -label "Update with Options" -underline 13 \
@@ -207,6 +214,10 @@ proc workdir_menus {topwin} {
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
      -command "DirCanvas:displaycolumns $topwin.main.tree"
   $topwin.menubar.options add separator
+  $topwin.menubar.options add checkbutton -label "Git Detailed Status" \
+     -variable cvscfg(gitdetail) -onvalue true -offvalue false \
+     -command { setup_dir }
+  $topwin.menubar.options add separator
 
   # User-defined commands
   if { [info exists cvsmenu] || \
@@ -256,11 +267,17 @@ proc branch_menus {topwin} {
      -command save_options
 }
 
-# Preferences for Git
-proc git_options_menu {topwin} {
+# Actions and preferences for Git
+proc git_branch_menu {topwin files} {
   global cvscfg
   global git_log_opt
 
+  # gitk takes maximum one filename
+  set file [lindex $files 0]
+  $topwin.menubar.gitopts add command -label "GiTk" \
+     -command "cvs_execcmd gitk $file"
+  $topwin.menubar.gitopts add separator
+  $topwin.menubar.gitopts add cascade -label "Git log options" -menu [menu $topwin.menubar.gitopts.logopts]
   set all_gitlog_opts [list  "--first-parent" "--full-history" "--sparse" "--no-merges"]
   foreach o $all_gitlog_opts {
     if {$o in $cvscfg(gitlog_opts)} {
@@ -269,19 +286,8 @@ proc git_options_menu {topwin} {
       set git_log_opt($o) 0
     }
   }
-
-  if [winfo exists $topwin.menubar.options.gitlog] {
-    return
-  }
-  $topwin.menubar.options add separator
-  if {$topwin eq ".workdir"} {
-    $topwin.menubar.options add checkbutton -label "Git Detailed Status" \
-       -variable cvscfg(gitdetail) -onvalue true -offvalue false \
-       -command { setup_dir }
-  }
-  $topwin.menubar.options add cascade -label "Git log options" -menu [menu $topwin.menubar.options.gitlog]
   foreach opt $all_gitlog_opts {
-     $topwin.menubar.options.gitlog add checkbutton -label $opt \
+     $topwin.menubar.gitopts.logopts add checkbutton -label $opt \
        -variable git_log_opt($opt) -onvalue 1 -offvalue 0 \
        -command {
            global cvscfg
@@ -297,12 +303,12 @@ proc git_options_menu {topwin} {
            gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
       }
     }
-    $topwin.menubar.options add cascade -label "Branches groups" -menu [menu $topwin.menubar.options.branches]
-    $topwin.menubar.options.branches add radiobutton -label " File-specific" \
+    $topwin.menubar.gitopts add cascade -label "Branches groups" -menu [menu $topwin.menubar.gitopts.branches]
+    $topwin.menubar.gitopts.branches add radiobutton -label " File-specific" \
       -variable cvscfg(gitbranchgroups) -value "F"
-    $topwin.menubar.options.branches add radiobutton -label " All Local" \
+    $topwin.menubar.gitopts.branches add radiobutton -label " All Local" \
       -variable cvscfg(gitbranchgroups) -value "FL"
-    $topwin.menubar.options.branches add radiobutton -label " Local + Remote" \
+    $topwin.menubar.gitopts.branches add radiobutton -label " Local + Remote" \
       -variable cvscfg(gitbranchgroups) -value "FLR"
 }
 
