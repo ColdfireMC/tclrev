@@ -1550,18 +1550,18 @@ namespace eval ::logcanvas {
             }
             # Draw merge arrows derived from cvsnt mergepoint or svn 1.5 mergeinfo
             foreach to [array names revmergefrom] {
-              gen_log:log D "revmergefrom($to) $revmergefrom($to)"
+              #gen_log:log D "revmergefrom($to) $revmergefrom($to)"
               set from $revmergefrom($to)
               if [info exists xyw($from)] {
                 gen_log:log D " xyw($from) $xyw($from)"
               } else {
-                gen_log:log D " xyw($from) doesn't exist"
+                #gen_log:log D " xyw($from) doesn't exist"
                 continue
               }
               if [info exists xyw($to)] {
                 gen_log:log D " xyw($to) $xyw($to)"
               } else {
-                gen_log:log D " xyw($to) doesn't exist"
+                #gen_log:log D " xyw($to) doesn't exist"
                 continue
               }
               set xto [lindex $xyw($from) 0]
