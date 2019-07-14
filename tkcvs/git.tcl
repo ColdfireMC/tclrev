@@ -1246,7 +1246,6 @@ namespace eval ::git_branchlog {
         # list while we're at it. Also ask how much overlap each branch has with -all, as
         # a means to order the branches from base to crown
         set empty_branches ""
-        set rootless_branches ""
         set current_branches ""
         set root_branches ""
         list family
@@ -1259,7 +1258,7 @@ namespace eval ::git_branchlog {
           $lc.canvas yview moveto 1
           update idletasks
 
-          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) $br -- \"$filename\""
+          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) $br --since=$revdate($oldest_rev) -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy
@@ -1289,7 +1288,6 @@ namespace eval ::git_branchlog {
               gen_log:log D "branch $br is DISJUNCT with our root"
               set idx [lsearch $branches $br]
               set branches [lreplace $branches $idx $idx]
-              lappend rootless_branches $br
             }
             set overlap_len($br) $n_overlap
             set overlap_start($br) $start
@@ -1352,7 +1350,6 @@ namespace eval ::git_branchlog {
           gen_log:log D "FAMILY $f $family($f)"
         }
         gen_log:log D "Empty branches: $empty_branches"
-        gen_log:log D "Rootless branches: $rootless_branches"
         gen_log:log D "Active branches: $branches"
         gen_log:log D "You are Here branches: $current_branches"
 
@@ -1416,14 +1413,7 @@ namespace eval ::git_branchlog {
             set fam_trunk($f) ""
           }
           gen_log:log D "TRUNK for FAMILY $f: $fam_trunk($f)"
-          #set revkind($f) "root"
-          #if {! [info exists revbranches($f)]} {
-            #set revbranches($f) $f
-          #} else {
-            #if {$f ni $revbranches($f)} {
-            #  lappend revbranches($f) $f
-            #}
-          #}
+
           # Make sure the trunk is the first in the branchlist
           set idx [lsearch $branches $fam_trunk($f)]
           set branches [lreplace $branches $idx $idx]
@@ -1433,17 +1423,8 @@ namespace eval ::git_branchlog {
           catch {unset branch_matches}
           gen_log:log D "BRANCHES: $branches"
           # Draw something on the canvas so the user knows we're working
-          $lc.canvas create text $cnv_x $cnv_y -text "Sorting out the BRANCHES" -tags {temporary} -fill green
-          incr cnv_y $yspc
-          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
-          $lc.canvas yview moveto 1
-          update idletasks
 
-          set rootless_branches ""
           set empty_branches ""
-
-          #set rootrev $oldest_rev
-          #gen_log:log D "ROOT REV $rootrev"
           gen_log:log D "========================"
           gen_log:log D "FINDING THE MAJOR BRANCHES for family($f)"
 
@@ -1573,7 +1554,6 @@ namespace eval ::git_branchlog {
               # Withdraw this branch from the proceedings
               set idx [lsearch $family($f) $branch]
               set branches [lreplace $family($f) $idx $idx]
-              lappend rootless_branches $branch
               continue
             }
 
@@ -1615,7 +1595,6 @@ namespace eval ::git_branchlog {
           }
         }
         gen_log:log D "Empty branches:    $empty_branches"
-        gen_log:log D "Rootless branches: $rootless_branches"
         gen_log:log D "Branches:    $branches"
 
         gen_log:log D "========================"
@@ -1647,6 +1626,8 @@ namespace eval ::git_branchlog {
             if {$j == $limit} {set j 0}
             set peer1 [lindex $peers $i]
             set peer2 [lindex $peers $j]
+            # If the next one has been taken out for identity or something, skip it
+            if {$peer2 ni $family($f)} continue
             gen_log:log D " COMPARING $peer1 VS $peer2"
             lassign [list_comm $branchrevs($peer2) $branchrevs($peer1)] inBonly inBoth
             gen_log:log D " == ONLY IN $peer1: $inBonly"
@@ -1742,6 +1723,11 @@ namespace eval ::git_branchlog {
       }
       set revkind($rootrev) "root"
       gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
+      foreach t $trunks {
+        if {$t ne $trunk} {
+          lappend rootless_branches $t
+        }
+      }
       # Make sure we know where we're rooted. Sometimes the initial parent detection went
       # one too far, which would put us on a different branch that's not visible from here.
       gen_log:log D "branchrevs($trunk) $branchrevs($trunk)"
@@ -1799,14 +1785,6 @@ namespace eval ::git_branchlog {
           }
         }
 
-        gen_log:log D "Rootless branches: $rootless_branches"
-        foreach rb $rootless_branches {
-          gen_log:log D " $rb $branchrevs($rb)"
-          #gen_log:log D " BASE $branchroot($rb)"
-          if {! [info exists branchrevs($branchroot($rb))]} {
-            set branchrevs($branchroot($rb)) $branchrevs($rb)
-          }
-        }
         # We may have added a "current" branch. We have to set all its
         # stuff or we'll get errors
         foreach {revwho(current) revdate(current) revtime(current)
@@ -1823,30 +1801,22 @@ namespace eval ::git_branchlog {
         # Little pause before erasing the list of branches we temporarily drew
         after 500
         $ln\::DrawTree now
-        set sidetree_x 100
-        #if {$rootrev ne $oldest_rev} {
-          #gen_log:log D "UNROOTED branch: $oldest_rev"
-          #set revkind($oldest_rev) "root"
-          #$ln\::DrawSideTree $sidetree_x -18 $oldest_rev
-          #incr sidetree_x 100
-        #}
-        foreach rb $rootless_branches {
-          set broot $branchroot($rb)
-          gen_log:log D "UNROOTED branch $rb: $broot"
-          #set revkind($broot) "root"
-          #lappend revbtags($broot) $rb
-          #gen_log:log D "revbtags($broot) $revbtags($broot)"
-          #$ln\::DrawSideTree $sidetree_x 0 $broot
-          #incr sidetree_x 100
+
+        # FIXME calculate a better x offset. I can't seem to get anything
+        # from the canvas though.
+        if {[info exists rootless_branches]} {
+          set sidetree_x 150
+          foreach rb $rootless_branches {
+            set broot $branchroot($rb)
+            gen_log:log D "UNROOTED branch $rb: $broot"
+            catch {unset revkind}
+            set revkind($broot) "root"
+            #lappend revbtags($broot) $rb
+            gen_log:log D "revbtags($broot) $revbtags($broot)"
+            $ln\::DrawSideTree $sidetree_x 0 $broot
+            incr sidetree_x 150
+          }
         }
-        #foreach rl [array names family_base] {
-        #  set newroot $family_base($rl)
-        #  gen_log:log D "family_base($rl) $newroot"
-        #  gen_log:log D "Adding UNROOTED branch: $newroot"
-        #  set revkind($newroot) "root"
-        #  $ln\::DrawSideTree $sidetree_x 18 $newroot
-        #  incr sidetree_x 100
-        #}
 
         gen_log:log T "LEAVE"
         return
