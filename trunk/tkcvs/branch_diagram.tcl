@@ -50,7 +50,7 @@ namespace eval ::logcanvas {
       set sel_tag(A) {}
       set sel_tag(B) {}
       variable sel_rev
-      variable revnum_current
+      variable current_revnum
       set sel_rev(A) {}
       set sel_rev(B) {}
       variable search_lastpattern ""
@@ -142,7 +142,7 @@ namespace eval ::logcanvas {
         variable logcanvas
         variable sys
         variable loc
-        variable revnum_current
+        variable current_revnum
 
         switch -- $sys {
           "SVN" {
@@ -156,10 +156,10 @@ namespace eval ::logcanvas {
                 set kind [lindex $infoline end]
               } elseif {[string match "Last Changed Rev:*" $infoline]} {
                 gen_log:log D "$infoline"
-                set revnum_current [lindex $infoline end]
+                set current_revnum [lindex $infoline end]
               }
             }
-            if {! [info exists revnum_current]} {
+            if {! [info exists current_revnum]} {
               gen_log:log E "Warning: couldn't find current revision number!"
             }
             $logcanvas.up.bmodbrowse configure -command modbrowse_run \
@@ -184,14 +184,14 @@ namespace eval ::logcanvas {
               $logcanvas.view configure \
                  -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text]
-                    if {$rev ==""} { set rev "r$revnum_current" }
+                    if {$rev ==""} { set rev "r$current_revnum" }
                     svn_fileview $rev $revpath($rev) directory
                  }]
             } else {
               $logcanvas.view configure \
                  -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text]
-                    if {$rev ==""} { set rev "r$revnum_current" }
+                    if {$rev ==""} { set rev "r$current_revnum" }
                     svn_fileview $rev $revpath($rev) file
                  }]
               $logcanvas.diff configure \
@@ -221,7 +221,7 @@ namespace eval ::logcanvas {
             }
             $logcanvas.delta configure \
               -command [namespace code {
-                 set currentrevpath "$revpath(r$revnum_current)@$revnum_current"
+                 set currentrevpath "$revpath(r$current_revnum)@$current_revnum"
                  set fromrev [$logcanvas.up.revA_rvers cget -text]
                  if {$fromrev == ""} {cvsfail "Please select a revision!" $logcanvas; return}
                  set fromrevpath "$revpath($fromrev)@[string trimleft $fromrev {r}]"
@@ -330,9 +330,9 @@ namespace eval ::logcanvas {
            gen_log:log D "$infoline"
            # don't split infoline because comments like this break it:
            #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
-           regsub { .*$} $infoline {} revnum_current
-           gen_log:log D "revnum_current $revnum_current"
-           if {! [info exists revnum_current]} {
+           regsub { .*$} $infoline {} current_revnum
+           #gen_log:log D "current_revnum $current_revnum"
+           if {! [info exists current_revnum]} {
              gen_log:log E "Warning: couldn't find current revision number!"
            }
            if {$loc == "rep"} {
@@ -352,7 +352,7 @@ namespace eval ::logcanvas {
              $logcanvas.view configure -state normal \
                -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text]
-                    if {$rev ==""} { set rev "r$revnum_current" }
+                    if {$rev ==""} { set rev "r$current_revnum" }
                     git_fileview $rev $revpath($rev) $filename
                }]
              $logcanvas.annotate configure -state normal \
@@ -888,7 +888,8 @@ namespace eval ::logcanvas {
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log T "level [info level]"
-        if {[info level] > 9} {
+        # This just prevents infinite recursion. Maybe depth is too shallow.
+        if {[info level] > 10} {
           return [list $x $y 200 18 $y]
         }
         if {[info exists revbtags($branch)]} {
