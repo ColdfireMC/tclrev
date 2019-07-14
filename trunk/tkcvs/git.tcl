@@ -1416,7 +1416,7 @@ namespace eval ::git_branchlog {
             set fam_trunk($f) ""
           }
           gen_log:log D "TRUNK for FAMILY $f: $fam_trunk($f)"
-          set revkind($f) "root"
+          #set revkind($f) "root"
           #if {! [info exists revbranches($f)]} {
             #set revbranches($f) $f
           #} else {
@@ -1709,15 +1709,38 @@ namespace eval ::git_branchlog {
       foreach ft [array names fam_trunk] {
         lappend trunks $fam_trunk($ft)
       }
-      # First trunk. FIXME it won't be right sometimes
       gen_log:log D "TRUNK(s) $trunks"
-      set trunk [lindex $trunks 0]
+      set trunk_ok 0
+      foreach t $trunks {
+        if {$t in $current_branches} {
+          gen_log:log D "Found $t in Current branches"
+          set trunk $t
+          set trunk_ok 1
+        }
+      }
+      if {! $trunk_ok} {
+        foreach t $trunks {
+          if {$t eq $current_tagname} {
+            gen_log:log D "Using current_tagname $current_tagname"
+            set trunk $t
+            set trunk_ok 1
+          }
+        }
+      }
+      if {! $trunk_ok} {
+        gen_log:log D "Using first trunk in list"
+        set trunk [lindex $trunks 0]
+        set trunk_ok 1
+      }
+      if {! $trunk_ok} {
+        cvsfail "Can't find a trunk for this file" $lc
+      }
       foreach f [array names fam_trunk] {
         if {$fam_trunk($f) eq "$trunk"} {
           set rootrev $f
         }
       }
-      #set revkind($rootrev) "root"
+      set revkind($rootrev) "root"
       gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
       # Make sure we know where we're rooted. Sometimes the initial parent detection went
       # one too far, which would put us on a different branch that's not visible from here.
