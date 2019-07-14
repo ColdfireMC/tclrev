@@ -1453,7 +1453,6 @@ namespace eval ::svn_branchlog {
         variable cmd_log
         variable lc
 
-        gen_log:log D "  $cmd_log\::abort"
         catch {$cmd_log\::abort}
         busy_done $lc
         pack forget $lc.stop
@@ -1515,8 +1514,8 @@ namespace eval ::svn_branchlog {
         set show_tags [set $ln\::opt(show_tags)]
 
         # Find out where to put the working revision icon (if anywhere)
-        set revnum_current [set $ln\::revnum_current]
-        set revnum_current r$revnum_current
+        set current_revnum [set $ln\::current_revnum]
+        set current_revnum r$current_revnum
 
         if { $relpath == {} } {
           set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$safe_filename"
@@ -1529,7 +1528,7 @@ namespace eval ::svn_branchlog {
         # We need to go to the repository to find the highest revision.  Doing
         # info on local files may not have it.  Let's start with what we've got
         # though in case it fails.
-        set highest_revision [string trimleft $revnum_current "r"]
+        set highest_revision [string trimleft $current_revnum "r"]
         set command "svn info $path"
         gen_log:log C "$command"
         set ret [catch {eval "exec $command"} output]
@@ -1593,7 +1592,7 @@ namespace eval ::svn_branchlog {
         set tip [lindex $brevs 0]
         set revpath($tip) $path
         set revkind($tip) "revision"
-        if {$tip == $revnum_current} {
+        if {$tip == $current_revnum} {
           # If current is at end of trunk do this.
           set branchrevs($drawing_root) [linsert $branchrevs($drawing_root) 0 {current}]
           set curr 1
@@ -1601,7 +1600,7 @@ namespace eval ::svn_branchlog {
         # We checked the tip, now check the rest while we assign revkind etc
         set brevs [lrange $brevs 1 end-1]
         foreach r $brevs {
-          if {($curr == 0) && ($r == $revnum_current)} {
+          if {($curr == 0) && ($r == $current_revnum)} {
             # We need to make a new artificial branch off of $r
             lappend revbranches($r) {current}
           }
@@ -1682,13 +1681,13 @@ namespace eval ::svn_branchlog {
           set revpath($tip) $path
           set revkind($tip) "revision"
           set brevs [lreplace $brevs 0 0]
-          if {$tip == $revnum_current} {
+          if {$tip == $current_revnum} {
             # If current is at end of the branch do this.
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
             set curr 1
           }
           foreach r $brevs {
-            if {$r == $revnum_current} {
+            if {$r == $current_revnum} {
               # We need to make a new artificial branch off of $r
               lappend revbranches($r) {current}
             }

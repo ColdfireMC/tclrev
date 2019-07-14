@@ -2205,7 +2205,6 @@ namespace eval ::cvs_branchlog {
         variable cmd_log
         variable lc
 
-        gen_log:log D "  $cmd_log\::abort"
         catch {$cmd_log\::abort}
         busy_done $lc
         pack forget $lc.stop
