@@ -1020,7 +1020,6 @@ namespace eval ::git_branchlog {
         variable lc
 
         if {[info exists cmd_log]} {
-          gen_log:log D "  $cmd_log\::abort"
           catch {$cmd_log\::abort}
         }
         busy_done $lc
