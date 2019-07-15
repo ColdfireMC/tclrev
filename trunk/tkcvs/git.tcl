@@ -1257,7 +1257,7 @@ namespace eval ::git_branchlog {
           $lc.canvas yview moveto 1
           update idletasks
 
-          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) $br --since=$revdate($oldest_rev) -- \"$filename\""
+          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) $br -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy
@@ -1309,11 +1309,13 @@ namespace eval ::git_branchlog {
             }
           }
         }
+        # Finished collecting the branches from the repository
 
         # The start position and number of overlaps give us information
         # to figure out sub-branching
         gen_log:log D "========================"
         gen_log:log D "allrevs [llength $allrevs]"
+        # Sort by value of overlap start
         set kv [list]
         foreach {k v} [array get overlap_start] {
           lappend kv [list $k $v]
@@ -1324,7 +1326,7 @@ namespace eval ::git_branchlog {
           gen_log:log D " $b [lindex $s 1]"
         }
 
-        # Sort by value
+        # Sort by value of overlap length
         set kv [list]
         foreach {k v} [array get overlap_len] {
           lappend kv [list $k $v]
@@ -1358,7 +1360,6 @@ namespace eval ::git_branchlog {
           set branches $family($f)
           set fam_trunk($f) ""
           set trunk_found 0
-
           gen_log:log D "Deciding on a trunk for the $family($f) family"
           if {[llength $branches] == 1} {
             # If there's only one choice, don't waste time looking
@@ -1378,6 +1379,42 @@ namespace eval ::git_branchlog {
             if {[llength $os_z] == 1} {
             gen_log:log D " Only one branch begins at the root. trunk=$b"
               set trunk_found 1
+            }
+          }
+          if {! $trunk_found} {
+            foreach t $branches {
+              if {$t in $current_branches} {
+                gen_log:log D "Found $t in Current branches"
+                set fam_trunk($f) $t
+                set trunk_found 1
+              }
+            }
+          }
+          if {! $trunk_found} {
+            # Narrow it down to the ones with the fewest overlaps
+            foreach f [array names family] {
+              # The one with the least overlaps is usually the trunk
+              set ol_z ""
+              set min_ovlp 9999
+              foreach b $branches {
+                if {$overlap_len($b) < $min_ovlp} {
+                  set min_ovlp $overlap_len($b)
+                }
+              }
+              gen_log:log D "These branches have the fewest overlaps"
+              set long_branches ""
+              foreach b $branches {
+                if {$overlap_len($b) eq $min_ovlp} {
+                  lappend long_branches $b
+                }
+              }
+              gen_log:log D " $long_branches"
+              if {[llength $long_branches] == 1} {
+                set fam_trunk($f) [lindex $long_branches 0]
+                gen_log:log D "Using the single least-overlapping branch trunk=$fam_trunk($f)"
+                set trunk_found 1
+
+              }
             }
           }
           if {! $trunk_found} {
@@ -1417,6 +1454,7 @@ namespace eval ::git_branchlog {
           set idx [lsearch $branches $fam_trunk($f)]
           set branches [lreplace $branches $idx $idx]
           set branches [linsert $branches 0 $fam_trunk($f)]
+          set family($f) $branches
 
           # Get rev lists for the branches
           catch {unset branch_matches}
@@ -1427,339 +1465,361 @@ namespace eval ::git_branchlog {
           gen_log:log D "========================"
           gen_log:log D "FINDING THE MAJOR BRANCHES for family($f)"
 
-        foreach branch $family($f) {
-          $lc.canvas create text $cnv_x $cnv_y -text "$branch" -tags {temporary} -fill green
-          incr cnv_y $yspc
-          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
-          $lc.canvas yview moveto 1
-          update idletasks
+          foreach branch $family($f) {
+            $lc.canvas create text $cnv_x $cnv_y -text "$branch" -tags {temporary} -fill green
+            incr cnv_y $yspc
+            $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
+            $lc.canvas yview moveto 1
+            update idletasks
 
-          gen_log:log D "========= $branch =========="
-          if {$branch eq $fam_trunk($f)} {
-            # sometimes we don't have raw_revs($fam_trunk($f)) if the file is added on branch,
-            # but we should have guessed at a rootrev by now
-            if {! [info exists raw_revs($fam_trunk($f))]} {
-              set raw_revs($fam_trunk($f)) $rootrev
-            }
-            set branchrevs($f) [lreverse $raw_revs($fam_trunk($f))]
-            set branchrevs($fam_trunk($f)) $branchrevs($f)
-            set branchtip($fam_trunk($f)) [lindex $branchrevs($fam_trunk($f)) 0]
-            set branchroot($fam_trunk($f)) [lindex $branchrevs($fam_trunk($f)) end]
-            if {! [info exists rootrev]} {
-              set rootrev $branchroot($fam_trunk($f))
-              gen_log:log D "USING ROOT $rootrev"
-            }
-            # Move the trunk's tags from the tip to the base
-            # But if there's only one rev, those are the same, so don't do it
-            if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
-              gen_log:log D "$branch is already in $branchroot($branch)"
-            } else {
-              gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
-              lappend revbtags($branchroot($branch)) $branch
-            }
-            if {$branchtip($branch) ne $branchroot($branch)} {
-              if [info exists revbtags($branchtip($branch))] {
-                gen_log:log D " and removing it from tip"
-                set idx [lsearch $revbtags($branchtip($branch)) $branch]
-                set revbtags($branchtip($branch)) [lreplace $revbtags($branchtip($branch)) $idx $idx]
+            gen_log:log D "========= $branch =========="
+            if {$branch eq $fam_trunk($f)} {
+              # sometimes we don't have raw_revs($fam_trunk($f)) if the file is added on branch,
+              # but we should have guessed at a rootrev by now
+              if {! [info exists raw_revs($fam_trunk($f))]} {
+                set raw_revs($fam_trunk($f)) $rootrev
               }
-            }
-            gen_log:log D "BASE of trunk $branch is $rootrev"
-            continue
-          }
-
-          # The root for a branch is the first one we get back that's only in the branch
-          # and not in master
-          if {[info exists raw_revs($branch)]} {
-            set raw_revs($branch) [lreverse $raw_revs($branch)]
-            gen_log:log D "COMPARING $fam_trunk($f) VS $branch"
-            lassign [list_comm $branchrevs($fam_trunk($f)) $raw_revs($branch)] inBonly inBoth
-            gen_log:log D " == ONLY IN $branch: $inBonly"
-            if {$inBonly eq "IDENTICAL"} {
-              gen_log:log D "BRANCHES $fam_trunk($f) and $branch are IDENTICAL"
-              set branchrevs($branch) $branchrevs($fam_trunk($f))
-              set branchroot($branch) $branchroot($fam_trunk($f))
-              set branchtip($branch) $branchtip($fam_trunk($f))
-              # Add its tag to the branchroot for the other,
-              # and take it out of the list?
-              foreach z [list $branch $fam_trunk($f)] {
-                if {$z ni $revbtags($branchroot($z))} {
-                  gen_log:log D "Adding $z to revbtags for root $branchroot($z)"
-                  lappend revbtags($branchroot($z)) $z
+              set branchrevs($f) [lreverse $raw_revs($fam_trunk($f))]
+              set branchrevs($fam_trunk($f)) $branchrevs($f)
+              set branchtip($fam_trunk($f)) [lindex $branchrevs($fam_trunk($f)) 0]
+              set branchroot($fam_trunk($f)) [lindex $branchrevs($fam_trunk($f)) end]
+              if {! [info exists rootrev]} {
+                set rootrev $branchroot($fam_trunk($f))
+                gen_log:log D "USING ROOT $rootrev"
+              }
+              # Move the trunk's tags from the tip to the base
+              # But if there's only one rev, those are the same, so don't do it
+              if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
+                gen_log:log D "$branch is already in $branchroot($branch)"
+              } else {
+                gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
+                lappend revbtags($branchroot($branch)) $branch
+              }
+              if {$branchtip($branch) ne $branchroot($branch)} {
+                if [info exists revbtags($branchtip($branch))] {
+                  gen_log:log D " and removing it from tip"
+                  set idx [lsearch $revbtags($branchtip($branch)) $branch]
+                  set revbtags($branchtip($branch)) [lreplace $revbtags($branchtip($branch)) $idx $idx]
                 }
               }
-              gen_log:log D "Removing $branch as an independent entity"
-              #catch {unset branchrevs($branch)}
-              set idx [lsearch $family($f) $branch]
-              set family($f) [lreplace $family($f) $idx $idx]
-              set branches $family($f)
+              gen_log:log D "BASE of trunk $branch is $rootrev"
               continue
             }
-            if {[llength $inBonly] < 1} {
-              # If it's empty, remove this branch from the list
-              gen_log:log D "$branch is EMPTY"
-              set idx [lsearch $family($f) $branch]
-              set branches [lreplace $family($f) $idx $idx]
-              continue
-            }
-            foreach h $inBonly {
-              #gen_log:log D "$h"
-              set revkind($h) "revision"
-            }
-            set branchrevs($branch) $inBonly
-            set base [lindex $inBonly end]
-            gen_log:log D "branchrevs($branch) $branchrevs($branch)"
-            gen_log:log D "BASE of $branch $base"
-            set branchtip($branch) [lindex $branchrevs($branch) 0]
-            set branchroot($branch) [lindex $branchrevs($branch) end]
-            if {$base eq ""} {
-              gen_log:log D "BASE not found for $branch"
-              set base [lindex $inBoth 0]
+
+            # The root for a branch is the first one we get back that's only in the branch
+            # and not in master
+            if {[info exists raw_revs($branch)]} {
+              set raw_revs($branch) [lreverse $raw_revs($branch)]
+              gen_log:log D "COMPARING $fam_trunk($f) VS $branch"
+              gen_log:log D " f $f"
+              gen_log:log D " fam_trunk($f) fam_trunk($f)"
+              set trb $fam_trunk($f)
+              gen_log:log D " branchrevs($f) branchrevs($f)"
+              gen_log:log D " branchrevs($trb) branchrevs($trb)"
+              # This sorts the two lists so the inclusive one is first
+              # Return -1 if a<b, 0 if a=b, and 1 if a>b
+              #set C [compare_nested_branches $branchrevs($fam_trunk($f)) $raw_revs($branch)]
+              #gen_log:log D " C $C"
+              lassign [list_comm $branchrevs($fam_trunk($f)) $raw_revs($branch)] inBonly inBoth
+              gen_log:log D " == ONLY IN $branch: $inBonly"
+              if {$inBonly eq "IDENTICAL"} {
+                gen_log:log D "BRANCHES $fam_trunk($f) and $branch are IDENTICAL"
+                set branchrevs($branch) $branchrevs($fam_trunk($f))
+                set branchroot($branch) $branchroot($fam_trunk($f))
+                set branchtip($branch) $branchtip($fam_trunk($f))
+                # Add its tag to the branchroot for the other,
+                # and take it out of the list?
+                foreach z [list $branch $fam_trunk($f)] {
+                  if {$z ni $revbtags($branchroot($z))} {
+                    gen_log:log D "Adding $z to revbtags for root $branchroot($z)"
+                    lappend revbtags($branchroot($z)) $z
+                  }
+                }
+                gen_log:log D "Removing $branch as an independent entity"
+                #catch {unset branchrevs($branch)}
+                set idx [lsearch $family($f) $branch]
+                set family($f) [lreplace $family($f) $idx $idx]
+                set branches $family($f)
+                continue
+              }
+              if {[llength $inBonly] < 1} {
+                # If it's empty, remove this branch from the list
+                gen_log:log D "$branch is EMPTY"
+                set idx [lsearch $family($f) $branch]
+                set family($f) [lreplace $family($f) $idx $idx]
+                set branches $family($f)
+                continue
+              }
+              foreach h $inBonly {
+                #gen_log:log D "$h"
+                set revkind($h) "revision"
+              }
+              set branchrevs($branch) $inBonly
+              set base [lindex $inBonly end]
+              set branchrevs($base) $branchrevs($branch)
+              gen_log:log D "branchrevs($branch) $branchrevs($branch)"
               gen_log:log D "BASE of $branch $base"
-            }
-
-            set revkind($base) "branch"
-            set parent_ok 0
-            set fork [lindex $inBoth 0]
-            if {$fork eq ""} {
-              gen_log:log D  "$fam_trunk($f) and $branch are DISJUNCT"
-            } else {
-              set revparent($base) $fork
-              gen_log:log D "Using end of inBoth $revparent($base) for PARENT of $branch"
-              set parent_ok 1
-            }
-            #if {! $parent_ok} {
-              # Was it merged from our root?
-              #if {[info exists revmergefrom($base)]} {
-                #set revparent($base) $revmergefrom($base)
-                #gen_log:log D "$base was MERGED FROM $revparent($base)"
-              #}
-            #}
-            if {! $parent_ok} {
-              # Maybe we got a parent from the log
-              if {[info exists revparent($base)]} {
-                gen_log:log D "Using logged parent $revparent($base) for PARENT of $branch"
-                #set parent_ok 1
+              set branchtip($branch) [lindex $branchrevs($branch) 0]
+              set branchroot($branch) [lindex $branchrevs($branch) end]
+              if {$base eq ""} {
+                gen_log:log D "BASE not found for $branch"
+                set base [lindex $inBoth 0]
+                gen_log:log D "BASE of $branch $base"
               }
-            }
-            # NOPE NOPE NOPE prevent recursion
-            if {[info exists revparent($base)] && ($revparent($base) in $branchrevs($branch))} {
-              gen_log:log D "PARENT $revparent($base) is in the revision list of $branch!"
+
+              set revkind($base) "branch"
               set parent_ok 0
-            }
-            if {! $parent_ok} {
-              gen_log:log D "Ignoring branch $branch"
-              catch {unset revparent($base)}
-              # Withdraw this branch from the proceedings
-              set idx [lsearch $family($f) $branch]
-              set branches [lreplace $family($f) $idx $idx]
-              continue
-            }
-
-            gen_log:log D "$branch: BASE $base PARENT $revparent($base)"
-            # Sometimes we get back a parent that our log --all didn't pick
-            # up. This may happen if the directory had checkins that didn't
-            # affect the file or the file is newly added
-            if {! [info exists revdate($revparent($base))] } {
-              # Draw it differently because it may not be reachable
-              set revpath($revparent($base)) $relpath
-              set revstate($revparent($base)) "ghost"
-            }
-
-            # We got the parent settled one way or another
-            # Add it to revbranches(parent)
-            if {! [info exists revbranches($revparent($base))] || $branchroot($branch) ni $revbranches($revparent($base))} {
-              lappend revbranches($revparent($base)) $branchroot($branch)
-            } else {
-              # If two branches are identical, we only want to draw it once. The
-              # header will show all the branchtags.
-              gen_log:log D "$branchroot($branch) is already in revbranches($revparent($base))"
-            }
-
-            # Move the branch tags from the tip to the base
-            # But if there's only one rev, those are the same, so don't do it
-            if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
-              gen_log:log D "$branch is already in $branchroot($branch)"
-            } else {
-              gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
-              lappend revbtags($branchroot($branch)) $branch
-            }
-            if {$branchtip($branch) ne $branchroot($branch)} {
-              if [info exists revbtags($branchtip($branch))] {
-                gen_log:log D " and removing it from tip"
-                set idx [lsearch $revbtags($branchtip($branch)) $branch]
-                set revbtags($branchtip($branch)) [lreplace $revbtags($branchtip($branch)) $idx $idx]
+              set fork [lindex $inBoth 0]
+              if {$fork eq ""} {
+                gen_log:log D  "$fam_trunk($f) and $branch are DISJUNCT"
+              } else {
+                set revparent($base) $fork
+                gen_log:log D "Using end of inBoth $revparent($base) for PARENT of $branch"
+                set parent_ok 1
               }
-            }
-          }
-        }
-        gen_log:log D "Empty branches:    $empty_branches"
-        gen_log:log D "Branches:    $branches"
-
-        gen_log:log D "========================"
-        # If two branches have the same root, one is likely
-        # a sub-branch of the other. Let's see if we can disambiguate
-        foreach t [array names branchroot] {
-          if {$t eq $branch} continue
-          if {! [info exists branchroot($branch)]} continue
-          if {$branchroot($branch) eq $branchroot($t)} {
-            gen_log:log D "$branch and $t have the same root $branchroot($branch)"
-            # Save the duplicates in a list to deal with next
-            lappend branch_matches($branch) $t
-          }
-        }
-        if {[info exists branch_matches]} {
-          gen_log:log D "SORTING OUT SUB-BRANCHES for FAMILY $f"
-        } else {
-          gen_log:log D "NO SUB-BRANCHES FOUND for FAMILY $f"
-        }
-
-        # Now that we've got sets of matches, process each set
-        foreach m [array names branch_matches] {
-          set family_base($m) $branchroot($m)
-          set peers [concat $m $branch_matches($m)]
-          gen_log:log D "FAMILY $peers"
-          set limit [llength $peers]
-          for {set i 0} {$i < $limit} {incr i} {
-            set j [expr {$i+1}]
-            if {$j == $limit} {set j 0}
-            set peer1 [lindex $peers $i]
-            set peer2 [lindex $peers $j]
-            # If the next one has been taken out for identity or something, skip it
-            if {$peer2 ni $family($f)} continue
-            gen_log:log D " COMPARING $peer1 VS $peer2"
-            lassign [list_comm $branchrevs($peer2) $branchrevs($peer1)] inBonly inBoth
-            gen_log:log D " == ONLY IN $peer1: $inBonly"
-            if {$inBonly eq "IDENTICAL"} {
-              gen_log:log D " BRANCHES $peer1 and $peer2 are IDENTICAL"
-              set branchrevs($peer1) $branchrevs($peer2)
-              set branchroot($peer1) $branchroot($peer2)
-              set branchtip($branch) $branchtip($peer2)
-              # Add its tag to the branchroot for the other,
-              # and take it out of the list?
-              foreach z [list $peer1 $peer2] {
-                if {$z ni $revbtags($branchroot($z))} {
-                  gen_log:log D " Adding $z to revbtags for ($branchroot($z))"
-                  lappend revbtags($branchroot($z)) $z
+              #if {! $parent_ok} {
+                # Was it merged from our root?
+                #if {[info exists revmergefrom($base)]} {
+                  #set revparent($base) $revmergefrom($base)
+                  #gen_log:log D "$base was MERGED FROM $revparent($base)"
+                #}
+              #}
+              if {! $parent_ok} {
+                # Maybe we got a parent from the log
+                if {[info exists revparent($base)]} {
+                  gen_log:log D "Using logged parent $revparent($base) for PARENT of $branch"
+                  #set parent_ok 1
                 }
               }
-              gen_log:log D "Removing $peer1 as an independent entity"
-              set idx [lsearch $branch_matches($m) $peer1]
-              set branch_matches($m) [lreplace $branch_matches($m) $idx $idx]
-              set idx [lsearch $family($f) $branch]
-              set family($f) [lreplace $family($f) $idx $idx]
-              set branches $family($f)
-              continue
+              # NOPE NOPE NOPE prevent recursion
+              if {[info exists revparent($base)] && ($revparent($base) in $branchrevs($branch))} {
+                gen_log:log D "PARENT $revparent($base) is in the revision list of $branch!"
+                set parent_ok 0
+              }
+              if {! $parent_ok} {
+                gen_log:log D "Ignoring branch $branch"
+                catch {unset revparent($base)}
+                # Withdraw this branch from the proceedings
+                set idx [lsearch $family($f) $branch]
+                set branches [lreplace $family($f) $idx $idx]
+                continue
+              }
+
+              gen_log:log D "$branch: BASE $base PARENT $revparent($base)"
+              # Sometimes we get back a parent that our log --all didn't pick
+              # up. This may happen if the directory had checkins that didn't
+              # affect the file or the file is newly added
+              if {! [info exists revdate($revparent($base))] } {
+                # Draw it differently because it may not be reachable
+                set revpath($revparent($base)) $relpath
+                set revstate($revparent($base)) "ghost"
+              }
+
+              # We got the parent settled one way or another
+              # Add it to revbranches(parent)
+              if {! [info exists revbranches($revparent($base))] || $branchroot($branch) ni $revbranches($revparent($base))} {
+                lappend revbranches($revparent($base)) $branchroot($branch)
+              } else {
+                # If two branches are identical, we only want to draw it once. The
+                # header will show all the branchtags.
+                gen_log:log D "$branchroot($branch) is already in revbranches($revparent($base))"
+              }
+
+              # Move the branch tags from the tip to the base
+              # But if there's only one rev, those are the same, so don't do it
+              if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
+                gen_log:log D "$branch is already in $branchroot($branch)"
+              } else {
+                gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
+                lappend revbtags($branchroot($branch)) $branch
+              }
+              if {$branchtip($branch) ne $branchroot($branch)} {
+                if [info exists revbtags($branchtip($branch))] {
+                  gen_log:log D " and removing it from tip"
+                  set idx [lsearch $revbtags($branchtip($branch)) $branch]
+                  set revbtags($branchtip($branch)) [lreplace $revbtags($branchtip($branch)) $idx $idx]
+                }
+              }
             }
-            set branchrevs($peer1) $inBonly
-            set branchroot($peer1) [lindex $branchrevs($peer1) end]
-            set branchtip($peer1) [lindex $branchrevs($peer1) 0]
-            set new_base $branchroot($peer1)
-            set branchrevs($new_base) $inBonly
-            set fork [lindex $inBoth 0]
-            if {$fork eq ""} {
-              gen_log:log D " $peer1 and $peer2 are now non-overlapping"
-              continue
+          }
+          gen_log:log D "Empty branches:    $empty_branches"
+          gen_log:log D "Branches:    $branches"
+
+          gen_log:log D "========================"
+          # If two branches have the same root, one is likely
+          # a sub-branch of the other. Let's see if we can disambiguate
+          foreach t [array names branchroot] {
+            if {$t eq $branch} continue
+            if {! [info exists branchroot($branch)]} continue
+            if {$branchroot($branch) eq $branchroot($t)} {
+              gen_log:log D "$branch and $t have the same root $branchroot($branch)"
+              # Save the duplicates in a list to deal with next
+              lappend branch_matches($branch) $t
             }
-            gen_log:log D " NEW PARENT $fork and BASE $new_base of $peer1"
-            set old_base [lindex $inBoth end]
-            set revkind($new_base) "branch"
-            # Move revbtags
-            if {! [info exists revbtags($new_base)] || ($peer1 ni $revbtags($new_base))} {
-              gen_log:log D " Adding $peer1 to revbtags($new_base)"
-              lappend revbtags($new_base) $peer1
-            }
-            if [info exists revbtags($old_base)] {
-               gen_log:log D " and removing it from old base $old_base"
-               set idx [lsearch $revbtags($old_base) $peer1]
-               set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
-            }
-            # Move revbranches
-            if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
-              gen_log:log D " Adding new BASE $new_base to PARENT revbranches($fork)"
-              lappend revbranches($fork) $new_base
+          }
+          if {[info exists branch_matches]} {
+            gen_log:log D "SORTING OUT SUB-BRANCHES for FAMILY $f"
+          } else {
+            gen_log:log D "NO SUB-BRANCHES FOUND for FAMILY $f"
+          }
+
+          # Now that we've got sets of matches, process each set
+          foreach m [array names branch_matches] {
+            set family_base($m) $branchroot($m)
+            set peers [concat $m $branch_matches($m)]
+            gen_log:log D "FAMILY $peers"
+            set limit [llength $peers]
+            for {set i 0} {$i < $limit} {incr i} {
+              set j [expr {$i+1}]
+              if {$j == $limit} {set j 0}
+              set peer1 [lindex $peers $i]
+              set peer2 [lindex $peers $j]
+              # If the next one has been taken out for identity or something, skip it
+              if {$peer2 ni $family($f)} continue
+              gen_log:log D " COMPARING $peer1 VS $peer2"
+              if {[info exists branchrevs($peer1)]} {
+                gen_log:log D " branchrevs($peer1) $branchrevs($peer1)"
+              } else {
+                gen_log:log D " branchrevs($peer1) doesn't exist"
+                continue
+              }
+              if {[info exists branchrevs($peer2)]} {
+                gen_log:log D " branchrevs($peer2) $branchrevs($peer2)"
+              } else {
+                gen_log:log D " branchrevs($peer2) doesn't exist"
+                continue
+              }
+              lassign [list_comm $branchrevs($peer2) $branchrevs($peer1)] inBonly inBoth
+              gen_log:log D " == ONLY IN $peer1: $inBonly"
+              if {$inBonly eq "IDENTICAL"} {
+                gen_log:log D " BRANCHES $peer1 and $peer2 are IDENTICAL"
+                set branchrevs($peer1) $branchrevs($peer2)
+                set branchroot($peer1) $branchroot($peer2)
+                set branchtip($branch) $branchtip($peer2)
+                # Add its tag to the branchroot for the other,
+                # and take it out of the list?
+                foreach z [list $peer1 $peer2] {
+                  if {$z ni $revbtags($branchroot($z))} {
+                    gen_log:log D " Adding $z to revbtags for ($branchroot($z))"
+                    lappend revbtags($branchroot($z)) $z
+                  }
+                }
+                gen_log:log D "Removing $peer1 as an independent entity"
+                set idx [lsearch $branch_matches($m) $peer1]
+                set branch_matches($m) [lreplace $branch_matches($m) $idx $idx]
+                set idx [lsearch $family($f) $branch]
+                set family($f) [lreplace $family($f) $idx $idx]
+                set branches $family($f)
+                continue
+              }
+              set branchrevs($peer1) $inBonly
+              set branchroot($peer1) [lindex $branchrevs($peer1) end]
+              set branchtip($peer1) [lindex $branchrevs($peer1) 0]
+              set new_base $branchroot($peer1)
+              set branchrevs($new_base) $inBonly
+              set fork [lindex $inBoth 0]
+              if {$fork eq ""} {
+                gen_log:log D " $peer1 and $peer2 are now non-overlapping"
+                continue
+              }
+              gen_log:log D " NEW PARENT $fork and BASE $new_base of $peer1"
+              set old_base [lindex $inBoth end]
+              set revkind($new_base) "branch"
+              # Move revbtags
+              if {! [info exists revbtags($new_base)] || ($peer1 ni $revbtags($new_base))} {
+                gen_log:log D " Adding $peer1 to revbtags($new_base)"
+                lappend revbtags($new_base) $peer1
+              }
+              if [info exists revbtags($old_base)] {
+                 gen_log:log D " and removing it from old base $old_base"
+                 set idx [lsearch $revbtags($old_base) $peer1]
+                 set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
+              }
+              # Move revbranches
+              if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
+                gen_log:log D " Adding new BASE $new_base to PARENT revbranches($fork)"
+                lappend revbranches($fork) $new_base
+              }
             }
           }
         }
-      }
-      gen_log:log D "========================"
+        # Finished finding major branches
+        gen_log:log D "========================"
 
-      gen_log:log D "Deciding which family to draw"
-      gen_log:log D "CURRENT BRANCH: $current_tagname"
-      foreach ft [array names fam_trunk] {
-        lappend trunks $fam_trunk($ft)
-      }
-      gen_log:log D "TRUNK(s) $trunks"
-      set trunk_ok 0
-      foreach t $trunks {
-        if {$t in $current_branches} {
-          gen_log:log D "Found $t in Current branches"
-          set trunk $t
-          set trunk_ok 1
+        gen_log:log D "Deciding which family to draw"
+        gen_log:log D "CURRENT BRANCH: $current_tagname"
+        foreach ft [array names fam_trunk] {
+          lappend trunks $fam_trunk($ft)
         }
-      }
-      if {! $trunk_ok} {
+        gen_log:log D "TRUNK(s) $trunks"
+        set trunk_ok 0
         foreach t $trunks {
-          if {$t eq $current_tagname} {
-            gen_log:log D "Using current_tagname $current_tagname"
+          if {$t in $current_branches} {
+            gen_log:log D "Found $t in Current branches"
             set trunk $t
             set trunk_ok 1
           }
         }
-      }
-      if {! $trunk_ok} {
-        gen_log:log D "Using first trunk in list"
-        set trunk [lindex $trunks 0]
-        set trunk_ok 1
-      }
-      if {! $trunk_ok} {
-        cvsfail "Can't find a trunk for this file" $lc
-      }
-      foreach f [array names fam_trunk] {
-        if {$fam_trunk($f) eq "$trunk"} {
-          set rootrev $f
-        }
-      }
-      set revkind($rootrev) "root"
-      gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
-      foreach t $trunks {
-        if {$t ne $trunk} {
-          lappend rootless_branches $t
-        }
-      }
-      # Make sure we know where we're rooted. Sometimes the initial parent detection went
-      # one too far, which would put us on a different branch that's not visible from here.
-      gen_log:log D "branchrevs($trunk) $branchrevs($trunk)"
-
-      # Position the the You are Here icon and top up final variables
-      gen_log:log D "Looking for current_revnum $current_revnum in branches"
-      foreach branch $family($rootrev) {
-        gen_log:log D " $branch"
-        if {$branchtip($branch) eq $current_revnum} {
-          gen_log:log D "Currently at top of $branch"
-          set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
-        } else {
-          # But maybe we're not at the tip
-          foreach r $branchrevs($branch) {
-            if {$r == $current_revnum} {
-              # We need to make a new artificial branch off of $r
-              gen_log:log D "appending current to revbranches($r)"
-              lappend revbranches($r) {current}
-              set revbtags(current) {current}
+        if {! $trunk_ok} {
+          foreach t $trunks {
+            if {$t eq $current_tagname} {
+              gen_log:log D "Using current_tagname $current_tagname"
+              set trunk $t
+              set trunk_ok 1
             }
           }
         }
-        if {[info exists branchroot($branch)]} {
-          gen_log:log D "branchroot($branch) $branchroot($branch)"
-          if {[info exists branchrevs($branch)]} {
-            set branchrevs($branchroot($branch)) $branchrevs($branch)
-          } else {
-            gen_log:log D "branchrevs($branch) doesn't exist!"
-          }
-        } else {
-          gen_log:log D "branchroot($branch) doesn't exist!"
+        if {! $trunk_ok} {
+          gen_log:log D "Using first trunk in list"
+          set trunk [lindex $trunks 0]
+          set trunk_ok 1
         }
-      }
+        if {! $trunk_ok} {
+          cvsfail "Can't find a trunk for this file" $lc
+        }
+        foreach f [array names fam_trunk] {
+          if {$fam_trunk($f) eq "$trunk"} {
+            set rootrev $f
+          }
+        }
+        set revkind($rootrev) "root"
+        gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
+        foreach t $trunks {
+          if {$t ne $trunk} {
+            lappend rootless_branches $t
+          }
+        }
+        # Make sure we know where we're rooted. Sometimes the initial parent detection went
+        # one too far, which would put us on a different branch that's not visible from here.
+        gen_log:log D "branchrevs($trunk) $branchrevs($trunk)"
+
+        # Position the the You are Here icon and top up final variables
+        gen_log:log D "Looking for current_revnum $current_revnum in branches"
+        foreach branch $family($rootrev) {
+          if {$branchtip($branch) eq $current_revnum} {
+            gen_log:log D "Currently at top of $branch"
+            set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
+          } else {
+            # But maybe we're not at the tip
+            foreach r $branchrevs($branch) {
+              if {$r == $current_revnum} {
+                # We need to make a new artificial branch off of $r
+                gen_log:log D "appending current to revbranches($r)"
+                lappend revbranches($r) {current}
+                set revbtags(current) {current}
+              }
+            }
+          }
+          if {[info exists branchroot($branch)]} {
+            if {[info exists branchrevs($branch)]} {
+              set branchrevs($branchroot($branch)) $branchrevs($branch)
+            } else {
+              gen_log:log D "branchrevs($branch) doesn't exist!"
+            }
+          } else {
+            gen_log:log D "branchroot($branch) doesn't exist!"
+          }
+        }
 
         # This causes recursion
         foreach rb [array names revbranches] {
@@ -1806,6 +1866,7 @@ namespace eval ::git_branchlog {
         if {[info exists rootless_branches]} {
           set sidetree_x 150
           foreach rb $rootless_branches {
+            if {! [info exists branchroot($rb)]} continue
             set broot $branchroot($rb)
             gen_log:log D "UNROOTED branch $rb: $broot"
             catch {unset revkind}

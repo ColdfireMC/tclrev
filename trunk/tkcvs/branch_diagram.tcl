@@ -353,7 +353,7 @@ namespace eval ::logcanvas {
                -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers cget -text]
                     if {$rev ==""} { set rev "r$current_revnum" }
-                    git_fileview $rev $revpath($rev) $filename
+                    git_fileview $rev $cvsglb(relpath) $filename
                }]
              $logcanvas.annotate configure -state normal \
                -command [namespace code {
@@ -790,9 +790,17 @@ namespace eval ::logcanvas {
         variable fromprefix
         variable toprefix
         variable mrev
+        variable drawn_revs
         upvar branch branch
 
         #gen_log:log T "ENTER ($x $y $width $height $revision)"
+        if {! [info exists drawn_revs]} {
+          set drawn_revs ""
+        }
+        if {$revision in $drawn_revs} {
+          gen_log:log E "$revision is already drawn!"
+          return
+        }
         set xyw($revision) [list $x [expr {$y - ($height / 4)}] $width ]
         # Draw the list of tags
         set tx [expr {$x - $curr(tspcb)}]
@@ -867,6 +875,7 @@ namespace eval ::logcanvas {
             -tags [list selectable R$revision active]
           incr ty -$font_norm_h
         }
+        lappend drawn_revs $revision
         #gen_log:log T "LEAVE ()"
         return
       }
@@ -885,9 +894,13 @@ namespace eval ::logcanvas {
         variable branchrevs
         variable revbranches
         variable revbtags
+        variable drawn_revs
 
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log T "level [info level]"
+        if {! [info exists drawn_revs]} {
+          set drawn_revs ""
+        }
         # This just prevents infinite recursion. Maybe depth is too shallow.
         if {[info level] > 10} {
           return [list $x $y 200 18 $y]
@@ -899,6 +912,12 @@ namespace eval ::logcanvas {
         }
         # What revisions to show on this branch? Options may hide some
         if {![info exists branchrevs($branch)]} {set branchrevs($branch) {}}
+        foreach r $drawn_revs {
+          if {$r in $branchrevs($branch)} {
+            gen_log:log E "Revision $r already drawn!"
+            return [list $x $y 200 18 $y]
+          }
+        }
         if {$branchrevs($branch) == {}} {
           set revlist {}
         } else {
@@ -1330,9 +1349,12 @@ namespace eval ::logcanvas {
         variable branchrevs
         variable mrev
         variable match
+        variable drawn_revs
 
         gen_log:log D "=================================="
         gen_log:log T "ENTER ($now)"
+
+        catch unset drawn_revs
 
         catch { unset revwho }
         foreach a [array names $scope\::revwho] {
