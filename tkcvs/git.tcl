@@ -869,7 +869,7 @@ proc git_merge_conflict {args} {
   gen_log:log T "ENTER ($args)"
 
   if {[llength $args] != 1} {
-    cvsfail "Please select one file."
+    cvsfail "Please select one file." .workdir
     return
   }
   set filelist [join $args]
@@ -1143,7 +1143,9 @@ namespace eval ::git_branchlog {
         catch {unset log_output}
         catch {unset log_lines}
         catch {unset log_output}
-        #set allrevs [lreverse $allrevs]
+        if {! [info exists allrevs]} {
+          cvsfail "Couldn't read git log for $filename" $lc
+        }
         gen_log:log D "[llength $allrevs] REVISIONS picked up by git log --all"
         # If we've found parentless revisions, rootrev is set to the first parentless
         # one we found
@@ -1288,8 +1290,8 @@ namespace eval ::git_branchlog {
             # with our root. Don't process these further now.
             if {$n_overlap == 0} {
               gen_log:log D "branch $br is DISJUNCT with our root"
-              set idx [lsearch $branches $br]
-              set branches [lreplace $branches $idx $idx]
+              #set idx [lsearch $branches $br]
+              #set branches [lreplace $branches $idx $idx]
             }
             set overlap_len($br) $n_overlap
             set overlap_start($br) $start
@@ -1360,20 +1362,20 @@ namespace eval ::git_branchlog {
         # Decide what to use for the trunk. Consider only non-empty,
         # non-disjunct branches.
         foreach f [array names family] {
-          set branches $family($f)
+          set fam_branches $family($f)
           set fam_trunk($f) ""
           set trunk_found 0
           gen_log:log D "Deciding on a trunk for the $family($f) family"
-          if {[llength $branches] == 1} {
+          if {[llength $fam_branches] == 1} {
             # If there's only one choice, don't waste time looking
-            set fam_trunk($f) [lindex $branches 0]
+            set fam_trunk($f) [lindex $fam_branches 0]
             set trunk_found 1
             gen_log:log D " Only one branch to begin with! That was easy! trunk=$fam_trunk($f)"
           }
           if {! $trunk_found} {
             # If only one branch begins at the beginning, that's a good one
             set os_z ""
-            foreach b $branches {
+            foreach b $fam_branches {
               if {$overlap_start($b) == 0} {
                 lappend os_z $b
               }
@@ -1386,7 +1388,7 @@ namespace eval ::git_branchlog {
           }
           if {! $trunk_found} {
             # Do we have revisions on master?
-            set m [lsearch -exact $branches {master}]
+            set m [lsearch -exact $fam_branches {master}]
             if {$m > -1} {
               gen_log:log D "master is in our branches"
               set fam_trunk($f) "master"
@@ -1395,16 +1397,16 @@ namespace eval ::git_branchlog {
           }
           if {! $trunk_found} {
             # how about origin/master
-            set m [lsearch -glob $branches {*/master}]
+            set m [lsearch -glob $fam_branches {*/master}]
             if {$m > -1} {
-              set match [lindex $branches $m]
+              set match [lindex $fam_branches $m]
               gen_log:log D "$match is in branches"
               set fam_trunk($f) $match
               set trunk_found 1
             }
           }
           if {! $trunk_found} {
-            foreach t $branches {
+            foreach t $fam_branches {
               if {$t in $current_branches} {
                 gen_log:log D "Found $t in Current branches"
                 set fam_trunk($f) $t
@@ -1413,8 +1415,8 @@ namespace eval ::git_branchlog {
             }
           }
           if {! $trunk_found} {
-            if {[llength $branches] > 0} {
-              set fam_trunk($f) [lindex $branches 0]
+            if {[llength $fam_branches] > 0} {
+              set fam_trunk($f) [lindex $fam_branches 0]
               set trunk_found 1
               gen_log:log D "Using first branch as trunk"
             }
@@ -1427,14 +1429,14 @@ namespace eval ::git_branchlog {
           gen_log:log D "TRUNK for FAMILY $f: $fam_trunk($f)"
 
           # Make sure the trunk is the first in the branchlist
-          set idx [lsearch $branches $fam_trunk($f)]
-          set branches [lreplace $branches $idx $idx]
-          set branches [linsert $branches 0 $fam_trunk($f)]
-          set family($f) $branches
+          set idx [lsearch $fam_branches $fam_trunk($f)]
+          set fam_branches [lreplace $fam_branches $idx $idx]
+          set fam_branches [linsert $fam_branches 0 $fam_trunk($f)]
+          set family($f) $fam_branches
 
           # Get rev lists for the branches
           catch {unset branch_matches}
-          gen_log:log D "BRANCHES: $branches"
+          gen_log:log D "BRANCHES for FAMILY: $fam_branches"
           # Draw something on the canvas so the user knows we're working
 
           set empty_branches ""
@@ -1487,15 +1489,7 @@ namespace eval ::git_branchlog {
             if {[info exists raw_revs($branch)]} {
               set raw_revs($branch) [lreverse $raw_revs($branch)]
               gen_log:log D "COMPARING $fam_trunk($f) VS $branch"
-              gen_log:log D " f $f"
-              gen_log:log D " fam_trunk($f) fam_trunk($f)"
               set trb $fam_trunk($f)
-              gen_log:log D " branchrevs($f) branchrevs($f)"
-              gen_log:log D " branchrevs($trb) branchrevs($trb)"
-              # This sorts the two lists so the inclusive one is first
-              # Return -1 if a<b, 0 if a=b, and 1 if a>b
-              #set C [compare_nested_branches $branchrevs($fam_trunk($f)) $raw_revs($branch)]
-              #gen_log:log D " C $C"
               lassign [list_comm $branchrevs($fam_trunk($f)) $raw_revs($branch)] inBonly inBoth
               gen_log:log D " == ONLY IN $branch: $inBonly"
               if {$inBonly eq "IDENTICAL"} {
@@ -1515,7 +1509,7 @@ namespace eval ::git_branchlog {
                 #catch {unset branchrevs($branch)}
                 set idx [lsearch $family($f) $branch]
                 set family($f) [lreplace $family($f) $idx $idx]
-                set branches $family($f)
+                #set branches $family($f)
                 continue
               }
               if {[llength $inBonly] < 1} {
@@ -1523,7 +1517,7 @@ namespace eval ::git_branchlog {
                 gen_log:log D "$branch is EMPTY"
                 set idx [lsearch $family($f) $branch]
                 set family($f) [lreplace $family($f) $idx $idx]
-                set branches $family($f)
+                #set branches $family($f)
                 continue
               }
               foreach h $inBonly {
@@ -1576,8 +1570,8 @@ namespace eval ::git_branchlog {
                 gen_log:log D "Ignoring branch $branch"
                 catch {unset revparent($base)}
                 # Withdraw this branch from the proceedings
-                set idx [lsearch $family($f) $branch]
-                set branches [lreplace $family($f) $idx $idx]
+                #set idx [lsearch $family($f) $branch]
+                #set branches [lreplace $family($f) $idx $idx]
                 continue
               }
 
@@ -1618,8 +1612,6 @@ namespace eval ::git_branchlog {
               }
             }
           }
-          gen_log:log D "Empty branches:    $empty_branches"
-          gen_log:log D "Branches:    $branches"
 
           gen_log:log D "========================"
           # If two branches have the same root, one is likely
@@ -1685,7 +1677,7 @@ namespace eval ::git_branchlog {
                 set branch_matches($m) [lreplace $branch_matches($m) $idx $idx]
                 set idx [lsearch $family($f) $branch]
                 set family($f) [lreplace $family($f) $idx $idx]
-                set branches $family($f)
+                #set branches $family($f)
                 continue
               }
               set branchrevs($peer1) $inBonly
@@ -1771,7 +1763,7 @@ namespace eval ::git_branchlog {
 
         # Position the the You are Here icon and top up final variables
         gen_log:log D "Looking for current_revnum $current_revnum in branches"
-        foreach branch $family($rootrev) {
+        foreach branch $branches {
           if {$branchtip($branch) eq $current_revnum} {
             gen_log:log D "Currently at top of $branch"
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
