@@ -1257,7 +1257,10 @@ namespace eval ::git_branchlog {
           $lc.canvas yview moveto 1
           update idletasks
 
-          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) $br -- \"$filename\""
+          set since_time $revdate($oldest_rev)
+          set seconds [clock scan $since_time -gmt yes]
+          set since_minus_an_hour [clock add $seconds -1 hour]
+          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) --since $since_minus_an_hour $br -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy
@@ -1443,7 +1446,7 @@ namespace eval ::git_branchlog {
             incr cnv_y $yspc
             $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
             $lc.canvas yview moveto 1
-            update idletasks
+            update
 
             gen_log:log D "========= $branch =========="
             if {$branch eq $fam_trunk($f)} {
