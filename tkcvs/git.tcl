@@ -1382,50 +1382,6 @@ namespace eval ::git_branchlog {
             }
           }
           if {! $trunk_found} {
-            foreach t $branches {
-              if {$t in $current_branches} {
-                gen_log:log D "Found $t in Current branches"
-                set fam_trunk($f) $t
-                set trunk_found 1
-              }
-            }
-          }
-          if {! $trunk_found} {
-            # Narrow it down to the ones with the fewest overlaps
-            foreach f [array names family] {
-              # The one with the least overlaps is usually the trunk
-              set ol_z ""
-              set min_ovlp 9999
-              foreach b $branches {
-                if {$overlap_len($b) < $min_ovlp} {
-                  set min_ovlp $overlap_len($b)
-                }
-              }
-              gen_log:log D "These branches have the fewest overlaps"
-              set long_branches ""
-              foreach b $branches {
-                if {$overlap_len($b) eq $min_ovlp} {
-                  lappend long_branches $b
-                }
-              }
-              gen_log:log D " $long_branches"
-              if {[llength $long_branches] == 1} {
-                set fam_trunk($f) [lindex $long_branches 0]
-                gen_log:log D "Using the single least-overlapping branch trunk=$fam_trunk($f)"
-                set trunk_found 1
-
-              }
-            }
-          }
-          if {! $trunk_found} {
-            if {[llength $branches] > 0} {
-              set fam_trunk($f) [lindex $branches 0]
-              set trunk_found 1
-              gen_log:log D "Using first branch as trunk"
-            }
-            set trunk_found 1
-          }
-          if {! $trunk_found} {
             # Do we have revisions on master?
             set m [lsearch -exact $branches {master}]
             if {$m > -1} {
@@ -1443,6 +1399,23 @@ namespace eval ::git_branchlog {
               set fam_trunk($f) $match
               set trunk_found 1
             }
+          }
+          if {! $trunk_found} {
+            foreach t $branches {
+              if {$t in $current_branches} {
+                gen_log:log D "Found $t in Current branches"
+                set fam_trunk($f) $t
+                set trunk_found 1
+              }
+            }
+          }
+          if {! $trunk_found} {
+            if {[llength $branches] > 0} {
+              set fam_trunk($f) [lindex $branches 0]
+              set trunk_found 1
+              gen_log:log D "Using first branch as trunk"
+            }
+            set trunk_found 1
           }
           if {! $trunk_found} {
             gen_log:log D "No named TRUNK found!"
