@@ -1087,10 +1087,19 @@ namespace eval ::logcanvas {
           foreach b $brevs {bx bw rh ly} $bxys {
             set mx [expr {$bx + $bw/2}]
             if {$ly != {} && ! $ingit} {
-              # The up-pointing arrow below the bottom revision
+              # The up-pointing arrow below the bottom revision, if that has been raised
               $logcanvas.canvas create line \
-                $mx [expr $ly + $tip_height] $mx [expr {$by - $rh + $tip_height}] \
+                $mx $ly $mx [expr {$by - $rh}] \
                 -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
+            }
+            if {$ingit} {
+              set ny [expr {$ly + $curr(boff)}]
+              if {$ny != $by} {
+                # The up-pointing arrow below the bottom revision, if that has been raised
+                  $logcanvas.canvas create line \
+                    $mx $ly $mx [expr {$by - $curr(boff)}] \
+                    -arrow first -arrowshape $curr(arrowshape) -width 1
+              }
             }
             if {$b == {current}} {
               # treat this "current" as a branch. The arrow points sideways to it
@@ -1112,10 +1121,12 @@ namespace eval ::logcanvas {
             }
             if {! $ingit} {
               DrawRoot $bx $by $bw $lbl_height($b) $revision $b
+              if {$ly == {} } {
               $logcanvas.canvas create line \
                 $mx [expr {$by - $rh}] $mx [expr {$by - $rh - $curr(boff)}] \
                 -arrow last -arrowshape $curr(arrowshape) \
                 -width $curr(width)
+              }
             }
             # Arrow connecting the branch root box to its parent
             if {$ingit} {
