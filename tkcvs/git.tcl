@@ -1205,9 +1205,14 @@ namespace eval ::git_branchlog {
         set branches $logged_branches
         # Then add the local branches that weren't in the logged branches, if desired
         if { [regexp {L} $cvscfg(gitbranchgroups)] } {
-          foreach locb $local_branches {
-            if {$locb ni $branches} {
-              lappend branches $locb
+          # The local branch list usually preserves the order the best. So 
+          # we try to preserve that order when we blend them
+          if {[llength $local_branches] > 0} {
+            set branches $local_branches
+          }
+          foreach fb $logged_branches {
+            if {$fb ni $branches} {
+              lappend branches $fb
             }
           }
         }
@@ -1316,38 +1321,10 @@ namespace eval ::git_branchlog {
         }
         # Finished collecting the branches from the repository
 
-        # The start position and number of overlaps give us information
-        # to figure out sub-branching
-        gen_log:log D "========================"
-        gen_log:log D "allrevs [llength $allrevs]"
-        # Sort by value of overlap start
-        set kv [list]
-        foreach {k v} [array get overlap_start] {
-          lappend kv [list $k $v]
-        }
-        gen_log:log D "Each branch's start position in allrevs"
-        foreach s [lsort -integer -index 1 $kv] {
-          set b [lindex $s 0]
-          gen_log:log D " $b [lindex $s 1]"
-        }
-
-        # Sort by value of overlap length
-        set kv [list]
-        foreach {k v} [array get overlap_len] {
-          lappend kv [list $k $v]
-        }
-        gen_log:log D "Each branch's overlaps with allrevs"
-        foreach s [lsort -integer -index 1 $kv] {
-          set b [lindex $s 0]
-          gen_log:log D " $b [lindex $s 1]"
-          lappend ordered_branches [lindex $s 0]
-        }
-        set branches $ordered_branches 
-      
         # Get the branches in each family back in order
         foreach f [array names family] {
           set ofam [list]
-          foreach ob $ordered_branches {
+          foreach ob $branches {
              if {$ob in $family($f)} {
                lappend ofam $ob
              }
