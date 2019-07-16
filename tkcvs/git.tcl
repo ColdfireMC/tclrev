@@ -1509,7 +1509,6 @@ namespace eval ::git_branchlog {
                 #catch {unset branchrevs($branch)}
                 set idx [lsearch $family($f) $branch]
                 set family($f) [lreplace $family($f) $idx $idx]
-                #set branches $family($f)
                 continue
               }
               if {[llength $inBonly] < 1} {
@@ -1517,7 +1516,8 @@ namespace eval ::git_branchlog {
                 gen_log:log D "$branch is EMPTY"
                 set idx [lsearch $family($f) $branch]
                 set family($f) [lreplace $family($f) $idx $idx]
-                #set branches $family($f)
+                set idx [lsearch $branches $branch]
+                set branches [lreplace $branches $idx $idx]
                 continue
               }
               foreach h $inBonly {
