@@ -26,7 +26,7 @@ auto_mkindex . \
   menubar.tcl \
   modbrowse.tcl \
   modules.tcl \
-  picklist.tcl \
+  preferences.tcl \
   rcs.tcl \
   ui_misc.tcl \
   static.tcl \

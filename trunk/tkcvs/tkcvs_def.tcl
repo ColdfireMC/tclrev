@@ -214,13 +214,13 @@ if {$tcl_platform(platform) == "windows"} {
       #set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
       # If you invoke vim this way, -psn_ tells it to run in its own window
       #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
-      set cvscfg(shell) /Applications/Utilities/Terminal.app/Contents/MacOS/Terminal
+      set cvscfg(shell) "open -a Terminal -n"
       #set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
     } else {
+      # Execution 
       set cvscfg(terminal) "xterm -e"
-      # What do you want to happen when you ask for a shell?
+      # Command shell
       set cvscfg(shell) {xterm -name tkcvsxterm -n {TkCVS xterm}}
-      # Terminal program
       # To override the default editor (setup when tkcvs is configured and
       # installed) a user can set the cvscfg(editor) variable to the editor
       # of choice in their .tkcvs file
