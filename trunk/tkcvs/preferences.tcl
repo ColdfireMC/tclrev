@@ -18,7 +18,7 @@ proc prefdialog {} {
 
   frame $pd.bot
   button $pd.bot.save -text "Save" -command save_options
-  button $pd.bot.close -text "Close/Cancel" -command {destroy .prefdlg}
+  button $pd.bot.close -text "Close" -command {destroy .prefdlg}
 
   pack $pd.bot.save -side left
   pack $pd.bot.close -side right
@@ -36,7 +36,7 @@ proc prefdialog {} {
 # General preferences
 proc prefs_general {w} {
   frame $w.general
-  $w add $w.general -text "General"
+  $w add $w.general -text "General" -sticky nsew
 
   checkbutton $w.general.confirmation -text "Confirmation Dialogs" \
     -variable cvscfg(confirm_prompt) -onvalue true -offvalue false
@@ -44,30 +44,38 @@ proc prefs_general {w} {
   entry $w.general.eshell -textvariable cvscfg(shell)
   label $w.general.leditor -text "Text Editor"
   entry $w.general.eeditor -textvariable cvscfg(editor)
+  checkbutton $w.general.ext_editor -text "Use Native Editor for Checkin" \
+    -variable cvscfg(use_cvseditor) -onvalue true -offvalue false
+  label $w.general.ldiff -text "Diff Visualizer"
+  entry $w.general.ediff -textvariable cvscfg(tkdiff)
 
+  grid columnconf $w.general 1 -weight 1
   grid $w.general.confirmation -sticky w -column 0 -row 0 -columnspan 2
   grid $w.general.lshell -sticky w -column 0 -row 1
   grid $w.general.eshell -sticky ew -column 1 -row 1
   grid $w.general.leditor -sticky w -column 0 -row 2
   grid $w.general.eeditor -sticky ew -column 1 -row 2
+  grid $w.general.ext_editor -sticky w -column 0 -row 3 -columnspan 2
+  grid $w.general.ldiff -sticky w -column 0 -row 4
+  grid $w.general.ediff -sticky ew -column 1 -row 4
 }
 
 # For the Branch diagrams
 proc prefs_diagram {w} {
   frame $w.branchbr
-  $w add $w.branchbr -text "Branch Diagrams"
+  $w add $w.branchbr -text "Branch Diagrams" -sticky nsew
 }
 
 # For Subversion
 proc prefs_subversion {w} {
   frame $w.svn
-  $w add $w.svn -text "SVN"
+  $w add $w.svn -text "SVN" -sticky nsew
 
-  label $w.svn.ltrunkdir -text "Trunk director"
+  label $w.svn.ltrunkdir -text "Trunk directory"
   entry $w.svn.etrunkdir -textvariable cvscfg(svn_trunkdir)
-  label $w.svn.lbranchdir -text "Branches director"
+  label $w.svn.lbranchdir -text "Branches directory"
   entry $w.svn.ebranchdir -textvariable cvscfg(svn_branchdir)
-  label $w.svn.ltagdir -text "Tags director"
+  label $w.svn.ltagdir -text "Tags directory"
   entry $w.svn.etagdir -textvariable cvscfg(svn_tagdir)
 
   grid $w.svn.ltrunkdir -sticky w -column 0 -row 0
@@ -81,6 +89,6 @@ proc prefs_subversion {w} {
 # For Git
 proc prefs_git {w} {
   frame $w.git
-  $w add $w.git -text "Git"
+  $w add $w.git -text "Git" -sticky nsew
 }
 
