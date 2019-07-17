@@ -424,12 +424,14 @@ proc modbrowse_menus {topwin} {
 
 proc about_menus {aboutmenu} {
 
-  # This goes in the Help menu unless we're on Apple, in which case
-  # it goes at the top of the Apple menu
-  $aboutmenu insert 0 command -label "About TkCVS" -underline 0 \
+  $aboutmenu add command -label "About TkCVS" -underline 0 \
      -command aboutbox
-  $aboutmenu insert 1 command -label "About CVS SVN RCS GIT" -underline 6 \
+  $aboutmenu add command -label "About CVS SVN RCS GIT" -underline 6 \
      -command {help_cvs_version 1}
-  $aboutmenu insert 1 command -label "About Wish" -underline 6 \
+  $aboutmenu add command -label "About Wish" -underline 6 \
      -command {wish_version}
+  $aboutmenu add separator
+  $aboutmenu add command -label "Preferences" -underline 6 \
+     -command {prefdialog}
 }
+
