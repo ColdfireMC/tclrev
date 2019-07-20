@@ -1238,6 +1238,31 @@ namespace eval ::git_branchlog {
           }
         }
 
+        # Filter the branches
+        set filtered_branches ""
+        if {$cvscfg(gitbranchregex) ne ""} {
+          gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
+          foreach b $branches {
+            gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
+            if {[catch { regexp "$cvscfg(gitbranchregex)" $b} reg_out]} {
+              gen_log:log E "$reg_out"
+              cvsfail "$reg_out"
+              break
+            } else {
+              if {$reg_out} {
+                lappend filtered_branches $b
+              }
+            }
+          }
+          if {[llength $filtered_branches] < 1} {
+            gen_log:log E "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
+            #cvsfail "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
+          } else {
+            gen_log:log D "Filtered branches: $filtered_branches"
+            set branches $filtered_branches
+          }
+        }
+
         # This is necessary to reset the view after clearing the canvas
         $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
         set cnv_y [expr {$cnv_y + $yspc}]

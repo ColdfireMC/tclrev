@@ -38,6 +38,9 @@ set cvscfg(gitbranchgroups) "FL"
 set cvscfg(gitmaxbranch) 100
 # Which git log options to use for the branch diagram
 set cvscfg(gitlog_opts) "--first-parent"
+# Which branches to process for the branch diagram
+# as a regexp pattern
+set cvscfg(gitbranchregex) ""
 
 # Branch Diagram options
 # Number of tags in a Subversion repository that's "too many", ie
