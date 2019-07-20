@@ -1408,11 +1408,12 @@ proc save_options { } {
   # There are two kinds of options we can set
   set BOOLopts { allfiles auto_status confirm_prompt \
                  gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
-                 status_filter recurse logging blame_linenums }
-  set STRGopts { file_filter ignore_file_filter clean_these \
-                 gitbranchgroups gitlog_opts gitmaxbranch gitmaxhist \
+                 status_filter recurse logging blame_linenums use_cvseditor }
+  set STRGopts { file_filter ignore_file_filter clean_these editor \
+                 gitbranchgroups gitlog_opts gitmaxbranch gitmaxhist gitbranchregex \
                  printer log_classes lastdir sort_pref editor editorargs \
-                 workgeom modgeom loggeom tracgeom }
+                 workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom \
+                 svn_trunkdir svn_branchdir svn_tagdir }
 
   # Plus the logcanvas options
   set LOGopts [concat [array names logcfg show_*] scale]
