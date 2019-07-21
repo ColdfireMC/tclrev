@@ -1409,7 +1409,7 @@ proc save_options { } {
   set BOOLopts { allfiles auto_status confirm_prompt \
                  gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums use_cvseditor }
-  set STRGopts { file_filter ignore_file_filter clean_these editor \
+  set STRGopts { file_filter ignore_file_filter clean_these editor preftab \
                  gitbranchgroups gitlog_opts gitmaxbranch gitmaxhist gitbranchregex \
                  printer log_classes lastdir sort_pref editor editorargs \
                  workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom \
