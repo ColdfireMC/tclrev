@@ -74,20 +74,37 @@ proc prefs_general {w} {
 
 # For the Branch diagrams
 proc prefs_diagram {w} {
+  global logcfg
+
   frame $w.logcanv
   $w add $w.logcanv -text "Branch Browser" -sticky nsew
 
-  checkbutton $w.logcanv.showempty -text "Show Empty Branches" \
+  frame $w.logcanv.show
+  checkbutton $w.logcanv.show.showempty -text "Show Empsy Branches" \
     -variable logcfg(show_empty_branches) -onvalue 1 -offvalue 0
-  checkbutton $w.logcanv.showintermed -text "Show Intermediate Revisions" \
+  checkbutton $w.logcanv.show.showintermed -text "Show Intermediate Revisions" \
     -variable logcfg(show_inter_revs) -onvalue 1 -offvalue 0
-  checkbutton $w.logcanv.showmerg -text "Show Merges" \
+  checkbutton $w.logcanv.show.showmerg -text "Show Merges" \
     -variable logcfg(show_merges) -onvalue 1 -offvalue 0
+  
+  pack $w.logcanv.show -side top -fill x
+  grid columnconf $w.logcanv.show 1 -weight 1
+  grid $w.logcanv.show.showempty -sticky w -column 0 -row 0 -columnspan 2
+  grid $w.logcanv.show.showintermed -sticky w -column 0 -row 1 -columnspan 2
+  grid $w.logcanv.show.showmerg -sticky w -column 0 -row 2 -columnspan 2
 
-  grid columnconf $w.logcanv 1 -weight 1
-  grid $w.logcanv.showempty -sticky w -column 0 -row 0 -columnspan 2
-  grid $w.logcanv.showintermed -sticky w -column 0 -row 1 -columnspan 2
-  grid $w.logcanv.showmerg -sticky w -column 0 -row 2 -columnspan 2
+  ttk::separator $w.logcanv.sep1
+  pack $w.logcanv.sep1 -side top -fill x -pady 3
+
+  frame $w.logcanv.scale
+  label $w.logcanv.scale.lspin -text "Scale"
+  ttk::spinbox $w.logcanv.scale.sspin -from .2 -to 1.5 -increment .1 \
+    -textvariable logcfg(scale)
+
+  pack  $w.logcanv.scale
+  grid columnconf $w.logcanv.scale 1 -weight 1
+  grid $w.logcanv.scale.lspin -sticky w -column 0 -row 0
+  grid $w.logcanv.scale.sspin -sticky w -column 1 -row 0
 }
 
 # For CVS
@@ -172,7 +189,7 @@ proc prefs_git {w} {
       -variable cvscfg(gitbranchgroups) -value "FLR"
   label $w.git.branchbr.lbrglob -text "Git Branch Filter (regex)"
   entry $w.git.branchbr.ebrglob -textvariable cvscfg(gitbranchregex)
-  label $w.git.branchbr.hbrglob -text "Hint: master|*tip*"
+  label $w.git.branchbr.hbrglob -text "Hint: master|.*tip.*"
 
   pack $w.git.branchbr -side top -fill x
   grid columnconf $w.git.branchbr 1 -weight 1

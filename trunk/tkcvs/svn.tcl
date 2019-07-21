@@ -1783,12 +1783,13 @@ namespace eval ::svn_branchlog {
         set branchrevs(current) {}
         # In SVN, sort_it_all_out is mostly a report
         [namespace current]::svn_sort_it_all_out
-        $ln\::DrawTree now
+        set new_x [$ln\::DrawTree now]
         # We chose a branch other than the oldest one for this file, as the root.
         # Let's draw the branch that has the oldest rev for this file, too.
         if {$rootrev ne $drawing_root} {
+          set sidetree_x [expr {$new_x + 2}]
           gen_log:log D "Adding UNROOTED branch: $rootrev"
-          $ln\::DrawSideTree 40 0 $rootrev
+          set new_x [$ln\::DrawSideTree $sidetree_x 0 $rootrev]
         }
 
         # Tags

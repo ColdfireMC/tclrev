@@ -1231,6 +1231,7 @@ namespace eval ::logcanvas {
         UpdateBndBox
 
         gen_log:log T "LEAVE"
+        return $x2
       }
 
       proc UpdateBndBox {} {
@@ -1367,6 +1368,13 @@ namespace eval ::logcanvas {
 
         catch {unset drawn_revs}
         catch {unset xyw}
+
+        # Collect the user options from the global set
+        set opt(update_drawing) $logcfg(update_drawing)
+        set opt(scale) $logcfg(scale)
+        foreach {key value} [array get logcfg show_*] {
+          set opt($key) $value
+        }
 
         catch { unset revwho }
         foreach a [array names $scope\::revwho] {
@@ -1633,7 +1641,7 @@ namespace eval ::logcanvas {
           busy_done $logcanvas
         }
         gen_log:log T "LEAVE ()"
-        return
+        return $x2
       }
 
       proc SaveOptions {} {
@@ -1813,12 +1821,6 @@ namespace eval ::logcanvas {
         }
       } ;# End of Search proc
 
-      # Collect the user options from the global set
-      set opt(update_drawing) $logcfg(update_drawing)
-      set opt(scale) $logcfg(scale)
-      foreach {key value} [array get logcfg show_*] {
-        set opt($key) $value
-      }
       toplevel $logcanvas
       wm title $logcanvas "TkCVS $cvscfg(version) -- $sys Log $filename"
 
