@@ -956,14 +956,15 @@ namespace eval ::logcanvas {
           lassign [CalcCurrent $branch] box_width cur_height
           set lbl_height(current) $cur_height
         } else {
+          lassign [CalcRoot $branch] rtw box_width bot_height
+          set tip_height 0
           if {$ingit} {
-            lassign [CalcRootGit $branch] rtw box_width bot_height
-          } else {
-            lassign [CalcRoot $branch] rtw box_width bot_height
+            set tip_height $bot_height
+            set bot_height 0
           }
           set lbl_height($branch) $bot_height
           gen_log:log D "set lbl_height($branch) ($lbl_height($branch))"
-          set tip_height $lbl_height($branch)
+          #set tip_height $lbl_height($branch)
           if {$rtw > $tag_width} {
             set tag_width $rtw
           }
@@ -1121,17 +1122,18 @@ namespace eval ::logcanvas {
             }
             if {! $ingit} {
               DrawRoot $bx $by $bw $lbl_height($b) $revision $b
-              if {$ly == {} } {
-              $logcanvas.canvas create line \
-                $mx [expr {$by - $rh}] $mx [expr {$by - $rh - $curr(boff)}] \
-                -arrow last -arrowshape $curr(arrowshape) \
-                -width $curr(width)
-              }
+              #if {$ly == {} } {
+              #$logcanvas.canvas create line \
+                #$mx [expr {$by - $rh}] $mx [expr {$by - $rh - $curr(boff)}] \
+                #-arrow last -arrowshape $curr(arrowshape) \
+                #-width $curr(width) -fill brown
+              #}
             }
             # Arrow connecting the branch root box to its parent
             if {$ingit} {
               # Curved line.
-              set ay [expr {$by - $tip_height - $curr(boff)}]
+              #set ay [expr {$by - $tip_height - $curr(boff)}]
+              set ay [expr {$by - $curr(boff)}]
               $logcanvas.canvas lower [ \
                 $logcanvas.canvas create line \
                   $rx $ry $mx $ry $mx $ay \
@@ -1641,7 +1643,11 @@ namespace eval ::logcanvas {
           busy_done $logcanvas
         }
         gen_log:log T "LEAVE ()"
-        return $x2
+        if {[info exists x2]} {
+          return $x2
+        } else {
+          return 0
+        }
       }
 
       proc SaveOptions {} {
@@ -1821,6 +1827,13 @@ namespace eval ::logcanvas {
         }
       } ;# End of Search proc
 
+      # Collect the user options from the global set
+      set opt(update_drawing) $logcfg(update_drawing)
+      set opt(scale) $logcfg(scale)
+      foreach {key value} [array get logcfg show_*] {
+        set opt($key) $value
+      }
+
       toplevel $logcanvas
       wm title $logcanvas "TkCVS $cvscfg(version) -- $sys Log $filename"
 
@@ -1847,17 +1860,17 @@ namespace eval ::logcanvas {
         "Show empty branches" \
         -variable [namespace current]::opt(show_empty_branches) \
         -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+        -command [namespace code { set logcfg(show_empty_branches) $opt(show_empty_branches); DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show intermediate revisions" \
         -variable [namespace current]::opt(show_inter_revs) \
         -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+        -command [namespace code { set logcfg(show_inter_revs) $opt(show_inter_revs); DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show merges" \
         -variable [namespace current]::opt(show_merges) \
         -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+        -command [namespace code { set logcfg(show_merges) $opt(show_merges); DrawTree }]
       $logcanvas.menubar.view add cascade -label "Branch Layout" \
         -menu $logcanvas.menubar.view.branch
       menu $logcanvas.menubar.view.branch
@@ -1924,7 +1937,7 @@ namespace eval ::logcanvas {
       menu $logcanvas.menubar.view.size
       foreach {label factor} $logcfg(scaling_options) {
         $logcanvas.menubar.view.size add radiobutton -label $label \
-          -variable [namespace current]::opt(scale) -value $factor \
+          -variable logcfg(scale) -value $factor \
           -command [namespace code { DrawTree }]
       }
       $logcanvas.menubar.view add separator
