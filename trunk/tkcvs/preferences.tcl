@@ -2,23 +2,25 @@
 # Make a tabbed notebook for Preferences
 proc prefdialog {} {
   global cvscfg
-  global cvsglb
 
   if {[winfo exists .prefdlg]} {
-    destroy .prefdlg
+    #destroy .prefdlg
+    raise .prefdlg
+    .prefdlg.prefnb select $cvscfg(preftab)
+    return
   }
 
   set pd .prefdlg
   toplevel $pd
   wm title $pd "TkCVS Preferences"
-  wm protocol $pd WM_DELETE_WINDOW { destroy .prefdlg }
+  wm protocol $pd WM_DELETE_WINDOW { prefs_close }
 
   ttk::notebook $pd.prefnb
   ttk::notebook::enableTraversal $pd.prefnb
 
   frame $pd.bot
   button $pd.bot.save -text "Save" -command save_options
-  button $pd.bot.close -text "Close" -command {destroy .prefdlg}
+  button $pd.bot.close -text "Close" -command { prefs_close }
 
   pack $pd.bot.save -side left -padx 4 -pady 2
   pack $pd.bot.close -side right -padx 4 -pady 2
@@ -32,6 +34,12 @@ proc prefdialog {} {
   prefs_git $pd.prefnb
 
   pack $pd.prefnb -side top -expand y -fill both
+
+  if {[info exists cvscfg(preftab)]} {
+    .prefdlg.prefnb select $cvscfg(preftab)
+  }
+
+  bind .prefdlg.prefnb <<NotebookTabChanged>> {set cvscfg(preftab) [.prefdlg.prefnb select]}
 }
 
 # General preferences
@@ -155,8 +163,16 @@ proc prefs_git {w} {
   entry $w.git.branchbr.emaxbranches -textvariable cvscfg(gitmaxbranch)
   label $w.git.branchbr.llogopts -text "Git Log Options"
   entry $w.git.branchbr.elogopts -textvariable cvscfg(gitlog_opts)
+
+  radiobutton $w.git.branchbr.br_file -text " File-specific branches only" \
+    -variable cvscfg(gitbranchgroups) -value "F"
+  radiobutton $w.git.branchbr.br_local -text " All local branches" \
+      -variable cvscfg(gitbranchgroups) -value "FL"
+  radiobutton $w.git.branchbr.br_remote -text " Local + Remote branches" \
+      -variable cvscfg(gitbranchgroups) -value "FLR"
   label $w.git.branchbr.lbrglob -text "Git Branch Filter (regex)"
   entry $w.git.branchbr.ebrglob -textvariable cvscfg(gitbranchregex)
+  label $w.git.branchbr.hbrglob -text "Hint: master|*tip*"
 
   pack $w.git.branchbr -side top -fill x
   grid columnconf $w.git.branchbr 1 -weight 1
@@ -166,7 +182,19 @@ proc prefs_git {w} {
   grid $w.git.branchbr.emaxbranches -sticky ew -column 1 -row 1
   grid $w.git.branchbr.llogopts -sticky w -column 0 -row 2
   grid $w.git.branchbr.elogopts -sticky ew -column 1 -row 2
-  grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 3
-  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 3
+
+  grid $w.git.branchbr.br_file -sticky w -column 1 -row 3
+  grid $w.git.branchbr.br_local -sticky w -column 1 -row 4
+  grid $w.git.branchbr.br_remote -sticky w -column 1 -row 5
+
+  grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 6
+  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 6
+  grid $w.git.branchbr.hbrglob -sticky w -column 1 -row 7
 }
 
+proc prefs_close { } {
+  global cvscfg
+
+  gen_log:log D "Preferences Tab $cvscfg(preftab)"
+  destroy .prefdlg
+}
