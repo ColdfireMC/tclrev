@@ -1507,11 +1507,18 @@ namespace eval ::git_branchlog {
                     lappend revbtags($branchroot($z)) $z
                   }
                 }
-                gen_log:log D "Removing $branch as an independent entity"
-                #catch {unset branchrevs($branch)}
-                set idx [lsearch $family($f) $branch]
-                set family($f) [lreplace $family($f) $idx $idx]
-                continue
+                if {$branch ne $current_tagname} {
+                  gen_log:log D "Removing $branch as an independent entity"
+                  set idx [lsearch $family($f) $branch]
+                  set family($f) [lreplace $family($f) $idx $idx]
+                  continue
+                } elseif {$fam_trunk($f) ne $current_tagname} {
+                  gen_log:log D "Removing $fam_trunk($f) as an independent entity"
+                  set idx [lsearch $family($f) $fam_trunk($f)]
+                  set family($f) [lreplace $family($f) $idx $idx]
+                  set fam_trunk($f) $branch
+                  continue
+                }
               }
               if {[llength $inBonly] < 1} {
                 # If it's empty, remove this branch from the list
@@ -1834,7 +1841,7 @@ namespace eval ::git_branchlog {
         # FIXME calculate a better x offset. I can't seem to get anything
         # from the canvas though.
         if {[info exists rootless_branches]} {
-          set sidetree_x 150
+          set sidetree_x 120
           foreach rb $rootless_branches {
             if {! [info exists branchroot($rb)]} continue
             set broot $branchroot($rb)
@@ -1844,7 +1851,7 @@ namespace eval ::git_branchlog {
             #lappend revbtags($broot) $rb
             gen_log:log D "revbtags($broot) $revbtags($broot)"
             $ln\::DrawSideTree $sidetree_x 0 $broot
-            incr sidetree_x 150
+            incr sidetree_x 120
           }
         }
 
