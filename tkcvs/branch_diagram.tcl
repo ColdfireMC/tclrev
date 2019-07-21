@@ -1365,7 +1365,8 @@ namespace eval ::logcanvas {
         gen_log:log D "=================================="
         gen_log:log T "ENTER ($now)"
 
-        catch unset drawn_revs
+        catch {unset drawn_revs}
+        catch {unset xyw}
 
         catch { unset revwho }
         foreach a [array names $scope\::revwho] {
@@ -1429,7 +1430,6 @@ namespace eval ::logcanvas {
         } else {
           set view_xoff [lindex [$logcanvas.canvas xview] 0]
           set view_yoff [lindex [$logcanvas.canvas yview] 0]
-          $logcanvas.canvas delete merge_arrows
           $logcanvas.canvas delete all
           # These put the names of variables into one variable to be passed.
           # Because they're in braces, we don't need to know about the
@@ -1621,7 +1621,7 @@ namespace eval ::logcanvas {
               }
               $logcanvas.canvas create line \
                   $xfrom $yfrom $xmid $ymid $xto $yto \
-                  -arrow first -smooth 1 -tags merge_arrows
+                  -arrow first -smooth 1
             }
           }
           # Reselect the previously selected revisions
