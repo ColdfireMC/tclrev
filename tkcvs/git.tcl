@@ -1836,22 +1836,20 @@ namespace eval ::git_branchlog {
         [namespace current]::git_sort_it_all_out
         # Little pause before erasing the list of branches we temporarily drew
         after 500
-        $ln\::DrawTree now
+        set new_x [$ln\::DrawTree now]
 
-        # FIXME calculate a better x offset. I can't seem to get anything
-        # from the canvas though.
+        # Draw unrooted branches
         if {[info exists rootless_branches]} {
-          set sidetree_x 120
+          set sidetree_x [expr {$new_x + 2}]
           foreach rb $rootless_branches {
             if {! [info exists branchroot($rb)]} continue
             set broot $branchroot($rb)
             gen_log:log D "UNROOTED branch $rb: $broot"
             catch {unset revkind}
             set revkind($broot) "root"
-            #lappend revbtags($broot) $rb
             gen_log:log D "revbtags($broot) $revbtags($broot)"
-            $ln\::DrawSideTree $sidetree_x 0 $broot
-            incr sidetree_x 120
+            set new_x [$ln\::DrawSideTree $sidetree_x 0 $broot]
+            set sidetree_x [expr {$new_x + 2}]
           }
         }
 
