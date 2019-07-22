@@ -9,8 +9,6 @@ proc prefdialog {} {
 
   set pd .prefdlg
   toplevel $pd
-  #wm group $pd .
-  #wm transient $pd .
   wm title $pd "TkCVS Preferences"
   wm protocol $pd WM_DELETE_WINDOW { prefs_close }
 
@@ -65,11 +63,11 @@ proc prefs_general {w} {
   grid $w.general.auto -sticky w -column 0 -row 1 -columnspan 2
   grid $w.general.ext_editor -sticky w -column 0 -row 2 -columnspan 2
   grid $w.general.leditor -sticky w -column 0 -row 3
-  grid $w.general.eeditor -sticky ew -column 1 -row 3
+  grid $w.general.eeditor -sticky ew -column 1 -row 3 -padx 2
   grid $w.general.ldiff -sticky w -column 0 -row 4
-  grid $w.general.ediff -sticky ew -column 1 -row 4
+  grid $w.general.ediff -sticky ew -column 1 -row 4 -padx 2
   grid $w.general.lshell -sticky w -column 0 -row 5
-  grid $w.general.eshell -sticky ew -column 1 -row 5
+  grid $w.general.eshell -sticky ew -column 1 -row 5 -padx 2
 }
 
 # For the Branch diagrams
@@ -137,11 +135,11 @@ proc prefs_subversion {w} {
   pack $w.svn.dirnames -side top -fill x
   grid columnconf $w.svn.dirnames 1 -weight 1
   grid $w.svn.dirnames.ltrunkdir -sticky w -column 0 -row 0
-  grid $w.svn.dirnames.etrunkdir -sticky ew -column 1 -row 0
+  grid $w.svn.dirnames.etrunkdir -sticky ew -column 1 -row 0 -padx 2
   grid $w.svn.dirnames.lbranchdir -sticky w -column 0 -row 1
-  grid $w.svn.dirnames.ebranchdir -sticky ew -column 1 -row 1
+  grid $w.svn.dirnames.ebranchdir -sticky ew -column 1 -row 1 -padx 2
   grid $w.svn.dirnames.ltagdir -sticky w -column 0 -row 2
-  grid $w.svn.dirnames.etagdir -sticky ew -column 1 -row 2
+  grid $w.svn.dirnames.etagdir -sticky ew -column 1 -row 2 -padx 2
 
   ttk::separator $w.svn.sep1
   pack $w.svn.sep1 -side top -fill x -pady 3
@@ -153,7 +151,7 @@ proc prefs_subversion {w} {
   pack $w.svn.branchbr -side top -fill x
   grid columnconf $w.svn.branchbr 1 -weight 1
   grid $w.svn.branchbr.lmaxtag -sticky w -column 0 -row 0
-  grid $w.svn.branchbr.emaxtag -sticky ew -column 1 -row 0
+  grid $w.svn.branchbr.emaxtag -sticky ew -column 1 -row 0 -padx 2
 }
 
 # For Git
@@ -193,18 +191,18 @@ proc prefs_git {w} {
   pack $w.git.branchbr -side top -fill x
   grid columnconf $w.git.branchbr 1 -weight 1
   grid $w.git.branchbr.lmaxhist -sticky w -column 0 -row 0
-  grid $w.git.branchbr.emaxhist -sticky ew -column 1 -row 0
+  grid $w.git.branchbr.emaxhist -sticky ew -column 1 -row 0 -padx 2
   grid $w.git.branchbr.lmaxbranches -sticky w -column 0 -row 1
-  grid $w.git.branchbr.emaxbranches -sticky ew -column 1 -row 1
+  grid $w.git.branchbr.emaxbranches -sticky ew -column 1 -row 1 -padx 2
   grid $w.git.branchbr.llogopts -sticky w -column 0 -row 2
-  grid $w.git.branchbr.elogopts -sticky ew -column 1 -row 2
+  grid $w.git.branchbr.elogopts -sticky ew -column 1 -row 2 -padx 2
 
   grid $w.git.branchbr.br_file -sticky w -column 1 -row 3
   grid $w.git.branchbr.br_local -sticky w -column 1 -row 4
   grid $w.git.branchbr.br_remote -sticky w -column 1 -row 5
 
   grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 6
-  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 6
+  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 6 -padx 2
   grid $w.git.branchbr.hbrglob -sticky w -column 1 -row 7
 }
 
