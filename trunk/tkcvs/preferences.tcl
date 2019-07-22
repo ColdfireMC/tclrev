@@ -4,10 +4,7 @@ proc prefdialog {} {
   global cvscfg
 
   if {[winfo exists .prefdlg]} {
-    #destroy .prefdlg
-    raise .prefdlg
-    .prefdlg.prefnb select $cvscfg(preftab)
-    return
+    destroy .prefdlg
   }
 
   set pd .prefdlg
@@ -29,9 +26,9 @@ proc prefdialog {} {
   # Build the pages
   prefs_general $pd.prefnb
   prefs_diagram $pd.prefnb
-  prefs_cvs $pd.prefnb
-  prefs_subversion $pd.prefnb
   prefs_git $pd.prefnb
+  prefs_subversion $pd.prefnb
+  prefs_cvs $pd.prefnb
 
   pack $pd.prefnb -side top -expand y -fill both
 
@@ -92,7 +89,6 @@ proc prefs_diagram {w} {
   grid $w.logcanv.show.showempty -sticky w -column 0 -row 0 -columnspan 2
   grid $w.logcanv.show.showintermed -sticky w -column 0 -row 1 -columnspan 2
   grid $w.logcanv.show.showmerg -sticky w -column 0 -row 2 -columnspan 2
-
   ttk::separator $w.logcanv.sep1
   pack $w.logcanv.sep1 -side top -fill x -pady 3
 
@@ -213,5 +209,7 @@ proc prefs_close { } {
   global cvscfg
 
   gen_log:log D "Preferences Tab $cvscfg(preftab)"
+  
   destroy .prefdlg
+  exit_cleanup 0
 }
