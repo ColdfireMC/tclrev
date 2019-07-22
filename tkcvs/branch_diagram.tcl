@@ -1093,7 +1093,7 @@ namespace eval ::logcanvas {
                 $mx $ly $mx [expr {$by - $rh}] \
                 -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
             }
-            if {$ingit} {
+            if {$ingit && $ly != {}} {
               set ny [expr {$ly + $curr(boff)}]
               if {$ny != $by} {
                 # The up-pointing arrow below the bottom revision, if that has been raised
