@@ -1847,30 +1847,30 @@ namespace eval ::logcanvas {
       # Diagram
       menu $logcanvas.menubar.view.update
       $logcanvas.menubar.view.update add radiobutton -label "Every Revision" \
-        -variable [namespace current]::opt(update_drawing) -value 0
+        -variable logcfg(update_drawing) -value 0
       $logcanvas.menubar.view.update add radiobutton -label "Every Branch" \
-        -variable [namespace current]::opt(update_drawing) -value 1
+        -variable logcfg(update_drawing) -value 1
       $logcanvas.menubar.view.update add radiobutton -label "When Finished" \
-        -variable [namespace current]::opt(update_drawing) -value 2
+        -variable logcfg(update_drawing) -value 2
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add cascade -label "Tree Layout" \
         -menu $logcanvas.menubar.view.tree
       menu $logcanvas.menubar.view.tree
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show empty branches" \
-        -variable [namespace current]::opt(show_empty_branches) \
+        -variable logcfg(show_empty_branches) \
         -onvalue 1 -offvalue 0 \
-        -command [namespace code { set logcfg(show_empty_branches) $opt(show_empty_branches); DrawTree }]
+        -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show intermediate revisions" \
-        -variable [namespace current]::opt(show_inter_revs) \
+        -variable logcfg(show_inter_revs) \
         -onvalue 1 -offvalue 0 \
-        -command [namespace code { set logcfg(show_inter_revs) $opt(show_inter_revs); DrawTree }]
+        -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
         "Show merges" \
-        -variable [namespace current]::opt(show_merges) \
+        -variable logcfg(show_merges) \
         -onvalue 1 -offvalue 0 \
-        -command [namespace code { set logcfg(show_merges) $opt(show_merges); DrawTree }]
+        -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add cascade -label "Branch Layout" \
         -menu $logcanvas.menubar.view.branch
       menu $logcanvas.menubar.view.branch
@@ -1886,7 +1886,7 @@ namespace eval ::logcanvas {
         }]
       $logcanvas.menubar.view.branch add separator
       $logcanvas.menubar.view.branch add checkbutton -label "Show label" \
-        -variable [namespace current]::opt(show_root_tags) \
+        -variable logcfg(show_root_tags) \
         -onvalue 1 -offvalue 0 \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add cascade -label "Revision Layout" \
@@ -1912,23 +1912,23 @@ namespace eval ::logcanvas {
         }]
       $logcanvas.menubar.view.rev add separator
       $logcanvas.menubar.view.rev add checkbutton -label "Show tags" \
-        -variable [namespace current]::opt(show_tags) \
+        -variable logcfg(show_tags) \
         -onvalue 1 -offvalue 0 \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show revision" \
-        -variable [namespace current]::opt(show_box_rev) \
+        -variable logcfg(show_box_rev) \
         -onvalue 1 -offvalue 0 \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show author" \
-        -variable [namespace current]::opt(show_box_revwho) \
+        -variable logcfg(show_box_revwho) \
         -onvalue 1 -offvalue 0 \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show date" \
-        -variable [namespace current]::opt(show_box_revdate) \
+        -variable logcfg(show_box_revdate) \
         -onvalue 1 -offvalue 0 \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show time" \
-        -variable [namespace current]::opt(show_box_revtime) \
+        -variable logcfg(show_box_revtime) \
         -onvalue 1 -offvalue 0 \
         -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add separator
