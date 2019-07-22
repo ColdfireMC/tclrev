@@ -410,6 +410,7 @@ proc modbrowse_menus {topwin} {
   $topwin.menubar.git add command -label "Git Clone" \
      -command { dialog_git_clone $cvscfg(gitroot) $modbrowse_path }
 
+  menu $topwin.menubar.options
   $topwin.menubar.options add checkbutton -label "Group Aliases in a Folder (CVS)" \
      -variable cvscfg(aliasfolder) -onvalue true -offvalue false \
      -command {

@@ -696,6 +696,8 @@ proc svn_jit_listdir {} {
   gen_log:log T "ENTER"
   gen_log:log D "svnroot: $cvscfg(svnroot)"
   set tv .modbrowse.treeframe.pw
+  busy_start .modbrowse.treeframe
+  update
   set opendir [$tv selection]
   # It might be a string like {/trunk/Dir 2}
   set opendir [join $opendir]
@@ -727,7 +729,6 @@ proc svn_jit_listdir {} {
     }
   }
 
-  busy_start $tv
   # Remove the placeholder
   if {[$tv exists "/$dir/placeholder"]} {
     gen_log:log D "$tv delete /$dir/placeholder"
@@ -741,7 +742,7 @@ proc svn_jit_listdir {} {
     svn_jit_dircmd "$dir" $d
   }
 
-  busy_done $tv
+  #busy_done .modbrowse.treeframe
   gen_log:log T "LEAVE"
 }
 
@@ -752,6 +753,7 @@ proc svn_jit_dircmd { parent dir } {
   gen_log:log T "ENTER ($parent $dir)"
 
   set tv .modbrowse.treeframe.pw
+  busy_start .modbrowse.treeframe
   # Here we are just figuring out if the top level directory is empty or not.
   # We don't have to collect any other information, so no -v flag
   set command "svn list \"$cvscfg(svnroot)/$parent/$dir\""
@@ -802,6 +804,7 @@ proc svn_jit_dircmd { parent dir } {
   $tv column #0 -width $col0_width
 
   #gen_log:log T "LEAVE"
+  #busy_done .modbrowse.treeframe
 }
 
 # called from module browser - list branches & tags
