@@ -9,13 +9,15 @@ proc prefdialog {} {
 
   set pd .prefdlg
   toplevel $pd
+  #wm group $pd .
+  #wm transient $pd .
   wm title $pd "TkCVS Preferences"
   wm protocol $pd WM_DELETE_WINDOW { prefs_close }
 
   ttk::notebook $pd.prefnb
   ttk::notebook::enableTraversal $pd.prefnb
 
-  frame $pd.bot
+  frame $pd.bot -relief raised -bd 2
   button $pd.bot.save -text "Save" -command save_options
   button $pd.bot.close -text "Close" -command { prefs_close }
 
@@ -37,6 +39,7 @@ proc prefdialog {} {
   }
 
   bind .prefdlg.prefnb <<NotebookTabChanged>> {set cvscfg(preftab) [.prefdlg.prefnb select]}
+  raise $pd
 }
 
 # General preferences
@@ -46,7 +49,7 @@ proc prefs_general {w} {
 
   checkbutton $w.general.confirmation -text "Show Confirmation Dialogs" \
     -variable cvscfg(confirm_prompt) -onvalue true -offvalue false
-  checkbutton $w.general.auto -text "Automaitic Workdir Status" \
+  checkbutton $w.general.auto -text "Automatic Workdir Status" \
     -variable cvscfg(auto_status) -onvalue true -offvalue false
   label $w.general.lshell -text "Terminal"
   entry $w.general.eshell -textvariable cvscfg(shell)
@@ -77,7 +80,7 @@ proc prefs_diagram {w} {
   $w add $w.logcanv -text "Branch Browser" -sticky nsew
 
   frame $w.logcanv.show
-  checkbutton $w.logcanv.show.showempty -text "Show Empsy Branches" \
+  checkbutton $w.logcanv.show.showempty -text "Show Empty Branches" \
     -variable logcfg(show_empty_branches) -onvalue 1 -offvalue 0
   checkbutton $w.logcanv.show.showintermed -text "Show Intermediate Revisions" \
     -variable logcfg(show_inter_revs) -onvalue 1 -offvalue 0

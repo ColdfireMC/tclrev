@@ -1,3 +1,8 @@
+Release 9.1.5 July, 2019
+
+- Improve appearance and behavior of prefs dialog, and fix embarrassing typos.
+
+
 Release 9.1.4 July, 2019
 
 - Made a preferences dialog under the TkCVS menu
