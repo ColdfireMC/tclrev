@@ -1131,8 +1131,8 @@ namespace eval ::git_branchlog {
         update idletasks
 
         # Gets all the commit information at once, including the branch, tag,
-        # merge, and parent information Doesn't necessarily pick up all, or
-        # any, of the locally reachable branches
+        # merge, and parent information. Doesn't necessarily pick up all of the
+        # locally reachable branches
         set command "git log --all -$cvscfg(gitmaxhist) --abbrev-commit --topo-order $cvscfg(gitlog_opts) --parents --date=iso --tags --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
@@ -1160,8 +1160,8 @@ namespace eval ::git_branchlog {
           set logged_branches [prune_branchlist $logged_branches]
         }
 
-        # This gets all the locally reachable branches. We only use all of them if asked.
-        # But if "master" is in there, we want it.
+        # This gets all the locally reachable branches. We only use all of them if asked,
+        # but their order is important. Also if "master" is in there, we want it.
         set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
         set branch_lines [split [$cmd(git_branch)\::output] "\n"]
         # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
@@ -1279,6 +1279,8 @@ namespace eval ::git_branchlog {
         set empty_branches ""
         set current_branches ""
         set root_branches ""
+        set branchtips ""
+        list ident_matches
         list family
         # Only sorting so it's easier to compare log outputs. No functional significance.
         foreach br [lsort $branches] {
@@ -1315,6 +1317,15 @@ namespace eval ::git_branchlog {
             }
             catch {unset revlist_output}
             catch {unset revlist_lines}
+            set branchtip($br) [lindex $raw_revs($br) end]
+            lappend branchtips $branchtip($br)
+            lappend ident_matches($branchtip($br)) $br
+
+            if {[llength $ident_matches($branchtip($br))] > 1} {
+              gen_log:log D "$br identical to another branch. Setting aside"
+              continue
+            }
+            
             lassign [list_within_list $raw_all $raw_revs($br)] start n_overlap
             # If there is orphaned stuff in here, some branches are disjunct with
             # with our root. Don't process these further now.
@@ -1345,6 +1356,14 @@ namespace eval ::git_branchlog {
           }
         }
         # Finished collecting the branches from the repository
+
+        # It's easier to compare the branches if we put identical ones aside.
+        # Here we are saving lists of two or more identical branches.
+        foreach i [array names ident_matches] {
+          if {[llength $ident_matches($i)] < 2} {
+            catch {unset ident_matches($i)}
+           }
+        }
 
         # Get the branches in each family back in order
         foreach f [array names family] {
@@ -1494,6 +1513,7 @@ namespace eval ::git_branchlog {
               set trb $fam_trunk($f)
               lassign [list_comm $branchrevs($fam_trunk($f)) $raw_revs($branch)] inBonly inBoth
               gen_log:log D " == ONLY IN $branch: $inBonly"
+              # This shouldn't happen anymore, right?
               if {$inBonly eq "IDENTICAL"} {
                 gen_log:log D "BRANCHES $fam_trunk($f) and $branch are IDENTICAL"
                 set branchrevs($branch) $branchrevs($fam_trunk($f))
@@ -1668,6 +1688,7 @@ namespace eval ::git_branchlog {
               }
               lassign [list_comm $branchrevs($peer2) $branchrevs($peer1)] inBonly inBoth
               gen_log:log D " == ONLY IN $peer1: $inBonly"
+              # This shouldn't happen anymore, right?
               if {$inBonly eq "IDENTICAL"} {
                 gen_log:log D " BRANCHES $peer1 and $peer2 are IDENTICAL"
                 set branchrevs($peer1) $branchrevs($peer2)
@@ -1722,6 +1743,20 @@ namespace eval ::git_branchlog {
         }
         # Finished finding major branches
         gen_log:log D "========================"
+
+        # Put back the identical branches
+        foreach i [array names ident_matches] {
+          gen_log:log D "$i IDENTICAL $ident_matches($i)"
+          set first [lindex $ident_matches($i) 0]
+          foreach next [lrange $ident_matches($i) 1 end] {
+            set branchrevs($next) $branchrevs($first)
+            set branchroot($next) $branchroot($first)
+            set branchtip($next) $branchtip($first)
+            if {$next ni $revbtags($branchroot($first))} {
+              lappend revbtags($branchroot($first)) $next
+            }
+          }
+        }
 
         gen_log:log D "Deciding which family to draw"
         gen_log:log D "CURRENT BRANCH: $current_tagname"
