@@ -1203,18 +1203,31 @@ namespace eval ::git_branchlog {
         # Collect and de-duplicate the branch list
         # First, add the logged branches. We always need those, you can't opt out
         set branches $logged_branches
-        # Then add the local branches that weren't in the logged branches, if desired
-        if { [regexp {L} $cvscfg(gitbranchgroups)] } {
-          # The local branch list usually preserves the order the best. So 
-          # we try to preserve that order when we blend them
-          if {[llength $local_branches] > 0} {
-            set branches $local_branches
-          }
-          foreach fb $logged_branches {
-            if {$fb ni $branches} {
-              lappend branches $fb
+        # The local branch list usually preserves the order the best. So 
+        # we try to preserve that order when we blend them, even if we don't add ones
+        # that aren't already in the logged branches
+        set ovlp_list ""
+        set fb_only ""
+        set lb_only ""
+        if {[llength $local_branches] > 0} {
+          foreach lb $local_branches {
+            if {$lb in $logged_branches} {
+              lappend ovlp_list $lb
+            } else {
+              lappend lb_only $lb
             }
           }
+          foreach fb $logged_branches {
+            if {$fb ni $local_branches} {
+              lappend fb_only $fb
+            }
+          }
+        }
+        # Then add the local branches that weren't in the logged branches, if desired
+        if { [regexp {L|R} $cvscfg(gitbranchgroups)] } {
+          set branches [concat $ovlp_list $fb_only $lb_only ]
+        } else {
+          set branches [concat $ovlp_list $fb_only ]
         }
         # Then add the remote branches, if desired
         if { [regexp {R} $cvscfg(gitbranchgroups)] } {
@@ -1228,7 +1241,10 @@ namespace eval ::git_branchlog {
         set branches [prune_branchlist $branches]
         catch {unset logged_branches}
         catch {unset local_branches}
-        # What we have here is an un-ordered mess, but we'll sort them out soon
+        
+        gen_log:log D "Overlap:    $ovlp_list"
+        gen_log:log D "File only:  $fb_only"
+        gen_log:log D "Local only: $lb_only"
         gen_log:log D "Combined branches ([llength $branches]): $branches"
 
         # De-duplicate the tags, while we're thinking of it.
