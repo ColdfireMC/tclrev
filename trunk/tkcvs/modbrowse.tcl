@@ -577,7 +577,6 @@ proc ModTree:create {w} {
   global cvsglb
   global cvscfg
 
-
   ttk::treeview $w.pw -yscroll "$w.yscroll set"
   $w.pw configure -columns "file information"
   $w.pw column #0 -minwidth 0
