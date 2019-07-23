@@ -610,38 +610,6 @@ namespace eval ::logcanvas {
         return [list $tag_width $root_width $height]
       }
 
-      # Finds the dimensions including tags, but not the location, for the blue root box.
-      # That (tags on the root) can only happen in CVS, I think
-      proc CalcRootGit { root_rev } {
-        global cvscfg
-        variable opt
-        variable curr
-        variable box_height
-        variable font_bold
-        variable font_norm
-        variable font_norm_h
-        variable logcanvas
-        variable root_info
-        variable revbtags
-        variable tlist
-
-        #gen_log:log T "ENTER ($root_rev)"
-        set height 0
-        set root_width 0
-        set tag_width 0
-
-        set tlist($root_rev) {}
-        if {![info exists revbtags($root_rev)]} {set revbtags($root_rev) {}}
-        foreach s [subst $root_info] {
-          set w [font measure $font_norm -displayof $logcanvas.canvas " $s "]
-          if {$w > $root_width} {
-            set root_width $w
-          }
-        }
-        incr width $curr(padx,2)
-        return [list $tag_width $root_width $height]
-      }
-
       proc DrawRoot { x y rbox_width rbox_height cur_rev root_rev } {
         global cvscfg
         variable curr
