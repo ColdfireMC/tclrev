@@ -1417,7 +1417,6 @@ namespace eval ::git_branchlog {
                 lappend os_z $b
               }
             }
-            #gen_log:log D "Root branches: $os_z"
             if {[llength $os_z] == 1} {
             gen_log:log D " Only one branch begins at the root. trunk=$b"
               set trunk_found 1
@@ -1455,7 +1454,7 @@ namespace eval ::git_branchlog {
             if {[llength $fam_branches] > 0} {
               set fam_trunk($f) [lindex $fam_branches 0]
               set trunk_found 1
-              gen_log:log D "Using first branch as trunk"
+              gen_log:log D " Using first branch as trunk"
             }
             set trunk_found 1
           }
@@ -1505,9 +1504,9 @@ namespace eval ::git_branchlog {
               # Move the trunk's tags from the tip to the base
               # But if there's only one rev, those are the same, so don't do it
               if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
-                gen_log:log D "$branch is already in $branchroot($branch)"
+                #gen_log:log D "$branch is already in $branchroot($branch)"
               } else {
-                gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
+                #gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
                 lappend revbtags($branchroot($branch)) $branch
               }
               if {$branchtip($branch) ne $branchroot($branch)} {
@@ -1517,7 +1516,7 @@ namespace eval ::git_branchlog {
                   set revbtags($branchtip($branch)) [lreplace $revbtags($branchtip($branch)) $idx $idx]
                 }
               }
-              gen_log:log D "BASE of trunk $branch is $rootrev"
+              gen_log:log D " BASE of trunk $branch is $branchroot($branch)"
               continue
             }
 
@@ -1572,14 +1571,12 @@ namespace eval ::git_branchlog {
               set branchrevs($branch) $inBonly
               set base [lindex $inBonly end]
               set branchrevs($base) $branchrevs($branch)
-              gen_log:log D "branchrevs($branch) $branchrevs($branch)"
-              gen_log:log D "BASE of $branch $base"
               set branchtip($branch) [lindex $branchrevs($branch) 0]
               set branchroot($branch) [lindex $branchrevs($branch) end]
               if {$base eq ""} {
                 gen_log:log D "BASE not found for $branch"
                 set base [lindex $inBoth 0]
-                gen_log:log D "BASE of $branch $base"
+                gen_log:log D " BASE of $branch $base"
               }
 
               set revkind($base) "branch"
@@ -1589,7 +1586,7 @@ namespace eval ::git_branchlog {
                 gen_log:log D  "$fam_trunk($f) and $branch are DISJUNCT"
               } else {
                 set revparent($base) $fork
-                gen_log:log D "Using end of inBoth $revparent($base) for PARENT of $branch"
+                gen_log:log D " Using end of inBoth $revparent($base) for PARENT of $branch"
                 set parent_ok 1
               }
               #if {! $parent_ok} {
@@ -1620,7 +1617,7 @@ namespace eval ::git_branchlog {
                 continue
               }
 
-              gen_log:log D "$branch: BASE $base PARENT $revparent($base)"
+              gen_log:log D " $branch: BASE $base PARENT $revparent($base)"
               # Sometimes we get back a parent that our log --all didn't pick
               # up. This may happen if the directory had checkins that didn't
               # affect the file or the file is newly added
@@ -1637,7 +1634,7 @@ namespace eval ::git_branchlog {
               } else {
                 # If two branches are identical, we only want to draw it once. The
                 # header will show all the branchtags.
-                gen_log:log D "$branchroot($branch) is already in revbranches($revparent($base))"
+                ##gen_log:log D "$branchroot($branch) is already in revbranches($revparent($base))"
               }
 
               # Move the branch tags from the tip to the base
@@ -1645,12 +1642,12 @@ namespace eval ::git_branchlog {
               if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
                 gen_log:log D "$branch is already in $branchroot($branch)"
               } else {
-                gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
+                #gen_log:log D "Adding $branch to revbtags for $branchroot($branch)"
                 lappend revbtags($branchroot($branch)) $branch
               }
               if {$branchtip($branch) ne $branchroot($branch)} {
                 if [info exists revbtags($branchtip($branch))] {
-                  gen_log:log D " and removing it from tip"
+                  #gen_log:log D " and removing it from tip"
                   set idx [lsearch $revbtags($branchtip($branch)) $branch]
                   set revbtags($branchtip($branch)) [lreplace $revbtags($branchtip($branch)) $idx $idx]
                 }
@@ -1665,7 +1662,7 @@ namespace eval ::git_branchlog {
             if {$t eq $branch} continue
             if {! [info exists branchroot($branch)]} continue
             if {$branchroot($branch) eq $branchroot($t)} {
-              gen_log:log D "$branch and $t have the same root $branchroot($branch)"
+              #gen_log:log D "$branch and $t have the same root $branchroot($branch)"
               # Save the duplicates in a list to deal with next
               lappend branch_matches($branch) $t
             }
@@ -1723,36 +1720,70 @@ namespace eval ::git_branchlog {
                 set branch_matches($m) [lreplace $branch_matches($m) $idx $idx]
                 set idx [lsearch $family($f) $branch]
                 set family($f) [lreplace $family($f) $idx $idx]
-                #set branches $family($f)
                 continue
               }
-              set branchrevs($peer1) $inBonly
-              set branchroot($peer1) [lindex $branchrevs($peer1) end]
-              set branchtip($peer1) [lindex $branchrevs($peer1) 0]
-              set new_base $branchroot($peer1)
-              set branchrevs($new_base) $inBonly
-              set fork [lindex $inBoth 0]
-              if {$fork eq ""} {
-                gen_log:log D " $peer1 and $peer2 are now non-overlapping"
+              if {$inBonly ne {}} {
+                set branchrevs($peer1) $inBonly
+                set branchroot($peer1) [lindex $branchrevs($peer1) end]
+                set branchtip($peer1) [lindex $branchrevs($peer1) 0]
+                set new_base $branchroot($peer1)
+                set branchrevs($new_base) $inBonly
+                set fork [lindex $inBoth 0]
+                if {$fork eq ""} {
+                  gen_log:log D " $peer1 and $peer2 are now non-overlapping"
+                  continue
+                }
+                gen_log:log D " NEW PARENT $fork and BASE $new_base of $peer1"
+                set old_base [lindex $inBoth end]
+                set revkind($new_base) "branch"
+                # Move revbtags
+                if {! [info exists revbtags($new_base)] || ($peer1 ni $revbtags($new_base))} {
+                  #gen_log:log D " Adding $peer1 to revbtags($new_base)"
+                  lappend revbtags($new_base) $peer1
+                }
+                if [info exists revbtags($old_base)] {
+                   #gen_log:log D " and removing it from old base $old_base"
+                   set idx [lsearch $revbtags($old_base) $peer1]
+                   set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
+                }
+                # Move revbranches
+                if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
+                  gen_log:log D " Adding new BASE $new_base to PARENT revbranches($fork)"
+                  lappend revbranches($fork) $new_base
+                }
                 continue
-              }
-              gen_log:log D " NEW PARENT $fork and BASE $new_base of $peer1"
-              set old_base [lindex $inBoth end]
-              set revkind($new_base) "branch"
-              # Move revbtags
-              if {! [info exists revbtags($new_base)] || ($peer1 ni $revbtags($new_base))} {
-                gen_log:log D " Adding $peer1 to revbtags($new_base)"
-                lappend revbtags($new_base) $peer1
-              }
-              if [info exists revbtags($old_base)] {
-                 gen_log:log D " and removing it from old base $old_base"
-                 set idx [lsearch $revbtags($old_base) $peer1]
-                 set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
-              }
-              # Move revbranches
-              if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
-                gen_log:log D " Adding new BASE $new_base to PARENT revbranches($fork)"
-                lappend revbranches($fork) $new_base
+              } else {
+                # Try the other order
+                lassign [list_comm $branchrevs($peer1) $branchrevs($peer2)] inBonly inBoth
+                gen_log:log D " == ONLY IN $peer2: $inBonly"
+                set branchrevs($peer2) $inBonly
+                set branchroot($peer2) [lindex $branchrevs($peer2) end]
+                set branchtip($peer2) [lindex $branchrevs($peer2) 0]
+                set new_base $branchroot($peer2)
+                set branchrevs($new_base) $inBonly
+                set fork [lindex $inBoth 0]
+                if {$fork eq ""} {
+                  gen_log:log D " $peer2 and $peer1 are now non-overlapping"
+                  continue
+                }
+                gen_log:log D " NEW PARENT $fork and BASE $new_base of $peer2"
+                set old_base [lindex $inBoth end]
+                set revkind($new_base) "branch"
+                # Move revbtags
+                if {! [info exists revbtags($new_base)] || ($peer2 ni $revbtags($new_base))} {
+                  #gen_log:log D " Adding $peer2 to revbtags($new_base)"
+                  lappend revbtags($new_base) $peer2
+                }
+                if [info exists revbtags($old_base)] {
+                   #gen_log:log D " and removing it from old base $old_base"
+                   set idx [lsearch $revbtags($old_base) $peer2]
+                   set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
+                }
+                # Move revbranches
+                if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
+                  gen_log:log D " Adding new BASE $new_base to PARENT revbranches($fork)"
+                  lappend revbranches($fork) $new_base
+                }
               }
             }
           }
@@ -1791,14 +1822,14 @@ namespace eval ::git_branchlog {
         if {! $trunk_ok} {
           foreach t $trunks {
             if {$t eq $current_tagname} {
-              gen_log:log D "Using current_tagname $current_tagname"
+              gen_log:log D " Using current_tagname $current_tagname"
               set trunk $t
               set trunk_ok 1
             }
           }
         }
         if {! $trunk_ok} {
-          gen_log:log D "Using first trunk in list"
+          gen_log:log D " Using first trunk in list"
           set trunk [lindex $trunks 0]
           set trunk_ok 1
         }
@@ -2188,29 +2219,6 @@ namespace eval ::git_branchlog {
       return [namespace current]
     }
 
-  }
-}
-
-# Sort lists which may be the same for several items
-# Return -1 if a<b, 0 if a=b, and 1 if a>b
-proc compare_nested_branches {listA listB} {
-  gen_log:log T "listA: ([llength $listA]) $listA"
-  gen_log:log T "listB: ([llength $listB]) $listB"
-
-  # Shortcut if lists are identical
-  if { $listA == $listB } {
-    return 0
-  }
-
-  lassign [list_comm [lreverse $listA] [lreverse $listB]] inBonly inBoth
-  lassign [list_comm [lreverse $listB] [lreverse $listA]] inAonly inBoth
-
-  if {$inBonly > $inAonly} {
-    return -1
-  } elseif {$inAonly > $inBonly} {
-    return 1
-  } else {
-    return 0
   }
 }
 
