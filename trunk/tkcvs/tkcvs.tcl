@@ -268,6 +268,7 @@ if {$WSYS eq "x11"} {
     option add *Frame.background $arbitrarybg userDefault
     option add *Label.background $arbitrarybg userDefault
     option add *Entry.highlightBackground $arbitrarybg userDefault
+    option add *Entry.readonlyBackground "#eeeeee" userDefault
     option add *Canvas.highlightBackground #fefefe userDefault
     option add *Message.Background $arbitrarybg userDefault
     option add *Checkbutton.Background $arbitrarybg userDefault
