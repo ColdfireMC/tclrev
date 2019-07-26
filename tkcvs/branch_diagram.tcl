@@ -72,7 +72,9 @@ namespace eval ::logcanvas {
         #catch {$logcanvas.canvas itemconfigure Sel$AorB -outline black}
         catch {$logcanvas.canvas itemconfigure Sel$AorB -fill gray90}
         $logcanvas.canvas dtag Sel$AorB
-        $logcanvas.up.rev${AorB}_rvers configure -text {}
+        $logcanvas.up.rev${AorB}_rvers configure -state normal
+        $logcanvas.up.rev${AorB}_rvers delete 0 end
+        $logcanvas.up.rev${AorB}_rvers configure -state readonly
         $logcanvas.up.log${AorB}_rlogfm.rcomment configure -state normal
         $logcanvas.up.log${AorB}_rlogfm.rcomment delete 1.0 end
         $logcanvas.up.log${AorB}_rlogfm.rcomment configure -state disabled
@@ -100,9 +102,15 @@ namespace eval ::logcanvas {
            set revcomment($rev) "*** empty log message ***"
         }
         if {$tag != {}} {
-          $logcanvas.up.rev${AorB}_rvers configure -text $tag
+          $logcanvas.up.rev${AorB}_rvers configure -state normal
+          $logcanvas.up.rev${AorB}_rvers delete 0 end
+          $logcanvas.up.rev${AorB}_rvers insert end "$tag"
+          $logcanvas.up.rev${AorB}_rvers configure -state readonly
         } else {
-          $logcanvas.up.rev${AorB}_rvers configure -text $rev
+          $logcanvas.up.rev${AorB}_rvers configure -state normal
+          $logcanvas.up.rev${AorB}_rvers delete 0 end
+          $logcanvas.up.rev${AorB}_rvers insert end "$rev"
+          $logcanvas.up.rev${AorB}_rvers configure -state readonly
         }
         if {$rev != {} && [info exists revwho($rev)]} {
           $logcanvas.up.rev${AorB}_rwho configure -text $revwho($rev)
@@ -171,7 +179,7 @@ namespace eval ::logcanvas {
             $logcanvas.up.rfname configure -state readonly
             $logcanvas.log configure \
                 -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text]
+                    set rev [$logcanvas.up.revA_rvers get]
                     if {$rev == ""} {
                       svn_log_rev $filename
                     } else {
@@ -183,21 +191,21 @@ namespace eval ::logcanvas {
               $logcanvas.annotate configure -state disabled
               $logcanvas.view configure \
                  -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text]
+                    set rev [$logcanvas.up.revA_rvers get]
                     if {$rev ==""} { set rev "r$current_revnum" }
                     svn_fileview $rev $revpath($rev) directory
                  }]
             } else {
               $logcanvas.view configure \
                  -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text]
+                    set rev [$logcanvas.up.revA_rvers get]
                     if {$rev ==""} { set rev "r$current_revnum" }
                     svn_fileview $rev $revpath($rev) file
                  }]
               $logcanvas.diff configure \
                 -command [namespace code {
-                   set revA [$logcanvas.up.revA_rvers cget -text]
-                   set revB [$logcanvas.up.revB_rvers cget -text]
+                   set revA [$logcanvas.up.revA_rvers get]
+                   set revB [$logcanvas.up.revB_rvers get]
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
                    # Let's be generous and let either A or B be selected
@@ -211,7 +219,7 @@ namespace eval ::logcanvas {
                 }]
               $logcanvas.annotate configure \
                  -command [namespace code {
-                   set rev [$logcanvas.up.revA_rvers cget -text]
+                   set rev [$logcanvas.up.revA_rvers get]
                    if {$rev == ""} {
                      svn_annotate_r "" $filename
                    } else {
@@ -222,10 +230,10 @@ namespace eval ::logcanvas {
             $logcanvas.delta configure \
               -command [namespace code {
                  set currentrevpath "$revpath(r$current_revnum)@$current_revnum"
-                 set fromrev [$logcanvas.up.revA_rvers cget -text]
+                 set fromrev [$logcanvas.up.revA_rvers get]
                  if {$fromrev == ""} {cvsfail "Please select a revision!" $logcanvas; return}
                  set fromrevpath "$revpath($fromrev)@[string trimleft $fromrev {r}]"
-                 set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 set sincerev [$logcanvas.up.revB_rvers get]
                  set fromtag ""
                  if {[info exists revbtags($sincerev)]} {
                    set fromtag [lindex $revbtags($sincerev) 0]
@@ -261,7 +269,7 @@ namespace eval ::logcanvas {
              # Working on repository files, not checked out
              $logcanvas.view configure \
                 -command [namespace code {
-                  cvs_fileview_checkout [$logcanvas.up.revA_rvers cget -text] $filename
+                  cvs_fileview_checkout [$logcanvas.up.revA_rvers get] $filename
                 }]
              $logcanvas.log configure \
                   -command [namespace code {
@@ -269,13 +277,12 @@ namespace eval ::logcanvas {
                   }]
              $logcanvas.annotate configure \
                 -command [namespace code {
-                   cvs_annotate_r [$logcanvas.up.revA_rvers cget\
-                   -text] $filename
+                   cvs_annotate_r [$logcanvas.up.revA_rvers get] $filename
                 }]
              $logcanvas.diff configure \
                 -command [namespace code {
-                   comparediff_sandbox [$logcanvas.up.revA_rvers cget -text] \
-                     [$logcanvas.up.revB_rvers cget -text] $logcanvas \
+                   comparediff_sandbox [$logcanvas.up.revA_rvers get] \
+                     [$logcanvas.up.revB_rvers get] $logcanvas \
                      $filename
                 }]
              $logcanvas.delta configure -state disabled
@@ -283,7 +290,7 @@ namespace eval ::logcanvas {
              # We have a checked-out local file
              $logcanvas.log configure \
                   -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text]
+                    set rev [$logcanvas.up.revA_rvers get]
                     if {$rev == ""} {
                       cvs_log_rev "" $filename
                     } else {
@@ -293,18 +300,16 @@ namespace eval ::logcanvas {
                   }]
              $logcanvas.view configure \
                -command [namespace code {
-                  cvs_fileview_update [$logcanvas.up.revA_rvers cget -text] \
-                  $filename
+                  cvs_fileview_update [$logcanvas.up.revA_rvers get] $filename
                }]
              $logcanvas.annotate configure \
                -command [namespace code {
-                 cvs_annotate [$logcanvas.up.revA_rvers cget -text] \
-                 $filename
+                 cvs_annotate [$logcanvas.up.revA_rvers get] $filename
                }]
              $logcanvas.delta configure \
                -command [namespace code {
-                 set fromrev [$logcanvas.up.revA_rvers cget -text]
-                 set sincerev [$logcanvas.up.revB_rvers cget -text]
+                 set fromrev [$logcanvas.up.revA_rvers get]
+                 set sincerev [$logcanvas.up.revB_rvers get]
                  set fromtag ""
                  set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
                  if {[info exists revbtags($fromrev_root)]} {
@@ -342,7 +347,7 @@ namespace eval ::logcanvas {
              # We have a checked-out local file
              $logcanvas.log configure \
                   -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text]
+                    set rev [$logcanvas.up.revA_rvers get]
                     if {$rev == ""} {
                       git_log_rev "" $filename
                     } else {
@@ -351,13 +356,13 @@ namespace eval ::logcanvas {
                   }]
              $logcanvas.view configure -state normal \
                -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers cget -text]
+                    set rev [$logcanvas.up.revA_rvers get]
                     if {$rev ==""} { set rev "r$current_revnum" }
                     git_fileview $rev $cvsglb(relpath) $filename
                }]
              $logcanvas.annotate configure -state normal \
                -command [namespace code {
-                   set rev [$logcanvas.up.revA_rvers cget -text]
+                   set rev [$logcanvas.up.revA_rvers get]
                    if {$rev == ""} {
                      git_annotate_r "" $filename
                    } else {
@@ -378,7 +383,7 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname configure -state readonly
            $logcanvas.view configure \
              -command [namespace code {
-               rcs_fileview_checkout  [$logcanvas.up.revA_rvers cget -text] $filename
+               rcs_fileview_checkout  [$logcanvas.up.revA_rvers get] $filename
                 }]
            $logcanvas.annotate configure -state disabled
            $logcanvas.log configure -command [namespace code {rcs_log $filename}]
@@ -1778,7 +1783,10 @@ namespace eval ::logcanvas {
                set revcomment($rev) "*** empty log message ***"
             }
           }
-          $logcanvas.up.revA_rvers configure -text $rev
+          $logcanvas.up.revA_rvers configure -state normal
+          $logcanvas.up.revA_rvers delete 0 end
+          $logcanvas.up.revA_rvers insert end "$rev"
+          $logcanvas.up.revA_rvers configure -state readonly
           if {$rev != {} && [info exists revwho($rev)]} {
             $logcanvas.up.revA_rwho configure -text $revwho($rev)
             $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
@@ -1939,8 +1947,8 @@ namespace eval ::logcanvas {
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
         label $logcanvas.up.rev${fm}_lvers -text "Revision $fm"
-        label $logcanvas.up.rev${fm}_rvers -text {} \
-           -anchor w -font $textfont
+        entry $logcanvas.up.rev${fm}_rvers -text {} \
+        -width 8 -bd 1 -relief sunk -state readonly
 
         label $logcanvas.up.rev${fm}_ldate -text "Committed"
         label $logcanvas.up.rev${fm}_rdate -text {} \
@@ -2028,8 +2036,8 @@ namespace eval ::logcanvas {
       button $logcanvas.annotate -image Annotate
       button $logcanvas.diff -image Diff \
         -command [namespace code {
-          comparediff_r [$logcanvas.up.revA_rvers cget -text] \
-          [$logcanvas.up.revB_rvers cget -text] $logcanvas $filename
+          comparediff_r [$logcanvas.up.revA_rvers get] \
+          [$logcanvas.up.revB_rvers get] $logcanvas $filename
         }]
       button $logcanvas.delta -image Mergediff
       button $logcanvas.viewtags -image Tags \

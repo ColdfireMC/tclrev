@@ -3,6 +3,8 @@ Release 9.1.6 July, 2019
 - Change behavior of cvscfg(toomany_tags) for Subversion. Instead of all-or-nothing,
   it now processes the max number of the most recent of the tags
 
+- Change the Revision number labels of the selected files in the branch browser to
+  readonly entries, so the contents can be copied
 
 Release 9.1.5 July, 2019
 
