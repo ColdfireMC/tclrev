@@ -1802,26 +1802,9 @@ namespace eval ::svn_branchlog {
           set tags [$cmd_log\::output]
           $cmd_log\::destroy
           set n_tags [llength $tags]
+            gen_log:log D "Getting $cvscfg(toomany_tags) of $n_tags tags"
           if {$n_tags > $cvscfg(toomany_tags)} {
-            # If confirm is on, give them a chance to say yes or no to tags
-            if {$cvscfg(confirm_prompt)} {
-              set mess    "There are $n_tags tags.  It could take a long time "
-              append mess "to process them. If you're willing to wait, "
-              append mess " press OK.\n"
-              append mess "Otherwise, press Cancel and I will draw the "
-              append mess "diagram now without showing tags.  "
-              append mess "You may wish to turn off\n"
-              append mess "View -> Revision Layout -> Show Tags\n"
-              append mess " and\n"
-              append mess "View -> Save Options"
-              if {[cvsconfirm $mess $lc] != "ok"} {
-                set tags ""
-              }
-            } else {
-              # Otherwise, just don't process tags
-              set tags ""
-              gen_log:log E "Skipping tags: $n_tags > cvscfg(toomany_tags) ($cvscfg(toomany_tags))"
-            }
+            set tags [lrange $tags [expr {$n_tags - $cvscfg(toomany_tags)}] end]
           }
           foreach tag $tags {
             gen_log:log D "$tag"
