@@ -545,6 +545,7 @@ namespace eval ::logcanvas {
       # That (tags on the root) can only happen in CVS, I think
       proc CalcRoot { root_rev } {
         global cvscfg
+        global logcfg
         variable curr
         variable box_height
         variable font_bold
