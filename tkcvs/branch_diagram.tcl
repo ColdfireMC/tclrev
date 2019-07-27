@@ -70,7 +70,7 @@ namespace eval ::logcanvas {
         variable sel_tag
         variable sel_rev
         #catch {$logcanvas.canvas itemconfigure Sel$AorB -outline black}
-        catch {$logcanvas.canvas itemconfigure Sel$AorB -fill gray90}
+        catch {$logcanvas.canvas itemconfigure Sel$AorB -fill white}
         $logcanvas.canvas dtag Sel$AorB
         $logcanvas.up.rev${AorB}_rvers configure -state normal
         $logcanvas.up.rev${AorB}_rvers delete 0 end
@@ -498,6 +498,7 @@ namespace eval ::logcanvas {
 
       # Draw You are Here box
       proc DrawCurrent { x y width height revision } {
+        global cvsglb
         variable curr
         variable revstate
         variable font_bold
@@ -513,7 +514,7 @@ namespace eval ::logcanvas {
         set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
-          -width $curr(width) -fill gray90 -outline red3
+          -width $curr(width) -fill $cvsglb(textbg) -outline red3
         if {[info exists revstate(current)]} {
           if {$revstate(current) == {dead}} {
             $logcanvas.canvas create line \
@@ -617,6 +618,7 @@ namespace eval ::logcanvas {
 
       proc DrawRoot { x y rbox_width rbox_height cur_rev root_rev } {
         global cvscfg
+        global cvsglb
         variable curr
         variable opt
         variable font_norm
@@ -643,7 +645,7 @@ namespace eval ::logcanvas {
           [expr {$x + $rbox_width}] [expr {$y - $rbox_height}] \
           -width $curr(width) \
           -tags box \
-          -fill gray90 -outline blue
+          -fill $cvsglb(textbg) -outline blue
 
         set tx [expr {$x + $rbox_width/2}]
         set ty [expr {$y - $curr(pady)}]
@@ -740,6 +742,7 @@ namespace eval ::logcanvas {
 
       proc DrawRevision { x y width height revision} {
         global cvscfg
+        global cvsglb
         variable opt
         variable curr
         variable rev_info
@@ -817,7 +820,7 @@ namespace eval ::logcanvas {
         set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
           $x $y $tx $ty \
-          -width $curr(width) -fill gray90 -outline black \
+          -width $curr(width) -fill $cvsglb(textbg) -outline black \
           -tags [list box selectable R$revision rect$revision active]
         # ...and add the contents
         if {[info exists revstate($revision)]} {
@@ -1661,6 +1664,7 @@ namespace eval ::logcanvas {
       # to put "FOO*". For all strings containing "FOO", you must put "*FOO*".
       proc Search {} {
         global cvscfg
+        global cvsglb
         variable logcanvas
         variable font_bold
         variable search_elements
@@ -1685,7 +1689,7 @@ namespace eval ::logcanvas {
           ||($search_lastcase != $search_nocase)} {
           # Restore box colors
           foreach item [$logcanvas.canvas find withtag box] {
-            $logcanvas.canvas itemconfigure $item -fill gray90
+            $logcanvas.canvas itemconfigure $item -fill $cvsglb(textbg)
           }
           $logcanvas.canvas itemconfigure SelA -fill $cvscfg(colourA)
           $logcanvas.canvas itemconfigure SelB -fill $cvscfg(colourB)
@@ -2015,7 +2019,7 @@ namespace eval ::logcanvas {
 
       # The canvas for the big picture
       canvas $logcanvas.canvas -relief sunken -border 2 \
-        -height 300 \
+        -height 300 -bg $cvsglb(canvbg) \
         -yscrollcommand [namespace code "$logcanvas.yscroll set"] \
         -xscrollcommand [namespace code "$logcanvas.xscroll set"]
       scrollbar $logcanvas.xscroll -relief sunken -orient horizontal \
