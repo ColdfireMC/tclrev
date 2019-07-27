@@ -10,6 +10,8 @@ Release 9.1.6 July, 2019
 
 - Fix You are Here sometimes not being drawn
 
+- Change invocation of gitk to gitk --all
+
 
 Release 9.1.5 July, 2019
 
