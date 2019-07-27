@@ -2154,6 +2154,7 @@ namespace eval ::cvs_branchlog {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set how [uplevel {concat $how}]
+      global logcfg
       variable command
       variable cmd_log
       variable lc
@@ -2188,7 +2189,7 @@ namespace eval ::cvs_branchlog {
             set newlc [logcanvas::new $filename $how [namespace current]]
             set ln [lindex $newlc 0]
             set lc [lindex $newlc 1]
-            set show_tags [set $ln\::opt(show_tags)]
+            set show_tags $logcfg(show_tags)
           }
         }
         RCS {
@@ -2196,7 +2197,7 @@ namespace eval ::cvs_branchlog {
           set newlc [logcanvas::new $filename "RCS,loc" [namespace current]]
           set ln [lindex $newlc 0]
           set lc [lindex $newlc 1]
-          set show_tags [set $ln\::opt(show_tags)]
+          set show_tags $logcfg(show_tags)
         }
       }
 

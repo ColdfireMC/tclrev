@@ -1413,6 +1413,7 @@ namespace eval ::svn_branchlog {
       set filename [uplevel {concat $filename}]
       set relpath [uplevel {concat $relpath}]
       set directory_merge [uplevel {concat $directory_merge}]
+      global logcfg
       variable cmd_log
       variable lc
       variable revwho
@@ -1436,7 +1437,7 @@ namespace eval ::svn_branchlog {
       }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-      set show_tags [set $ln\::opt(show_tags)]
+      set show_tags $logcfg(show_tags)
 
       # Implementation of Perl-like "grep {/re/} in_list"
       proc grep_filter { re in_list } {
@@ -1464,6 +1465,7 @@ namespace eval ::svn_branchlog {
       proc reloadLog { } {
         global cvscfg
         global cvsglb
+        global logcfg
         variable filename
         variable cmd_log
         variable lc
@@ -1511,8 +1513,8 @@ namespace eval ::svn_branchlog {
         set path "$cvscfg(url)/$safe_filename"
         $ln\::ConfigureButtons $filename
 
-        set show_merges [set $ln\::opt(show_merges)]
-        set show_tags [set $ln\::opt(show_tags)]
+        set show_merges $logcfg(show_merges)
+        set show_tags $logcfg(show_tags)
 
         # Find out where to put the working revision icon (if anywhere)
         set current_revnum [set $ln\::current_revnum]
