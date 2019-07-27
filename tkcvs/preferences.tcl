@@ -77,19 +77,23 @@ proc prefs_diagram {w} {
   frame $w.logcanv
   $w add $w.logcanv -text "Branch Browser" -sticky nsew
 
-  frame $w.logcanv.show
-  checkbutton $w.logcanv.show.showempty -text "Show Empty Branches" \
+  frame $w.logcanv.layout
+  checkbutton $w.logcanv.layout.showtags -text "Show Tags" \
+    -variable logcfg(show_tags) -onvalue 1 -offvalue 0
+  checkbutton $w.logcanv.layout.showempty -text "Show Empty Branches" \
     -variable logcfg(show_empty_branches) -onvalue 1 -offvalue 0
-  checkbutton $w.logcanv.show.showintermed -text "Show Intermediate Revisions" \
+  checkbutton $w.logcanv.layout.showintermed -text "Show Intermediate Revisions" \
     -variable logcfg(show_inter_revs) -onvalue 1 -offvalue 0
-  checkbutton $w.logcanv.show.showmerg -text "Show Merges" \
+  checkbutton $w.logcanv.layout.showmerg -text "Show Merges" \
     -variable logcfg(show_merges) -onvalue 1 -offvalue 0
   
-  pack $w.logcanv.show -side top -fill x
-  grid columnconf $w.logcanv.show 1 -weight 1
-  grid $w.logcanv.show.showempty -sticky w -column 0 -row 0 -columnspan 2
-  grid $w.logcanv.show.showintermed -sticky w -column 0 -row 1 -columnspan 2
-  grid $w.logcanv.show.showmerg -sticky w -column 0 -row 2 -columnspan 2
+  pack $w.logcanv.layout -side top -fill x
+  grid columnconf $w.logcanv.layout 1 -weight 1
+  grid $w.logcanv.layout.showtags -sticky w -column 0 -row 0 -columnspan 2
+  grid $w.logcanv.layout.showempty -sticky w -column 0 -row 1 -columnspan 2
+  grid $w.logcanv.layout.showintermed -sticky w -column 0 -row 2 -columnspan 2
+  grid $w.logcanv.layout.showmerg -sticky w -column 0 -row 3 -columnspan 2
+
   ttk::separator $w.logcanv.sep1
   pack $w.logcanv.sep1 -side top -fill x -pady 3
 
@@ -102,6 +106,26 @@ proc prefs_diagram {w} {
   grid columnconf $w.logcanv.scale 1 -weight 1
   grid $w.logcanv.scale.lspin -sticky w -column 0 -row 0
   grid $w.logcanv.scale.sspin -sticky w -column 1 -row 0
+
+  ttk::separator $w.logcanv.sep2
+  pack $w.logcanv.sep2 -side top -fill x -pady 3
+
+  frame $w.logcanv.revs
+  checkbutton $w.logcanv.revs.showrev -text "Show Revision #" \
+    -variable logcfg(show_box_rev) -onvalue 1 -offvalue 0
+  checkbutton $w.logcanv.revs.showrevwho -text "Show Author" \
+    -variable logcfg(show_box_revwho) -onvalue 1 -offvalue 0
+  checkbutton $w.logcanv.revs.showrevdate -text "Show Date" \
+    -variable logcfg(show_box_revdate) -onvalue 1 -offvalue 0
+  checkbutton $w.logcanv.revs.showrevtime -text "Show Time" \
+    -variable logcfg(show_box_revtime) -onvalue 1 -offvalue 0
+  pack $w.logcanv.revs -side top -fill x
+  grid columnconf $w.logcanv.revs 1 -weight 1
+  grid $w.logcanv.revs.showrev -sticky w -column 0 -row 0 -columnspan 2
+  grid $w.logcanv.revs.showrevwho -sticky w -column 0 -row 1 -columnspan 2
+  grid $w.logcanv.revs.showrevdate -sticky w -column 0 -row 2 -columnspan 2
+  grid $w.logcanv.revs.showrevtime -sticky w -column 0 -row 3 -columnspan 2
+
 }
 
 # For CVS
