@@ -983,6 +983,7 @@ namespace eval ::git_branchlog {
     incr instance
 
     namespace eval $my_idx {
+      global logcfg
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set relpath [uplevel {concat $relpath}]
@@ -1012,7 +1013,7 @@ namespace eval ::git_branchlog {
       }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-      set show_tags [set $ln\::opt(show_tags)]
+      set show_tags $logcfg(show_tags)
 
       proc abortLog { } {
         global cvscfg
@@ -1031,6 +1032,7 @@ namespace eval ::git_branchlog {
       proc reloadLog { } {
         global cvscfg
         global cvsglb
+        global logcfg
         global current_tagname
         variable filename
         variable cmd_log
@@ -1112,8 +1114,8 @@ namespace eval ::git_branchlog {
         set current_revnum [set $ln\::current_revnum]
         gen_log:log D "current_revnum $current_revnum"
 
-        set show_merges [set $ln\::opt(show_merges)]
-        set show_tags [set $ln\::opt(show_tags)]
+        set show_merges $logcfg(show_merges)
+        set show_tags $logcfg(show_tags)
         set show_merges 0
         set show_tags 0
 
@@ -1558,8 +1560,8 @@ namespace eval ::git_branchlog {
                 gen_log:log D "Ignoring branch $branch"
                 catch {unset revparent($base)}
                 # Withdraw this branch from the proceedings
-                #set idx [lsearch $family($f) $branch]
-                #set branches [lreplace $family($f) $idx $idx]
+                set idx [lsearch $family($f) $branch]
+                set branches [lreplace $family($f) $idx $idx]
                 continue
               }
 
@@ -1595,6 +1597,8 @@ namespace eval ::git_branchlog {
           foreach t [array names branchroot] {
             if {$t eq $branch} continue
             if {! [info exists branchroot($branch)]} continue
+            # Maybe we took it out in the first comparison
+            if {$branch ni $family($f)} continue
             if {$branchroot($branch) eq $branchroot($t)} {
               #gen_log:log D "$branch and $t have the same root $branchroot($branch)"
               # Save the duplicates in a list to deal with next
@@ -1689,7 +1693,7 @@ namespace eval ::git_branchlog {
 
         # Position the the You are Here icon and top up final variables
         gen_log:log D "Looking for current_revnum $current_revnum in branches"
-        foreach branch $branches {
+        foreach branch $current_branches {
           if {$branchtip($branch) eq $current_revnum} {
             gen_log:log D "Currently at top of $branch"
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
@@ -1763,15 +1767,11 @@ namespace eval ::git_branchlog {
 
         set sidetree_x [expr {$new_x + 2}]
         foreach rv $rootrevs {
-          #if {[info exists fam_trunk($rv)]} { gen_log:log D " TRUNK $fam_trunk($rv)" }
           if {[info exists revbtags($rv)]} {
-            gen_log:log D " BTAGS $revbtags($rv)"
             set broot [lindex $revbtags($rv) 0]
           } else {
             continue
           }
-          if {[info exists branchrevs($rv)]} { gen_log:log D " $revbtags($rv)" }
-
           gen_log:log D "UNROOTED branch $rv: $broot"
           catch {unset revkind}
           set revkind($broot) "root"
@@ -1975,14 +1975,23 @@ namespace eval ::git_branchlog {
           }
           if [info exists revbtags($old_base)] {
             gen_log:log D " and removing it from old base $old_base"
-             set idx [lsearch $revbtags($old_base) $A]
-             set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
+            set idx [lsearch $revbtags($old_base) $A]
+            set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
           }
           # Move revbranches
           if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
             lappend revbranches($fork) $new_base
           }
         } else {
+          set fork [lindex $inBoth 0]
+          set old_base [lindex $inBoth end]
+          if {[info exists family($old_base)]} {
+            set idx [lsearch $family($old_base) $A]
+            set family($old_base) [lreplace $family($old_base) $idx $idx]
+            gen_log:log D " removing $old_base from family($old_base)"
+          }
+
+          if {0} {
           # Try the other order
           lassign [list_comm $branchrevs($A) $branchrevs($B)] inBonly inBoth
           gen_log:log D " == ONLY IN $B: $inBonly"
@@ -2015,6 +2024,7 @@ namespace eval ::git_branchlog {
             gen_log:log D "Adding new BASE $new_base to PARENT revbranches($fork)"
             lappend revbranches($fork) $new_base
           }
+        }
         }
       }
 

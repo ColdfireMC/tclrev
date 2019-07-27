@@ -33,9 +33,9 @@ namespace eval ::logcanvas {
       variable curr
       global cvscfg
       global cvsglb
+      global logcfg
       global tcl_platform
       # User options for info display for this instance
-      variable opt
       variable revwho
       variable revdate
       variable revtime
@@ -545,7 +545,6 @@ namespace eval ::logcanvas {
       # That (tags on the root) can only happen in CVS, I think
       proc CalcRoot { root_rev } {
         global cvscfg
-        variable opt
         variable curr
         variable box_height
         variable font_bold
@@ -577,7 +576,7 @@ namespace eval ::logcanvas {
           }
           set tlist($root_rev) [concat $tag_colour $tag_black]
 
-          if {$opt(show_tags)} {
+          if {$logcfg(show_tags)} {
             if {[info exists cvscfg(tagdepth)] && $cvscfg(tagdepth) != 0} {
               set n [expr {$cvscfg(tagdepth) - [llength $tag_colour]}]
               if {$n < [llength $tag_black]} {
@@ -620,7 +619,6 @@ namespace eval ::logcanvas {
         global cvscfg
         global cvsglb
         variable curr
-        variable opt
         variable font_norm
         variable font_norm_h
         variable font_bold
@@ -666,7 +664,7 @@ namespace eval ::logcanvas {
       # Finds the dimensions including tags, but not the location, of each revision box
       proc CalcRevision { revision } {
         global cvscfg
-        variable opt
+        global logcfg
         variable curr
         variable box_height
         variable rev_info
@@ -705,7 +703,7 @@ namespace eval ::logcanvas {
             }
           }
           set tlist($revision) [concat $tag_colour $tag_black]
-          if {$opt(show_tags)} {
+          if {$logcfg(show_tags)} {
             foreach tag $tlist($revision) {
               if {$tag == {more...}} {
                 set my_font $font_bold
@@ -743,7 +741,7 @@ namespace eval ::logcanvas {
       proc DrawRevision { x y width height revision} {
         global cvscfg
         global cvsglb
-        variable opt
+        global logcfg
         variable curr
         variable rev_info
         variable revdate
@@ -796,7 +794,7 @@ namespace eval ::logcanvas {
             set mrev($tag) $revision
             lappend totags $tag
           }
-          if {$opt(show_tags)} {
+          if {$logcfg(show_tags)} {
             set my_font $font_norm
             set tagcolour black
             set taglist {}
@@ -857,9 +855,9 @@ namespace eval ::logcanvas {
       }
 
       proc DrawBranch { x y root_rev branch } {
+        global logcfg
         global ingit
         variable logcanvas
-        variable opt
         variable curr
         variable box_height
         variable bot_height
@@ -901,7 +899,7 @@ namespace eval ::logcanvas {
           set revlist [lindex $branchrevs($branch) 0]
           foreach r [lrange $branchrevs($branch) 1 end-1] {
             if {![info exists revbranches($r)]} {set revbranches($r) {}}
-            if {$opt(show_inter_revs) || $opt(show_empty_branches) \
+            if {$logcfg(show_inter_revs) || $logcfg(show_empty_branches) \
                 && $revbranches($r) != {}} {
               lappend revlist $r
             } else {
@@ -1037,10 +1035,10 @@ namespace eval ::logcanvas {
             foreach r2 $revbranches($revision) {
               if {![info exists branchrevs($r2)] } { set branchrevs($r2) {} }
               # Don't display the branch if it is empty unless
-              # opt(show_empty_branches) is set.  Except for You are Here,
+              # logcfg(show_empty_branches) is set.  Except for You are Here,
               # which is a special case
               if {$branchrevs($r2) == {} && $r2 != {current} && !\
-                  $opt(show_empty_branches)} {
+                  $logcfg(show_empty_branches)} {
                 continue
               }
               lappend brevs $r2
@@ -1124,7 +1122,7 @@ namespace eval ::logcanvas {
                   -fill blue
               ]
             }
-            if {$opt(update_drawing) < 1} {
+            if {$logcfg(update_drawing) < 1} {
               UpdateBndBox
             }
           }
@@ -1146,7 +1144,7 @@ namespace eval ::logcanvas {
             # Otherwise, draw normal revision
             DrawRevision $x $y $box_width $rheight $revision
           }
-          if {$opt(update_drawing) < 1} {
+          if {$logcfg(update_drawing) < 1} {
             UpdateBndBox
           }
           set last_y $y
@@ -1167,7 +1165,7 @@ namespace eval ::logcanvas {
             ]
           }
         }
-        if {$opt(update_drawing) < 2} {
+        if {$logcfg(update_drawing) < 2} {
           UpdateBndBox
         }
         set new_y [expr {$y + $lbl_height($branch) + $curr(spcy)}]
@@ -1316,7 +1314,6 @@ namespace eval ::logcanvas {
         variable view_xoff
         variable view_yoff
         variable curr
-        variable opt
         variable rev_info
         variable scale
         variable font_norm
@@ -1346,13 +1343,6 @@ namespace eval ::logcanvas {
 
         catch {unset drawn_revs}
         catch {unset xyw}
-
-        # Collect the user options from the global set
-        set opt(update_drawing) $logcfg(update_drawing)
-        set opt(scale) $logcfg(scale)
-        foreach {key value} [array get logcfg show_*] {
-          set opt($key) $value
-        }
 
         catch { unset revwho }
         foreach a [array names $scope\::revwho] {
@@ -1422,31 +1412,31 @@ namespace eval ::logcanvas {
           # variables here.  But the proc they're evaluated in has to know
           # about them.
           set root_info {}
-          if {$opt(show_root_tags)} {
+          if {$logcfg(show_root_tags)} {
             append root_info {$revbtags($root_rev) }
           }
-          if {$opt(show_box_rev)} {
+          if {$logcfg(show_box_rev)} {
             if {$sys eq "CVS" || $sys eq "RCS"} {
               append root_info {$root_rev}
             }
           }
           set rev_info {}
-          if {$opt(show_box_revtime)} {
+          if {$logcfg(show_box_revtime)} {
             append rev_info {$revtime($revision) }
           }
-          if {$opt(show_box_revdate)} {
+          if {$logcfg(show_box_revdate)} {
             append rev_info {$revdate($revision) }
           }
-          if {$opt(show_box_revwho)} {
+          if {$logcfg(show_box_revwho)} {
             append rev_info {"$revwho($revision)" }
           }
-          if {$opt(show_box_rev)} {
+          if {$logcfg(show_box_rev)} {
             append rev_info {$revision}
           }
 
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
-          set my_size [expr {round($logcfg(font_size) * $opt(scale))}]
+          set my_size [expr {round($logcfg(font_size) * $logcfg(scale))}]
           set font_norm [font create \
             -family Helvetica -size $my_size]
           set font_norm_h [font metrics \
@@ -1457,18 +1447,18 @@ namespace eval ::logcanvas {
             $font_bold -displayof $logcanvas -linespace]
           # Scale the layout constants
           foreach x {spcx spcy yfudge boff} {
-            set curr($x) [expr {round($logcfg($x) * $font_norm_h * $opt(scale))}]
+            set curr($x) [expr {round($logcfg($x) * $font_norm_h * $logcfg(scale))}]
             if {$curr($x) < 1} {
               set curr($x) 1
             }
           }
           foreach x {padx pady tspcb width} {
-            set curr($x) [expr {round($logcfg($x) * $opt(scale))}]
+            set curr($x) [expr {round($logcfg($x) * $logcfg(scale))}]
             set curr($x,2) [expr {$curr($x) << 1}]
           }
           set curr(arrowshape) {}
           foreach x $logcfg(arrowshape) {
-            lappend curr(arrowshape) [expr {$x * $opt(scale)}]
+            lappend curr(arrowshape) [expr {$x * $logcfg(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
 
@@ -1547,7 +1537,7 @@ namespace eval ::logcanvas {
 
           gen_log:log D "fromtags: $fromtags"
           gen_log:log D "totags: $totags"
-          if {$opt(show_merges)} {
+          if {$logcfg(show_merges)} {
             # Draw merge arrows derived from tags
             foreach from $fromtags {
               gen_log:log D "  $from on $mrev($from)"
@@ -1628,11 +1618,10 @@ namespace eval ::logcanvas {
 
       proc SaveOptions {} {
         global logcfg
-        variable opt
         variable loc
 
         # Save the options to the global set
-        set logcfg(update_drawing) $opt(update_drawing)
+        set logcfg(update_drawing) $logcfg(update_drawing)
         foreach {key value} [array get opt] {
           gen_log:log D "logcfg($key) $value"
           set logcfg($key) $value
@@ -1807,12 +1796,6 @@ namespace eval ::logcanvas {
         }
       } ;# End of Search proc
 
-      # Collect the user options from the global set
-      set opt(update_drawing) $logcfg(update_drawing)
-      set opt(scale) $logcfg(scale)
-      foreach {key value} [array get logcfg show_*] {
-        set opt($key) $value
-      }
 
       toplevel $logcanvas
       wm title $logcanvas "TkCVS $cvscfg(version) -- $sys Log $filename"
@@ -1856,12 +1839,12 @@ namespace eval ::logcanvas {
       menu $logcanvas.menubar.view.branch
       $logcanvas.menubar.view.branch add command -label "Turn all options on" \
         -command [namespace code {
-          set opt(show_root_tags) 1
+          set logcfg(show_root_tags) 1
           DrawTree
         }]
       $logcanvas.menubar.view.branch add command -label "Turn all options off" \
         -command [namespace code {
-          set opt(show_root_tags) 0
+          set logcfg(show_root_tags) 0
           DrawTree
         }]
       $logcanvas.menubar.view.branch add separator
@@ -1874,20 +1857,20 @@ namespace eval ::logcanvas {
       menu $logcanvas.menubar.view.rev
       $logcanvas.menubar.view.rev add command -label "Turn all options on" \
         -command [namespace code {
-          set opt(show_tags) [\
-          set opt(show_box_rev) [\
-          set opt(show_box_revwho) [\
-          set opt(show_box_revdate) [\
-          set opt(show_box_revtime) 1]]]]
+          set logcfg(show_tags) [\
+          set logcfg(show_box_rev) [\
+          set logcfg(show_box_revwho) [\
+          set logcfg(show_box_revdate) [\
+          set logcfg(show_box_revtime) 1]]]]
           DrawTree
         }]
       $logcanvas.menubar.view.rev add command -label "Turn all options off" \
         -command [namespace code {
-          set opt(show_tags) [\
-          set opt(show_box_rev) [\
-          set opt(show_box_revwho) [\
-          set opt(show_box_revdate) [\
-          set opt(show_box_revtime) 0]]]]
+          set logcfg(show_tags) [\
+          set logcfg(show_box_rev) [\
+          set logcfg(show_box_revwho) [\
+          set logcfg(show_box_revdate) [\
+          set logcfg(show_box_revtime) 0]]]]
           DrawTree
         }]
       $logcanvas.menubar.view.rev add separator
