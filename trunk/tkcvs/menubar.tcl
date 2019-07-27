@@ -151,7 +151,7 @@ proc workdir_menus {topwin} {
   # GIT - create it now, but place it later
   menu $topwin.menubar.git
   $topwin.menubar.git add command -label "GiTk" \
-     -command {cvs_execcmd gitk [workdir_list_files]}
+     -command {cvs_execcmd gitk --all [workdir_list_files]}
   $topwin.menubar.git add separator
   $topwin.menubar.git add command -label "Checkout/Update" -underline 6 \
      -command {git_checkout [workdir_list_files]}
@@ -275,7 +275,7 @@ proc git_branch_menu {topwin files} {
   # gitk takes maximum one filename
   set file [lindex $files 0]
   $topwin.menubar.gitopts add command -label "GiTk" \
-     -command "cvs_execcmd gitk $file"
+     -command "cvs_execcmd gitk --all $file"
   $topwin.menubar.gitopts add separator
   $topwin.menubar.gitopts add cascade -label "Git log options" -menu [menu $topwin.menubar.gitopts.logopts]
   set all_gitlog_opts [list  "--first-parent" "--full-history" "--sparse" "--no-merges"]
