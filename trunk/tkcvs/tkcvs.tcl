@@ -169,7 +169,7 @@ if {$WSYS eq "x11"} {
     }
     # Put the Help menu back on the right
     tk::classic::restore menu
-    #set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
+    # canvbg is for the treeviews, not the branch browser canvas
     set cvsglb(canvbg) $cvsglb(shadow)
   } elseif [get_gtk_params] {
     set theme_system "GTK"
@@ -186,6 +186,7 @@ if {$WSYS eq "x11"} {
     # trick I use for CDE to give the canvases a little shading.
     set cvsglb(bg) [lindex [.testlbl cget -background] 0]
     set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+    # canvbg is for the treeviews, not the branch browser canvas
     set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   } else {
     set bg  [lindex [.testlbl cget -background] 0]
@@ -210,7 +211,7 @@ if {$WSYS eq "x11"} {
     option add *Entry.Foreground $textfg
     option add *Entry.selectBackground $hlbg
     option add *Entry.selectForeground $hlfg
-    option add *Entry.readonlyBackground $bg
+    option add *Entry.readonlyBackground $cvsglb(lighter)
     option add *Listbox.background $textbg
     option add *Listbox.selectBackground $hlbg
     option add *Listbox.selectForeground $hlfg
@@ -257,18 +258,19 @@ if {$WSYS eq "x11"} {
   set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
   set cvscfg(dialogfont) $cvscfg(guifont)
 
-  set cvsglb(canvbg) [lindex [.testlbl configure -background] 4]
   set cvsglb(bg) [lindex [.testlbl cget -background] 0]
   set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+  # canvbg is for the treeviews, not the branch browser canvas
   set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
   destroy .testlbl
   if {$WSYS eq "aqua"} {
     # Keep everything from being blinding white
     set arbitrarybg "#dddddd"
+    set lighterbg "#eeeeee"
     option add *Frame.background $arbitrarybg userDefault
     option add *Label.background $arbitrarybg userDefault
     option add *Entry.highlightBackground $arbitrarybg userDefault
-    option add *Entry.readonlyBackground "#eeeeee" userDefault
+    option add *Entry.readonlyBackground $lighterbg userDefault
     option add *Canvas.highlightBackground #fefefe userDefault
     option add *Message.Background $arbitrarybg userDefault
     option add *Checkbutton.Background $arbitrarybg userDefault
@@ -276,7 +278,8 @@ if {$WSYS eq "x11"} {
     # button highlightbackground has to be the same as background
     # or else there are little white boxes around the button "pill"
     option add *Button.highlightBackground $arbitrarybg userDefault
-    set cvsglb(canvbg) "#eeeeee"
+    # canvbg is for the treeviews, not the branch browser canvas
+    set cvsglb(canvbg) $lighterbg
   }
 }
 
