@@ -434,5 +434,7 @@ proc about_menus {aboutmenu} {
   $aboutmenu add separator
   $aboutmenu add command -label "Preferences" \
      -command {prefdialog}
+  $aboutmenu add command -label Exit -underline 1 \
+     -command { exit_cleanup 1 }
 }
 
