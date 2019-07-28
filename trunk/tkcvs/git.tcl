@@ -1451,15 +1451,15 @@ namespace eval ::git_branchlog {
               set trunk_found 1
             }
           }
-          if {! $trunk_found} {
-            foreach t $fam_branches {
-              if {$t in $current_branches} {
-                gen_log:log D "Found $t in Current branches"
-                set fam_trunk($f) $t
-                set trunk_found 1
-              }
-            }
-          }
+          #if {! $trunk_found} {
+            #foreach t $fam_branches {
+              #if {$t in $current_branches} {
+                #gen_log:log D "Found $t in Current branches"
+                #set fam_trunk($f) $t
+                #set trunk_found 1
+              #}
+            #}
+          #}
           if {! $trunk_found} {
             if {[llength $fam_branches] > 0} {
               set fam_trunk($f) [lindex $fam_branches 0]
