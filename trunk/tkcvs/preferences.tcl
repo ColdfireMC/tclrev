@@ -80,6 +80,8 @@ proc prefs_diagram {w} {
   frame $w.logcanv.layout
   checkbutton $w.logcanv.layout.showtags -text "Show Tags" \
     -variable logcfg(show_tags) -onvalue 1 -offvalue 0
+  checkbutton $w.logcanv.layout.showbranches -text "Show Branches" \
+    -variable logcfg(show_branches) -onvalue 1 -offvalue 0
   checkbutton $w.logcanv.layout.showempty -text "Show Empty Branches" \
     -variable logcfg(show_empty_branches) -onvalue 1 -offvalue 0
   checkbutton $w.logcanv.layout.showintermed -text "Show Intermediate Revisions" \
@@ -90,9 +92,10 @@ proc prefs_diagram {w} {
   pack $w.logcanv.layout -side top -fill x
   grid columnconf $w.logcanv.layout 1 -weight 1
   grid $w.logcanv.layout.showtags -sticky w -column 0 -row 0 -columnspan 2
-  grid $w.logcanv.layout.showempty -sticky w -column 0 -row 1 -columnspan 2
-  grid $w.logcanv.layout.showintermed -sticky w -column 0 -row 2 -columnspan 2
-  grid $w.logcanv.layout.showmerg -sticky w -column 0 -row 3 -columnspan 2
+  grid $w.logcanv.layout.showbranches -sticky w -column 0 -row 1 -columnspan 2
+  grid $w.logcanv.layout.showempty -sticky w -column 0 -row 2 -columnspan 2
+  grid $w.logcanv.layout.showintermed -sticky w -column 0 -row 3 -columnspan 2
+  grid $w.logcanv.layout.showmerg -sticky w -column 0 -row 4 -columnspan 2
 
   ttk::separator $w.logcanv.sep1
   pack $w.logcanv.sep1 -side top -fill x -pady 3

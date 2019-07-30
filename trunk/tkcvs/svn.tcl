@@ -1426,8 +1426,6 @@ namespace eval ::svn_branchlog {
       variable revbranches
       variable branchrevs
       variable logstate
-      variable show_tags
-      variable show_merges
 
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
@@ -1437,7 +1435,6 @@ namespace eval ::svn_branchlog {
       }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-      set show_tags $logcfg(show_tags)
 
       # Implementation of Perl-like "grep {/re/} in_list"
       proc grep_filter { re in_list } {
@@ -1485,8 +1482,6 @@ namespace eval ::svn_branchlog {
         variable logstate
         variable relpath
         variable filename
-        variable show_tags
-        variable show_merges
 
         gen_log:log T "ENTER"
         catch { $lc.canvas delete all }
@@ -1513,8 +1508,6 @@ namespace eval ::svn_branchlog {
         set path "$cvscfg(url)/$safe_filename"
         $ln\::ConfigureButtons $filename
 
-        set show_merges $logcfg(show_merges)
-        set show_tags $logcfg(show_tags)
 
         # Find out where to put the working revision icon (if anywhere)
         set current_revnum [set $ln\::current_revnum]
@@ -1649,88 +1642,90 @@ namespace eval ::svn_branchlog {
         # so we look for a trailing slash
         set branches [grep_filter {/$} $branches]
 
-        foreach branch $branches {
-          set branch [string trimright $branch "/"]
-          gen_log:log D "========= $branch =========="
-          # Draw something on the canvas so the user knows we're working
-          $lc.canvas create text $cnv_x $cnv_y -text $branch -tags {temporary} -fill $cvscfg(colourB)
-          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
-          $lc.canvas yview moveto 1
-          incr cnv_y $yspc
-          update
-          # Can't use file join or it will mess up the URL
-          if { $relpath == {} } {
-            set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$safe_filename"
-          } else {
-            set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
-          }
-          # Do stop-on-copy to find the base of the branch
-          set command "svn log -g"
-          append command " --stop-on-copy $path"
-          set cmd_log [exec::new $command {} 0 {} 1]
-          set log_output [$cmd_log\::output]
-          $cmd_log\::destroy
-          if {$log_output == ""} {
-            continue
-          }
-          set loglines [split $log_output "\n"]
-          set rb [parse_svnlog $loglines $branch]
-          gen_log:log D "$branch: BASE $rb"
-          set branchroot($branch) $rb
-          # See if the current revision is on this branch
-          set curr 0
-          set brevs $branchrevs($branch)
-          set tip [lindex $brevs 0]
-          set revpath($tip) $path
-          set revkind($tip) "revision"
-          set brevs [lreplace $brevs 0 0]
-          if {$tip == $current_revnum} {
-            # If current is at end of the branch do this.
-            set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
-            set curr 1
-          }
-          foreach r $brevs {
-            if {$r == $current_revnum} {
-              # We need to make a new artificial branch off of $r
-              lappend revbranches($r) {current}
+        if {$logcfg(show_branches)} {
+          foreach branch $branches {
+            set branch [string trimright $branch "/"]
+            gen_log:log D "========= $branch =========="
+            # Draw something on the canvas so the user knows we're working
+            $lc.canvas create text $cnv_x $cnv_y -text $branch -tags {temporary} -fill $cvscfg(colourB)
+            $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
+            $lc.canvas yview moveto 1
+            incr cnv_y $yspc
+            update
+            # Can't use file join or it will mess up the URL
+            if { $relpath == {} } {
+              set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$safe_filename"
+            } else {
+              set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
             }
-            gen_log:log D "  $r $revdate($r) ($revcomment($r))"
-            set revkind($r) "revision"
-            set revpath($r) $path
-          }
-          set branchrevs($rb) $branchrevs($branch)
-          set revkind($rb) "branch"
-          # build a list of all branches so we can make sure each branch is on
-          # a revbranch list so there will be a full set of branches on diagram
-          lappend branchlist $rb
-          lappend revbtags($rb) $branch
-          set revpath($rb) $path
+            # Do stop-on-copy to find the base of the branch
+            set command "svn log -g"
+            append command " --stop-on-copy $path"
+            set cmd_log [exec::new $command {} 0 {} 1]
+            set log_output [$cmd_log\::output]
+            $cmd_log\::destroy
+            if {$log_output == ""} {
+              continue
+            }
+            set loglines [split $log_output "\n"]
+            set rb [parse_svnlog $loglines $branch]
+            gen_log:log D "$branch: BASE $rb"
+            set branchroot($branch) $rb
+            # See if the current revision is on this branch
+            set curr 0
+            set brevs $branchrevs($branch)
+            set tip [lindex $brevs 0]
+            set revpath($tip) $path
+            set revkind($tip) "revision"
+            set brevs [lreplace $brevs 0 0]
+            if {$tip == $current_revnum} {
+              # If current is at end of the branch do this.
+              set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
+              set curr 1
+            }
+            foreach r $brevs {
+              if {$r == $current_revnum} {
+                # We need to make a new artificial branch off of $r
+                lappend revbranches($r) {current}
+              }
+              gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+              set revkind($r) "revision"
+              set revpath($r) $path
+            }
+            set branchrevs($rb) $branchrevs($branch)
+            set revkind($rb) "branch"
+            # build a list of all branches so we can make sure each branch is on
+            # a revbranch list so there will be a full set of branches on diagram
+            lappend branchlist $rb
+            lappend revbtags($rb) $branch
+            set revpath($rb) $path
 
-          set command "svn log -q -g $path"
-          set cmd_log [exec::new $command {} 0 {} 1]
-          set log_output [$cmd_log\::output]
-          $cmd_log\::destroy
-          if {$log_output == ""} {
-            cvsfail "$command returned no output"
-            return
-          }
-          set loglines [split $log_output "\n"]
-          parse_q $loglines $branch
+            set command "svn log -q -g $path"
+            set cmd_log [exec::new $command {} 0 {} 1]
+            set log_output [$cmd_log\::output]
+            $cmd_log\::destroy
+            if {$log_output == ""} {
+              cvsfail "$command returned no output"
+              return
+            }
+            set loglines [split $log_output "\n"]
+            parse_q $loglines $branch
 
-          # Deduce the parent of the branch by finding the last member of the
-          # long list that's not in the stop-on-copy list
-          set search_list [lreverse $allrevs($branch)]
-          set idx [lsearch $search_list $rb]
-          set bp [lindex $search_list $idx-1]
-          if {$bp < 0} {
-            gen_log:log D "$branch is EMPTY"
-            continue
-          }
-          gen_log:log D " PARENT for $branch: $bp"
-          set revparent($rb) $bp
-          lappend revbranches($bp) $rb
-          gen_log:log D "===== finished $branch ======"
-        } ;# Finished branches
+            # Deduce the parent of the branch by finding the last member of the
+            # long list that's not in the stop-on-copy list
+            set search_list [lreverse $allrevs($branch)]
+            set idx [lsearch $search_list $rb]
+            set bp [lindex $search_list $idx-1]
+            if {$bp < 0} {
+              gen_log:log D "$branch is EMPTY"
+              continue
+            }
+            gen_log:log D " PARENT for $branch: $bp"
+            set revparent($rb) $bp
+            lappend revbranches($bp) $rb
+            gen_log:log D "===== finished $branch ======"
+          } ;# Finished branches
+        }
 
         # In Subversion, it takes a long toime to gather the tags, so we draw the
         # branches and keep going
@@ -1797,7 +1792,7 @@ namespace eval ::svn_branchlog {
 
         # Tags
         # Get a list of the tags from the repository
-        if {$show_tags} {
+        if {$logcfg(show_tags)} {
           busy_start $lc
           set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
           set cmd_log [exec::new $command {} 0 {} 1]

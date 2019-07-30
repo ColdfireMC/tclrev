@@ -1821,6 +1821,16 @@ namespace eval ::logcanvas {
         -menu $logcanvas.menubar.view.tree
       menu $logcanvas.menubar.view.tree
       $logcanvas.menubar.view.tree add checkbutton -label \
+        "Show tags" \
+        -variable logcfg(show_tags) \
+        -onvalue 1 -offvalue 0 \
+        -command [namespace code { DrawTree }]
+      $logcanvas.menubar.view.tree add checkbutton -label \
+        "Show branches" \
+        -variable logcfg(show_branches) \
+        -onvalue 1 -offvalue 0 \
+        -command [namespace code { DrawTree }]
+      $logcanvas.menubar.view.tree add checkbutton -label \
         "Show empty branches" \
         -variable logcfg(show_empty_branches) \
         -onvalue 1 -offvalue 0 \
@@ -1858,27 +1868,25 @@ namespace eval ::logcanvas {
       menu $logcanvas.menubar.view.rev
       $logcanvas.menubar.view.rev add command -label "Turn all options on" \
         -command [namespace code {
-          set logcfg(show_tags) [\
-          set logcfg(show_box_rev) [\
-          set logcfg(show_box_revwho) [\
-          set logcfg(show_box_revdate) [\
-          set logcfg(show_box_revtime) 1]]]]
+          set logcfg(show_tags) 1
+          set logcfg(show_branches) 1
+          set logcfg(show_box_rev) 1
+          set logcfg(show_box_revwho) 1
+          set logcfg(show_box_revdate) 1
+          set logcfg(show_box_revtime) 1
           DrawTree
         }]
       $logcanvas.menubar.view.rev add command -label "Turn all options off" \
         -command [namespace code {
-          set logcfg(show_tags) [\
-          set logcfg(show_box_rev) [\
-          set logcfg(show_box_revwho) [\
-          set logcfg(show_box_revdate) [\
-          set logcfg(show_box_revtime) 0]]]]
+          set logcfg(show_tags) 0
+          set logcfg(show_branches) 0
+          set logcfg(show_box_rev) 0
+          set logcfg(show_box_revwho) 0
+          set logcfg(show_box_revdate) 0
+          set logcfg(show_box_revtime) 0
           DrawTree
         }]
       $logcanvas.menubar.view.rev add separator
-      $logcanvas.menubar.view.rev add checkbutton -label "Show tags" \
-        -variable logcfg(show_tags) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show revision" \
         -variable logcfg(show_box_rev) \
         -onvalue 1 -offvalue 0 \

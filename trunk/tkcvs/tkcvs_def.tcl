@@ -174,6 +174,7 @@ set logcfg(scaling_options) {50% 0.5 80% 0.8 90% 0.9 100% 1.0 120% 1.2 150% 1.5}
 set logcfg(update_drawing) 2
 set logcfg(scale) 1.0
 set logcfg(show_tags) 1
+set logcfg(show_branches) 1
 set logcfg(show_merges) 1
 set logcfg(show_empty_branches) 1
 set logcfg(show_inter_revs) 1

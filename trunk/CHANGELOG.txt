@@ -1,3 +1,9 @@
+Release 9.1.7 July, 2019
+
+- Implement logcfg(show_branches) so that if a diagram without branches is
+  desired, time isn't spent getting them. This works in CVS, SVN, and GIT.
+
+
 Release 9.1.6 July, 2019
 
 - Change behavior of cvscfg(toomany_tags) for Subversion. Instead of all-or-nothing,
