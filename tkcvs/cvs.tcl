@@ -1235,14 +1235,14 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
 # so we can't do operations such as merges.
 proc cvs_filelog {filename parent {graphic {0}} } {
   global cvs
-  global cvscfg
+  global cvsglb
   global cwd
   
   gen_log:log T "ENTER ($filename $parent $graphic)"
   set pid [pid]
   set filetail [file tail $filename]
   
-  set commandline "$cvs -d $cvscfg(cvsroot) checkout \"$filename\""
+  set commandline "$cvs -d $cvsglb(root) checkout \"$filename\""
   gen_log:log C "$commandline"
   set ret [cvs_sandbox_runcmd "$commandline" cmd_output]
   if {$ret == $cwd} {
@@ -1256,7 +1256,7 @@ proc cvs_filelog {filename parent {graphic {0}} } {
   # Log canvas viewer
     ::cvs_branchlog::new "CVS,rep" $filename
   } else {
-    set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
+    set commandline "$cvs -d $cvsglb(root) log \"$filename\""
     set logcmd [viewer::new "CVS log $filename"]
     $logcmd\::do "$commandline" 0 hilight_rcslog
     $logcmd\::wait
@@ -2057,7 +2057,8 @@ proc cvs_lock {do files} {
 }
 
 # Sends directory "." to the directory-merge tool
-# Find the bushiest file in the directory and diagram it
+# Find the bushiest file in the directory and diagram it.
+# Called from the workdir browser
 proc cvs_directory_merge {} {
   global cvscfg
   global cvsglb
@@ -2154,7 +2155,10 @@ namespace eval ::cvs_branchlog {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set how [uplevel {concat $how}]
-      global logcfg
+      #global cvsglb
+      #global logcfg
+      #global cvs
+      variable filename
       variable command
       variable cmd_log
       variable lc
@@ -2169,6 +2173,8 @@ namespace eval ::cvs_branchlog {
       variable revbranches
       variable branchrevs
       variable logstate
+      variable sys
+      variable loc
       variable cwd
 
       gen_log:log T "ENTER [namespace current]"
@@ -2177,29 +2183,22 @@ namespace eval ::cvs_branchlog {
       set loc [lindex $sys_loc 1]
 
       switch -- $sys {
+        # loc is "loc" (local, i.e. workdir), "rep" (repository), or "dir" (mergecanvas)
         CVS {
-          set command "cvs log \"$filename\""
-          if {$loc == "dir"} {
+          if {$loc eq "dir"} {
+            # Invoking the mergecanvas
             set newlc [mergecanvas::new $filename $how [namespace current]]
-            # ln is the namespace, lc is the canvas
-            set ln [lindex $newlc 0]
-            set lc [lindex $newlc 1]
-            set show_tags 0
           } else {
             set newlc [logcanvas::new $filename $how [namespace current]]
-            set ln [lindex $newlc 0]
-            set lc [lindex $newlc 1]
-            set show_tags $logcfg(show_tags)
           }
         }
         RCS {
-          set command "rlog \"$filename\""
           set newlc [logcanvas::new $filename "RCS,loc" [namespace current]]
-          set ln [lindex $newlc 0]
-          set lc [lindex $newlc 1]
-          set show_tags $logcfg(show_tags)
         }
       }
+      # ln is the namespace, lc is the canvas
+      set ln [lindex $newlc 0]
+      set lc [lindex $newlc 1]
 
       proc abortLog { } {
         global cvscfg
@@ -2214,6 +2213,10 @@ namespace eval ::cvs_branchlog {
       }
 
       proc reloadLog { } {
+        global cvs
+        global logcfg
+        global cvsglb
+        variable filename
         variable command
         variable cmd_log
         variable lc
@@ -2229,6 +2232,8 @@ namespace eval ::cvs_branchlog {
         variable revbranches
         variable branchrevs
         variable logstate
+        variable sys
+        variable loc
 
         gen_log:log T "ENTER"
         catch { $lc.canvas delete all }
@@ -2244,6 +2249,31 @@ namespace eval ::cvs_branchlog {
         catch { unset revbranches }
         catch { unset branchrevs }
         set cwd [pwd]
+
+        switch -- $sys {
+          # loc is "loc" (local, i.e. workdir), "rep" (repository), or "dir" (mergecanvas)
+          CVS {
+            if {$loc eq "dir"} {
+              set command "$cvs log \"$filename\""
+            } else {
+              set command "$cvs "
+              if {$loc eq "rep"} {
+                append command " -d $cvsglb(root) "
+                # FIXME: Refresh won't work in the temp sandbox so for now
+                # disable the button
+                $lc.refresh configure -state disabled
+              }
+              append command " log"
+              if {! $logcfg(show_branches)} {
+                append command " -b"
+              }
+            }
+            append command " \"$filename\""
+          }
+          RCS {
+            set command "rlog \"$filename\""
+          }
+        }
 
         pack forget $lc.close
         pack $lc.stop -in $lc.down.closefm -side right
@@ -2273,6 +2303,7 @@ namespace eval ::cvs_branchlog {
         global module_dir
         global inrcs
         global cvsglb
+        global logcfg
         variable filename
         variable lc
         variable ln
@@ -2340,13 +2371,15 @@ namespace eval ::cvs_branchlog {
                 }
                 if {[lindex $parts end-1] == 0} {
                   # Branch tag
-                  set rnum [join [lreplace $parts end-1 end-1] {.}]
-                  set revkind($rnum) "branch"
-                  set revbranch($tagstring) $rnum
-                  set rbranch [join [lrange $parts 0 end-2] {.}]
-                  set rootbranch($tagstring) $rbranch
-                  lappend revbtags($rnum) $tagstring
-                  lappend revbranches($rbranch) $rnum
+                  if {$logcfg(show_branches)} {
+                    set rnum [join [lreplace $parts end-1 end-1] {.}]
+                    set revkind($rnum) "branch"
+                    set revbranch($tagstring) $rnum
+                    set rbranch [join [lrange $parts 0 end-2] {.}]
+                    set rootbranch($tagstring) $rbranch
+                    lappend revbtags($rnum) $tagstring
+                    lappend revbranches($rbranch) $rnum
+                  }
                 } else {
                   # Ordinary symbolic tag
                   lappend revtags($rnum) $tagstring
@@ -2359,8 +2392,10 @@ namespace eval ::cvs_branchlog {
                     # at all.
                     lappend branchrevs(trunk) $rnum
                   } else {
-                    set rbranch [join [lrange $parts 0 end-1] {.}]
-                    lappend branchrevs($rbranch) $rnum
+                    if {$logcfg(show_branches)} {
+                      set rbranch [join [lrange $parts 0 end-1] {.}]
+                      lappend branchrevs($rbranch) $rnum
+                    }
                   }
                   # Branches for this revision may have already been created
                   # during tag parsing

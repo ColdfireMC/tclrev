@@ -1002,8 +1002,6 @@ namespace eval ::git_branchlog {
       variable revbranches
       variable branchrevs
       variable logstate
-      variable show_tags
-      variable show_merges
 
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
@@ -1013,7 +1011,6 @@ namespace eval ::git_branchlog {
       }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-      set show_tags $logcfg(show_tags)
 
       proc abortLog { } {
         global cvscfg
@@ -1064,8 +1061,6 @@ namespace eval ::git_branchlog {
         variable logstate
         variable relpath
         variable filename
-        variable show_tags
-        variable show_merges
 
         gen_log:log T "ENTER"
         catch { $lc.canvas delete all }
@@ -1114,11 +1109,6 @@ namespace eval ::git_branchlog {
         set current_revnum [set $ln\::current_revnum]
         gen_log:log D "current_revnum $current_revnum"
 
-        set show_merges $logcfg(show_merges)
-        set show_tags $logcfg(show_tags)
-        set show_merges 0
-        set show_tags 0
-
         # Start collecting the branches
         catch {unset branches}
         catch {unset logged_branches}
@@ -1143,7 +1133,19 @@ namespace eval ::git_branchlog {
         # Gets all the commit information at once, including the branch, tag,
         # merge, and parent information. Doesn't necessarily pick up all of the
         # locally reachable branches
-        set command "git log --all -$cvscfg(gitmaxhist) --abbrev-commit --topo-order $cvscfg(gitlog_opts) --parents --date=iso --tags --decorate=short --no-color -- \"$filename\""
+        set command "git log --all"
+        #if {$logcfg(show_branches)} {
+          #append commnd " --all"
+        #}
+        if {$logcfg(show_tags)} {
+          append commnd " --tags"
+        }
+        if {$logcfg(show_tags) || $logcfg(show_branches)} {
+          append command " --decorate=short"
+        } else {
+          append command " --no-decorate"
+        }
+        append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --topo-order $cvscfg(gitlog_opts) --date=iso --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1170,123 +1172,134 @@ namespace eval ::git_branchlog {
           set logged_branches [prune_branchlist $logged_branches]
         }
 
-        # This gets all the locally reachable branches. We only use all of them if asked,
-        # but their order is important. Also if "master" is in there, we want it.
-        set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
-        set branch_lines [split [$cmd(git_branch)\::output] "\n"]
-        # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
-        # but we can just filter it out
-        foreach line $branch_lines {
-          if {[string length $line] < 1} continue
-          if {[regexp {detached} $line]} continue
-          lappend local_branches [lindex $line 0]
-        }
-        catch {unset branch_lines}
-
-        # We always want the current branch, though
-        if {($current_tagname != "") && ($current_tagname ni $logged_branches)} {
-          lappend logged_branches $current_tagname
-        }
-        if {("master" in $local_branches) && ("master" ni $logged_branches)} {
-           lappend logged_branches {master}
-        }
-        set logged_branches [lreverse $logged_branches]
-
-        # Don't get the remote branches unless asked to
-        if { [regexp {R} $cvscfg(gitbranchgroups)] } {
-          set cmd(git_rbranch) [exec::new "git branch -r --format=%(refname:short)"]
-          set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
+        if {$logcfg(show_branches)} {
+          # This gets all the locally reachable branches. We only use all of them if asked,
+          # but their order is important. Also if "master" is in there, we want it.
+          set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
+          set branch_lines [split [$cmd(git_branch)\::output] "\n"]
+          # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
+          # but we can just filter it out
           foreach line $branch_lines {
             if {[string length $line] < 1} continue
-            if {[string match {*/HEAD} $line]} continue
-            lappend remote_branches [lindex $line 0]
+            if {[regexp {detached} $line]} continue
+            lappend local_branches [lindex $line 0]
           }
           catch {unset branch_lines}
-        }
-        if {![info exists logged_branches]} { set logged_branches {} }
-        if {![info exists local_branches]} { set local_branches {} }
-        if {![info exists remote_branches]} { set remote_branches {} }
-        gen_log:log D "File-log branches ([llength $logged_branches]): $logged_branches"
-        gen_log:log D "Local branches ([llength $local_branches]):    $local_branches"
-        gen_log:log D "Remote branches ([llength $remote_branches]):   $remote_branches"
 
-        # Collect and de-duplicate the branch list
-        # First, add the logged branches. We always need those, you can't opt out
-        set branches $logged_branches
-        # The local branch list usually preserves the order the best. So 
-        # we try to preserve that order when we blend them, even if we don't add ones
-        # that aren't already in the logged branches
-        set ovlp_list ""
-        set fb_only ""
-        set lb_only ""
-        if {[llength $local_branches] > 0} {
-          foreach lb $local_branches {
-            if {$lb in $logged_branches} {
-              lappend ovlp_list $lb
-            } else {
-              lappend lb_only $lb
-            }
+          # We always want the current branch, though
+          if {($current_tagname != "") && ($current_tagname ni $logged_branches)} {
+            lappend logged_branches $current_tagname
           }
-          foreach fb $logged_branches {
-            if {$fb ni $local_branches} {
-              lappend fb_only $fb
-            }
+          if {("master" in $local_branches) && ("master" ni $logged_branches)} {
+             lappend logged_branches {master}
           }
-        }
-        # Then add the local branches that weren't in the logged branches, if desired
-        if { [regexp {L|R} $cvscfg(gitbranchgroups)] } {
-          set branches [concat $ovlp_list $fb_only $lb_only ]
-        } else {
-          set branches [concat $ovlp_list $fb_only ]
-        }
-        # Then add the remote branches, if desired
-        if { [regexp {R} $cvscfg(gitbranchgroups)] } {
-          foreach remb $remote_branches {
-            if {$remb ni $branches} {
-              lappend branches $remb
-            }
-          }
-        }
-        set branches [lrange $branches 0 $cvscfg(gitmaxbranch)]
-        set branches [prune_branchlist $branches]
-        catch {unset logged_branches}
-        catch {unset local_branches}
-        
-        gen_log:log D "Overlap:    $ovlp_list"
-        gen_log:log D "File only:  $fb_only"
-        gen_log:log D "Local only: $lb_only"
-        gen_log:log D "Combined branches ([llength $branches]): $branches"
+          set logged_branches [lreverse $logged_branches]
 
-        # De-duplicate the tags, while we're thinking of it.
-        foreach a [array names revtags] {
-          if {[llength $revtags($a)] > 1} {
-            set revtags($a) [prune_branchlist $revtags($a)]
+          # Don't get the remote branches unless asked to
+          if { [regexp {R} $cvscfg(gitbranchgroups)] } {
+            set cmd(git_rbranch) [exec::new "git branch -r --format=%(refname:short)"]
+            set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
+            foreach line $branch_lines {
+              if {[string length $line] < 1} continue
+              if {[string match {*/HEAD} $line]} continue
+              lappend remote_branches [lindex $line 0]
+            }
+            catch {unset branch_lines}
           }
-        }
+          if {![info exists logged_branches]} { set logged_branches {} }
+          if {![info exists local_branches]} { set local_branches {} }
+          if {![info exists remote_branches]} { set remote_branches {} }
+          gen_log:log D "File-log branches ([llength $logged_branches]): $logged_branches"
+          gen_log:log D "Local branches ([llength $local_branches]):    $local_branches"
+          gen_log:log D "Remote branches ([llength $remote_branches]):   $remote_branches"
 
-        # Filter the branches
-        set filtered_branches ""
-        if {$cvscfg(gitbranchregex) ne ""} {
-          gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
-          foreach b $branches {
-            gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
-            if {[catch { regexp "$cvscfg(gitbranchregex)" $b} reg_out]} {
-              gen_log:log E "$reg_out"
-              cvsfail "$reg_out"
-              break
-            } else {
-              if {$reg_out} {
-                lappend filtered_branches $b
+          # Collect and de-duplicate the branch list
+          # First, add the logged branches. We always need those, you can't opt out
+          set branches $logged_branches
+          # The local branch list usually preserves the order the best. So 
+          # we try to preserve that order when we blend them, even if we don't add ones
+          # that aren't already in the logged branches
+          set ovlp_list ""
+          set fb_only ""
+          set lb_only ""
+          if {[llength $local_branches] > 0} {
+            foreach lb $local_branches {
+              if {$lb in $logged_branches} {
+                lappend ovlp_list $lb
+              } else {
+                lappend lb_only $lb
+              }
+            }
+            foreach fb $logged_branches {
+              if {$fb ni $local_branches} {
+                lappend fb_only $fb
               }
             }
           }
-          if {[llength $filtered_branches] < 1} {
-            gen_log:log E "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
-            #cvsfail "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
+          # Then add the local branches that weren't in the logged branches, if desired
+          if { [regexp {L|R} $cvscfg(gitbranchgroups)] } {
+            set branches [concat $ovlp_list $fb_only $lb_only ]
           } else {
-            gen_log:log D "Filtered branches: $filtered_branches"
-            set branches $filtered_branches
+            set branches [concat $ovlp_list $fb_only ]
           }
+          # Then add the remote branches, if desired
+          if { [regexp {R} $cvscfg(gitbranchgroups)] } {
+            foreach remb $remote_branches {
+              if {$remb ni $branches} {
+                lappend branches $remb
+              }
+            }
+          }
+          set branches [lrange $branches 0 $cvscfg(gitmaxbranch)]
+          set branches [prune_branchlist $branches]
+          catch {unset logged_branches}
+          catch {unset local_branches}
+        
+          gen_log:log D "Overlap:    $ovlp_list"
+          gen_log:log D "File only:  $fb_only"
+          gen_log:log D "Local only: $lb_only"
+          gen_log:log D "Combined branches ([llength $branches]): $branches"
+
+          # De-duplicate the tags, while we're thinking of it.
+          foreach a [array names revtags] {
+            if {[llength $revtags($a)] > 1} {
+              set revtags($a) [prune_branchlist $revtags($a)]
+            }
+          }
+
+          # Filter the branches
+          set filtered_branches ""
+          if {$cvscfg(gitbranchregex) ne ""} {
+            gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
+            foreach b $branches {
+              gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
+              if {[catch { regexp "$cvscfg(gitbranchregex)" $b} reg_out]} {
+                gen_log:log E "$reg_out"
+                cvsfail "$reg_out"
+                break
+              } else {
+                if {$reg_out} {
+                  lappend filtered_branches $b
+                }
+              }
+            }
+            if {[llength $filtered_branches] < 1} {
+              gen_log:log E "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
+              #cvsfail "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
+            } else {
+              gen_log:log D "Filtered branches: $filtered_branches"
+              set branches $filtered_branches
+            }
+          }
+        } else {
+          set branches $current_tagname
+          set current_branches $current_tagname
+          set trunk $current_tagname
+          set trunks $current_tagname
+          set branchrevs($trunk) $allrevs
+          set branchtip($trunk) [lindex $allrevs end]
+          set branchroot($trunk) [lindex $allrevs 0]
+          set branchrevs($branchroot($trunk)) $branchrevs($trunk)
         }
 
         # This is necessary to reset the view after clearing the canvas

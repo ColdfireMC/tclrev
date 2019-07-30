@@ -363,7 +363,7 @@ proc modbrowse_run {} {
         set selection [.modbrowse.treeframe.pw selection]
         set modbrowse_title [string trimleft $selection "/"]
         set modbrowse_path $modbrowse_title
-        set modbrowse_module $selection
+        set modbrowse_module $modbrowse_path
       }
 
       # parse_cvsmodules will check out CVSROOT/modules and post what it finds
