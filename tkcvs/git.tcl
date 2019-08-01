@@ -359,7 +359,7 @@ proc git_log {detail args} {
       append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      append flags " --graph --all --format=%h\\ \\ %<(12,trunc)%aN\\ %<(54,trunc)%s\\ %d"
+      append flags " --graph --all --pretty=oneline"
     }
     verbose {
       append flags " --all"
@@ -520,7 +520,7 @@ proc git_log_rev {rev file} {
 
   gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
-  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %<(12,trunc)%aN\\ %<(54,trunc)%s\\ %d"
+  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s%n\\%d"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -528,9 +528,10 @@ proc git_log_rev {rev file} {
   append commandline " \"$file\""
   append title " $file"
 
-  set v [viewer::new "$title"]
-  $v\::do "$commandline" 0
-  $v\::width 120
+  set v_log [viewer::new "$title"]
+  $v_log\::width 120
+  $v_log\::do $commandline 1 truncate_git_graph
+  $v_log\::wait
 
   gen_log:log T "LEAVE"
 }
@@ -1175,13 +1176,14 @@ namespace eval ::git_branchlog {
         if {$logcfg(show_branches)} {
           # This gets all the locally reachable branches. We only use all of them if asked,
           # but their order is important. Also if "master" is in there, we want it.
-          set cmd(git_branch) [exec::new "git branch --format=%(refname:short)"]
+          set cmd(git_branch) [exec::new "git branch --no-color"]
           set branch_lines [split [$cmd(git_branch)\::output] "\n"]
           # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
           # but we can just filter it out
           foreach line $branch_lines {
             if {[string length $line] < 1} continue
             if {[regexp {detached} $line]} continue
+            regsub {\*\s+} $line {} line
             lappend local_branches [lindex $line 0]
           }
           catch {unset branch_lines}
@@ -1197,7 +1199,7 @@ namespace eval ::git_branchlog {
 
           # Don't get the remote branches unless asked to
           if { [regexp {R} $cvscfg(gitbranchgroups)] } {
-            set cmd(git_rbranch) [exec::new "git branch -r --format=%(refname:short)"]
+            set cmd(git_rbranch) [exec::new "git branch -r"]
             set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
             foreach line $branch_lines {
               if {[string length $line] < 1} continue
@@ -1333,7 +1335,7 @@ namespace eval ::git_branchlog {
           set since_time $revdate($oldest_rev)
           set seconds [clock scan $since_time -gmt yes]
           set since_minus_an_hour [clock add $seconds -1 hour]
-          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) --since $since_minus_an_hour $br -- \"$filename\""
+          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_minus_an_hour $br -- \"$filename\""
           set cmd_revlist [exec::new $command {} 0 {} 1]
           set revlist_output [$cmd_revlist\::output]
           $cmd_revlist\::destroy

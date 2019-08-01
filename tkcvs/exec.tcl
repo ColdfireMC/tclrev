@@ -153,7 +153,7 @@ namespace eval ::exec {
         }
         if {$filter ne ""} {
           if {$texttag != "noshow"} {
-            $v_w.text insert end "$line\n" $texttag
+            $v_w.text insert end "$line" $texttag
           }
         } else {
           # disable until (1;32m) type codes are fixed
@@ -506,7 +506,7 @@ proc status_colortags {exec line} {
       default { set tag default }
     }
   #gen_log:log T "LEAVE: $tag"
-  return [list $tag $line]
+  return [list $tag "$line\n"]
 }
 
 # A filter to colorize diff (patch) output
@@ -526,7 +526,7 @@ proc patch_colortags {exec line} {
     default          { set tag default }
   }
   #gen_log:log T "LEAVE: $tag"
-  return [list $tag $line]
+  return [list $tag "$line\n"]
 }
 
 # A filter to colorize an RCS log
@@ -540,9 +540,23 @@ proc hilight_rcslog {exec line} {
     set tag patched
   }
 
-  return [list $tag $line]
+  return [list $tag "$line\n"]
 }
 
+# A filter to truncate git log --graph output
+proc truncate_git_graph {exec line} {
+  gen_log:log D "$line"
+  if {[regexp {^[|\s]*$} $line]} {
+    return [list "" "\n"]
+  } elseif {[regsub {^[|\s]*\(} $line {(} l]} {
+    set out_line "   $l\n"
+    return [list "" $out_line]
+  } else {
+    # Truncate or pad the line
+    set out_line [string trimright [format "%-80s" $line] "\n"]
+    return [list "" $out_line]
+  }
+}
 
 # This is a plain viewer that prints whatever text is sent to it.
 # Called directly with input gathered from an eval exec, not exec::new

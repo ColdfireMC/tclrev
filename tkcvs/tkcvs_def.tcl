@@ -322,7 +322,7 @@ set cvscfg(log_classes) "CEF"
 # On (1) or off (0)
 set cvscfg(logging)    false
 # How many trace lines to save.  The debugging output can get very large.
-set cvscfg(trace_savelines) 5000
+set cvscfg(trace_savelines) 100000
 
 # In the Repository Browser, if true this will cause the alias modules
 # to be grouped in one folder.  Cleans up clutter if there are a lot of

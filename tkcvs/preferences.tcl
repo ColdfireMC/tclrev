@@ -102,7 +102,7 @@ proc prefs_diagram {w} {
 
   frame $w.logcanv.scale
   label $w.logcanv.scale.lspin -text "Scale"
-  ttk::spinbox $w.logcanv.scale.sspin -from .2 -to 1.5 -increment .1 \
+  spinbox $w.logcanv.scale.sspin -from .2 -to 1.5 -increment .1 \
     -textvariable logcfg(scale)
 
   pack  $w.logcanv.scale
