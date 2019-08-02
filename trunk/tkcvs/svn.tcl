@@ -1818,7 +1818,7 @@ namespace eval ::svn_branchlog {
             }
             # Do log with stop-on-copy to find the actual revision that was tagged.
             # The tag itself created a rev which may be much higher.
-            set command "svn log -g --stop-on-copy $path"
+            set command "svn log -g --limit 2 $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
@@ -1835,20 +1835,8 @@ namespace eval ::svn_branchlog {
             set revkind($rb) "tag"
             set revpath($rb) $path
 
-            # Now do log -q to find the previous rev, which is down
-            # the list.  For tags, it's only one down, so we can limit
-            # the log to 2.  It only speeds it up a little though.
-            set command "svn log -q --limit 2 $path"
-            set cmd_log [exec::new $command {} 0 {} 1]
-            set log_output [$cmd_log\::output]
-            $cmd_log\::destroy
-            if {$log_output == ""} {
-              cvsfail "$command returned no output"
-              return
-            }
-            set loglines [split $log_output "\n"]
-            parse_q $loglines $tag
-            set bp [lindex $allrevs($tag) [llength $branchrevs($tag)]]
+            # The branch parent
+            set bp [lindex $branchrevs($tag) end]
             lappend revtags($bp) $tag
             gen_log:log D "   revtags($bp) $revtags($bp)"
             update idletasks
