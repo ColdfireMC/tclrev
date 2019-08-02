@@ -520,7 +520,8 @@ proc git_log_rev {rev file} {
 
   gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
-  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s%n\\%d"
+  #set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s%n\\%d"
+  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
