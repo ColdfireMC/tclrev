@@ -545,16 +545,14 @@ proc hilight_rcslog {exec line} {
 
 # A filter to truncate git log --graph output
 proc truncate_git_graph {exec line} {
-  gen_log:log D "$line"
-  if {[regexp {^[|\s]*$} $line]} {
-    return [list "" "\n"]
-  } elseif {[regsub {^[|\s]*\(} $line {(} l]} {
-    set out_line "   $l\n"
-    return [list "" $out_line]
+  #gen_log:log D "$line"
+  if [regexp {^(.*DdDdD)(.*)} $line tmp diag tagbr] {
+    regsub {DdDdD$} $diag {} diag
+    set diag [format "%-74s" $diag]
+    return [list "" "$diag $tagbr\n"]
   } else {
-    # Truncate or pad the line
-    set out_line [string trimright [format "%-80s" $line] "\n"]
-    return [list "" $out_line]
+    #gen_log:log D " NO MATCH: $line"
+    return [list "" "$line\n"]
   }
 }
 
