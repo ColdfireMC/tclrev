@@ -1948,8 +1948,9 @@ namespace eval ::git_branchlog {
         }
         gen_log:log D " branchrevs($B) $branchrevs($B)"
 
-        lassign [list_comm $branchrevs($B) $branchrevs($A)] inBonly inBoth
+        lassign [list_comm $branchrevs($B) $branchrevs($A)] inAonly inBonly inBoth
         gen_log:log D " == ONLY IN $A: $inBonly"
+        gen_log:log D " == ONLY IN $B: $inAonly"
         if {$inBonly eq "IDENTICAL"} {
           gen_log:log D " BRANCHES $A and $B are IDENTICAL"
           set branchrevs($A) $branchrevs($B)
@@ -2006,41 +2007,6 @@ namespace eval ::git_branchlog {
             set family($old_base) [lreplace $family($old_base) $idx $idx]
             gen_log:log D " removing $old_base from family($old_base)"
           }
-
-          if {0} {
-          # Try the other order
-          lassign [list_comm $branchrevs($A) $branchrevs($B)] inBonly inBoth
-          gen_log:log D " == ONLY IN $B: $inBonly"
-          set branchrevs($B) $inBonly
-          set branchroot($B) [lindex $branchrevs($B) end]
-          set branchtip($B) [lindex $branchrevs($B) 0]
-          set new_base $branchroot($B)
-          set branchrevs($new_base) $inBonly
-          set fork [lindex $inBoth 0]
-          if {$fork eq ""} {
-            gen_log:log D " $B and $A are now non-overlapping"
-            return
-          }
-          gen_log:log D " NEW PARENT $fork and BASE $new_base of $B"
-          set branchparent($A) $fork
-          set old_base [lindex $inBoth end]
-          set revkind($new_base) "branch"
-          # Move revbtags
-          if {! [info exists revbtags($new_base)] || ($B ni $revbtags($new_base))} {
-            gen_log:log D "Adding $B to revbtags($new_base)"
-            lappend revbtags($new_base) $B
-          }
-          if [info exists revbtags($old_base)] {
-            #gen_log:log D " and removing it from old base $old_base"
-             set idx [lsearch $revbtags($old_base) $B]
-             set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
-          }
-          # Move revbranches
-          if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
-            gen_log:log D "Adding new BASE $new_base to PARENT revbranches($fork)"
-            lappend revbranches($fork) $new_base
-          }
-        }
         }
       }
 
@@ -2172,15 +2138,17 @@ proc list_comm {listA listB} {
         lappend inB $B
       }
     }
+    foreach A $listA {
+      if {$A ni $listB} {
+        lappend inA $A
+      }
+    }
   }
 
-  #gen_log:log D "in A only: $inA"
-  #gen_log:log D "in listB only: $inB"
-  #gen_log:log D "in Both:   $inBoth"
-
+  gen_log:log T "LEAVE A only: ([llength $inA]) $inA"
   gen_log:log T "LEAVE B only: ([llength $inB]) $inB"
   gen_log:log T "LEAVE in Both: ([llength $inBoth]) $inBoth"
-  return [list $inB $inBoth]
+  return [list $inA $inB $inBoth]
 }
 
 # We have both remote and local names of the same branch.

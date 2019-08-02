@@ -153,7 +153,7 @@ namespace eval ::exec {
         }
         if {$filter ne ""} {
           if {$texttag != "noshow"} {
-            $v_w.text insert end "$line" $texttag
+            $v_w.text insert end "$line\n" $texttag
           }
         } else {
           # disable until (1;32m) type codes are fixed
@@ -506,7 +506,7 @@ proc status_colortags {exec line} {
       default { set tag default }
     }
   #gen_log:log T "LEAVE: $tag"
-  return [list $tag "$line\n"]
+  return [list $tag "$line"]
 }
 
 # A filter to colorize diff (patch) output
@@ -526,7 +526,7 @@ proc patch_colortags {exec line} {
     default          { set tag default }
   }
   #gen_log:log T "LEAVE: $tag"
-  return [list $tag "$line\n"]
+  return [list $tag "$line"]
 }
 
 # A filter to colorize an RCS log
@@ -540,7 +540,7 @@ proc hilight_rcslog {exec line} {
     set tag patched
   }
 
-  return [list $tag "$line\n"]
+  return [list $tag "$line"]
 }
 
 # A filter to truncate git log --graph output
@@ -549,10 +549,10 @@ proc truncate_git_graph {exec line} {
   if [regexp {^(.*DdDdD)(.*)} $line tmp diag tagbr] {
     regsub {DdDdD$} $diag {} diag
     set diag [format "%-74s" $diag]
-    return [list "" "$diag $tagbr\n"]
+    return [list "" "$diag $tagbr"]
   } else {
     #gen_log:log D " NO MATCH: $line"
-    return [list "" "$line\n"]
+    return [list "" "$line"]
   }
 }
 
