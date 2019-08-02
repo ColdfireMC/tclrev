@@ -548,7 +548,7 @@ proc truncate_git_graph {exec line} {
   #gen_log:log D "$line"
   if [regexp {^(.*DdDdD)(.*)} $line tmp diag tagbr] {
     regsub {DdDdD$} $diag {} diag
-    set diag [format "%-74s" $diag]
+    set diag [string range $diag 0 79]
     return [list "" "$diag $tagbr"]
   } else {
     #gen_log:log D " NO MATCH: $line"
