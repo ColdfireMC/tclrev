@@ -521,7 +521,7 @@ proc git_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
   #set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s%n\\%d"
-  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
+  set commandline "git log -$cvscfg(gitmaxhist) --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -1942,11 +1942,11 @@ namespace eval ::git_branchlog {
         if {! [info exists branchrevs($A)]} {
           set branchrevs($A) $raw_revs($A)
         }
-        gen_log:log D " branchrevs($A) $branchrevs($A)"
+        #gen_log:log D " branchrevs($A) $branchrevs($A)"
         if {! [info exists branchrevs($B)]} {
           set branchrevs($B) $raw_revs($B)
         }
-        gen_log:log D " branchrevs($B) $branchrevs($B)"
+        #gen_log:log D " branchrevs($B) $branchrevs($B)"
 
         lassign [list_comm $branchrevs($B) $branchrevs($A)] inAonly inBonly inBoth
         gen_log:log D " == ONLY IN $A: $inBonly"
@@ -1993,6 +1993,35 @@ namespace eval ::git_branchlog {
           if [info exists revbtags($old_base)] {
             gen_log:log D " and removing it from old base $old_base"
             set idx [lsearch $revbtags($old_base) $A]
+            set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
+          }
+          # Move revbranches
+          if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
+            lappend revbranches($fork) $new_base
+          }
+        } elseif {$inAonly ne {}} {
+          set branchrevs($B) $inAonly
+          set branchroot($B) [lindex $branchrevs($B) end]
+          set branchtip($B) [lindex $branchrevs($B) 0]
+          set new_base $branchroot($B)
+          set branchrevs($new_base) $inAonly
+          set fork [lindex $inBoth 0]
+          if {$fork eq ""} {
+            gen_log:log D " $A and $B are now non-overlapping"
+            return
+          }
+          gen_log:log D " NEW PARENT $fork and BASE $new_base of $B"
+          set branchparent($B) $fork
+          set old_base [lindex $inBoth end]
+          set revkind($new_base) "branch"
+          # Move revbtags
+          if {! [info exists revbtags($new_base)] || ($A ni $revbtags($new_base))} {
+            gen_log:log D "Adding $B to revbtags($new_base)"
+            lappend revbtags($new_base) $B
+          }
+          if [info exists revbtags($old_base)] {
+            gen_log:log D " and removing it from old base $old_base"
+            set idx [lsearch $revbtags($old_base) $B]
             set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
           }
           # Move revbranches
