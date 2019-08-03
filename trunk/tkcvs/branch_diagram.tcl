@@ -1179,6 +1179,9 @@ namespace eval ::logcanvas {
         variable logcanvas
         variable curr
         variable lbl_height
+        variable branchrevs
+        variable revmergefrom
+        variable xyw
 
         gen_log:log T "ENTER: ($x $y $root_rev)"
         gen_log:log D "Drawing SideTree branch at $root_rev"
@@ -1205,6 +1208,50 @@ namespace eval ::logcanvas {
               -width $curr(width)
           ]
         }
+        # See if any merges were from this branch back to one we've already drawn
+        foreach to [array names revmergefrom] {
+          if {$revmergefrom($to) ni $branchrevs($root_rev)} continue
+          #gen_log:log D "revmergefrom($to) $revmergefrom($to)"
+          set from $revmergefrom($to)
+          if [info exists xyw($from)] {
+                #gen_log:log D " xyw($from) $xyw($from)"
+          } else {
+            #gen_log:log D " xyw($from) doesn't exist"
+            continue
+          }
+          if [info exists xyw($to)] {
+            gen_log:log D " xyw($to) $xyw($to)"
+          } else {
+            #gen_log:log D " xyw($to) doesn't exist"
+                continue
+          }
+          set xto [lindex $xyw($from) 0]
+          set yto [lindex $xyw($from) 1]
+          set bwto [lindex $xyw($from) 2]
+          set xfrom [lindex $xyw($to) 0]
+          set yfrom [lindex $xyw($to) 1]
+          set bwfrom [lindex $xyw($to) 2]
+          set xmid $xto
+          set ymid $yto
+          if {$xto > $xfrom} {
+            set xfrom [expr {$xfrom + $bwfrom}]
+            set yfrom [expr {$yfrom - ($box_height / 2)}]
+            set yto [expr {$yto - ($box_height / 2)}]
+            set xmid [expr {$xfrom + (($xto - $xfrom) / 2)}]
+            set ymid [expr {$yto - $box_height}]
+          } elseif {$xfrom > $xto} {
+            set xto [expr {$xto + $bwto}]
+            set xmid [expr {$xto + (($xfrom - $xto) / 2)}]
+            set ymid [expr {$yto + ($box_height / 2)}]
+          } elseif {$xto == $xfrom} {
+            set xmid [expr {$xto - ($bwfrom / 2)}]
+            set ymid [expr {$yfrom - (($yfrom - $yto) / 2)}]
+          }
+          $logcanvas.canvas create line \
+              $xfrom $yfrom $xmid $ymid $xto $yto \
+              -arrow first -smooth 1
+        }
+
         UpdateBndBox
 
         gen_log:log T "LEAVE"
@@ -1558,9 +1605,9 @@ namespace eval ::logcanvas {
                  }
               }
             }
-            # Draw merge arrows derived from cvsnt mergepoint or svn 1.5 mergeinfo
+            # Draw merge arrows derived from cvsnt mergepoint, svn mergeinfo, or git
             foreach to [array names revmergefrom] {
-              #gen_log:log D "revmergefrom($to) $revmergefrom($to)"
+              gen_log:log D "revmergefrom($to) $revmergefrom($to)"
               set from $revmergefrom($to)
               if [info exists xyw($from)] {
                 gen_log:log D " xyw($from) $xyw($from)"

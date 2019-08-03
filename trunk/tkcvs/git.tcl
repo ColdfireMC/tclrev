@@ -1194,9 +1194,8 @@ namespace eval ::git_branchlog {
             lappend logged_branches $current_tagname
           }
           if {("master" in $local_branches) && ("master" ni $logged_branches)} {
-             lappend logged_branches {master}
+            lappend logged_branches {master}
           }
-          set logged_branches [lreverse $logged_branches]
 
           # Don't get the remote branches unless asked to
           if { [regexp {R} $cvscfg(gitbranchgroups)] } {
@@ -1255,6 +1254,11 @@ namespace eval ::git_branchlog {
           }
           set branches [lrange $branches 0 $cvscfg(gitmaxbranch)]
           set branches [prune_branchlist $branches]
+          # Move master to the front
+          set idx [lsearch -regexp $branches {master|.*/master}]
+          set mstr [lindex $branches $idx]
+          set branches [lreplace $branches $idx $idx]
+          set branches [concat $mstr $branches]
           catch {unset logged_branches}
           catch {unset local_branches}
         
@@ -1671,11 +1675,19 @@ namespace eval ::git_branchlog {
         }
         gen_log:log D "TRUNK(s) $trunks"
         set trunk_ok 0
-        foreach t $trunks {
-          if {$t in $current_branches} {
-            gen_log:log D "Found $t in Current branches"
-            set trunk $t
-            set trunk_ok 1
+        if [set idx [lsearch -regexp $trunks {master|.*/master}]] {
+          set mstr [lindex $trunks $idx]
+          gen_log:log D "Found $mstr in ($trunks)"
+          set trunk $mstr
+          set trunk_ok 1
+        }
+        if {! $trunk_ok} {
+          foreach t $trunks {
+            if {$t in $current_branches} {
+              gen_log:log D "Found $t in Current branches"
+              set trunk $t
+              set trunk_ok 1
+            }
           }
         }
         if {! $trunk_ok} {
@@ -1702,6 +1714,11 @@ namespace eval ::git_branchlog {
         }
         set revkind($rootrev) "root"
         gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
+        # Little flourish here if we can do it. If the master arises from a merged
+        # branch, and we might draw the branch, try to show the merge
+        if {[info exists revparent($rootrev)] && $revparent($rootrev) ne ""} {
+          set revmergefrom($rootrev) $revparent($rootrev)
+        }
 
         # Make sure we know where we're rooted. Sometimes the initial parent detection went
         # one too far, which would put us on a different branch that's not visible from here.
