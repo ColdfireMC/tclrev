@@ -1,10 +1,15 @@
-Release 9.1.7 July, 2019
+Release 9.1.7 August, 2019
 
 - Found some things that didn't work with Tk8.5 and older versions of git, and
-  got rid of the offending things.
+  fixed the offending things.
 
 - Implement logcfg(show_branches) so that if a diagram without branches is
   desired, time isn't spent getting them. This works in CVS, SVN, and GIT.
+
+- Encourage "master" to be the main trunk in a git diagram.
+
+- If a file is created on a side branch that we're drawing and has merged into
+  our trunk, try to draw a merge arrow. Sometimes we succeed.
 
 
 Release 9.1.6 July, 2019
