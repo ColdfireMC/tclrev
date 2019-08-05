@@ -11,6 +11,8 @@ Release 9.1.7 August, 2019
 - If a file is created on a side branch that we're drawing and has merged into
   our trunk, try to draw a merge arrow. Sometimes we succeed.
 
+- Fix Bug #148, crash when diagramming a very deep CVS branch
+
 
 Release 9.1.6 July, 2019
 
