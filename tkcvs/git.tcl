@@ -1279,7 +1279,7 @@ namespace eval ::git_branchlog {
           if {$cvscfg(gitbranchregex) ne ""} {
             gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
             foreach b $branches {
-              gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
+              #gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
               if {[catch { regexp "$cvscfg(gitbranchregex)" $b} reg_out]} {
                 gen_log:log E "$reg_out"
                 cvsfail "$reg_out"
@@ -2016,7 +2016,7 @@ namespace eval ::git_branchlog {
           if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
             lappend revbranches($fork) $new_base
           }
-        } elseif {$inAonly ne {}} {
+        } elseif {$inAonly ne {} && ! [regexp $B {master|.*/master}]} {
           set branchrevs($B) $inAonly
           set branchroot($B) [lindex $branchrevs($B) end]
           set branchtip($B) [lindex $branchrevs($B) 0]
