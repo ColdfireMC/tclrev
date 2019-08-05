@@ -876,10 +876,6 @@ namespace eval ::logcanvas {
         if {! [info exists drawn_revs]} {
           set drawn_revs ""
         }
-        # This just prevents infinite recursion. Maybe depth is too shallow.
-        if {[info level] > 10} {
-          return [list $x $y 200 18 $y]
-        }
         if {[info exists revbtags($branch)]} {
           gen_log:log D "Drawing $revbtags($branch) $branch rooted at $root_rev ($x $y)"
         } else {
