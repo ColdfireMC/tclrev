@@ -1760,9 +1760,7 @@ namespace eval ::svn_branchlog {
             continue
           }
           gen_log:log D "$br $btag"
-          if {[info exists branchroot($btag)]} {
-            gen_log:log D " base of $br is $branchroot($btag)"
-          } else {
+          if {! [info exists branchroot($btag)]} {
             gen_log:log D " base of $br is MISSING"
           }
           if {[info exists revparent($br)]} {
@@ -1799,7 +1797,7 @@ namespace eval ::svn_branchlog {
           set tags [$cmd_log\::output]
           $cmd_log\::destroy
           set n_tags [llength $tags]
-            gen_log:log D "Getting $cvscfg(toomany_tags) of $n_tags tags"
+            gen_log:log D "Getting max $cvscfg(toomany_tags) of $n_tags tags"
           if {$n_tags > $cvscfg(toomany_tags)} {
             set tags [lrange $tags [expr {$n_tags - $cvscfg(toomany_tags)}] end]
           }
@@ -1877,7 +1875,7 @@ namespace eval ::svn_branchlog {
 	  set last [lindex $lines $i]
 	  incr i 1
           set line [lindex $lines $i]
-          gen_log:log D "$i of $l:  $line"
+          #gen_log:log D "$i of $l:  $line"
           if { [ regexp {^[-]+$} $last ] && [ regexp {^r[0-9]+ \| .*line[s]?$} $line] } {
             # ^ The last line was dashes and this one starts with a revnum
             if {[expr {$l - $i}] <= 1} {break}
@@ -1892,11 +1890,6 @@ namespace eval ::svn_branchlog {
             set revdate($revnum) [lindex $date_and_time 0]
             set revtime($revnum) [lindex $date_and_time 1]
             set notelen [lindex [string trim [lindex $splitline 3]] 0]
-            gen_log:log D "revnum $revnum"
-            gen_log:log D "revwho($revnum) $revwho($revnum)"
-            gen_log:log D "revdate($revnum) $revdate($revnum)"
-            gen_log:log D "revtime($revnum) $revtime($revnum)"
-            gen_log:log D "notelen $notelen"
 
             # See if there's merge info
             incr i 1
@@ -1916,7 +1909,7 @@ namespace eval ::svn_branchlog {
               incr c
             }
             set revcomment($revnum) [string trimright $revcomment($revnum)]
-            gen_log:log D "revcomment($revnum) $revcomment($revnum)"
+            #gen_log:log D "revcomment($revnum) $revcomment($revnum)"
           }
           incr i
         }
