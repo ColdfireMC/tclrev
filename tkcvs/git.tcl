@@ -1166,7 +1166,7 @@ namespace eval ::git_branchlog {
         gen_log:log D "Parentless revs $rootrevs"
         gen_log:log D "Last rootrev $rootrev"
         set oldest_rev [lindex $allrevs end]
-        gen_log:log D "Oldest rev $oldest_rev"
+        gen_log:log D "Oldest rev $oldest_rev $revdate($oldest_rev)"
         set raw_all [lreverse $allrevs]
 
         # Branches that were in the log decorations
@@ -1275,7 +1275,8 @@ namespace eval ::git_branchlog {
           }
 
           # Filter the branches
-          set filtered_branches ""
+          # We got the master above
+          set filtered_branches $mstr
           if {$cvscfg(gitbranchregex) ne ""} {
             gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
             foreach b $branches {
@@ -1425,6 +1426,10 @@ namespace eval ::git_branchlog {
         gen_log:log D "Empty branches: $empty_branches"
         gen_log:log D "You are Here:   $current_branches"
         gen_log:log D "Branches:       $branches"
+        if {[llength $branches] < 1} {
+          cvsfail "Nothing found by git log $cvscfg(gitlog_opts)"
+          return
+        }
 
         # Decide what to use for the trunk. Consider only non-empty,
         # non-disjunct branches.
@@ -1675,7 +1680,8 @@ namespace eval ::git_branchlog {
         }
         gen_log:log D "TRUNK(s) $trunks"
         set trunk_ok 0
-        if [set idx [lsearch -regexp $trunks {master|.*/master}]] {
+        set idx [lsearch -regexp $trunks {master|.*/master}]
+        if {$idx > -1} {
           set mstr [lindex $trunks $idx]
           gen_log:log D "Found $mstr in ($trunks)"
           set trunk $mstr

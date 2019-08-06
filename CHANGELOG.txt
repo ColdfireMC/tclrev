@@ -8,6 +8,9 @@ Release 9.1.7 August, 2019
 
 - Encourage "master" to be the main trunk in a git diagram.
 
+- For the Git branch filter, assume that master is always included, so that
+  the regex only applies to branches other than the master.
+
 - If a file is created on a side branch that we're drawing and has merged into
   our trunk, try to draw a merge arrow. Sometimes we succeed.
 
