@@ -1718,6 +1718,9 @@ namespace eval ::git_branchlog {
             set rootrev $f
           }
         }
+        if {$rootrev eq ""} {
+          set rootrev $oldest_rev
+        }
         set revkind($rootrev) "root"
         gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
         # Little flourish here if we can do it. If the master arises from a merged
