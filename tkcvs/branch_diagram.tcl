@@ -666,6 +666,7 @@ namespace eval ::logcanvas {
       proc CalcRevision { revision } {
         global cvscfg
         global logcfg
+        global ingit
         variable curr
         variable box_height
         variable rev_info
@@ -677,7 +678,9 @@ namespace eval ::logcanvas {
         variable font_bold
         variable logcanvas
         variable revtags
+        variable revbtags
         variable tlist
+        variable btlist
 
         #gen_log:log T "ENTER ($revision)"
         set height $box_height
@@ -723,6 +726,41 @@ namespace eval ::logcanvas {
             }
           }
         }
+        if {$ingit && $logcfg(show_tags) && ! $logcfg(show_branches)} {
+          # If show_branches is off but we're in git, it doesn't cost anything to
+          # get branch tags, so we can show them like tags
+          set btlist($revision) {}
+          set btag_colour {}
+          set btag_black {}
+          if {[info exists revbtags($revision)]} {
+            foreach btag $revbtags($revision) {
+              lappend btag_colour $btag
+            }
+            if {[info exists cvscfg(tagdepth)] && $cvscfg(tagdepth) != 0} {
+              set n [expr {$cvscfg(tagdepth) - [llength $btag_colour]}]
+              if {$n < [llength $btag_black]} {
+                set btag_black [concat [lrange $btag_black 0 [expr {$n-1}]] {more...}]
+              }
+            }
+            set btlist($revision) [concat $btag_colour $btag_black]
+            foreach rbt $revbtags($revision) {
+              if {$rbt == {more...}} {
+                set my_font $font_bold
+              } else {
+                set my_font $font_norm
+              }
+              set w [font measure $my_font -displayof $logcanvas.canvas $rbt]
+              if {$w > $tag_width} {
+                set tag_width $w
+              }
+            }
+            incr tag_width $curr(tspcb,2)
+            set h [expr {[llength $btlist($revision)] * $font_norm_h}]
+            if {$h > $height} {
+              set height $h
+            }
+          }
+        }
 
         if {![info exists revtime($revision)]} {set revtime($revision) {}}
         if {![info exists revdate($revision)]} {set revdate($revision) {}}
@@ -743,6 +781,7 @@ namespace eval ::logcanvas {
         global cvscfg
         global cvsglb
         global logcfg
+        global ingit
         variable curr
         variable rev_info
         variable revdate
@@ -756,6 +795,7 @@ namespace eval ::logcanvas {
         variable font_norm_h
         variable font_bold
         variable logcanvas
+        variable btlist
         variable tlist
         variable match
         variable fromtags
@@ -781,6 +821,27 @@ namespace eval ::logcanvas {
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
         set revbtag $revbtags($branch)
+        if {$ingit && $logcfg(show_tags) && ! $logcfg(show_branches)} {
+          # This is a git-only thing. Treat branches as tags
+          foreach btag $btlist($revision) {
+            gen_log:log D "$revision: btag $btag"
+            set my_font $font_norm
+            set btagcolour blue
+            set btaglist {}
+            if {$btag == {more...}} {
+              set my_font $font_bold
+              set btaglist [list R$revision tag active]
+              set tagcolour $cvscfg(tagcolour,$btag)
+            }
+            $logcanvas.canvas create text \
+               $tx $ty \
+               -text $btag \
+               -anchor se -fill $btagcolour \
+               -font $my_font \
+               -tags $btaglist
+            incr ty -$font_norm_h
+          }
+        }
         foreach tag $tlist($revision) {
           gen_log:log D "$revision: tag $tag"
           if {[string match "${fromprefix}_*" $tag]} {

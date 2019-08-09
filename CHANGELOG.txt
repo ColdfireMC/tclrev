@@ -1,3 +1,10 @@
+Release 9.1.8 August, 2019
+
+- When git log is drawn with logcfg(show_branches) OFF, it shows the branch
+  names as tags, since that's the way they are in the git log and it doesn't
+  cost anything to get them.
+
+
 Release 9.1.7 August, 2019
 
 - Found some things that didn't work with Tk8.5 and older versions of git, and
