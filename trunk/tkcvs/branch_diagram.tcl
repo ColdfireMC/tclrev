@@ -584,12 +584,8 @@ namespace eval ::logcanvas {
                 set tag_black [concat [lrange $tag_black 0 [expr {$n-1}]] {more...}]
               }
             }
+            set my_font $font_bold
             foreach tag $tlist($root_rev) {
-              if {$tag == {more...}} {
-                set my_font $font_bold
-              } else {
-                set my_font $font_norm
-              }
               set w [font measure $my_font -displayof $logcanvas.canvas $tag]
               if {$w > $tag_width} {
                 set tag_width $w
@@ -743,12 +739,8 @@ namespace eval ::logcanvas {
               }
             }
             set btlist($revision) [concat $btag_colour $btag_black]
+            set my_font $font_bold
             foreach rbt $revbtags($revision) {
-              if {$rbt == {more...}} {
-                set my_font $font_bold
-              } else {
-                set my_font $font_norm
-              }
               set w [font measure $my_font -displayof $logcanvas.canvas $rbt]
               if {$w > $tag_width} {
                 set tag_width $w
@@ -825,7 +817,7 @@ namespace eval ::logcanvas {
           # This is a git-only thing. Treat branches as tags
           foreach btag $btlist($revision) {
             gen_log:log D "$revision: btag $btag"
-            set my_font $font_norm
+            set my_font $font_bold
             set btagcolour blue
             set btaglist {}
             if {$btag == {more...}} {
@@ -1664,7 +1656,7 @@ namespace eval ::logcanvas {
             }
             # Draw merge arrows derived from cvsnt mergepoint, svn mergeinfo, or git
             foreach to [array names revmergefrom] {
-              gen_log:log D "revmergefrom($to) $revmergefrom($to)"
+              #gen_log:log D "revmergefrom($to) $revmergefrom($to)"
               set from $revmergefrom($to)
               if [info exists xyw($from)] {
                 gen_log:log D " xyw($from) $xyw($from)"
