@@ -1136,17 +1136,10 @@ namespace eval ::git_branchlog {
         # merge, and parent information. Doesn't necessarily pick up all of the
         # locally reachable branches
         set command "git log --all"
-        #if {$logcfg(show_branches)} {
-          #append commnd " --all"
-        #}
         if {$logcfg(show_tags)} {
           append commnd " --tags"
         }
-        if {$logcfg(show_tags) || $logcfg(show_branches)} {
-          append command " --decorate=short"
-        } else {
-          append command " --no-decorate"
-        }
+        append command " --decorate=short"
         append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --topo-order $cvscfg(gitlog_opts) --date=iso --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
@@ -1299,14 +1292,15 @@ namespace eval ::git_branchlog {
               set branches $filtered_branches
             }
           }
+          set current_branches ""
         } else {
           set branches $current_tagname
           set current_branches $current_tagname
           set trunk $current_tagname
           set trunks $current_tagname
           set branchrevs($trunk) $allrevs
-          set branchtip($trunk) [lindex $allrevs end]
-          set branchroot($trunk) [lindex $allrevs 0]
+          set branchtip($trunk) [lindex $allrevs 0]
+          set branchroot($trunk) [lindex $allrevs end]
           set branchrevs($branchroot($trunk)) $branchrevs($trunk)
         }
 
@@ -1324,12 +1318,12 @@ namespace eval ::git_branchlog {
         # revision list while we're at it. We collect the branches into
         # families having the same root, and detect identical ones.
         set empty_branches ""
-        set current_branches ""
         set root_branches ""
         set branchtips ""
         list ident_matches
         list family
         
+if {$logcfg(show_branches)} {
         foreach br $branches {
           # Draw something on the canvas so the user knows we're working
           $lc.canvas create text $cnv_x $cnv_y -text $br -tags {temporary} -fill $cvscfg(colourB)
@@ -1411,7 +1405,7 @@ namespace eval ::git_branchlog {
             catch {unset ident_matches($i)}
            }
         }
-
+}
         # Get the branches in each family back in order
         foreach f [array names family] {
           set ofam [list]
@@ -1824,6 +1818,7 @@ namespace eval ::git_branchlog {
       }
  
       proc parse_gitlog {lines} {
+        global logcfg
         variable allrevs
         variable relpath
         variable revwho
@@ -1892,7 +1887,11 @@ namespace eval ::git_branchlog {
                 # what's left are branches. This is the tip, not the root, usually
                 set raw_btag [string trimright [lindex $items $p] ","]
                 if {(! [regexp {HEAD} $raw_btag]) && ($raw_btag ne "->")} {
-                  lappend logged_branches $raw_btag
+                  if {$logcfg(show_branches)} {
+                    lappend logged_branches $raw_btag
+                  } else {
+                    set revbtags($revnum) $raw_btag
+                  }
                 }
                 incr p
               }
