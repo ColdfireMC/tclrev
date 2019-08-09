@@ -520,11 +520,12 @@ proc git_log_rev {rev file} {
 
   gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
-  #set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s%n\\%d"
   set commandline "git log -$cvscfg(gitmaxhist) --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
+  } else {
+    append title " $cvscfg(gitlog_opts)"
   }
   append commandline " \"$file\""
   append title " $file"
@@ -1136,11 +1137,15 @@ namespace eval ::git_branchlog {
         # merge, and parent information. Doesn't necessarily pick up all of the
         # locally reachable branches
         set command "git log --all"
+        if {$logcfg(show_branches)} {
+          # For the fast no-branches mode, it's best with no options
+          append command " $cvscfg(gitlog_opts)"
+        }
         if {$logcfg(show_tags)} {
-          append commnd " --tags"
+          append command " --tags"
         }
         append command " --decorate=short"
-        append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --topo-order $cvscfg(gitlog_opts) --date=iso --decorate=short --no-color -- \"$filename\""
+        append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --topo-order --date=iso --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1191,7 +1196,7 @@ namespace eval ::git_branchlog {
           }
 
           # Don't get the remote branches unless asked to
-          if { [regexp {R} $cvscfg(gitbranchgroups)] } {
+          if { $logcfg(show_branches) && [regexp {R} $cvscfg(gitbranchgroups)] } {
             set cmd(git_rbranch) [exec::new "git branch -r"]
             set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
             foreach line $branch_lines {
@@ -1304,16 +1309,6 @@ namespace eval ::git_branchlog {
           set branchrevs($branchroot($trunk)) $branchrevs($trunk)
         }
 
-        # This is necessary to reset the view after clearing the canvas
-        $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
-        set cnv_y [expr {$cnv_y + $yspc}]
-        set cnv_x [expr {$cnv_w / 2- 8}]
-        $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
-        incr cnv_y $yspc
-        $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
-        $lc.canvas yview moveto 1
-        update idletasks
-
         # We need to query each branch to know if it's empty, so we collect the
         # revision list while we're at it. We collect the branches into
         # families having the same root, and detect identical ones.
@@ -1323,89 +1318,100 @@ namespace eval ::git_branchlog {
         list ident_matches
         list family
         
-if {$logcfg(show_branches)} {
-        foreach br $branches {
-          # Draw something on the canvas so the user knows we're working
-          $lc.canvas create text $cnv_x $cnv_y -text $br -tags {temporary} -fill $cvscfg(colourB)
+        if {$logcfg(show_branches)} {
+          # This is necessary to reset the view after clearing the canvas
+          $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
+          set cnv_y [expr {$cnv_y + $yspc}]
+          set cnv_x [expr {$cnv_w / 2- 8}]
+          $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
           incr cnv_y $yspc
           $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
           $lc.canvas yview moveto 1
           update idletasks
 
-          set since_time $revdate($oldest_rev)
-          set seconds [clock scan $since_time -gmt yes]
-          set since_minus_an_hour [clock add $seconds -1 hour]
-          set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_minus_an_hour $br -- \"$filename\""
-          set cmd_revlist [exec::new $command {} 0 {} 1]
-          set revlist_output [$cmd_revlist\::output]
-          $cmd_revlist\::destroy
-          set revlist_lines [split $revlist_output "\n"]
-          if {[llength $revlist_lines] < 1} {
-            gen_log:log D "branch $br is EMPTY. Removing from consideration"
-            # If it's empty, remove this branch from the list
-            set idx [lsearch $branches $br]
-            set branches [lreplace $branches $idx $idx]
-            lappend empty_branches $br
-            continue
-          }
-          if {[llength $revlist_lines]} {
-            foreach ro $revlist_lines {
-              if {[string length $ro] > 0} {
-                 lappend raw_revs($br) $ro
-                 set revpath($ro) $relpath
-                 set revkind($ro) "revision"
-              }
-            }
-            catch {unset revlist_output}
-            catch {unset revlist_lines}
-            set branchtip($br) [lindex $raw_revs($br) end]
-            lappend branchtips $branchtip($br)
-            lappend ident_matches($branchtip($br)) $br
+          foreach br $branches {
+            # Draw something on the canvas so the user knows we're working
+            $lc.canvas create text $cnv_x $cnv_y -text $br -tags {temporary} -fill $cvscfg(colourB)
+            incr cnv_y $yspc
+            $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
+            $lc.canvas yview moveto 1
+            update idletasks
 
-            if {[llength $ident_matches($branchtip($br))] > 1} {
-              gen_log:log D "$br identical to another branch. Setting aside"
+            set since_time $revdate($oldest_rev)
+            set seconds [clock scan $since_time -gmt yes]
+            set since_minus_an_hour [clock add $seconds -1 hour]
+            set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_minus_an_hour $br -- \"$filename\""
+            set cmd_revlist [exec::new $command {} 0 {} 1]
+            set revlist_output [$cmd_revlist\::output]
+            $cmd_revlist\::destroy
+            set revlist_lines [split $revlist_output "\n"]
+            if {[llength $revlist_lines] < 1} {
+              gen_log:log D "branch $br is EMPTY. Removing from consideration"
+              # If it's empty, remove this branch from the list
+              set idx [lsearch $branches $br]
+              set branches [lreplace $branches $idx $idx]
+              lappend empty_branches $br
               continue
             }
+            if {[llength $revlist_lines]} {
+              foreach ro $revlist_lines {
+                if {[string length $ro] > 0} {
+                  lappend raw_revs($br) $ro
+                  set revpath($ro) $relpath
+                  set revkind($ro) "revision"
+                }
+              }
+              catch {unset revlist_output}
+              catch {unset revlist_lines}
+              set branchtip($br) [lindex $raw_revs($br) end]
+              lappend branchtips $branchtip($br)
+              lappend ident_matches($branchtip($br)) $br
+
+              if {[llength $ident_matches($branchtip($br))] > 1} {
+                gen_log:log D "$br identical to another branch. Setting aside"
+                continue
+              }
             
-            lassign [list_within_list $raw_all $raw_revs($br)] start n_overlap
-            # If there is orphaned stuff in here, some branches are disjunct with
-            # with our root. Don't process these further now.
-            if {$n_overlap == 0} {
-              gen_log:log D "branch $br is DISJUNCT with our root"
-              #set idx [lsearch $branches $br]
-              #set branches [lreplace $branches $idx $idx]
-            }
-            set overlap_len($br) $n_overlap
-            set overlap_start($br) $start
-            set branchroot($br) [lindex $raw_revs($br) 0]
-            gen_log:log D "$br root is $branchroot($br)"
-            if {$branchroot($br) ni $rootrevs} {
-              lappend rootrevs $branchroot($br)
-            }
-            if {$current_revnum in $raw_revs($br)} {
-              gen_log:log D "$br contains current_revnum $current_revnum"
-              lappend current_branches $br
-            }
-            foreach r $rootrevs {
-              if {$r in $raw_revs($br)} {
-                gen_log:log D "$br contains ROOT $r"
-                if {[lindex $raw_revs($br) 0] eq $r} {
-                  lappend family($r) $br
+              lassign [list_within_list $raw_all $raw_revs($br)] start n_overlap
+              # If there is orphaned stuff in here, some branches are disjunct with
+              # with our root. Don't process these further now.
+              if {$n_overlap == 0} {
+                gen_log:log D "branch $br is DISJUNCT with our root"
+                #set idx [lsearch $branches $br]
+                #set branches [lreplace $branches $idx $idx]
+              }
+              set overlap_len($br) $n_overlap
+              set overlap_start($br) $start
+              set branchroot($br) [lindex $raw_revs($br) 0]
+              gen_log:log D "$br root is $branchroot($br)"
+              if {$branchroot($br) ni $rootrevs} {
+                lappend rootrevs $branchroot($br)
+              }
+              if {$current_revnum in $raw_revs($br)} {
+                gen_log:log D "$br contains current_revnum $current_revnum"
+                lappend current_branches $br
+              }
+              foreach r $rootrevs {
+                if {$r in $raw_revs($br)} {
+                  gen_log:log D "$br contains ROOT $r"
+                  if {[lindex $raw_revs($br) 0] eq $r} {
+                    lappend family($r) $br
+                  }
                 }
               }
             }
           }
-        }
-        # Finished collecting the branches from the repository
+          # Finished collecting the branches from the repository
 
-        # It's easier to compare the branches if we put identical ones aside.
-        # Here we are saving lists of two or more identical branches.
-        foreach i [array names ident_matches] {
-          if {[llength $ident_matches($i)] < 2} {
-            catch {unset ident_matches($i)}
-           }
+          # It's easier to compare the branches if we put identical ones aside.
+          # Here we are saving lists of two or more identical branches.
+          foreach i [array names ident_matches] {
+            if {[llength $ident_matches($i)] < 2} {
+              catch {unset ident_matches($i)}
+             }
+          }
         }
-}
+
         # Get the branches in each family back in order
         foreach f [array names family] {
           set ofam [list]
