@@ -2,7 +2,7 @@ Release 9.1.8 August, 2019
 
 - When git log is drawn with logcfg(show_branches) OFF, it shows the branch
   names as tags, since that's the way they are in the git log and it doesn't
-  cost anything to get them.
+  cost anything to get them. cvscfg(gitlog_opts) is not used.
 
 
 Release 9.1.7 August, 2019

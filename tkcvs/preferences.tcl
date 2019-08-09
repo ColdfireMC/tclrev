@@ -7,10 +7,16 @@ proc prefdialog {} {
     destroy .prefdlg
   }
 
+
   set pd .prefdlg
   toplevel $pd
   wm title $pd "TkCVS Preferences"
   wm protocol $pd WM_DELETE_WINDOW { prefs_close }
+  wm withdraw .prefdlg
+
+  lassign [winfo pointerxy .] x y
+  incr x -350
+  wm geometry .prefdlg +$x+$y
 
   ttk::notebook $pd.prefnb
   ttk::notebook::enableTraversal $pd.prefnb
@@ -34,6 +40,9 @@ proc prefdialog {} {
 
   if {[info exists cvscfg(preftab)]} {
     .prefdlg.prefnb select $cvscfg(preftab)
+  }
+  if {! [winfo ismapped .prefdlg]} {
+    wm deiconify .prefdlg
   }
 
   bind .prefdlg.prefnb <<NotebookTabChanged>> {set cvscfg(preftab) [.prefdlg.prefnb select]}
