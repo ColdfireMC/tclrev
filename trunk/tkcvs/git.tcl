@@ -1140,12 +1140,14 @@ namespace eval ::git_branchlog {
         if {$logcfg(show_branches)} {
           # For the fast no-branches mode, it's best with no options
           append command " $cvscfg(gitlog_opts)"
+        } else {
+          append command " --date-order"
         }
         if {$logcfg(show_tags)} {
           append command " --tags"
         }
         append command " --decorate=short"
-        append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --topo-order --date=iso --decorate=short --no-color -- \"$filename\""
+        append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --date=iso --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
