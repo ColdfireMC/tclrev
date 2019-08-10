@@ -1970,7 +1970,7 @@ namespace eval ::svn_branchlog {
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revbranches]] {
-           # sort the rev branches to they will be displayed in increasing order
+           # sort the rev branches so they will be displayed in increasing order
            set revbranches($a) [lsort -dictionary $revbranches($a)]
            gen_log:log D "revbranches($a) $revbranches($a)"
         }
