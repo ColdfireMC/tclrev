@@ -661,6 +661,7 @@ namespace eval ::logcanvas {
       # Finds the dimensions including tags, but not the location, of each revision box
       proc CalcRevision { revision } {
         global cvscfg
+        global cvsglb
         global logcfg
         global ingit
         variable curr
@@ -722,7 +723,7 @@ namespace eval ::logcanvas {
             }
           }
         }
-        if {$ingit && $logcfg(show_tags) && ! $logcfg(show_branches)} {
+        if {$ingit && $logcfg(show_tags) && (! $logcfg(show_branches) || $cvsglb(lightning))} {
           # If show_branches is off but we're in git, it doesn't cost anything to
           # get branch tags, so we can show them like tags
           set btlist($revision) {}
@@ -813,7 +814,7 @@ namespace eval ::logcanvas {
         set tx [expr {$x - $curr(tspcb)}]
         set ty $y
         set revbtag $revbtags($branch)
-        if {$ingit && $logcfg(show_tags) && ! $logcfg(show_branches)} {
+        if {$ingit && $logcfg(show_tags) && (! $logcfg(show_branches) || $cvsglb(lightning))} {
           # This is a git-only thing. Treat branches as tags
           foreach btag $btlist($revision) {
             gen_log:log D "$revision: btag $btag"
