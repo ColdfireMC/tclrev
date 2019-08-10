@@ -4,6 +4,10 @@ Release 9.1.8 August, 2019
   names as tags, since that's the way they are in the git log and it doesn't
   cost anything to get them. cvscfg(gitlog_opts) is not used.
 
+- Gave the working directory browser a separate button for the fast diagram,
+  so it can co-exist with regular branching diagrams and can have its own
+  git options.
+
 
 Release 9.1.7 August, 2019
 

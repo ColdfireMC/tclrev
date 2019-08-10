@@ -1,4 +1,4 @@
-#
+
 # Tcl Library for TkCVS
 #
 
@@ -178,7 +178,7 @@ proc workdir_setup {} {
   button .workdir.bottom.buttons.cvsfuncs.brevert -image Revert \
      -command { cvs_revert [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bjoin -image DirBranches \
-     -command cvs_joincanvas
+     -image DirBranches -command cvs_joincanvas
 
   button .workdir.bottom.buttons.oddfuncs.bcvsedit_files -image Edit \
      -command { edit_dialog [workdir_list_files] }
@@ -610,6 +610,8 @@ proc setup_dir { } {
     -image Checkin
   .workdir.bottom.buttons.cvsfuncs.bupdate configure -state disabled \
     -image Checkout
+  set_tooltips .workdir.bottom.buttons.cvsfuncs.bjoin \
+     {"Directory Branch Diagram and Merge Tool"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
      {"Add the selected files to the repository"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bremove \
@@ -686,7 +688,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
-      -command { svn_branches . }
+      -image DirBranches -command { svn_branches . }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { svn_branches [workdir_list_files] }
@@ -759,7 +761,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
-      -command cvs_joincanvas
+      -image DirBranches -command cvs_joincanvas
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
       -command { cvs_merge_conflict [workdir_list_files] }
@@ -849,6 +851,8 @@ proc setup_dir { } {
       -command { foreach f [workdir_list_files] {git_merge_conflict \"$f\"} }
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { git_branches [workdir_list_files] }
+    .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
+      -image BranchNo -command { git_fast_diagram [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { git_log $cvscfg(ldetail) [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
@@ -871,6 +875,8 @@ proc setup_dir { } {
       -command { rcs_lock lock [workdir_list_files] }
     .workdir.bottom.buttons.oddfuncs.bunlock configure -state normal \
       -command { rcs_lock unlock [workdir_list_files] }
+    set_tooltips .workdir.bottom.buttons.cvsfuncs.bjoin \
+       {"Fast log diagram"}
     set_tooltips .workdir.bottom.buttons.cvsfuncs.badd_files \
        {"Add the selected files to the staging area"}
     set_tooltips .workdir.bottom.buttons.cvsfuncs.bremove \

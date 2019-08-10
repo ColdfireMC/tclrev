@@ -83,6 +83,12 @@ proc newbranch {Root oldtag newtag} {
 proc tag {Root tag} {
   global taghead
 
+  # Need to update . or the tag may be in the wrong place
+  set exec_cmd "svn update \".\""
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+
   puts "Tag: $tag"
   set exec_cmd "svn copy \".\" file:///$Root/$taghead(tag)/$tag -m \"Tag $tag\""
   puts "$exec_cmd"

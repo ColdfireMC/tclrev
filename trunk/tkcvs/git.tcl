@@ -963,6 +963,32 @@ proc git_branches {files} {
   gen_log:log T "ENTER ($files)"
   set filelist [join $files]
 
+  set cvsglb(lightning) 0
+
+  read_git_dir [pwd]
+  gen_log:log D "Relative Path: $cvsglb(relpath)"
+
+  if {$files == {}} {
+    ::git_branchlog::new $cvsglb(relpath) .
+  } else {
+    foreach file $files {
+      ::git_branchlog::new $cvsglb(relpath) $file
+    }
+  }
+
+  gen_log:log T "LEAVE"
+}
+
+# Sends files to the branch browser one at a time
+proc git_fast_diagram {files} {
+  global cvscfg
+  global cvsglb
+
+  gen_log:log T "ENTER ($files)"
+  set filelist [join $files]
+
+  set cvsglb(lightning) 1
+
   read_git_dir [pwd]
   gen_log:log D "Relative Path: $cvsglb(relpath)"
 
@@ -987,6 +1013,7 @@ namespace eval ::git_branchlog {
 
     namespace eval $my_idx {
       global logcfg
+      global cvsglb
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set relpath [uplevel {concat $relpath}]
@@ -1007,13 +1034,13 @@ namespace eval ::git_branchlog {
       variable logstate
 
       gen_log:log T "ENTER [namespace current]"
-      if {$directory_merge} {
-        set newlc [logcanvas::new . "GIT,loc" [namespace current]]
-      } else {
-        set newlc [logcanvas::new $filename "GIT,loc" [namespace current]]
-      }
+      set newlc [logcanvas::new $filename "GIT,loc" [namespace current]]
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
+
+      if {![info exists cvsglb(lightning)]} {
+        set cvsglb(lightning) 0
+      }
 
       proc abortLog { } {
         global cvscfg
@@ -1133,15 +1160,19 @@ namespace eval ::git_branchlog {
         $lc.canvas yview moveto 1
         update idletasks
 
+        if {! $logcfg(show_branches)} {
+          set cvsglb(lightning) 1
+        }
+
         # Gets all the commit information at once, including the branch, tag,
         # merge, and parent information. Doesn't necessarily pick up all of the
         # locally reachable branches
         set command "git log --all"
-        if {$logcfg(show_branches)} {
-          # For the fast no-branches mode, it's best with no options
-          append command " $cvscfg(gitlog_opts)"
-        } else {
+        if {$cvsglb(lightning)} {
+          # For the fast no-branches mode, it's best with no options but in date order
           append command " --date-order"
+        } else {
+          append command " $cvscfg(gitlog_opts)"
         }
         if {$logcfg(show_tags)} {
           append command " --tags"
@@ -1174,7 +1205,7 @@ namespace eval ::git_branchlog {
           set logged_branches [prune_branchlist $logged_branches]
         }
 
-        if {$logcfg(show_branches)} {
+        if {! $cvsglb(lightning)} {
           # This gets all the locally reachable branches. We only use all of them if asked,
           # but their order is important. Also if "master" is in there, we want it.
           set cmd(git_branch) [exec::new "git branch --no-color"]
@@ -1198,7 +1229,7 @@ namespace eval ::git_branchlog {
           }
 
           # Don't get the remote branches unless asked to
-          if { $logcfg(show_branches) && [regexp {R} $cvscfg(gitbranchgroups)] } {
+          if { ! $cvsglb(lightning) && [regexp {R} $cvscfg(gitbranchgroups)] } {
             set cmd(git_rbranch) [exec::new "git branch -r"]
             set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
             foreach line $branch_lines {
@@ -1320,7 +1351,7 @@ namespace eval ::git_branchlog {
         list ident_matches
         list family
         
-        if {$logcfg(show_branches)} {
+        if {! $cvsglb(lightning)} {
           # This is necessary to reset the view after clearing the canvas
           $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
           set cnv_y [expr {$cnv_y + $yspc}]
@@ -1830,6 +1861,7 @@ namespace eval ::git_branchlog {
  
       proc parse_gitlog {lines} {
         global logcfg
+        global cvsglb
         variable allrevs
         variable relpath
         variable revwho
@@ -1898,10 +1930,10 @@ namespace eval ::git_branchlog {
                 # what's left are branches. This is the tip, not the root, usually
                 set raw_btag [string trimright [lindex $items $p] ","]
                 if {(! [regexp {HEAD} $raw_btag]) && ($raw_btag ne "->")} {
-                  if {$logcfg(show_branches)} {
-                    lappend logged_branches $raw_btag
-                  } else {
+                  if {$cvsglb(lightning)} {
                     set revbtags($revnum) $raw_btag
+                  } else {
+                    lappend logged_branches $raw_btag
                   }
                 }
                 incr p

@@ -9,6 +9,7 @@ proc load_all_images {} {
   image create photo Add -format gif -file [file join $cvscfg(bitmapdir) add.gif]
   image create photo Annotate -format gif -file [file join $cvscfg(bitmapdir) annotate.gif]
   image create photo Branches -format gif -file [file join $cvscfg(bitmapdir) branch.gif]
+  image create photo BranchNo -format gif -file [file join $cvscfg(bitmapdir) lightning.gif]
   image create photo Branchtag -format gif -file [file join $cvscfg(bitmapdir) branchtag.gif]
   image create photo Check -format gif -file [file join $cvscfg(bitmapdir) check.gif]
   image create photo Checkin -format gif -file [file join $cvscfg(bitmapdir) checkin.gif]
