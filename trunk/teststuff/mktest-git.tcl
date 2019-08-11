@@ -270,6 +270,7 @@ proc mkfiles {topdir} {
   foreach n {1 2 3} {
     writefile "File$n.txt" "Initial"
   }
+  writefile "FTags.txt" "Initial"
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
@@ -444,6 +445,9 @@ fetch {--all}
 modfiles "Main 2"
 stage
 commit "Second revision on trunk"
+foreach t {one ten one_hundred one_thousand ten_thousand one_hundred_thousand} {
+  tag "tag_$t" FTags.txt
+}
 
 puts "==============================="
 puts "Third revision on trunk"

@@ -69,7 +69,6 @@ namespace eval ::logcanvas {
         variable logcanvas
         variable sel_tag
         variable sel_rev
-        #catch {$logcanvas.canvas itemconfigure Sel$AorB -outline black}
         catch {$logcanvas.canvas itemconfigure Sel$AorB -fill white}
         $logcanvas.canvas dtag Sel$AorB
         $logcanvas.up.rev${AorB}_rvers configure -state normal
@@ -437,12 +436,16 @@ namespace eval ::logcanvas {
             -yscroll "$mname.yscr set" \
             -listvar [namespace current]::revtags($rev)
           scrollbar $mname.yscr -orient vertical -command "$mname.lbx yview"
+          frame $mname.bot -bg  $cvsglb(hlbg)
           button $mname.but -text "Close" -command "$logcanvas.canvas delete lbx"
+          button $mname.arr -image arr_dn -command [namespace code "sort_tag_lbx $mname"]
           incr w [winfo reqwidth $mname.yscr]
           incr h [winfo reqheight $mname.but]
           $logcanvas.canvas create window $rev_x $rev_y -anchor w \
             -height $h -width $w -window $mname -tags lbx
-          pack $mname.but -in $mname -side bottom
+          pack $mname.bot -in $mname -side bottom -expand 1 -fill x
+          pack $mname.arr -in $mname.bot -side left -anchor w
+          pack $mname.but -in $mname.bot -side right -anchor e -ipady 0
           pack $mname.yscr -in $mname -side right -fill y
           pack $mname.lbx -in $mname -side left -expand yes -fill both
           bind $mname.lbx <Button-1> [namespace code "
@@ -470,6 +473,27 @@ namespace eval ::logcanvas {
         }
         gen_log:log T "LEAVE"
         return
+      }
+
+      # Sort the tags popup listbox
+      proc sort_tag_lbx {mname} {
+
+        set arr [$mname.arr cget -image]
+        set tagvar [$mname.lbx cget -listvar]
+        set taglist [set [$mname.lbx cget -listvar]]
+        if {$arr eq {arr_up}} {
+          set direction "-decreasing"
+          $mname.arr configure -image "arr_dn"
+        } else {
+          set direction "-increasing"
+          $mname.arr configure -image "arr_up"
+        }
+        set new_taglist [lsort -dictionary $direction $taglist]
+
+        $mname.lbx delete 0 end
+        foreach t $new_taglist {
+          $mname.lbx insert end $t
+        }
       }
 
       # Calculate size of the You are Here box

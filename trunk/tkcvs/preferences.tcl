@@ -91,7 +91,7 @@ proc prefs_diagram {w} {
     -variable logcfg(show_tags) -onvalue 1 -offvalue 0
   checkbutton $w.logcanv.layout.showbranches -text "Show Branches" \
     -variable logcfg(show_branches) -onvalue 1 -offvalue 0
-  checkbutton $w.logcanv.layout.showempty -text "Show Empty Branches" \
+  checkbutton $w.logcanv.layout.showempty -text "Show Empty Branches (CVS)" \
     -variable logcfg(show_empty_branches) -onvalue 1 -offvalue 0
   checkbutton $w.logcanv.layout.showintermed -text "Show Intermediate Revisions" \
     -variable logcfg(show_inter_revs) -onvalue 1 -offvalue 0
