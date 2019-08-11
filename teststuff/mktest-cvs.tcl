@@ -114,6 +114,15 @@ proc newbranch {proj oldtag newtag} {
   set ret [catch {eval "exec $exec_cmd"} out]
 }
 
+proc empty_branch {proj oldtag newtag} {
+  global env
+
+  set exec_cmd "cvs -d $env(CVSROOT) rtag -r $oldtag -b $newtag $proj"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+}
+
 proc tag {tag obj} {
   set exec_cmd "cvs tag -F $tag $obj"
   puts "$exec_cmd"
@@ -191,6 +200,7 @@ proc mkfiles {topdir} {
   foreach n {1 2 3} {
     writefile "File$n.txt" "Initial"
   }
+  writefile "FTags.txt" "Initial"
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
@@ -313,9 +323,6 @@ addfile Ftrunk.txt trunk
 commit "First revision on trunk"
 tag "tagA" "."
 tag "tagC" "."
-foreach t {one ten one_hundred one_thousand ten_thousand one_hundred_thousand} {
-  tag "tag_$t" File1.txt
-}
 cd $WD
 
 if {$branching_desired} {
@@ -365,6 +372,9 @@ puts "Second revision on trunk"
 cd $WD/cvs_test_trunk
 modfiles "Main 2"
 commit "Second revision on trunk"
+foreach t {one ten one_hundred one_thousand ten_thousand one_hundred_thousand} {
+  tag "tag_$t" FTags.txt
+}
 cd $WD
 
 puts "==============================="
@@ -402,6 +412,8 @@ if {$branching_desired} {
   puts "MAKING BRANCH B"
   newbranch cvs_test HEAD branchB
   cd $WD/cvs_test_branchB
+  # Empty branch. Don't check out or update
+  empty_branch cvs_test HEAD branchD
   modfiles "BranchB 1"
   writefile FbranchB.txt "BranchB 1"
   addfile FbranchB.txt branchB

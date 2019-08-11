@@ -8,6 +8,8 @@ Release 9.1.8 August, 2019
   so it can co-exist with regular branching diagrams and can have its own
   git options.
 
+- Added a sort button to the tags popup on the branch diagram, ticket #149
+
 
 Release 9.1.7 August, 2019
 

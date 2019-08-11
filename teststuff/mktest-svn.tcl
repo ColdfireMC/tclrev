@@ -158,6 +158,7 @@ proc mkfiles {topdir} {
   foreach n {1 2 3} {
     writefile "File$n.txt" "Initial"
   }
+  writefile "FTags.txt" "Initial"
   foreach D {Dir1 "Dir 2"} {
     puts $D
     file mkdir $D
@@ -330,6 +331,15 @@ puts "Second revision on $taghead(trunk)"
 cd $WD/svn_test_trunk
 modfiles "Main 2"
 commit "Second revision on $taghead(trunk)"
+foreach t {one ten one_hundred one_thousand ten_thousand one_hundred_thousand} {
+  set exec_cmd "svn copy --parents -m\"multitags\" FTags.txt file://$SVNROOT/$taghead(tag)/$t/FTags.txt"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  if {$ret} {
+    exit 1
+  }
+}
 cd $WD
 
 puts "==============================="
@@ -367,6 +377,14 @@ if {$branching_desired} {
   puts "MAKING BRANCH B"
   newbranch $SVNROOT $taghead(trunk) branchB
   cd $WD/svn_test_branchB
+  # Empty branch. Don't check out or update.
+  set exec_cmd "svn mkdir -m\"empty_branch\" file://$SVNROOT/$taghead(branch)/branchD"
+  puts "$exec_cmd"
+  set ret [catch {eval "exec $exec_cmd"} out]
+  puts $out
+  if {$ret} {
+    exit 1
+  }
   modfiles "BranchB 1"
   writefile FbranchB.txt "BranchB 1"
   addfile FbranchB.txt branchB
