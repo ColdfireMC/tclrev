@@ -1041,6 +1041,9 @@ namespace eval ::git_branchlog {
       if {![info exists cvsglb(lightning)]} {
         set cvsglb(lightning) 0
       }
+      if {$cvsglb(lightning)} {
+        $lc.refresh configure -state disabled
+      }
 
       proc abortLog { } {
         global cvscfg
