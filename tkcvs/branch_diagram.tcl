@@ -443,7 +443,7 @@ namespace eval ::logcanvas {
           incr h [winfo reqheight $mname.but]
           $logcanvas.canvas create window $rev_x $rev_y -anchor w \
             -height $h -width $w -window $mname -tags lbx
-          pack $mname.bot -in $mname -side bottom -expand 1 -fill x
+          pack $mname.bot -in $mname -side bottom -expand 0 -fill x
           pack $mname.arr -in $mname.bot -side left -anchor w
           pack $mname.but -in $mname.bot -side right -anchor e -ipady 0
           pack $mname.yscr -in $mname -side right -fill y
