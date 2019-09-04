@@ -7,7 +7,6 @@ proc prefdialog {} {
     destroy .prefdlg
   }
 
-
   set pd .prefdlg
   toplevel $pd
   wm title $pd "TkCVS Preferences"
@@ -207,6 +206,8 @@ proc prefs_git {w} {
   pack $w.git.sep1 -side top -fill x -pady 3
 
   frame $w.git.branchbr
+  label $w.git.branchbr.lsince -text "Since"
+  entry $w.git.branchbr.esince -textvariable cvscfg(gitsince)
   label $w.git.branchbr.lmaxhist -text "Maximum Git History"
   entry $w.git.branchbr.emaxhist -textvariable cvscfg(gitmaxhist)
   label $w.git.branchbr.lmaxbranches -text "Maximum Git Branches"
@@ -226,20 +227,22 @@ proc prefs_git {w} {
 
   pack $w.git.branchbr -side top -fill x
   grid columnconf $w.git.branchbr 1 -weight 1
-  grid $w.git.branchbr.lmaxhist -sticky w -column 0 -row 0
-  grid $w.git.branchbr.emaxhist -sticky ew -column 1 -row 0 -padx 2
-  grid $w.git.branchbr.lmaxbranches -sticky w -column 0 -row 1
-  grid $w.git.branchbr.emaxbranches -sticky ew -column 1 -row 1 -padx 2
-  grid $w.git.branchbr.llogopts -sticky w -column 0 -row 2
-  grid $w.git.branchbr.elogopts -sticky ew -column 1 -row 2 -padx 2
+  grid $w.git.branchbr.lsince -sticky w -column 0 -row 0
+  grid $w.git.branchbr.esince -sticky ew -column 1 -row 0 -padx 2
+  grid $w.git.branchbr.lmaxhist -sticky w -column 0 -row 1
+  grid $w.git.branchbr.emaxhist -sticky ew -column 1 -row 1 -padx 2
+  grid $w.git.branchbr.lmaxbranches -sticky w -column 0 -row 2
+  grid $w.git.branchbr.emaxbranches -sticky ew -column 1 -row 2 -padx 2
+  grid $w.git.branchbr.llogopts -sticky w -column 0 -row 3
+  grid $w.git.branchbr.elogopts -sticky ew -column 1 -row 3 -padx 2
 
-  grid $w.git.branchbr.br_file -sticky w -column 1 -row 3
-  grid $w.git.branchbr.br_local -sticky w -column 1 -row 4
-  grid $w.git.branchbr.br_remote -sticky w -column 1 -row 5
+  grid $w.git.branchbr.br_file -sticky w -column 1 -row 4
+  grid $w.git.branchbr.br_local -sticky w -column 1 -row 5
+  grid $w.git.branchbr.br_remote -sticky w -column 1 -row 6
 
-  grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 6
-  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 6 -padx 2
-  grid $w.git.branchbr.hbrglob -sticky w -column 1 -row 7
+  grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 7
+  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 7 -padx 2
+  grid $w.git.branchbr.hbrglob -sticky w -column 1 -row 8
 }
 
 proc prefs_close { } {

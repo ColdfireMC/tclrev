@@ -240,13 +240,25 @@ namespace eval ::annotate {
         gen_log:log D "$infoline"
         set now [lindex $infoline 0]
 
+        if {$cvscfg(gitsince) != ""} {
+          set sinceflag "--since=$cvscfg(gitsince)"
+        } else {
+          set sinceflag ""
+        }
+
         set blameproc git_annotate_color
-        set commandline "git annotate $revision \"$file\""
+        set commandline "git annotate $sinceflag $revision \"$file\""
         set now $revlabel
       }
       "git_r" {
+        if {$cvscfg(gitsince) != ""} {
+          set sinceflag "--since=$cvscfg(gitsince)"
+        } else {
+          set sinceflag ""
+        }
+
         set blameproc git_annotate_color
-        set commandline "git annotate $revision \"$file\""
+        set commandline "git annotate $sinceflag $revision \"$file\""
         set now $revlabel
       }
       default {

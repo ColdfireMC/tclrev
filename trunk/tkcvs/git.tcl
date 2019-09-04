@@ -906,6 +906,7 @@ proc git_merge_conflict {args} {
 
 # annotate/blame. Called from workdir.
 proc git_annotate {revision args} {
+
   gen_log:log T "ENTER ($revision $args)"
   if {$revision != ""} {
     # We were given a revision
@@ -1176,12 +1177,17 @@ namespace eval ::git_branchlog {
           append command " --date-order"
         } else {
           append command " $cvscfg(gitlog_opts)"
+          if {$cvscfg(gitmaxhist) != ""} {
+            append command " -$cvscfg(gitmaxhist)"
+          }
+          if {$cvscfg(gitsince) != ""} {
+            append command " --since=$cvscfg(gitsince)"
+          }
         }
         if {$logcfg(show_tags)} {
           append command " --tags"
         }
-        append command " --decorate=short"
-        append command " -$cvscfg(gitmaxhist) --abbrev-commit --parents --date=iso --decorate=short --no-color -- \"$filename\""
+        append command " --abbrev-commit --parents --date=iso --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1190,7 +1196,6 @@ namespace eval ::git_branchlog {
 
         catch {unset log_output}
         catch {unset log_lines}
-        catch {unset log_output}
         if {! [info exists allrevs]} {
           cvsfail "Couldn't read git log for $filename" $lc
         }
@@ -1373,10 +1378,17 @@ namespace eval ::git_branchlog {
             $lc.canvas yview moveto 1
             update idletasks
 
-            set since_time $revdate($oldest_rev)
-            set seconds [clock scan $since_time -gmt yes]
-            set since_minus_an_hour [clock add $seconds -1 hour]
-            set command "git rev-list -$cvscfg(gitmaxhist) --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_minus_an_hour $br -- \"$filename\""
+            set command "git rev-list"
+            if {$cvscfg(gitmaxhist) != ""} {
+              append command " -$cvscfg(gitmaxhist)"
+            }
+            # If since time is set, use that. Otherwise, use the time of the oldest rev we found in log --all
+            if {$cvscfg(gitsince) != ""} {
+              set since_time $cvscfg(gitsince)
+            } else {
+              set since_time $revdate($oldest_rev)
+            }
+            set command "$command --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_time $br -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
             $cmd_revlist\::destroy
