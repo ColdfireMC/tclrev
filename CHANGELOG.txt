@@ -1,3 +1,8 @@
+Release 9.2.0 September, 2019
+
+- Add a config cvscfg(gitsince) to limit log diagrams and annotations to
+  a time depth
+
 Release 9.1.8 August, 2019
 
 - When git log is drawn with logcfg(show_branches) OFF, it shows the branch

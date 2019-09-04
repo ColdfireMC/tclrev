@@ -356,7 +356,7 @@ namespace eval ::logcanvas {
              $logcanvas.view configure -state normal \
                -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers get]
-                    if {$rev ==""} { set rev "r$current_revnum" }
+                    if {$rev == ""} { set rev "$current_revnum" }
                     git_fileview $rev $cvsglb(relpath) $filename
                }]
              $logcanvas.annotate configure -state normal \

@@ -1416,7 +1416,7 @@ proc save_options { } {
                  gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums use_cvseditor }
   set STRGopts { file_filter ignore_file_filter clean_these editor preftab \
-                 gitbranchgroups gitlog_opts gitmaxbranch gitmaxhist gitbranchregex \
+                 gitbranchgroups gitlog_opts gitsince gitmaxbranch gitmaxhist gitbranchregex \
                  printer log_classes lastdir sort_pref editor editorargs \
                  workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom \
                  svn_trunkdir svn_branchdir svn_tagdir }
