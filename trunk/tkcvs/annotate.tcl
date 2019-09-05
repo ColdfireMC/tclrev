@@ -102,7 +102,7 @@ namespace eval ::annotate {
         variable maxrevlen
         variable ll
 
-        regexp {(^\S+)\s+\((.*)\)(.*$)} $logline all revnum annot orig_line
+        regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
         set annot [string trim $annot]
         regsub -all {\s+} $annot { } annot
         set linenum [lindex $annot end]
