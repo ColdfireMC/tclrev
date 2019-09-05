@@ -1,7 +1,11 @@
-Release 9.2.0 September, 2019
+Release 9.2 September, 2019
+
+- For Git, added the ability to choose a range of lines in the text view
+  of a file, and send that range of lines to the annotation browser.
 
 - Add a config cvscfg(gitsince) to limit log diagrams and annotations to
   a time depth
+
 
 Release 9.1.8 August, 2019
 

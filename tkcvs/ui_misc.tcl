@@ -64,6 +64,7 @@ proc ro_textbindings {txtw} {
   bind $txtw <3> "copy_paste_popup $txtw %X %Y"
 }
 
+# Save the contents of a text widget to a file
 proc save_viewcontents {w} {
   set types  { {"Text Files" {*.txt *.log}} {"All Files" *} }
   set savfile [ \
@@ -81,6 +82,15 @@ proc save_viewcontents {w} {
   }
   puts $fo [$w.text get 1.0 end]
   close $fo
+}
+
+# Get the selected text lines, to pass to git annotate
+proc get_textlines {w} {
+  lassign [$w.text tag ranges sel] firstsel lastsel
+  set firstline [lindex [split $firstsel "."] 0]
+  set lastline [lindex [split $lastsel "."] 0]
+  gen_log:log T "LEAVE (\"$firstline\" \"$lastline\")"
+  return [list $firstline $lastline]
 }
 
 #

@@ -915,7 +915,7 @@ proc git_annotate {revision args} {
     set revflag ""
   }
 
-  set filelist [join $args]
+  set filelist $args
   if {$filelist == ""} {
     cvsfail "Annotate:\nPlease select one or more files !" .workdir
     gen_log:log T "LEAVE (Unselected files)"
@@ -942,18 +942,53 @@ proc git_annotate_r {revision filepath} {
   gen_log:log T "LEAVE"
 }
 
+# Called from file viewer annotate button
+proc git_annotate_range {v_w revision filename} {
+
+  gen_log:log T "ENTER ($v_w $revision $filename)"
+  if {$revision != ""} {
+    # We were given a revision
+    set revflag "$revision"
+  } else {
+    set revflag ""
+  }
+  set range [get_textlines $v_w]
+  set firstline [lindex $range 0]
+  set lastline [lindex $range 1]
+  if {$firstline eq "" || $lastline eq ""} {
+    cvsfail "Plesae select a range of lines" $v_w
+    return
+  }
+
+  annotate::new $revision $filename "git_range" $firstline $lastline
+  gen_log:log T "LEAVE"
+}
+
 # View a specific revision of a file.
 # Called from branch browser
-proc git_fileview {revision path filename} {
-  gen_log:log T "ENTER ($revision $path $filename)"
+proc git_fileview {revision path files} {
 
-  if {$path ne ""} {
-    set command "git show \"$revision:$path/$filename\""
-  } else {
-    set command "git show \"$revision:$filename\""
+  gen_log:log T "ENTER ($revision $path $files)"
+  set filelist [join $files]
+
+  foreach filename $filelist {
+    if {$path ne ""} {
+      set filepath "$path/$filename"
+    } else {
+      set filepath "$filename"
+    }
+    set command "git show \"$revision:$filepath\""
+    set v [viewer::new "$filepath Revision $revision"]
+    $v\::do "$command"
+
+    # Get the viewer window
+    set v_w [namespace inscope $v {set w}]
+    frame $v_w.blamefm
+    button $v_w.blamefm.blame -text "Annotate selection" \
+      -command "git_annotate_range $v_w $revision \"$filename\""
+    pack $v_w.blamefm -in $v_w.bottom -side left
+    pack $v_w.blamefm.blame
   }
-  set v [viewer::new "$filename Revision $revision"]
-  $v\::do "$command"
 }
 
 # Sends files to the branch browser one at a time
@@ -1386,7 +1421,8 @@ namespace eval ::git_branchlog {
             if {$cvscfg(gitsince) != ""} {
               set since_time $cvscfg(gitsince)
             } else {
-              set since_time $revdate($oldest_rev)
+              set seconds [clock scan $revdate($oldest_rev) -gmt yes]
+              set since_time [clock add $seconds -1 hour]
             }
             set command "$command --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_time $br -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
