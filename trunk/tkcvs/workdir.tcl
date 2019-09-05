@@ -309,7 +309,7 @@ proc workdir_list_files {} {
   gen_log:log T "ENTER (cvsglb(current_selection) = $cvsglb(current_selection))"
 
   set wt .workdir.main.tree
-  set cvsglb(current_selection {}
+  set cvsglb(current_selection) {}
   set DirList($wt:selection) {}
   set selected_items [$wt selection]
   foreach s $selected_items {
@@ -634,6 +634,8 @@ proc setup_dir { } {
     set cvsglb(root) $cvscfg(rcsdir)
     set cvsglb(vcs) rcs
     # Buttons
+    .workdir.bottom.buttons.funcs.bview_files configure \
+      -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { rcs_check }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
@@ -685,6 +687,8 @@ proc setup_dir { } {
     set cvsglb(root) $cvscfg(url)
     set cvsglb(vcs) svn
     # Buttons
+    .workdir.bottom.buttons.funcs.bview_files configure \
+      -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
@@ -758,6 +762,8 @@ proc setup_dir { } {
     set cvsglb(root) $cvscfg(cvsroot)
     set cvsglb(vcs) cvs
     # Buttons
+    .workdir.bottom.buttons.funcs.bview_files configure \
+      -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
@@ -844,6 +850,8 @@ proc setup_dir { } {
     set cvsglb(root) $cvscfg(url)
     set cvsglb(vcs) git
     # Buttons
+    .workdir.bottom.buttons.funcs.bview_files configure \
+      -command { git_fileview HEAD $module_dir [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal

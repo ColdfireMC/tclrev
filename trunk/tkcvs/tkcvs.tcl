@@ -73,7 +73,7 @@ set cvscfg(bitmapdir) [file join $TclRoot tkcvs bitmaps]
 #puts "TCDIR $TCDIR"
 #puts "BITMAPDIR $cvscfg(bitmapdir)"
 
-set cvscfg(version) "9.1.8"
+set cvscfg(version) "9.2"
 
 if {! [info exists cvscfg(editorargs)]} {
   set cvscfg(editorargs) {}
@@ -446,15 +446,15 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_branches \"$lcfile"\
+    cvs_branches "$lcfile"
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
-    rcs_branches \"$lcfile\"
+    rcs_branches "$lcfile"
   } elseif {$insvn} {
-    svn_branches \"$lcfile\"
+    svn_branches "$lcfile"
   } elseif {$ingit} {
-    git_branches \"$lcfile\"
+    git_branches "$lcfile"
   } else {
     puts "File doesn't seem to be in CVS, SVN, RCS, or GIT"
   }
@@ -466,11 +466,11 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_annotate "" \"$lcfile"\
+    cvs_annotate "" "$lcfile"
   } elseif {$insvn} {
-    svn_annotate "" \"$lcfile\"
+    svn_annotate "" "$lcfile"
   } elseif {$ingit} {
-    git_annotate "" \"$lcfile\"
+    git_annotate "" "$lcfile"
   } else {
     puts "File doesn't seem to be in CVS, SVN, or GIT"
   }
