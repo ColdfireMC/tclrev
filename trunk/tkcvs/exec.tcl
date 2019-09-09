@@ -160,7 +160,7 @@ namespace eval ::exec {
           #$viewer\::ansi_print "$line"
           $v_w.text insert end "$line\n"
         }
-        $v_w.text yview end
+        #$v_w.text yview end
       }
 
       proc err_handler {} {
@@ -373,7 +373,7 @@ namespace eval ::viewer {
       proc log { text {texttag {}} } {
         variable w
         $w.text insert end $text $texttag 
-        $w.text yview end
+        #$w.text yview end
       }
 
       # A filter that detects ANSI color codes and changes them to tags
