@@ -6,6 +6,16 @@ Release 9.2 September, 2019
 - Add a config cvscfg(gitsince) to limit log diagrams and annotations to
   a time depth
 
+- SVN patches (#103) from Knut Beneke:
+  - If a svn branch is copied from a tag it is not shown in 9.1.8
+  - Sometimes a svn log -g produces a non consecutive list, thus resulting in an
+    erroneous branch diagram
+  - If a commit affected more than one branch 9.1.8 would crash
+  - The parsing of svn comments is buggy
+  - If a branch is added and not copied 9.1.8 would get completly confused,
+    resulting in an almost empty branch diagram
+  - Do not scroll to the end of the viewer output
+  - Use verbose svn log output when not otherwise specified
 
 Release 9.1.8 August, 2019
 

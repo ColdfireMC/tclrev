@@ -892,7 +892,7 @@ proc svn_log {detail args} {
      }
   }
   if {$detail ne "summary"} {
-    append flags "-g "
+    append flags "-g -v "
   }
 
   set v [viewer::new "$title"]
@@ -914,7 +914,7 @@ proc svn_log_rev {filepath} {
 
   gen_log:log T "ENTER ($filepath)"
 
-  set svncommand "svn log -g "
+  set svncommand "svn log -g -v "
   if {[regexp {/} $filepath]} {
     append svncommand "--stop-on-copy "
   }
@@ -1320,7 +1320,7 @@ proc svn_filelog {root path title} {
 
   gen_log:log T "ENTER ($root $path $title)"
 
-  set command "svn log -g "
+  set command "svn log -g -v "
 
   set url [safe_url $root/$path]
   append command "\"$url\""
@@ -1669,6 +1669,22 @@ namespace eval ::svn_branchlog {
             }
             set loglines [split $log_output "\n"]
             set rb [parse_svnlog $loglines $branch]
+            # If the branch was not created by copy we have to correct the base
+            if {$rb == $rootrev} {
+              gen_log:log D "$branch was not created by copy"
+              set command "svn log -q --stop-on-copy $path"
+              set cmd_log [exec::new $command {} 0 {} 1]
+              set log_output [$cmd_log\::output]
+              $cmd_log\::destroy
+              if {$log_output == ""} {
+                continue
+              }
+              set loglines [split $log_output "\n"]
+              set line [lindex [lreverse $loglines] 2]
+              gen_log:log D "line = $line"
+              set splitline [split $line "|"]
+              set rb [string trim [lindex $splitline 0]]
+            }
             gen_log:log D "$branch: BASE $rb"
             set branchroot($branch) $rb
             # See if the current revision is on this branch
@@ -1716,6 +1732,27 @@ namespace eval ::svn_branchlog {
             set search_list [lreverse $allrevs($branch)]
             set idx [lsearch $search_list $rb]
             set bp [lindex $search_list $idx-1]
+            # Skip tag revisions because they are not supported further down
+            set i 0
+            while {$i < 100 && $bp >= 0} {
+              set command "svn info -r $bp $path"
+              set cmd_info [exec::new $command {} 0 {} 1]
+              set info_output [$cmd_info\::output]
+              $cmd_info\::destroy
+              if {$info_output == ""} {
+                gen_log:log D "$command returned no output"
+                break
+              }
+              set found [grep_filter {^URL:.*/tags/} [split $info_output "\n"]]
+              if {$found == ""} {
+                break
+              }
+              # This is a tag, use previous revision
+              gen_log:log D "$bp is a tag, using previous revision"
+              incr idx -1
+              set bp [lindex $search_list $idx-1]
+              incr i 1
+            }
             if {$bp < 0} {
               gen_log:log D "$branch is EMPTY"
               continue
@@ -1898,6 +1935,7 @@ namespace eval ::svn_branchlog {
               set splitline [split $line " "]
               set mergedvia [string trim [lindex $splitline end]]
               lappend revmergefrom($mergedvia) $revnum
+              incr i 1
             } else {
               lappend branchrevs($r) $revnum
             }
@@ -1913,6 +1951,20 @@ namespace eval ::svn_branchlog {
           }
           incr i
         }
+        # Correct the revision list, svn may miss some merged via lines, resulting in 
+        # non consecutive revions
+        set revs {}
+        set last 0
+        foreach rev [lreverse $branchrevs($r)] {
+          set actual [string range $rev 1 end]
+          if {$actual > $last} {
+            lappend revs $rev
+            set last $actual
+          } else {
+            gen_log:log D "skipping $rev because of wrong order"
+          }
+        }
+        set branchrevs($r) [lreverse $revs]
         gen_log:log T "LEAVE \"$revnum\""
         # Return the base revnum of the branch
         return $revnum

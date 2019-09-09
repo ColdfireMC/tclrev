@@ -829,7 +829,7 @@ namespace eval ::logcanvas {
         if {! [info exists drawn_revs]} {
           set drawn_revs ""
         }
-        if {$revision in $drawn_revs} {
+        if {{$branch,$revision} in $drawn_revs} {
           gen_log:log E "$revision is already drawn!"
           return
         }
@@ -928,7 +928,7 @@ namespace eval ::logcanvas {
             -tags [list selectable R$revision active]
           incr ty -$font_norm_h
         }
-        lappend drawn_revs $revision
+        lappend drawn_revs $branch,$revision
         #gen_log:log T "LEAVE ()"
         return
       }
