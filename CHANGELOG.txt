@@ -8,6 +8,8 @@ Release 9.2 September, 2019
 - Added a button to the branch browser to do "git show" or "svn diff" on
   a selected commit, listing the files changed in that commit.
 
+- Speeded up the SVN module browser by not pre-scanning subdirectories
+
 - SVN patches (#103) from Knut Beneke:
   - If a svn branch is copied from a tag it is not shown in 9.1.8
   - Sometimes a svn log -g produces a non consecutive list, thus resulting in an
