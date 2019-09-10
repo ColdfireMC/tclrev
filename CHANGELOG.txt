@@ -2,12 +2,11 @@ Release 9.2 September, 2019
 
 - For Git, added the ability to choose a range of lines in the text view
   of a file, and send that range of lines to the annotation browser.
+  View the selected file in a git repository, select some lines, and
+  press the "Annotate selection" button.
 
 - Added a button to the branch browser to do "git show" or "svn diff" on
   a selected commit, listing the files changed in that commit.
-
-- Add a config cvscfg(gitsince) to limit log diagrams and annotations to
-  a time depth
 
 - SVN patches (#103) from Knut Beneke:
   - If a svn branch is copied from a tag it is not shown in 9.1.8
@@ -19,6 +18,9 @@ Release 9.2 September, 2019
     resulting in an almost empty branch diagram
   - Do not scroll to the end of the viewer output
   - Use verbose svn log output when not otherwise specified
+
+- Add a config cvscfg(gitsince) to limit log diagrams and annotations to
+  a time depth
 
 
 Release 9.1.8 August, 2019
