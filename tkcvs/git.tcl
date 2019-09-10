@@ -359,7 +359,8 @@ proc git_log {detail args} {
       append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      append flags " --graph --all --pretty=oneline"
+      #append flags " --graph --all --pretty=oneline"
+      append flags " --graph --all --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
     }
     verbose {
       append flags " --all"
@@ -520,7 +521,7 @@ proc git_log_rev {rev file} {
 
   gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
-  set commandline "git log -$cvscfg(gitmaxhist) --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
+  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
@@ -534,6 +535,21 @@ proc git_log_rev {rev file} {
   $v_log\::width 120
   $v_log\::do $commandline 1 truncate_git_graph
   $v_log\::wait
+
+  gen_log:log T "LEAVE"
+}
+
+# Shows which files changed in a commit
+# called from the branch browser
+proc git_show {rev} {
+
+  gen_log:log T "ENTER ($rev)"
+  set commandline "git show --stat --oneline --no-color $rev"
+  set title "Git show $rev"
+  set v_show [viewer::new "$title"]
+  $v_show\::width 120
+  $v_show\::do $commandline 1
+  $v_show\::wait
 
   gen_log:log T "LEAVE"
 }

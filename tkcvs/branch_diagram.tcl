@@ -255,6 +255,12 @@ namespace eval ::logcanvas {
                    svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
                  }
                }]
+               $logcanvas.rdiff configure -state normal \
+                 -command [namespace code {
+                    set rev [$logcanvas.up.revA_rvers get]
+                    if {$rev == ""} { set rev "$current_revnum" }
+                    svn_diff $rev
+               }]
           }
          "CVS" {
            $logcanvas.up.bmodbrowse configure -command modbrowse_run \
@@ -264,6 +270,7 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname,v"
            $logcanvas.up.rfname configure -state readonly
+           $logcanvas.rdiff configure -state disabled
            if {$loc == "rep"} {
              # Working on repository files, not checked out
              $logcanvas.view configure \
@@ -371,6 +378,12 @@ namespace eval ::logcanvas {
              $logcanvas.delta configure -state disabled
              $logcanvas.viewtags configure -state normal \
                -command {git_list_tags}
+             $logcanvas.rdiff configure -state normal \
+               -command [namespace code {
+                    set rev [$logcanvas.up.revA_rvers get]
+                    if {$rev == ""} { set rev "$current_revnum" }
+                    git_show $rev
+               }]
             }
          }
          "RCS" {
@@ -2173,6 +2186,7 @@ namespace eval ::logcanvas {
                    }
                    view_output::new Tags $taglist
                  }]
+      button $logcanvas.rdiff -image Patches
       button $logcanvas.close -text "Close" \
         -command [namespace code {
                  global cvscfg
@@ -2200,6 +2214,7 @@ namespace eval ::logcanvas {
            $logcanvas.diff \
            $logcanvas.delta \
            $logcanvas.viewtags \
+           $logcanvas.rdiff \
         -in $logcanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
       pack $logcanvas.down.closefm -side right -expand yes -fill x
@@ -2224,6 +2239,8 @@ namespace eval ::logcanvas {
         {"Merge to current"}
       set_tooltips $logcanvas.viewtags \
         {"List all the file\'s tags"}
+      set_tooltips $logcanvas.rdiff \
+        {"List changed files in a commit"}
 
       #
       # Put the canvas on to the display.
