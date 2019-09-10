@@ -712,6 +712,7 @@ proc svn_jit_listdir {} {
   }
   set dirs {}
   set fils {}
+
   foreach logline $contents {
     if {$logline == "" } continue
     gen_log:log D "$logline"
@@ -720,12 +721,12 @@ proc svn_jit_listdir {} {
       set item [string trimright $item "/"]
       if {$item ne "."} {
         lappend dirs "$item"
-        set info($item) [lrange $logline 0 4]
+        set info($item) [lrange $logline 2 4]
       }
     } else {
       set item [lrange $logline 6 end]
       lappend fils "$item"
-      set info($item) [lrange $logline 0 5]
+      set info($item) [lrange $logline 3 5]
     }
   }
 
@@ -735,50 +736,25 @@ proc svn_jit_listdir {} {
     $tv delete \"/$dir/placeholder\"
   }
   foreach f $fils {
-    gen_log:log D "$tv insert /$dir end -id /$dir/$f -image paper -values [list $f]"
-    $tv insert "/$dir" end -id "/$dir/$f" -image paper -values [list "$f"]
+    gen_log:log D "$tv insert /$dir end -id /$dir/$f -image paper -values [list $f $info($f)]"
+    $tv insert "/$dir" end -id "/$dir/$f" -image paper -values [list "$f" "$info($f)"]
   }
   foreach d $dirs {
-    svn_jit_dircmd "$dir" $d
+    svn_jit_dircmd "$dir" $d "$info($d)"
   }
 
   busy_done $tv
   gen_log:log T "LEAVE"
 }
 
-proc svn_jit_dircmd { parent dir } {
+proc svn_jit_dircmd { parent dir info} {
   global cvscfg
   global Tree
 
-  gen_log:log T "ENTER ($parent $dir)"
+  gen_log:log T "ENTER (\"$parent\" \"$dir\" \"$info\")"
 
   set tv .modbrowse.treeframe.pw
-  # Here we are just figuring out if the top level directory is empty or not.
-  # We don't have to collect any other information, so no -v flag
-  set command "svn list \"$cvscfg(svnroot)/$parent/$dir\""
-  set cmd(svnlist) [exec::new "$command"]
-  if {[info exists cmd(svnlist)]} {
-    set contents [$cmd(svnlist)\::output]
-    $cmd(svnlist)\::destroy
-    catch {unset cmd(svnlist)}
-  }
   set lbl "[file tail $dir]/"
-
-  set dirs {}
-  set fils {}
-  set nl 0
-  foreach logline [split $contents "\n"] {
-    if {$logline == ""} continue
-    incr nl
-    #gen_log:log D "$logline"
-    if [string match {*/} $logline] {
-      set item [string trimright $logline "/"]
-      lappend dirs $item
-    } else {
-      lappend fils $logline
-    }
-  }
-  set exp "($nl items)"
 
   if {$parent ne {}} {
     set parent "/$parent"
@@ -787,17 +763,11 @@ proc svn_jit_dircmd { parent dir } {
   # To avoid having to look ahead and build the whole tree at once, we put
   # a "marker" item in non-empty directories so it will look non-empty
   # and be openable
-  if {$dirs == {} && $fils == {}} {
-    # Empty, so no placeholder
-    gen_log:log D "$tv insert $parent end -id $parent/$dir -image dir -values {$lbl $exp}"
-    $tv insert "$parent" end -id "$parent/$dir" -image dir -values [list "$lbl" "$exp"]
-  } else {
-    gen_log:log D "$tv insert $parent end -id $parent/$dir -image dir -values {$lbl $exp}"
-    $tv insert "$parent" end -id "$parent/$dir" -image dir -values [list "$lbl" "$exp"]
-    # Placeholder so that folder is openable
-    gen_log:log D "$tv insert $parent/$dir end -id $parent/$dir/placeholder -values {placeholder \"\"}"
-    $tv insert "$parent/$dir" end -id "$parent/$dir/placeholder" -values [list "placeholder" ""]
-  }
+  gen_log:log D "$tv insert $parent end -id $parent/$dir -image dir -values {$lbl $info}"
+  $tv insert "$parent" end -id "$parent/$dir" -image dir -values [list "$lbl" "$info"]
+  # Placeholder so that folder is openable
+  gen_log:log D "$tv insert $parent/$dir end -id $parent/$dir/placeholder -values {placeholder \"\"}"
+  $tv insert "$parent/$dir" end -id "$parent/$dir/placeholder" -values [list "placeholder" ""]
   set depth [llength [file split "$parent/$dir"]]
   set col0_width [expr {$depth * $cvscfg(mod_iconwidth)}]
   $tv column #0 -width $col0_width
@@ -827,22 +797,24 @@ proc parse_svnmodules {svnroot} {
     gen_log:log D "$logline"
     if [string match {*/} $logline] {
       set item [lrange $logline 5 end]
-        if {$item ne "./"} {
-      lappend dirs [string trimright $item "/"]
+      set item [string trimright $item "/"]
+      if {$item ne "."} {
+        lappend dirs $item
+        set info($item) [lrange $logline 2 4]
       }
     } else {
       set item [lrange $logline 6 end]
       lappend fils $item
-      set info($item) [lrange $logline 0 5]
+      set info($item) [lrange $logline 3 5]
     }
   }
 
   foreach f $fils {
-    gen_log:log D "$tv insert {} end -id $f -image Fileview -values {$f \"\"}"
-    $tv insert {} end -id $f -image paper -values [list "$f" ""]
+    gen_log:log D "$tv insert {} end -id $f -image Fileview -values [list $f $info($f)]"
+    $tv insert {} end -id $f -image paper -values [list "$f" "$info($f)"]
   }
   foreach d $dirs {
-    svn_jit_dircmd {} $d
+    svn_jit_dircmd {} $d "$info($d)"
   }
   gen_log:log T "LEAVE"
 }

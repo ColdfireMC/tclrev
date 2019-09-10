@@ -328,7 +328,7 @@ proc modbrowse_run {} {
       ModTree:create .modbrowse.treeframe
       pack .modbrowse.treeframe.pw -side bottom -fill both -expand yes
       .modbrowse.treeframe.pw heading file -text "File"
-      .modbrowse.treeframe.pw heading information -text "Information"
+      .modbrowse.treeframe.pw heading information -text "Date"
       # parse_svnmodules will do "svn list" and post the files and directories
       bind .modbrowse.treeframe.pw <<TreeviewOpen>> svn_jit_listdir
       bind .modbrowse.treeframe.pw <<TreeviewClose>> svn_closedir
