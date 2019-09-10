@@ -924,6 +924,21 @@ proc svn_log_rev {filepath} {
   gen_log:log T "LEAVE"
 }
 
+# Shows which files changed in a commit
+# called from the branch browser
+proc svn_diff {rev} {
+
+  gen_log:log T "ENTER ($rev)"
+  set commandline "svn diff --summarize -r $rev"
+  set title "SVN diff $rev"
+  set v_show [viewer::new "$title"]
+  $v_show\::width 120
+  $v_show\::do $commandline 1
+  $v_show\::wait
+
+  gen_log:log T "LEAVE"
+}
+
 proc svn_info {args} {
   global cvscfg
   gen_log:log T "ENTER ($args)"
