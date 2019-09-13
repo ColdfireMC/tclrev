@@ -1238,7 +1238,7 @@ namespace eval ::git_branchlog {
         if {$logcfg(show_tags)} {
           append command " --tags"
         }
-        append command " --abbrev-commit --parents --date=iso --decorate=short --no-color -- \"$filename\""
+        append command " --abbrev-commit --parents --format=fuller --date=iso --decorate=short --no-color -- \"$filename\""
         set cmd_log [exec::new $command {} 0 {} 1]
         set log_output [$cmd_log\::output]
         $cmd_log\::destroy
@@ -1249,6 +1249,7 @@ namespace eval ::git_branchlog {
         catch {unset log_lines}
         if {! [info exists allrevs]} {
           cvsfail "Couldn't read git log for $filename" $lc
+          return;
         }
         gen_log:log D "[llength $allrevs] REVISIONS picked up by git log --all"
         # If we've found parentless revisions, rootrev is set to the first parentless
@@ -1528,6 +1529,7 @@ namespace eval ::git_branchlog {
         gen_log:log D "Branches:       $branches"
         if {[llength $branches] < 1} {
           cvsfail "Nothing found by git log $cvscfg(gitlog_opts)"
+          busy_done $lc
           return
         }
 
@@ -2020,10 +2022,10 @@ namespace eval ::git_branchlog {
               set remainder [join [lrange $line 1 end]]
               regsub { <.*>} $remainder {} revwho($revnum)
             }
-            incr i
+            incr i 3
             set line [lindex $lines $i]
             # Date:   2018-08-17 20:10:15 -0700
-            if { [string match {Date:*} $line] } {
+            if { [string match {CommitDate:*} $line] } {
               set revdate($revnum) [lindex $line 1]
               set revtime($revnum) [lindex $line 2]
             }

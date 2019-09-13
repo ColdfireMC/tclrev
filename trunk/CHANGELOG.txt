@@ -1,3 +1,8 @@
+Release 9.2.1 September, 2019
+
+- In git branch diagram, show commit date instead of author date
+
+
 Release 9.2 September, 2019
 
 - For Git, added the ability to choose a range of lines in the text view
