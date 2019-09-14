@@ -522,7 +522,8 @@ proc patch_colortags {exec line} {
     { is removed;}   { set tag removed }
     {^\+}            { set tag added }
     {^\-}            { set tag removed }
-    {^Index}         { set tag modified }
+    {^Index}         { set tag invert }
+    {^diff }         { set tag invert }
     default          { set tag default }
   }
   #gen_log:log T "LEAVE: $tag"
@@ -615,6 +616,7 @@ namespace eval ::view_output {
 
 proc viewer_window {w title parent} {
   global cvscfg
+  global cvsglb
   global tcl_platform
 
   toplevel $w
@@ -634,6 +636,7 @@ proc viewer_window {w title parent} {
     regsub {^.*,} $outputcolor {} mode
     $w.text tag configure "$mode" -foreground $cvscfg($outputcolor)
   }
+  $w.text tag configure "invert" -foreground $cvsglb(textbg) -background $cvscfg(outputColor,patched)
 
   scrollbar $w.scroll -relief sunken -command "$w.text yview"
   frame $w.bottom
