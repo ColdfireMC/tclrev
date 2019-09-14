@@ -55,6 +55,7 @@ namespace eval ::annotate {
 
       proc cvs_annotate_color {w now logline ln} {
         global cvscfg
+        global cvsglb
         variable revcolors
         variable agecolors
         variable revlist
@@ -82,7 +83,7 @@ namespace eval ::annotate {
           set revcolors($revnum) $agecolors($revindex)
 
           $w tag configure $revnum \
-            -background $revcolors($revnum) -foreground black
+            -background $revcolors($revnum) -foreground black -selectbackground $cvsglb(hlbg)
         }
 
         if {$cvscfg(blame_linenums)} {
@@ -94,6 +95,7 @@ namespace eval ::annotate {
 
       proc git_annotate_color {w now logline ln} {
         global cvscfg
+        global cvsglb
         variable revcolors
         variable agecolors
         variable revlist
@@ -109,7 +111,7 @@ namespace eval ::annotate {
         set when [lindex $annot end-3]
         # Is the name ever in two parts?
         set who [lindex $annot 0]
-        set line "$who ($when): $orig_line"
+        set line "($who $when): $orig_line"
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
@@ -125,7 +127,7 @@ namespace eval ::annotate {
           set revcolors($revnum) $agecolors($revindex)
 
           $w tag configure $revnum \
-            -background $revcolors($revnum) -foreground black
+            -background $revcolors($revnum) -foreground black -selectbackground $cvsglb(hlbg)
         }
 
         if {$cvscfg(blame_linenums)} {
@@ -148,12 +150,12 @@ namespace eval ::annotate {
 
         set logline [string trimleft $logline]
         regexp {(\d+\s+.*\) )(.*$)} $logline all annotations orig_line
-        regexp {(^\S+)\s+(\S+).*(\(.*?\))} $annotations all revnum who when
+        regexp {(^\S+)\s+(\S+).*\((.*?)\)} $annotations all revnum who when
         if {$revnum == "Skipping"} {
           cvsfail "Skipping binary file" $w
           return
         }
-        set line "$who $when: $orig_line"
+        set line "($who $when): $orig_line"
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
@@ -169,7 +171,7 @@ namespace eval ::annotate {
           set revcolors($revnum) $agecolors($revindex)
 
           $w tag configure $revnum \
-            -background $revcolors($revnum) -foreground black
+            -background $revcolors($revnum) -foreground black -selectbackground $cvsglb(hlbg)
         }
 
         if {$cvscfg(blame_linenums)} {
