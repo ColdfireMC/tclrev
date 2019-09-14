@@ -152,6 +152,7 @@ proc workdir_setup {} {
      -command { setup_dir }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check \
      -command { cvs_check }
+  button .workdir.bottom.buttons.dirfuncs.rdiff -image Patches
   button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches \
      -command { cvs_branches [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate \
@@ -208,6 +209,7 @@ proc workdir_setup {} {
   grid rowconf .workdir.bottom.buttons.dirfuncs 0 -weight 1
   grid .workdir.bottom.buttons.dirfuncs.brefresh      -column 0 -row 0 -ipadx 4 -ipady 4
   grid .workdir.bottom.buttons.dirfuncs.bcheckdir     -column 1 -row 0 -ipadx 4 -ipady 4
+  grid .workdir.bottom.buttons.dirfuncs.rdiff         -column 2 -row 0 -ipadx 4 -ipady 4
 
   # Revcontrol functions
   grid .workdir.bottom.buttons.cvsfuncs.blogfile      -column 0 -row 0 -ipadx 4
@@ -249,6 +251,8 @@ proc workdir_setup {} {
      {"Directory Branch Diagram and Merge Tool"}
   set_tooltips .workdir.bottom.buttons.dirfuncs.bcheckdir \
      {"Check the status of the directory"}
+  set_tooltips .workdir.bottom.buttons.dirfuncs.rdiff \
+     {"List the changed files"}
 
   set_tooltips .workdir.bottom.buttons.cvsfuncs.blogfile \
      {"Graphical Branch Diagram of the selected files"}
@@ -594,6 +598,7 @@ proc setup_dir { } {
   .workdir.menubar.reports entryconfigure "Info" -state disabled
   # Start with the revision-control buttons disabled
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
+  .workdir.bottom.buttons.dirfuncs.rdiff configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
     $widget configure -state disabled
   }
@@ -854,6 +859,8 @@ proc setup_dir { } {
       -command { git_fileview HEAD $module_dir [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
+    .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
+      -command { git_show "" }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
       -command { foreach f [workdir_list_files] {git_merge_conflict \"$f\"} }

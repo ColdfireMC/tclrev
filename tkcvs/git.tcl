@@ -343,6 +343,7 @@ proc git_log {detail args} {
   busy_start .workdir.main
   set filelist [join $args]
   set flags ""
+  set filter ""
 
   if {[llength $filelist] == 0} {
     set filelist {.}
@@ -361,6 +362,7 @@ proc git_log {detail args} {
     summary {
       #append flags " --graph --all --pretty=oneline"
       append flags " --graph --all --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
+      set filter truncate_git_graph
     }
     verbose {
       append flags " --all"
@@ -373,7 +375,7 @@ proc git_log {detail args} {
       $v\::log "-- $file -------------------------------\n" blue
     }
     set command "git log --no-color $flags -- \"$file\""
-    $v\::do "$command" 1
+    $v\::do "$command" 1 $filter
     $v\::wait
     $v\::width 120
   }
