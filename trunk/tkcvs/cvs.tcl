@@ -1312,9 +1312,9 @@ proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outf
   global cvs
   global cvscfg
  
-  gen_log:log T "ENTER ($cvsroot $module $difffmt $revtagA $dateA $revtagB $dateB $outmode $outfile)"
+  gen_log:log T "ENTER ($cvsroot $module $difffmt \"$revtagA\" \"$dateA\" \"$revtagB\" \"$dateB\" $outmode $outfile)"
 
-  lassign {{} {}} {rev1 rev2}
+  lassign {{} {}} rev1 rev2
   if {$revtagA != {}} {
     set rev1 "-r \"$revtagA\""
   } elseif {$dateA != {}} {
