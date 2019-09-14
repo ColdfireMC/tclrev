@@ -2,6 +2,8 @@ Release 9.2.1 September, 2019
 
 - In git branch diagram, show commit date instead of author date
 
+- Add the "git show" button to the workdir browser, too
+
 
 Release 9.2 September, 2019
 
