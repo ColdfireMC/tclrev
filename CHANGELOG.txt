@@ -2,7 +2,10 @@ Release 9.2.1 September, 2019
 
 - In git branch diagram, show commit date instead of author date
 
-- Add the "git show" button to the workdir browser, too
+- Add a patch button to the workdir browser for CVS, SVN, and Git.
+  It does a diff of all the changed files.
+
+- Fixed broken module-level patch dialog for CVS and SVN.
 
 
 Release 9.2 September, 2019

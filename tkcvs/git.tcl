@@ -556,6 +556,20 @@ proc git_show {rev} {
   gen_log:log T "LEAVE"
 }
 
+# Shows changes between commits
+# called from the workdir browser
+proc git_patch {rev} {
+
+  gen_log:log T "ENTER ($rev)"
+  set commandline "git diff --no-color $rev"
+  set title "Git show $rev"
+  set v_show [viewer::new "$title"]
+  $v_show\::width 120
+  $v_show\::do $commandline 1 patch_colortags
+  $v_show\::wait
+
+  gen_log:log T "LEAVE"
+}
 # called from the "Check Directory" button in the workdir and Reports menu
 proc git_check {} {
   global cvscfg
