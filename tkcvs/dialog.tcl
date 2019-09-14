@@ -381,13 +381,13 @@ proc dialog_cvs_patch { cvsroot module summary {revtagA {}} {revtagB {}} } {
 
 # Compare two revisions, from the module browser
 # Can make a patch file or send a summary to the screen
-proc dialog_svn_patch { cvsroot pathA pathB summary } {
+proc dialog_svn_patch { svn_url {pathA {}} {pathB {}} summary } {
   global dynamic_dialog
   global dialog_action
 
-  gen_log:log T "ENTER ( $cvsroot $pathA $pathB $summary )"
+  gen_log:log T "ENTER ( $svn_url $pathA $pathB $summary )"
 
-  set dynamic_dialog(cvsroot) $cvsroot
+  set dynamic_dialog(svn_url) $svn_url
   set dynamic_dialog(pathA) $pathA
   set dynamic_dialog(pathB) $pathB
   if {$summary} {
@@ -396,11 +396,11 @@ proc dialog_svn_patch { cvsroot pathA pathB summary } {
     set dynamic_dialog(outmode) 1
   }
   set dynamic_dialog(outfile) "patchfile.patch"
-  set dynamic_dialog(fullA) "$cvsroot$pathA"
+  set dynamic_dialog(fullA) "$svn_url$pathA"
   if {$pathB == ""} {
     set dynamic_dialog(fullB) ""
   } else {
-    set dynamic_dialog(fullB) "$cvsroot$pathB"
+    set dynamic_dialog(fullB) "$svn_url$pathB"
   }
 
   # field  req type labeltext          data
@@ -421,11 +421,11 @@ proc dialog_svn_patch { cvsroot pathA pathB summary } {
   # Action function
   set dialog_action {
     # Make new fullA and fullB from the pathA and pathB entries
-    set dynamic_dialog(fullA) "$dynamic_dialog(cvsroot)/$dynamic_dialog(pathA)"
+    set dynamic_dialog(fullA) "$dynamic_dialog(svn_url)/$dynamic_dialog(pathA)"
     if {$dynamic_dialog(pathB) == ""} {
       set dynamic_dialog(fullB) ""
     } else {
-      set dynamic_dialog(fullB) "$dynamic_dialog(cvsroot)/$dynamic_dialog(pathB)"
+      set dynamic_dialog(fullB) "$dynamic_dialog(svn_url)/$dynamic_dialog(pathB)"
     }
     svn_patch $dynamic_dialog(fullA) \
        $dynamic_dialog(fullB) \

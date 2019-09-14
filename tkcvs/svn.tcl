@@ -627,7 +627,7 @@ proc svn_annotate_r {revision filepath} {
 # If both are null the top two revisions of the file are diffed.
 proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
 
-  gen_log:log T "ENTER ($pathA $pathB $revA $dateA $revB $dateB $outmode $outfile)"
+  gen_log:log T "ENTER ($pathA $pathB \"$revA\" \"$dateA\" \"$revB\" \"$dateB\" $outmode $outfile)"
 
   lassign {{} {}} rev1 rev2
   if {$revA != {}} {
@@ -646,14 +646,19 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
     set command "svn diff $pathA $pathB"
   } elseif {$rev1 != {} && $rev2 != {}} {
     set command "svn diff $pathA@$rev1 $pathA@$rev2"
+  } elseif {$rev1 != {}} {
+    set command "svn diff $pathA -c $rev1"
+  } elseif {$rev2 != {}} {
+    set command "svn diff $pathA -c $rev2"
+  } elseif {$pathA == {} && $pathB == {} && $rev1 == {} && $rev2 == {}} {
+    set command "svn diff"
   } else {
-    cvsfail "Specify either two paths OR one path and two revisions"
-    return
+    set command "svn diff"
   }
 
   if {$outmode == 0} {
     set v [viewer::new "SVN Diff"]
-    $v\::do "$command"
+    $v\::do "$command" 0 patch_colortags
   } else {
     set e [exec::new "$command"]
     set patch [$e\::output]

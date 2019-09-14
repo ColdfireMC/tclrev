@@ -455,9 +455,9 @@ proc modbrowse_run {} {
       .modbrowse.bottom.buttons.modfuncs.branchtag configure -state normal \
         -command { dialog_svn_tag $cvscfg(svnroot) $modbrowse_path "branches" }
       .modbrowse.bottom.buttons.modfuncs.patchsummary configure -state normal \
-        -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 1 }
+        -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path {} 1 }
       .modbrowse.bottom.buttons.modfuncs.patchfile configure -state normal \
-        -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path $selB_path 0 }
+        -command { dialog_svn_patch $cvscfg(svnroot) $modbrowse_path {} 0 }
       .modbrowse.bottom.buttons.cvsfuncs.who configure -state disabled
       .modbrowse.bottom.buttons.svnfuncs.filecat configure -state normal
       .modbrowse.bottom.buttons.svnfuncs.filelog configure -state normal

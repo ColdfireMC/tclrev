@@ -696,6 +696,8 @@ proc setup_dir { } {
       -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check }
+    .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
+      -command { svn_patch $cvscfg(url) {} {} {} {} {} 0 {} }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -image DirBranches -command { svn_branches . }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
@@ -771,6 +773,8 @@ proc setup_dir { } {
       -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check }
+    .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
+      -command { cvs_patch $cvscfg(cvsroot) $module_dir -u {} {} {} {} 0 {} }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -image DirBranches -command cvs_joincanvas
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
