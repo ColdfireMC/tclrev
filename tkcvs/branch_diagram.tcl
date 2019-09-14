@@ -949,6 +949,7 @@ namespace eval ::logcanvas {
       proc DrawBranch { x y root_rev branch } {
         global logcfg
         global ingit
+        global cvsglb
         variable logcanvas
         variable curr
         variable box_height
@@ -1240,7 +1241,7 @@ namespace eval ::logcanvas {
         }
         # Finished individual revisions and their branches
 
-        if {$ingit} {
+        if {$ingit && ! $cvsglb(lightning)} {
           # For Git, now we draw the root box at the top
           lassign [CalcRoot $branch] rtw ignore bot_height
           if {$last_y != {} } {
