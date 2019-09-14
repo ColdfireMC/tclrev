@@ -864,7 +864,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
     .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
-      -command { git_show "" }
+      -command { git_patch "" }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
       -command { foreach f [workdir_list_files] {git_merge_conflict \"$f\"} }
