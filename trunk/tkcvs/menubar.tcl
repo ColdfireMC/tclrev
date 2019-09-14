@@ -185,7 +185,6 @@ proc workdir_menus {topwin} {
   $topwin.menubar.reports.log_detail add command -label "Summary"
   $topwin.menubar.reports.log_detail add command -label "Verbose"
 
-  $topwin.menubar.reports add command -label "Annotate/Blame" -underline 0
   $topwin.menubar.reports add command -label "Info" -underline 0
   $topwin.menubar.reports add separator
   $topwin.menubar.reports add checkbutton -label "Report Unknown Files" \

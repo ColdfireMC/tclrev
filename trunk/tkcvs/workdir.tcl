@@ -594,7 +594,6 @@ proc setup_dir { } {
   .workdir.menubar.reports entryconfigure "Check Directory" -state disabled
   .workdir.menubar.reports entryconfigure "Status" -state disabled
   .workdir.menubar.reports entryconfigure "Log" -state disabled
-  .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
   .workdir.menubar.reports entryconfigure "Info" -state disabled
   # Start with the revision-control buttons disabled
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
@@ -674,7 +673,6 @@ proc setup_dir { } {
     .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
        -command { rcs_log "verbose" [workdir_list_files] }
 
-    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
     .workdir.menubar.reports entryconfigure "Info" -state disabled
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state disabled
@@ -747,9 +745,6 @@ proc setup_dir { } {
        -command { svn_log "summary" [workdir_list_files] }
     .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
        -command { svn_log "verbose" [workdir_list_files] }
-    # Annotate/Blame (svn blame)
-    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
-       -command { svn_annotate BASE [workdir_list_files] }
     # General info (svn info)
     .workdir.menubar.reports entryconfigure "Info" -state normal \
        -command { svn_info [workdir_list_files] }
@@ -839,9 +834,6 @@ proc setup_dir { } {
        -command { cvs_log "summary" [workdir_list_files] }
     .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
        -command { cvs_log "verbose" [workdir_list_files] }
-    # Annotate/Blame (cvs annotate)
-    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state normal \
-       -command { cvs_annotate $current_tagname [workdir_list_files] }
     .workdir.menubar.reports entryconfigure "Info" -state disabled
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
@@ -926,8 +918,6 @@ proc setup_dir { } {
        -command { git_log "summary" [workdir_list_files] }
     .workdir.menubar.reports.log_detail entryconfigure "Verbose" \
        -command { git_log "verbose" [workdir_list_files] }
-    # Annotate/Blame
-    .workdir.menubar.reports entryconfigure "Annotate/Blame" -state disabled
     .workdir.menubar.reports entryconfigure "Info" -state disabled
     # Options for reports
     .workdir.menubar.reports entryconfigure "Report Unknown Files" -state normal
