@@ -255,14 +255,6 @@ namespace eval ::logcanvas {
                    svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
                  }
                }]
-               $logcanvas.ddiff configure -state normal \
-                 -command [namespace code {
-                    set rev1 [$logcanvas.up.revA_rvers get]
-                    set rev2 [$logcanvas.up.revB_rvers get]
-                    set rev1 [string trimleft $rev1 {r}]
-                    set rev2 [string trimleft $rev2 {r}]
-                    svn_ddiff $rev1 $rev2
-               }]
                $logcanvas.rdiff configure -state normal \
                  -command [namespace code {
                     set rev1 [$logcanvas.up.revA_rvers get]
@@ -270,6 +262,14 @@ namespace eval ::logcanvas {
                     set rev1 [string trimleft $rev1 {r}]
                     set rev2 [string trimleft $rev2 {r}]
                     svn_patch $filename {} $rev1 {} $rev2 {} 0 {}
+               }]
+               $logcanvas.ddiff configure -state normal \
+                 -command [namespace code {
+                    set rev1 [$logcanvas.up.revA_rvers get]
+                    set rev2 [$logcanvas.up.revB_rvers get]
+                    set rev1 [string trimleft $rev1 {r}]
+                    set rev2 [string trimleft $rev2 {r}]
+                    svn_ddiff $rev1 $rev2
                }]
           }
          "CVS" {
@@ -388,11 +388,16 @@ namespace eval ::logcanvas {
              $logcanvas.delta configure -state disabled
              $logcanvas.viewtags configure -state normal \
                -command {git_list_tags}
+             $logcanvas.rdiff configure -state normal \
+               -command [namespace code {
+                    set rev1 [$logcanvas.up.revA_rvers get]
+                    set rev2 [$logcanvas.up.revB_rvers get]
+                    git_patch $rev1 $rev2
+               }]
              $logcanvas.ddiff configure -state normal \
                -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers get]
-                    if {$rev == ""} { set rev "$current_revnum" }
-                    git_show $rev
+                    set rev1 [$logcanvas.up.revA_rvers get]
+                    git_show $rev1
                }]
             }
          }
