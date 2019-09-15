@@ -454,7 +454,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } elseif {$insvn} {
     svn_branches "$lcfile"
   } elseif {$ingit} {
-    git_branches "$lcfile"
+    git_fast_diagram "$lcfile"
   } else {
     puts "File doesn't seem to be in CVS, SVN, RCS, or GIT"
   }

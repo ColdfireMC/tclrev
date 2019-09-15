@@ -252,7 +252,7 @@ proc workdir_setup {} {
   set_tooltips .workdir.bottom.buttons.dirfuncs.bcheckdir \
      {"Check the status of the directory"}
   set_tooltips .workdir.bottom.buttons.dirfuncs.rdiff \
-     {"List the changed files"}
+     {"Show diffs in the changed files"}
 
   set_tooltips .workdir.bottom.buttons.cvsfuncs.blogfile \
      {"Graphical Branch Diagram of the selected files"}

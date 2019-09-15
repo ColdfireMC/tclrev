@@ -622,6 +622,29 @@ proc svn_annotate_r {revision filepath} {
   gen_log:log T "LEAVE"
 }
 
+# Shows which files changed in a commit
+# called from the branch browser
+proc svn_ddiff { {rev1 {}} {rev2 {}} } {
+
+  gen_log:log T "ENTER (\"$rev1\" \"$rev2\")"
+  set command "svn diff --summarize"
+  set args ""
+  if {$rev1 != {} && $rev2 != {} } {
+    set args " -r $rev1:$rev2"
+  } elseif {$rev1 != {} } {
+    set args "-c -r$rev1"
+  } elseif {$rev2 != {} } {
+    set args "-c -r$rev2"
+  }
+  set title "SVN diff $args"
+  set v_show [viewer::new "$title"]
+  $v_show\::width 120
+  $v_show\::do "$command $args" 1
+  $v_show\::wait
+
+  gen_log:log T "LEAVE"
+}
+
 # This creates a patch file between two revisions of a module.  If the
 # second revision is null, it creates a patch to the head revision.
 # If both are null the top two revisions of the file are diffed.
@@ -642,23 +665,24 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
   }
   set pathA [safe_url $pathA]
   set pathB [safe_url $pathB]
+  set args ""
+  set command "svn diff"
   if {$pathA != {} && $pathB != {}} {
-    set command "svn diff $pathA $pathB"
+    set args "$pathA $pathB"
+    if {$rev1 != {} && $rev2 != {}} {
+      set args "$pathA@$rev1 $pathB@$rev2"
+    }
   } elseif {$rev1 != {} && $rev2 != {}} {
-    set command "svn diff $pathA@$rev1 $pathA@$rev2"
+    set args "$pathA -r $rev1:$rev2"
   } elseif {$rev1 != {}} {
-    set command "svn diff $pathA -c $rev1"
+    set args "$pathA -c -r$rev1"
   } elseif {$rev2 != {}} {
-    set command "svn diff $pathA -c $rev2"
-  } elseif {$pathA == {} && $pathB == {} && $rev1 == {} && $rev2 == {}} {
-    set command "svn diff"
-  } else {
-    set command "svn diff"
+    set args "$pathA -c -r$rev2"
   }
 
   if {$outmode == 0} {
-    set v [viewer::new "SVN Diff"]
-    $v\::do "$command" 0 patch_colortags
+    set v [viewer::new "SVN Diff $args"]
+    $v\::do "$command $args" 0 patch_colortags
   } else {
     set e [exec::new "$command"]
     set patch [$e\::output]
@@ -898,21 +922,6 @@ proc svn_log_rev {filepath} {
   append svncommand "\"$filepath\""
   set logcmd [viewer::new "SVN log $filepath"]
   $logcmd\::do "$svncommand"
-  gen_log:log T "LEAVE"
-}
-
-# Shows which files changed in a commit
-# called from the branch browser
-proc svn_diff {rev} {
-
-  gen_log:log T "ENTER ($rev)"
-  set commandline "svn diff --summarize -r $rev"
-  set title "SVN diff $rev"
-  set v_show [viewer::new "$title"]
-  $v_show\::width 120
-  $v_show\::do $commandline 1
-  $v_show\::wait
-
   gen_log:log T "LEAVE"
 }
 
