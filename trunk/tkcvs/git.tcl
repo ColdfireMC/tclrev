@@ -558,7 +558,7 @@ proc git_show {rev} {
 
 # Shows changes between commits
 # called from the workdir browser
-proc git_patch { {rev1 {}} {rev2 {}} } {
+proc git_patch { filename {rev1 {}} {rev2 {}} } {
 
   gen_log:log T "ENTER (\"$rev1\" \"$rev2\")"
   set command "git diff --no-color"
@@ -569,6 +569,9 @@ proc git_patch { {rev1 {}} {rev2 {}} } {
     set args "$rev1^ $rev1"
   } elseif {$rev2 != {} } {
     set args "$rev2^ $rev2"
+  }
+  if {$filename != {}} {
+    append args " $filename"
   }
   set title "SVN diff $args"
 

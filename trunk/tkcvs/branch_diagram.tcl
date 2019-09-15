@@ -255,22 +255,22 @@ namespace eval ::logcanvas {
                    svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
                  }
                }]
-               $logcanvas.rdiff configure -state normal \
-                 -command [namespace code {
-                    set rev1 [$logcanvas.up.revA_rvers get]
-                    set rev2 [$logcanvas.up.revB_rvers get]
-                    set rev1 [string trimleft $rev1 {r}]
-                    set rev2 [string trimleft $rev2 {r}]
-                    svn_patch $filename {} $rev1 {} $rev2 {} 0 {}
-               }]
-               $logcanvas.ddiff configure -state normal \
-                 -command [namespace code {
-                    set rev1 [$logcanvas.up.revA_rvers get]
-                    set rev2 [$logcanvas.up.revB_rvers get]
-                    set rev1 [string trimleft $rev1 {r}]
-                    set rev2 [string trimleft $rev2 {r}]
-                    svn_ddiff $rev1 $rev2
-               }]
+               #$logcanvas.rdiff configure -state normal \
+                 #-command [namespace code {
+                    #set rev1 [$logcanvas.up.revA_rvers get]
+                    #set rev2 [$logcanvas.up.revB_rvers get]
+                    #set rev1 [string trimleft $rev1 {r}]
+                    #set rev2 [string trimleft $rev2 {r}]
+                    #svn_patch $filename {} $rev1 {} $rev2 {} 0 {}
+               #}]
+               #$logcanvas.ddiff configure -state normal \
+                 #-command [namespace code {
+                    #set rev1 [$logcanvas.up.revA_rvers get]
+                    #set rev2 [$logcanvas.up.revB_rvers get]
+                    #set rev1 [string trimleft $rev1 {r}]
+                    #set rev2 [string trimleft $rev2 {r}]
+                    #svn_ddiff $rev1 $rev2
+               #}]
           }
          "CVS" {
            $logcanvas.up.bmodbrowse configure -command modbrowse_run \
@@ -280,8 +280,6 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname delete 0 end
            $logcanvas.up.rfname insert end "$fname,v"
            $logcanvas.up.rfname configure -state readonly
-           $logcanvas.ddiff configure -state disabled
-           $logcanvas.rdiff configure -state disabled
            if {$loc == "rep"} {
              # Working on repository files, not checked out
              $logcanvas.view configure \
@@ -336,14 +334,14 @@ namespace eval ::logcanvas {
                    }
                    cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
                }]
-             $logcanvas.rdiff configure -state normal \
-                 -command [namespace code {
-                   set rev1 [$logcanvas.up.revA_rvers get]
-                   set rev2 [$logcanvas.up.revB_rvers get]
-                   set rev1 [string trimleft $rev1 {r}]
-                   set rev2 [string trimleft $rev2 {r}]
-                   cvs_patch $cvscfg(cvsroot) $module_dir/$filename -u $rev1 {} $rev2 {} 0 {}
-               }]
+             #$logcanvas.rdiff configure -state normal \
+                 #-command [namespace code {
+                   #set rev1 [$logcanvas.up.revA_rvers get]
+                   #set rev2 [$logcanvas.up.revB_rvers get]
+                   #set rev1 [string trimleft $rev1 {r}]
+                   #set rev2 [string trimleft $rev2 {r}]
+                   #cvs_patch $cvscfg(cvsroot) $module_dir/$filename -u $rev1 {} $rev2 {} 0 {}
+               #}]
             }
          }
          "GIT" {
@@ -400,7 +398,7 @@ namespace eval ::logcanvas {
                -command [namespace code {
                     set rev1 [$logcanvas.up.revA_rvers get]
                     set rev2 [$logcanvas.up.revB_rvers get]
-                    git_patch $rev1 $rev2
+                    git_patch $filename $rev1 $rev2
                }]
              $logcanvas.ddiff configure -state normal \
                -command [namespace code {
@@ -2239,10 +2237,14 @@ namespace eval ::logcanvas {
            $logcanvas.diff \
            $logcanvas.delta \
            $logcanvas.viewtags \
-           $logcanvas.rdiff \
-           $logcanvas.ddiff \
         -in $logcanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
+      if {$ingit} {
+         pack  $logcanvas.rdiff \
+               $logcanvas.ddiff \
+                 -in $logcanvas.down.btnfm -side left \
+                 -ipadx 4 -ipady 4
+      }
       pack $logcanvas.down.closefm -side right -expand yes -fill x
       pack $logcanvas.close \
         -in $logcanvas.down.closefm -side right -padx 15
