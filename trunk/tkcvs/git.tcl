@@ -1261,7 +1261,7 @@ namespace eval ::git_branchlog {
             append command " -$cvscfg(gitmaxhist)"
           }
           if {$cvscfg(gitsince) != ""} {
-            append command " --since=$cvscfg(gitsince)"
+            append command " --since=\"$cvscfg(gitsince)\""
           }
         }
         if {$logcfg(show_tags)} {
@@ -1470,7 +1470,7 @@ namespace eval ::git_branchlog {
               set seconds [clock scan $revdate($oldest_rev) -gmt yes]
               set since_time [clock add $seconds -1 hour]
             }
-            set command "$command --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=$since_time $br -- \"$filename\""
+            set command "$command --reverse --abbrev-commit $cvscfg(gitlog_opts) --since=\"$since_time\" $br -- \"$filename\""
             set cmd_revlist [exec::new $command {} 0 {} 1]
             set revlist_output [$cmd_revlist\::output]
             $cmd_revlist\::destroy
