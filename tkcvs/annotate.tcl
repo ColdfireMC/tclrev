@@ -246,7 +246,7 @@ namespace eval ::annotate {
          set now [lindex $infoline 0]
 
          if {$cvscfg(gitsince) != ""} {
-           set sinceflag "--since=$cvscfg(gitsince)"
+           set sinceflag "--since=\"$cvscfg(gitsince)\""
          } else {
            set sinceflag ""
          }
@@ -257,7 +257,7 @@ namespace eval ::annotate {
        }
        "git_r" {
          if {$cvscfg(gitsince) != ""} {
-           set sinceflag "--since=$cvscfg(gitsince)"
+           set sinceflag "--since=\"$cvscfg(gitsince)\""
          } else {
            set sinceflag ""
          }
