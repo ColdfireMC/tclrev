@@ -96,6 +96,7 @@ namespace eval ::annotate {
       proc git_annotate_color {w now logline ln} {
         global cvscfg
         global cvsglb
+        global tk_version
         variable revcolors
         variable agecolors
         variable revlist
@@ -126,8 +127,10 @@ namespace eval ::annotate {
 
           set revcolors($revnum) $agecolors($revindex)
 
-          $w tag configure $revnum \
-            -background $revcolors($revnum) -foreground black -selectbackground $cvsglb(hlbg)
+          $w tag configure $revnum -background $revcolors($revnum) -foreground black
+          if {$tk_version >= 8.6} {
+            $w tag configure $revnum black -selectbackground $cvsglb(hlbg)
+          }
         }
 
         if {$cvscfg(blame_linenums)} {
