@@ -562,7 +562,7 @@ proc git_patch {rev} {
 
   gen_log:log T "ENTER ($rev)"
   set commandline "git diff --no-color $rev"
-  set title "Git show $rev"
+  set title "Git diff $rev"
   set v_show [viewer::new "$title"]
   $v_show\::width 120
   $v_show\::do $commandline 1 patch_colortags

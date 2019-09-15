@@ -2,11 +2,18 @@ Release 9.2.1 September, 2019
 
 - In git branch diagram, show commit date instead of author date
 
+- When invoking tkcvs -log <filename> or tkcvs <filename> from the command
+  line, do the fast non-branched kind.
+
 - Add a patch button to the workdir browser for CVS, SVN, and Git.  It does a
   diff of all the changed files.
 
--  Introduce an "invert" tag in the viewer window, and use it in
-   patch_colortags to make each new file stand out.
+- Add a file diff button to the branch browser, and change the icon of
+  the one that lists changed files, so the patch buttons in the workdir and
+  branch browsers do the same thing.
+
+- Introduce an "invert" tag in the viewer window, and use it in
+  patch_colortags to make each new file stand out.
 
 - Fixed broken module-level patch dialog for CVS and SVN.
 
