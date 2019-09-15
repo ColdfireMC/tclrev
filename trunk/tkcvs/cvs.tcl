@@ -665,10 +665,10 @@ proc cvs_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "CVS log"
-  set commandline "$cvs log -N"
+  set commandline "$cvs log -N -S"
   if {$rev ne ""} {
-    append commandline " -r$rev"
-    append title " -r$rev"
+    append commandline " -r:$rev"
+    append title " -r:$rev"
   }
   append commandline " \"$file\""
   append title " $file"

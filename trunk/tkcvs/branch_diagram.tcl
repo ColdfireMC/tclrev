@@ -281,6 +281,7 @@ namespace eval ::logcanvas {
            $logcanvas.up.rfname insert end "$fname,v"
            $logcanvas.up.rfname configure -state readonly
            $logcanvas.ddiff configure -state disabled
+           $logcanvas.rdiff configure -state disabled
            if {$loc == "rep"} {
              # Working on repository files, not checked out
              $logcanvas.view configure \
@@ -310,8 +311,7 @@ namespace eval ::logcanvas {
                     if {$rev == ""} {
                       cvs_log_rev "" $filename
                     } else {
-                      regsub {\.\d+$} $rev {} baserev
-                      cvs_log_rev $baserev $filename
+                      cvs_log_rev $rev $filename
                     }
                   }]
              $logcanvas.view configure \
@@ -323,19 +323,27 @@ namespace eval ::logcanvas {
                  cvs_annotate [$logcanvas.up.revA_rvers get] $filename
                }]
              $logcanvas.delta configure \
-               -command [namespace code {
-                 set fromrev [$logcanvas.up.revA_rvers get]
-                 set sincerev [$logcanvas.up.revB_rvers get]
-                 set fromtag ""
-                 set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
-                 if {[info exists revbtags($fromrev_root)]} {
-                   set fromtag [lindex $revbtags($fromrev_root) 0]
-                 } else {
-                   # Just a rev number will do
-                   set fromtag $fromrev_root
-                 }
-                 cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
-                }]
+                 -command [namespace code {
+                   set fromrev [$logcanvas.up.revA_rvers get]
+                   set sincerev [$logcanvas.up.revB_rvers get]
+                   set fromtag ""
+                   set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
+                   if {[info exists revbtags($fromrev_root)]} {
+                     set fromtag [lindex $revbtags($fromrev_root) 0]
+                   } else {
+                     # Just a rev number will do
+                     set fromtag $fromrev_root
+                   }
+                   cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
+               }]
+             $logcanvas.rdiff configure -state normal \
+                 -command [namespace code {
+                   set rev1 [$logcanvas.up.revA_rvers get]
+                   set rev2 [$logcanvas.up.revB_rvers get]
+                   set rev1 [string trimleft $rev1 {r}]
+                   set rev2 [string trimleft $rev2 {r}]
+                   cvs_patch $cvscfg(cvsroot) $module_dir/$filename -u $rev1 {} $rev2 {} 0 {}
+               }]
             }
          }
          "GIT" {
