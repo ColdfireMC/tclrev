@@ -25,38 +25,29 @@ proc copy_paste_popup {win X Y} {
     menu $win.copy_paste_pop
     $win.copy_paste_pop add command -label "Copy selection" \
       -command [list event generate $win <<Copy>>]
+    $win.copy_paste_pop add command -label "Select all" \
+      -command [list $win tag add sel 0.0 end]
   }
   tk_popup $win.copy_paste_pop $X $Y
 }
 
+# Disable all key sequences for text widget except for navigation
+# and copy-to-clipboard
 proc ro_textbindings {txtw} {
-  # Disable all key sequences for widget named in variable, except
-  # the cursor navigation keys (regardless of the state ctrl/shift/etc.)
-  # and Ctrl-C (Copy to Clipboard).
 
   gen_log:log T "ENTER ($txtw)"
-  bind $txtw <KeyPress> {
-    switch -- %K {
-      "Up" -
-      "Left" -
-      "Right" -
-      "Down" -
-      "Next" -
-      "Prior" -
-      "Home" -
-      "End" {
-      }
-      "c" -
-      "C" {
-        if {(%s & 0x04) == 0} {
-          break
-        }
-      }
-      default {
-          break
-      }
-    }
-  }
+  bind $txtw <Key-Home>   {catch {%W yview moveto 0};break}
+  bind $txtw <Key-Up>     {catch {%W yview scroll -1 units};break}
+  bind $txtw <Key-Down>   {catch {%W yview scroll  1 units};break}
+  bind $txtw <Key-Left>   {catch {%W xview scroll -1 units};break}
+  bind $txtw <Key-Right>  {catch {%W xview scroll  1 units};break}
+  bind $txtw <Key-End>    {catch {%W yview moveto 1};break}
+
+  bind $txtw <Control-Key-c> {tk_textCopy %W;break}
+  bind $txtw <Meta-Key-c>    {tk_textCopy %W;break}
+  bind $txtw <Control-Key-a> {%W tag add sel 0.0 end;break}
+  bind $txtw <Meta-Key-a>    {%W tag add sel 0.0 end;break}
+
   # Disable the cut and paste events.
   bind $txtw <<Paste>> "break"
   bind $txtw <<Cut>> "break"
