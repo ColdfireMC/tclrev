@@ -25,8 +25,10 @@ set cvscfg(sort_pref) {filecol -increasing}
 
 # If you want to see hash and author in Git workdir
 set cvscfg(gitdetail) false
-# Since date for git blame and log diagram
-set cvscfg(gitsince) ""
+# Since date for git log diagram
+set cvscfg(gitlog_since) ""
+# Since date for git blame
+set cvscfg(gitblame_since) ""
 # Max number of revs to go back in a git branch diagram
 set cvscfg(gitmaxhist) 500
 # Max number of git branches to process
