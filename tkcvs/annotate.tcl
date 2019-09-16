@@ -129,7 +129,7 @@ namespace eval ::annotate {
 
           $w tag configure $revnum -background $revcolors($revnum) -foreground black
           if {$tk_version >= 8.6} {
-            $w tag configure $revnum black -selectbackground $cvsglb(hlbg)
+            $w tag configure $revnum -selectbackground $cvsglb(hlbg)
           }
         }
 
@@ -245,8 +245,9 @@ namespace eval ::annotate {
          gen_log:log D "$infoline"
          set now [lindex $infoline 0]
 
-         if {$cvscfg(gitsince) != ""} {
-           set sinceflag "--since=\"$cvscfg(gitsince)\""
+         if {$cvscfg(gitblame_since) != ""} {
+           set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+           regsub  -all {\s+} $sinceflag {\\ } sinceflag
          } else {
            set sinceflag ""
          }
@@ -256,8 +257,9 @@ namespace eval ::annotate {
          set now $revlabel
        }
        "git_r" {
-         if {$cvscfg(gitsince) != ""} {
-           set sinceflag "--since=\"$cvscfg(gitsince)\""
+         if {$cvscfg(gitblame_since) != ""} {
+           set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+           regsub  -all {\s+} $sinceflag {\\ } sinceflag
          } else {
            set sinceflag ""
          }
@@ -381,6 +383,11 @@ namespace eval ::annotate {
        }
       }
       set nrevs [llength $revlist]
+      if {$nrevs == 0} {
+        set msg "No output for $commandline"
+        cvsfail $msg $w
+        return;
+      }
       gen_log:log D "$revlist"
       set ncolors [expr {[array size agecolors] - 1}]
       if {$nrevs < $ncolors} {

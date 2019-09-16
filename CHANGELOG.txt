@@ -1,3 +1,9 @@
+Release 9.2.2 September, 2019
+
+- Allow spaces in git "since" option, such as "2 years ago". If the log
+  or blame is empty, report what the since option was.
+
+
 Release 9.2.1 September, 2019
 
 - In git branch diagram, show commit date instead of author date

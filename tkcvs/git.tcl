@@ -1260,8 +1260,10 @@ namespace eval ::git_branchlog {
           if {$cvscfg(gitmaxhist) != ""} {
             append command " -$cvscfg(gitmaxhist)"
           }
-          if {$cvscfg(gitsince) != ""} {
-            append command " --since=\"$cvscfg(gitsince)\""
+          if {$cvscfg(gitlog_since) != ""} {
+            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+            regsub -all {\s+} $sinceflag {\\ } sinceflag
+            append command " $sinceflag"
           }
         }
         if {$logcfg(show_tags)} {
@@ -1277,7 +1279,13 @@ namespace eval ::git_branchlog {
         catch {unset log_output}
         catch {unset log_lines}
         if {! [info exists allrevs]} {
-          cvsfail "Couldn't read git log for $filename" $lc
+          set msg "No revisions found for $filename"
+          if {$cvscfg(gitlog_since) != ""} {
+            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+            regsub -all {\s+} $sinceflag {\\ } sinceflag
+            append msg " $sinceflag"
+          }
+          cvsfail $msg $lc
           return;
         }
         gen_log:log D "[llength $allrevs] REVISIONS picked up by git log --all"
@@ -1464,8 +1472,10 @@ namespace eval ::git_branchlog {
               append command " -$cvscfg(gitmaxhist)"
             }
             # If since time is set, use that. Otherwise, use the time of the oldest rev we found in log --all
-            if {$cvscfg(gitsince) != ""} {
-              set since_time $cvscfg(gitsince)
+            if {$cvscfg(gitlog_since) != ""} {
+              set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+              regsub  -all {\s+} $sinceflag {\\ } sinceflag
+              set since_time $sinceflag
             } else {
               set seconds [clock scan $revdate($oldest_rev) -gmt yes]
               set since_time [clock add $seconds -1 hour]

@@ -1425,7 +1425,8 @@ proc save_options { } {
                  gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums use_cvseditor }
   set STRGopts { file_filter ignore_file_filter clean_these editor preftab \
-                 gitbranchgroups gitlog_opts gitsince gitmaxbranch gitmaxhist gitbranchregex \
+                 gitblame_since gitbranchgroups gitlog_opts gitlog_since \
+                 gitmaxbranch gitmaxhist gitbranchregex \
                  printer log_classes lastdir sort_pref editor editorargs \
                  workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom \
                  svn_trunkdir svn_branchdir svn_tagdir }
@@ -1433,12 +1434,15 @@ proc save_options { } {
   # Plus the logcanvas options
   set LOGopts [concat [array names logcfg show_*] scale]
 
+  # remove obsolete settings
   if {[info exists cvscfg(editorargs)] } {
-    # editorargs is no longer necessary
     if {$cvscfg(editorargs) != ""} {
       set cvscfg(editor) [concat $cvscfg(editor) $cvscfg(editorargs)]
     }
     unset cvscfg(editorargs)
+  }
+  if {[info exists cvscfg(gitsince)] } {
+    unset cvscfg(gitsince)
   }
 
   # Save the list so we can keep track of what we've done
