@@ -3,6 +3,9 @@ Release 9.2.2 September, 2019
 - Allow spaces in git "since" option, such as "2 years ago". If the log
   or blame is empty, report what the since option was.
 
+- Fixed the bindings in the text viewing windows so that copy-to-clipboard
+  works. Home and End work now also.
+
 
 Release 9.2.1 September, 2019
 
