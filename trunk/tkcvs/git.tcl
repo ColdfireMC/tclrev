@@ -1261,7 +1261,7 @@ namespace eval ::git_branchlog {
             append command " -$cvscfg(gitmaxhist)"
           }
           if {$cvscfg(gitlog_since) != ""} {
-            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+            set sinceflag "--since=\"$cvscfg(gitlog_since)\""
             regsub -all {\s+} $sinceflag {\\ } sinceflag
             append command " $sinceflag"
           }
@@ -1281,7 +1281,7 @@ namespace eval ::git_branchlog {
         if {! [info exists allrevs]} {
           set msg "No revisions found for $filename"
           if {$cvscfg(gitlog_since) != ""} {
-            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+            set sinceflag "--since=\"$cvscfg(gitlog_since)\""
             regsub -all {\s+} $sinceflag {\\ } sinceflag
             append msg " $sinceflag"
           }
@@ -1473,7 +1473,7 @@ namespace eval ::git_branchlog {
             }
             # If since time is set, use that. Otherwise, use the time of the oldest rev we found in log --all
             if {$cvscfg(gitlog_since) != ""} {
-              set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+              set sinceflag "--since=\"$cvscfg(gitlog_since)\""
               regsub  -all {\s+} $sinceflag {\\ } sinceflag
               set since_time $sinceflag
             } else {
