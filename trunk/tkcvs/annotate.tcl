@@ -28,7 +28,6 @@ namespace eval ::annotate {
         variable log_lines
         variable revcolors
         variable blameproc
-        variable now
         variable nrevs
         variable revlist
         variable lc
@@ -43,7 +42,7 @@ namespace eval ::annotate {
         set lc 0
         foreach logline [lrange $log_lines 0 end-1] {
           incr lc
-          $blameproc $w.text $now $logline $lc
+          $blameproc $w.text $logline $lc
         }
         $w.text configure -state disabled
         # Focus in the text widget to activate the text bindings
@@ -53,7 +52,7 @@ namespace eval ::annotate {
         gen_log:log T "LEAVE"
       }
 
-      proc cvs_annotate_color {w now logline ln} {
+      proc cvs_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
         variable revcolors
@@ -71,8 +70,7 @@ namespace eval ::annotate {
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
-          # determine the number of revisions
-          # between this commit and the now, then set color accordingly
+          # determine the number of revisions then set color accordingly
           set revticks [lsearch -exact $revlist $revnum]
           set revticks [expr {$nrevs - $revticks}]
           set revindex [expr {$revticks / $revspercolor}]
@@ -93,7 +91,7 @@ namespace eval ::annotate {
         $w insert end "$line\n" $revnum
       }
 
-      proc git_annotate_color {w now logline ln} {
+      proc git_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
         global tk_version
@@ -116,8 +114,7 @@ namespace eval ::annotate {
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
-          # determine the number of revisions
-          # between this commit and the now, then set color accordingly
+          # determine the number of revisions then set color accordingly
           set revticks [lsearch -exact $revlist $revnum]
           set revticks [expr {$nrevs - $revticks}]
           set revindex [expr {$revticks / $revspercolor}]
@@ -140,7 +137,7 @@ namespace eval ::annotate {
         $w insert end "$line\n" $revnum
       }
 
-      proc svn_annotate_color {w now logline ln} {
+      proc svn_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
         variable revcolors
@@ -162,8 +159,7 @@ namespace eval ::annotate {
 
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
-          # determine the number of revisions
-          # between this commit and the now, then set color accordingly
+          # determine the number of revisions then set color accordingly
           set revticks [lsearch -exact $revlist $revnum]
           set revticks [expr {$nrevs - $revticks}]
           set revindex [expr {$revticks / $revspercolor}]
@@ -186,35 +182,14 @@ namespace eval ::annotate {
         $w insert end "$line\n" $revnum
       }
 
-      regsub {^-} $revision {} revlabel
       regsub -all {\$} $file {\$} file
       switch $type {
-       "svn" {
-         set info_cmd [exec::new "svn info \"$file\""]
-         set info_lines [split [$info_cmd\::output] "\n"]
-         foreach infoline $info_lines {
-           if {[string match "Revision:*" $infoline]} {
-             gen_log:log D "$infoline"
-             set now [lrange $infoline 1 end]
-           }
-         }
-         set blameproc svn_annotate_color
-         set commandline "svn blame -v $revision \"$file\""
-       }
+       "svn" -
        "svn_r" {
          set blameproc svn_annotate_color
-         set now $revision
          set commandline "svn blame -v $revision \"$file\""
        }
        "cvs" {
-         set info_cmd [exec::new "$cvs status \"$file\""]
-         set info_lines [split [$info_cmd\::output] "\n"]
-         foreach infoline $info_lines {
-           if {[string match "*Working revision:*" $infoline]} {
-             gen_log:log D "$infoline"
-             set now [lindex $infoline 2]
-           }
-         }
          set blameproc cvs_annotate_color
          set commandline "$cvs annotate $revision \"$file\""
        }
@@ -237,41 +212,20 @@ namespace eval ::annotate {
          }
          set blameproc cvs_annotate_color
          set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
-         set now $revlabel
        }
        "git" {
-         set info_cmd [exec::new "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$file\""]
-         set infoline [$info_cmd\::output]
-         gen_log:log D "$infoline"
-         set now [lindex $infoline 0]
-
          if {$cvscfg(gitblame_since) != ""} {
            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
            regsub  -all {\s+} $sinceflag {\\ } sinceflag
          } else {
            set sinceflag ""
          }
-
          set blameproc git_annotate_color
          set commandline "git annotate $sinceflag $revision \"$file\""
-         set now $revlabel
-       }
-       "git_r" {
-         if {$cvscfg(gitblame_since) != ""} {
-           set sinceflag "--since=\"$cvscfg(gitblame_since)\""
-           regsub  -all {\s+} $sinceflag {\\ } sinceflag
-         } else {
-           set sinceflag ""
-         }
-
-         set blameproc git_annotate_color
-         set commandline "git annotate $sinceflag $revision \"$file\""
-         set now $revlabel
        }
        "git_range" {
          set blameproc git_annotate_color
          set commandline "git annotate -L$L1,$L2 $revision \"$file\""
-         set now $revlabel
        }
        default {
          cvsfail "I don't understand flag \"$type\""
@@ -288,6 +242,10 @@ namespace eval ::annotate {
         -relief sunken -border 2 -height 40 -width 122 \
         -yscroll "$w.scroll set"
       scrollbar $w.scroll -relief sunken -command "$w.text yview"
+
+      frame $w.top -relief groove -border 2
+      button $w.top.bworkdir -image Workdir \
+        -command {workdir_setup}
 
       frame $w.bottom
       button $w.bottom.close -text "Close" \
@@ -313,6 +271,9 @@ namespace eval ::annotate {
       pack $w.bottom.dayentry -side left
       pack $w.bottom.redo -side left
       pack $w.bottom.close -side right -ipadx 15
+
+      pack $w.top -side top -fill x
+      pack $w.top.bworkdir -side right
 
       pack $w.scroll -side right -fill y
       pack $w.text -fill both -expand 1
@@ -411,7 +372,7 @@ namespace eval ::annotate {
       set ll [string length [llength $log_lines]]
       foreach logline [lrange $log_lines 0 end-1] {
         incr lc
-        $blameproc $w.text $now $logline $lc
+        $blameproc $w.text $logline $lc
       }
 
       $w.text yview moveto 0

@@ -469,9 +469,10 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   if {$incvs} {
     cvs_annotate "" "$lcfile"
   } elseif {$insvn} {
-    svn_annotate "" "$lcfile"
+    svn_annotate BASE "$lcfile"
   } elseif {$ingit} {
-    git_annotate "" "$lcfile"
+    read_git_dir .
+    git_annotate "$current_tagname" "$lcfile"
   } else {
     puts "File doesn't seem to be in CVS, SVN, or GIT"
   }
