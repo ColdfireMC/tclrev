@@ -256,9 +256,9 @@ proc prefs_git {w} {
   grid $w.git.branchbr.br_local -sticky w -column 1 -row 6
   grid $w.git.branchbr.br_remote -sticky w -column 1 -row 7
 
-  grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 7
-  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 7 -padx 2
-  grid $w.git.branchbr.hbrglob -sticky w -column 1 -row 8
+  grid $w.git.branchbr.lbrglob -sticky w -column 0 -row 8
+  grid $w.git.branchbr.ebrglob -sticky ew -column 1 -row 8 -padx 2
+  grid $w.git.branchbr.hbrglob -sticky w -column 1 -row 9
 }
 
 proc prefs_close { } {
