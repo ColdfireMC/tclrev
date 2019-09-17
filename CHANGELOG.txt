@@ -1,3 +1,14 @@
+Release 9.2.3 September, 2019
+
+- Got the colors working properly for Git annotate. Now newer ones are
+  redder, as they should be.
+
+- Added a button to the annotation browser so you can open the workdir
+  browser if you used the -blame command line
+
+- Save the geometry of the annotation browser.
+
+
 Release 9.2.2 September, 2019
 
 - Allow spaces in git "since" option, such as "2 years ago". If the log

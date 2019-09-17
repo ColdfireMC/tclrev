@@ -1428,7 +1428,7 @@ proc save_options { } {
                  gitblame_since gitbranchgroups gitlog_opts gitlog_since \
                  gitmaxbranch gitmaxhist gitbranchregex \
                  printer log_classes lastdir sort_pref editor editorargs \
-                 workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom \
+                 workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom blamegeom \
                  svn_trunkdir svn_branchdir svn_tagdir }
 
   # Plus the logcanvas options
