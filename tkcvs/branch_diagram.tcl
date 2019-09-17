@@ -222,7 +222,7 @@ namespace eval ::logcanvas {
                    if {$rev == ""} {
                      svn_annotate_r "" $filename
                    } else {
-                     svn_annotate_r [string trimleft $rev {r}] $revpath($rev)
+                     svn_annotate_r [string trimleft $rev {r}] $filename
                    }
                  }]
             }
