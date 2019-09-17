@@ -47,7 +47,7 @@ proc git_workdir_status {} {
     #  M Dir2/F2.txt
     set status [string range $statline 0 1]
     # Strip quotes
-    set f [string trim [lindex $statline 1] "\""]
+    set f [string trim [lrange $statline 1 end] "\""]
     # Trim path
     regsub "^$module_dir/" $f "" f
     if {[regexp {/} $f]} {
