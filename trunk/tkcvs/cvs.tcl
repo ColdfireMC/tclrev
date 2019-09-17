@@ -679,7 +679,7 @@ proc cvs_log_rev {rev file} {
   gen_log:log T "LEAVE"
 }
 
-# annotate/blame. Called from workdir.
+# annotate/blame. Called from workdir
 proc cvs_annotate {revision args} {
   global cvs
   global cvscfg
@@ -708,11 +708,8 @@ proc cvs_annotate {revision args} {
   gen_log:log T "LEAVE"
 }
 
+# annotate/blame. Called from logcanvas
 proc cvs_annotate_r {revision file} {
-#
-# This looks at a log from the repository.
-# Called by Logcanvas when not in a CVS directory
-#
   global cvs
   global cvscfg
 

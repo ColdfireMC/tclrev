@@ -215,7 +215,8 @@ namespace eval ::annotate {
          set blameproc cvs_annotate_color
          set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
        }
-       "git" {
+       "git" -
+       "git_r" {
          if {$cvscfg(gitblame_since) != ""} {
            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
            regsub  -all {\s+} $sinceflag {\\ } sinceflag
@@ -337,29 +338,31 @@ namespace eval ::annotate {
 
       # We have 24 colors.  How many revs do we have?
       set revlist {}
-      # Might as well use the minimum space needed for revision numbers while
-      # we're at it.  The cvs annotate output wastes space
       set maxrevlen 0
-      foreach logline $log_lines {
-        set line [split [string trimleft $logline]]
-        set revnum [lindex $line 0]
-        if {$revnum == ""} {continue}
-        if {$revnum ni $revlist} {
-          lappend revlist $revnum
-          set l [string length $revnum]
-          if {$l > $maxrevlen} {
-            set maxrevlen $l
-          }
-        }
-      }
-      # Sort the revisions
       switch -glob -- $type {
-       "cvs" -
-       "svn" {
+       {cvs*} -
+       {svn*} {
+         # Sort the revisions
+         foreach logline $log_lines {
+           set line [split [string trimleft $logline]]
+           set revnum [lindex $line 0]
+           if {$revnum == ""} {continue}
+           if {$revnum ni $revlist} {
+             lappend revlist $revnum
+             set l [string length $revnum]
+             if {$l > $maxrevlen} {
+               set maxrevlen $l
+             }
+           }
+         }
          set revlist [lsort -command sortrevs $revlist]
        }
-       "git" {
-         set rl_cmd "git rev-list --abbrev-commit --abbrev=$maxrevlen --reverse $revision \"$file\""
+       {git*} {
+         # The abbrev-commit length of blame may not be the same as for rev-list
+         set line [split [string trimleft [lindex $log_lines 0]]]
+         set revlen [string length [lindex $line 0]]
+         # All the commit hashes are the same length, and we only need to know for rev-list
+         set rl_cmd "git rev-list --abbrev-commit --abbrev=$revlen --reverse $revision \"$file\""
          set cmd_revlist [exec::new $rl_cmd {} 0 {} 1]
          set revlist_output [$cmd_revlist\::output]
          $cmd_revlist\::destroy
