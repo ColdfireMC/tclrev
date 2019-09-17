@@ -24,14 +24,10 @@ namespace eval ::annotate {
       global tcl_platform
 
       proc redo {w} {
-        global cvscfg
         variable log_lines
         variable revcolors
         variable blameproc
-        variable nrevs
-        variable revlist
         variable lc
-
 
         gen_log:log T "ENTER ($w)"
 
@@ -55,6 +51,7 @@ namespace eval ::annotate {
       proc cvs_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
+        global tk_version
         variable revcolors
         variable agecolors
         variable revlist
@@ -80,8 +77,10 @@ namespace eval ::annotate {
 
           set revcolors($revnum) $agecolors($revindex)
 
-          $w tag configure $revnum \
-            -background $revcolors($revnum) -foreground black -selectbackground $cvsglb(hlbg)
+          $w tag configure $revnum -background $revcolors($revnum) -foreground black
+          if {$tk_version >= 8.6} {
+            $w tag configure $revnum -selectbackground $cvsglb(hlbg)
+          }
         }
 
         if {$cvscfg(blame_linenums)} {
@@ -108,8 +107,8 @@ namespace eval ::annotate {
         regsub -all {\s+} $annot { } annot
         set linenum [lindex $annot end]
         set when [lindex $annot end-3]
-        # Is the name ever in two parts?
-        set who [lindex $annot 0]
+        # Is the name ever in two parts? (Yes. Or three.)
+        set who [lrange $annot 0 end-4]
         set line "($who $when): $orig_line"
 
         # Beginning of a revision
@@ -140,6 +139,7 @@ namespace eval ::annotate {
       proc svn_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
+        global tk_version
         variable revcolors
         variable agecolors
         variable revlist
@@ -169,8 +169,10 @@ namespace eval ::annotate {
 
           set revcolors($revnum) $agecolors($revindex)
 
-          $w tag configure $revnum \
-            -background $revcolors($revnum) -foreground black -selectbackground $cvsglb(hlbg)
+          $w tag configure $revnum -background $revcolors($revnum) -foreground black
+          if {$tk_version >= 8.6} {
+            $w tag configure $revnum -selectbackground $cvsglb(hlbg)
+          }
         }
 
         if {$cvscfg(blame_linenums)} {
@@ -221,11 +223,11 @@ namespace eval ::annotate {
            set sinceflag ""
          }
          set blameproc git_annotate_color
-         set commandline "git annotate $sinceflag $revision \"$file\""
+         set commandline "git annotate --abbrev-commit $sinceflag $revision \"$file\""
        }
        "git_range" {
          set blameproc git_annotate_color
-         set commandline "git annotate -L$L1,$L2 $revision \"$file\""
+         set commandline "git annotate --abbrev-commit -L$L1,$L2 $revision \"$file\""
        }
        default {
          cvsfail "I don't understand flag \"$type\""
@@ -249,7 +251,15 @@ namespace eval ::annotate {
 
       frame $w.bottom
       button $w.bottom.close -text "Close" \
-        -command "destroy $w; exit_cleanup 0"
+        -command [namespace code {
+                 global cvscfg
+                 variable w
+                 variable my_idx
+                 set cvscfg(blamegeom) [wm geometry $w]
+                 destroy $w
+                 namespace delete [namespace current]
+                 exit_cleanup 0
+               }]
       label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
       checkbutton $w.bottom.linum -text "Show Line Numbers" \
         -variable cvscfg(blame_linenums) \
@@ -282,6 +292,11 @@ namespace eval ::annotate {
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $w @$cvscfg(bitmapdir)/annotate.xbm
       }
+      wm minsize $w 1 1
+      if {[info exists cvscfg(blamegeom)]} {
+        wm geometry $w $cvscfg(blamegeom)
+      }
+
 
       # Define the colors
       array set agecolors {
@@ -338,12 +353,27 @@ namespace eval ::annotate {
         }
       }
       # Sort the revisions
-      switch $type {
+      switch -glob -- $type {
        "cvs" -
        "svn" {
          set revlist [lsort -command sortrevs $revlist]
        }
+       "git" {
+         set rl_cmd "git rev-list --abbrev-commit --abbrev=$maxrevlen --reverse $revision \"$file\""
+         set cmd_revlist [exec::new $rl_cmd {} 0 {} 1]
+         set revlist_output [$cmd_revlist\::output]
+         $cmd_revlist\::destroy
+         set revlist_lines [split $revlist_output "\n"]
+         set revlist {}
+         foreach revnum $revlist_lines {
+           if {$revnum == ""} {continue}
+           if {$revnum ni $revlist} {
+             lappend revlist $revnum
+           }
+         }
+       }
       }
+
       set nrevs [llength $revlist]
       if {$nrevs == 0} {
         set msg "No output for $commandline"
