@@ -362,7 +362,8 @@ namespace eval ::annotate {
          set line [split [string trimleft [lindex $log_lines 0]]]
          set revlen [string length [lindex $line 0]]
          # All the commit hashes are the same length, and we only need to know for rev-list
-         set rl_cmd "git rev-list --abbrev-commit --abbrev=$revlen --reverse $revision \"$file\""
+         set blameproc git_annotate_color
+         set rl_cmd "git rev-list $sinceflag --abbrev-commit --abbrev=$revlen --reverse $revision \"$file\""
          set cmd_revlist [exec::new $rl_cmd {} 0 {} 1]
          set revlist_output [$cmd_revlist\::output]
          $cmd_revlist\::destroy
