@@ -376,9 +376,10 @@ namespace eval ::annotate {
           }
         }
       }
-      # Sort the revisions (not needed for svn, and deadly for git)
+      # Sort the revisions
       switch $type {
-       "cvs" {
+       "cvs" -
+       "svn" {
          set revlist [lsort -command sortrevs $revlist]
        }
       }
