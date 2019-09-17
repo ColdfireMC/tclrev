@@ -6,6 +6,9 @@ Release 9.2.2 September, 2019
 - Fixed the bindings in the text viewing windows so that copy-to-clipboard
   works. Home and End work now also.
 
+- Fixed a bad thing that happened under certain conditions in the workdir
+  browser if a filename had spaces.
+
 
 Release 9.2.1 September, 2019
 
