@@ -227,6 +227,12 @@ namespace eval ::annotate {
          set commandline "git annotate --abbrev-commit $sinceflag $revision \"$file\""
        }
        "git_range" {
+         if {$cvscfg(gitblame_since) != ""} {
+           set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+           regsub  -all {\s+} $sinceflag {\\ } sinceflag
+         } else {
+           set sinceflag ""
+         }
          set blameproc git_annotate_color
          set commandline "git annotate --abbrev-commit -L$L1,$L2 $revision \"$file\""
        }
