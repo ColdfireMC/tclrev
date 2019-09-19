@@ -341,9 +341,10 @@ proc git_log {detail args} {
 
   gen_log:log T "ENTER ($detail $args)"
   busy_start .workdir.main
-  set filelist [join $args]
   set flags ""
   set filter ""
+
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   if {[llength $filelist] == 0} {
     set filelist {.}
@@ -354,6 +355,7 @@ proc git_log {detail args} {
     set title "Git Log $filelist ($detail)"
   }
 
+return
   set commandline "git log"
   switch -- $detail {
     latest {
@@ -372,7 +374,7 @@ proc git_log {detail args} {
   set v [viewer::new "$title"]
   foreach file $filelist {
     if {[llength $filelist] > 1} {
-      $v\::log "-- $file -------------------------------\n" blue
+      $v\::log "-- $file -------------------------------\n" invert
     }
     set command "git log --no-color $flags -- \"$file\""
     $v\::do "$command" 1 $filter
@@ -387,7 +389,7 @@ proc git_log {detail args} {
 # does git rm from workdir browser
 proc git_rm {args} {
   gen_log:log T "ENTER ($args)"
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set command [exec::new "git rm $filelist"]
   auto_setup_dir $command
@@ -398,7 +400,7 @@ proc git_rm {args} {
 # does git rm -r from workdir browser popup menu
 proc git_remove_dir {args} {
   gen_log:log T "ENTER ($args)"
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set command [exec::new "git rm -r $filelist"]
   auto_setup_dir $command
@@ -411,7 +413,7 @@ proc git_add {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
@@ -468,7 +470,7 @@ proc git_reset {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   gen_log:log D "Reverting $filelist"
   set commandline "git reset $filelist"
   set v [viewer::new "Git Reset"]
@@ -489,7 +491,7 @@ proc git_status {detail args} {
   gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   set flags ""
   set title "Git Status ($detail)"
   # Hide unknown files if desired
@@ -571,7 +573,7 @@ proc git_patch { filename {rev1 {}} {rev2 {}} } {
     set args "$rev2^ $rev2"
   }
   if {$filename != {}} {
-    append args " $filename"
+    append args " \"$filename\""
   }
   set title "SVN diff $args"
 
@@ -703,7 +705,7 @@ proc git_commit {comment args} {
 
   gen_log:log T "ENTER ($comment $args)"
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set commit_output ""
   if {$filelist == ""} {
@@ -761,7 +763,7 @@ proc git_tag {tagname annotate comment args} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set command "git tag "
   if {$annotate == "yes"} {
@@ -790,7 +792,7 @@ proc git_branch {branchname updflag args} {
     cvsfail "You must enter a branch name!" .workdir
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set command "git branch $branchname $filelist"
   set v [viewer::new "Git Branch"]
@@ -844,7 +846,7 @@ proc git_checkout {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   if {$filelist == ""} {
     append mess "\nThis will download from"
@@ -920,7 +922,7 @@ proc git_merge_conflict {args} {
     cvsfail "Please select one file." .workdir
     return
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   # See if it's really a conflict file
   foreach file $filelist {
@@ -953,20 +955,21 @@ proc git_merge_conflict {args} {
 proc git_annotate {revision args} {
 
   gen_log:log T "ENTER ($revision $args)"
+
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
   if {$revision != ""} {
-    # We were given a revision
     set revflag "$revision"
   } else {
     set revflag ""
   }
 
-  set filelist $args
   if {$filelist == ""} {
     cvsfail "Annotate:\nPlease select one or more files !" .workdir
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
-  foreach file $filelist {
+  foreach file [join $filelist] {
     annotate::new $revflag $file "git"
   }
   gen_log:log T "LEAVE"
@@ -1011,10 +1014,11 @@ proc git_annotate_range {v_w revision filename} {
 
 # View a specific revision of a file.
 # Called from branch browser
-proc git_fileview {revision path files} {
+proc git_fileview {revision path args} {
 
-  gen_log:log T "ENTER ($revision $path $files)"
-  set filelist [join $files]
+  gen_log:log T "ENTER ($revision $path $args)"
+
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   foreach filename $filelist {
     if {$path ne ""} {
@@ -1023,6 +1027,7 @@ proc git_fileview {revision path files} {
       set filepath "$filename"
     }
     set command "git show \"$revision:$filepath\""
+    #set command "git show [list $revision:$filepath]"
     set v [viewer::new "$filepath Revision $revision"]
     $v\::do "$command"
 
@@ -1042,7 +1047,6 @@ proc git_branches {files} {
   global cvsglb
 
   gen_log:log T "ENTER ($files)"
-  set filelist [join $files]
 
   set cvsglb(lightning) 0
 
@@ -1066,7 +1070,7 @@ proc git_fast_diagram {files} {
   global cvsglb
 
   gen_log:log T "ENTER ($files)"
-  set filelist [join $files]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set cvsglb(lightning) 1
 

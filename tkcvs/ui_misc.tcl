@@ -35,7 +35,7 @@ proc copy_paste_popup {win X Y} {
 # and copy-to-clipboard
 proc ro_textbindings {txtw} {
 
-  gen_log:log T "ENTER ($txtw)"
+  #gen_log:log T "ENTER ($txtw)"
   bind $txtw <Key-Home>   {catch {%W yview moveto 0};break}
   bind $txtw <Key-Up>     {catch {%W yview scroll -1 units};break}
   bind $txtw <Key-Down>   {catch {%W yview scroll  1 units};break}
@@ -76,11 +76,12 @@ proc save_viewcontents {w} {
 }
 
 # Get the selected text lines, to pass to git annotate
+# Works with what's already selected
 proc get_textlines {w} {
   lassign [$w.text tag ranges sel] firstsel lastsel
   set firstline [lindex [split $firstsel "."] 0]
   set lastline [lindex [split $lastsel "."] 0]
-  gen_log:log T "LEAVE (\"$firstline\" \"$lastline\")"
+
   return [list $firstline $lastline]
 }
 

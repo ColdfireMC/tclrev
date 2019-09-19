@@ -142,13 +142,13 @@ proc DirCanvas:unselectall {w} {
   global DirList
   global cvsglb
 
-  gen_log:log T "ENTER ($w)"
+  #gen_log:log T "ENTER ($w)"
   
   $w.tree selection set {}
   set DirList($w:selection) {}
   set cvsglb(current_selection) {}
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # Show and hide columns according to the values of cvscfg(show*col)
@@ -158,7 +158,7 @@ proc DirCanvas:displaycolumns {wt} {
   global cvscfg
   global incvs insvn inrcs ingit
 
-  gen_log:log T "ENTER ($wt)"
+  #gen_log:log T "ENTER ($wt)"
 
   set col [lindex $cvscfg(sort_pref) 0]
   set sense [lindex $cvscfg(sort_pref) 1]
@@ -204,14 +204,14 @@ proc DirCanvas:displaycolumns {wt} {
 
   DirCanvas:adjust_columnwidths $wt
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:sort_by_col {wt col sense} {
   global DirList
   global cvscfg
 
-  gen_log:log T "ENTER ($wt $col $sense)"
+  #gen_log:log T "ENTER ($wt $col $sense)"
 
   gen_log:log D "old sort prefs $cvscfg(sort_pref)"
   set old_columnpref [lindex $cvscfg(sort_pref) 0]
@@ -277,13 +277,13 @@ proc DirCanvas:sort_by_col {wt col sense} {
   gen_log:log D "new sort prefs $cvscfg(sort_pref)"
   DirCanvas:adjust_columnwidths $wt
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:adjust_columnwidths {wt} {
   global cvscfg
 
-  gen_log:log T "ENTER ($wt)"
+  #gen_log:log T "ENTER ($wt)"
 
   set displayed_columns [lindex [$wt configure -displaycolumns] end]
   # Try to adjust the width of the columns suitably
@@ -320,7 +320,7 @@ proc DirCanvas:adjust_columnwidths {wt} {
     gen_log:log D "$c: \"$maxstr($c)\" $maxlen($c) chars, width $col_wid($c)"
   }
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # menu binding for right-cliwinwid on an item. We have to explicitly
@@ -328,7 +328,7 @@ proc DirCanvas:adjust_columnwidths {wt} {
 proc DirCanvas:popup {w x y X Y} {
   global DirList
 
-  gen_log:log T "ENTER ($w $x $y $X $Y)"
+  #gen_log:log T "ENTER ($w $x $y $X $Y)"
   set item [$w.tree identify item $x $y]
   $w.tree selection set $item
   update
@@ -336,7 +336,7 @@ proc DirCanvas:popup {w x y X Y} {
   gen_log:log D "$DirList($w:$f:popup)"
   set pop $DirList($w:$f:popup)
   tk_popup $w.$pop $X $Y
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:bindings {w} {
@@ -349,7 +349,7 @@ proc DirCanvas:bindings {w} {
 # Context-sensitive popups for list items.  We build them all at once here,
 # then bind canvas items to them as appropriate
 proc DirCanvas:makepopup {w} {
-  gen_log:log T "ENTER ($w)"
+  #gen_log:log T "ENTER ($w)"
 
   # For plain files in an un-versioned directory
   menu $w.paper_pop
@@ -625,7 +625,7 @@ proc DirCanvas:makepopup {w} {
   $w.git_conf_pop add command -label "Stage resolved conflict" \
     -command { git_add [workdir_list_files] }
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # Pick an icon for the file status. There are way too many of these.

@@ -852,7 +852,7 @@ proc setup_dir { } {
     set cvsglb(vcs) git
     # Buttons
     .workdir.bottom.buttons.funcs.bview_files configure \
-      -command { git_fileview HEAD $module_dir [workdir_list_files] }
+      -command { git_fileview HEAD {.} [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
     .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
@@ -1232,8 +1232,6 @@ proc cvsroot_check { dir } {
       gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
       return [list $incvs $insvn $inrcs $ingit]
     }
-  } else {
-    gen_log:log E $svnout
   }
 
   set rcsdir [file join $dir RCS]

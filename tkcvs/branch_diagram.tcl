@@ -179,11 +179,7 @@ namespace eval ::logcanvas {
             $logcanvas.log configure \
                 -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers get]
-                    if {$rev == ""} {
-                      svn_log_rev $filename
-                    } else {
-                      svn_log_rev $revpath($rev)
-                    }
+                    svn_log_rev $rev $filename
                  }]
             if {$kind == "directory"} {
               $logcanvas.diff configure -state disabled
@@ -255,22 +251,6 @@ namespace eval ::logcanvas {
                    svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
                  }
                }]
-               #$logcanvas.rdiff configure -state normal \
-                 #-command [namespace code {
-                    #set rev1 [$logcanvas.up.revA_rvers get]
-                    #set rev2 [$logcanvas.up.revB_rvers get]
-                    #set rev1 [string trimleft $rev1 {r}]
-                    #set rev2 [string trimleft $rev2 {r}]
-                    #svn_patch $filename {} $rev1 {} $rev2 {} 0 {}
-               #}]
-               #$logcanvas.ddiff configure -state normal \
-                 #-command [namespace code {
-                    #set rev1 [$logcanvas.up.revA_rvers get]
-                    #set rev2 [$logcanvas.up.revB_rvers get]
-                    #set rev1 [string trimleft $rev1 {r}]
-                    #set rev2 [string trimleft $rev2 {r}]
-                    #svn_ddiff $rev1 $rev2
-               #}]
           }
          "CVS" {
            $logcanvas.up.bmodbrowse configure -command modbrowse_run \
@@ -306,11 +286,7 @@ namespace eval ::logcanvas {
              $logcanvas.log configure \
                   -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers get]
-                    if {$rev == ""} {
-                      cvs_log_rev "" $filename
-                    } else {
-                      cvs_log_rev $rev $filename
-                    }
+                    cvs_log_rev $rev $filename
                   }]
              $logcanvas.view configure \
                -command [namespace code {
@@ -334,14 +310,6 @@ namespace eval ::logcanvas {
                    }
                    cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
                }]
-             #$logcanvas.rdiff configure -state normal \
-                 #-command [namespace code {
-                   #set rev1 [$logcanvas.up.revA_rvers get]
-                   #set rev2 [$logcanvas.up.revB_rvers get]
-                   #set rev1 [string trimleft $rev1 {r}]
-                   #set rev2 [string trimleft $rev2 {r}]
-                   #cvs_patch $cvscfg(cvsroot) $module_dir/$filename -u $rev1 {} $rev2 {} 0 {}
-               #}]
             }
          }
          "GIT" {
@@ -370,26 +338,18 @@ namespace eval ::logcanvas {
              $logcanvas.log configure \
                   -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers get]
-                    if {$rev == ""} {
-                      git_log_rev "" $filename
-                    } else {
-                      git_log_rev $rev $filename
-                    }
+                    git_log_rev $rev $filename
                   }]
              $logcanvas.view configure -state normal \
                -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers get]
                     if {$rev == ""} { set rev "$current_revnum" }
-                    git_fileview $rev $cvsglb(relpath) $filename
+                    git_fileview $rev $cvsglb(relpath) \"$filename\"
                }]
              $logcanvas.annotate configure -state normal \
                -command [namespace code {
                    set rev [$logcanvas.up.revA_rvers get]
-                   if {$rev == ""} {
-                     git_annotate_r "" $filename
-                   } else {
-                     git_annotate_r $rev $filename
-                   }
+                   git_annotate_r $rev $filename
                }]
              $logcanvas.delta configure -state disabled
              $logcanvas.viewtags configure -state normal \
@@ -2268,7 +2228,7 @@ namespace eval ::logcanvas {
       set_tooltips $logcanvas.viewtags \
         {"List all the file\'s tags"}
       set_tooltips $logcanvas.rdiff \
-        {"Show changes between commits"}
+        {"Show file changes in a commit"}
       set_tooltips $logcanvas.ddiff \
         {"List changed files in a commit"}
 
