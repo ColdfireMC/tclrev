@@ -45,7 +45,7 @@ namespace eval ::exec {
     set my_idx $instance
     incr instance
 
-    gen_log:log T "ENTER (\"$command\" \"$viewer\" \"$show_stderr\" \"$filter\" \"$errok\")"
+    #gen_log:log T "ENTER (\"$command\" \"$viewer\" \"$show_stderr\" \"$filter\" \"$errok\")"
 
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
@@ -327,7 +327,7 @@ namespace eval ::viewer {
         variable w
         variable v_e
 
-        gen_log:log T "ENTER (\"$command\" \"$show_stderr\" \"$filter\")"
+        #gen_log:log T "ENTER (\"$command\" \"$show_stderr\" \"$filter\")"
 
         pack forget $w.close
         pack $w.stop -in $w.bottom -side right -ipadx 15 -padx 20
@@ -335,7 +335,7 @@ namespace eval ::viewer {
         # Send the command to the execution module
         set v_e [::exec::new $command [namespace current] $show_stderr $filter]
 
-        gen_log:log T "LEAVE"
+        #gen_log:log T "LEAVE"
       }
 
       proc abort {} {
@@ -572,7 +572,7 @@ namespace eval ::view_output {
     set my_idx $instance
     incr instance
 
-    gen_log:log T "ENTER ($title ...)"
+    #gen_log:log T "ENTER ($title ...)"
     namespace eval $my_idx {
       global cvscfg
       variable my_idx [uplevel {concat $my_idx}]

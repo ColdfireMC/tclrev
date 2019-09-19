@@ -17,7 +17,7 @@ namespace eval ::annotate {
       variable type [uplevel {concat $type}]
       variable L1 [uplevel {concat $L1}]
       variable L2 [uplevel {concat $L2}]
-      variable w .annotate$my_idx
+      variable blamewin .annotate$my_idx
       variable ll
 
       global cvs
@@ -29,23 +29,42 @@ namespace eval ::annotate {
         variable blameproc
         variable lc
 
-        gen_log:log T "ENTER ($w)"
+        gen_log:log T "ENTER ($blamewin)"
 
         catch {unset revcolors}
-        $w.text configure -state normal
-        $w.text delete 1.0 end
-        busy_start $w
+        $blamewin.text configure -state normal
+        $blamewin.text delete 1.0 end
+        busy_start $blamewin
         set lc 0
         foreach logline [lrange $log_lines 0 end-1] {
           incr lc
-          $blameproc $w.text $logline $lc
+          $blameproc $blamewin.text $logline $lc
         }
-        $w.text configure -state disabled
+        $blamewin.text configure -state disabled
         # Focus in the text widget to activate the text bindings
-        focus $w.text
-        busy_done $w
+        focus $blamewin.text
+        busy_done $blamewin
         update idletasks
         gen_log:log T "LEAVE"
+      }
+
+      # Get the line the mouse was clicked on
+      proc get_blamerev {win x y} {
+        global cvscfg
+        
+        set parent [winfo parent $win]
+        set lineloc [$win index @$x,$y]
+        set linenum [lindex [split $lineloc "."] 0]
+        set linetext [$win get $linenum.0 $linenum.end]
+        set f1 ""
+        set f2 ""
+        regexp {^\s*(\S+)\s+(\S+)} $linetext all f1 f2 orig_line 
+        $parent.top.reventry delete 0 end
+        if $cvscfg(blame_linenums) {
+          $parent.top.reventry insert end $f2
+        } else {
+          $parent.top.reventry insert end $f1
+        }
       }
 
       proc cvs_annotate_color {w logline ln} {
@@ -102,6 +121,7 @@ namespace eval ::annotate {
         variable maxrevlen
         variable ll
 
+        # Separate the line into annotations and content
         regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
         set annot [string trim $annot]
         regsub -all {\s+} $annot { } annot
@@ -148,9 +168,9 @@ namespace eval ::annotate {
         variable maxrevlen
         variable ll
 
-        set logline [string trimleft $logline]
-        regexp {(\d+\s+.*\) )(.*$)} $logline all annotations orig_line
-        regexp {(^\S+)\s+(\S+).*\((.*?)\)} $annotations all revnum who when
+        # Separate the line into annotations and content
+        regexp {^\s*(\d+)\s+(.*?\) )(.*$)} $logline all revnum annotations orig_line
+        regexp {(\S+).*\((.*?)\)} $annotations all who when
         if {$revnum == "Skipping"} {
           cvsfail "Skipping binary file" $w
           return
@@ -246,63 +266,138 @@ namespace eval ::annotate {
       search_textwidget_init
 
       # Make the window
-      toplevel $w
-      text $w.text -setgrid yes -exportselection 1 \
+      toplevel $blamewin
+      text $blamewin.text -setgrid yes -exportselection 1 \
         -relief sunken -border 2 -height 40 -width 122 \
-        -yscroll "$w.scroll set"
-      scrollbar $w.scroll -relief sunken -command "$w.text yview"
+        -yscroll "$blamewin.scroll set"
+      scrollbar $blamewin.scroll -relief sunken -command "$blamewin.text yview"
 
-      frame $w.top -relief groove -border 2
-      button $w.top.bworkdir -image Workdir \
-        -command {workdir_setup}
+      frame $blamewin.top -relief groove -border 2
+      entry $blamewin.top.reventry
+      button $blamewin.top.viewfile -image Fileview
+      button $blamewin.top.log -image Log
+      button $blamewin.top.ddiff -image Difflines
+      button $blamewin.top.rdiff -image Patches
+      button $blamewin.top.workdir -image Workdir -command {workdir_setup}
 
-      frame $w.bottom
-      button $w.bottom.close -text "Close" \
+      frame $blamewin.bottom
+      button $blamewin.bottom.close -text "Close" \
         -command [namespace code {
                  global cvscfg
                  variable w
                  variable my_idx
-                 set cvscfg(blamegeom) [wm geometry $w]
-                 destroy $w
+                 set cvscfg(blamegeom) [wm geometry $blamewin]
+                 destroy $blamewin
                  namespace delete [namespace current]
                  exit_cleanup 0
                }]
-      label $w.bottom.days -text "Revs per Color" -width 20 -anchor e
-      checkbutton $w.bottom.linum -text "Show Line Numbers" \
+      label $blamewin.bottom.days -text "Revs per Color" -width 20 -anchor e
+      checkbutton $blamewin.bottom.linum -text "Show Line Numbers" \
         -variable cvscfg(blame_linenums) \
         -onvalue 1 -offvalue 0
-      entry $w.bottom.dayentry -width 3 \
+      entry $blamewin.bottom.dayentry -width 3 \
         -textvariable [namespace current]::revspercolor
-      button $w.bottom.redo -text "Redo Colors" 
+      button $blamewin.bottom.redo -text "Redo Colors" 
 
-      button $w.bottom.srchbtn -text Search \
-        -command "search_textwidget $w.text"
-      entry $w.bottom.entry -width 20 -textvariable cvsglb(searchstr)
-      bind $w.bottom.entry <Return> "search_textwidget $w.text"
+      button $blamewin.bottom.srchbtn -text Search \
+        -command "search_textwidget $blamewin.text"
+      entry $blamewin.bottom.entry -width 20 -textvariable cvsglb(searchstr)
+      bind $blamewin.bottom.entry <Return> "search_textwidget $blamewin.text"
 
-      pack $w.bottom -side bottom -fill x
-      pack $w.bottom.srchbtn -side left
-      pack $w.bottom.entry -side left
-      pack $w.bottom.linum -side left -ipadx 15
-      pack $w.bottom.days -side left
-      pack $w.bottom.dayentry -side left
-      pack $w.bottom.redo -side left
-      pack $w.bottom.close -side right -ipadx 15
+      pack $blamewin.bottom -side bottom -fill x
+      pack $blamewin.bottom.srchbtn -side left
+      pack $blamewin.bottom.entry -side left
+      pack $blamewin.bottom.linum -side left -ipadx 15
+      pack $blamewin.bottom.days -side left
+      pack $blamewin.bottom.dayentry -side left
+      pack $blamewin.bottom.redo -side left
+      pack $blamewin.bottom.close -side right -ipadx 15
 
-      pack $w.top -side top -fill x
-      pack $w.top.bworkdir -side right
+      pack $blamewin.top -side top -fill x
+      pack $blamewin.top.reventry -side left
+      pack $blamewin.top.viewfile \
+           $blamewin.top.log \
+           $blamewin.top.ddiff \
+           $blamewin.top.rdiff \
+        -in $blamewin.top -side left -ipadx 4 -ipady 4
+      
+      pack $blamewin.top.workdir -side right
 
-      pack $w.scroll -side right -fill y
-      pack $w.text -fill both -expand 1
+      pack $blamewin.scroll -side right -fill y
+      pack $blamewin.text -fill both -expand 1
 
-      wm title $w "$commandline"
+      wm title $blamewin "$commandline"
       if {$tcl_platform(platform) != "windows"} {
-        wm iconbitmap $w @$cvscfg(bitmapdir)/annotate.xbm
+        wm iconbitmap $blamewin @$cvscfg(bitmapdir)/annotate.xbm
       }
-      wm minsize $w 1 1
+      wm minsize $blamewin 1 1
       if {[info exists cvscfg(blamegeom)]} {
-        wm geometry $w $cvscfg(blamegeom)
+        wm geometry $blamewin $cvscfg(blamegeom)
       }
+
+      switch -- $type {
+        {cvs} {
+          $blamewin.top.viewfile configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { cvs_fileview_update $rev $file }
+           }]
+          $blamewin.top.log configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { cvs_log_rev $rev $file }
+           }]
+          $blamewin.top.ddiff configure -state disabled
+          $blamewin.top.rdiff configure -state disabled
+        }
+        {svn} {
+          $blamewin.top.viewfile configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { svn_fileview $rev $file file}
+           }]
+          $blamewin.top.log configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { svn_log_rev $rev $file}
+           }]
+          $blamewin.top.ddiff configure -state disabled
+          $blamewin.top.rdiff configure -state disabled
+        }
+        {git} {
+          $blamewin.top.viewfile configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { git_fileview $rev "." $file}
+           }]
+          $blamewin.top.log configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { git_log_rev $rev $file}
+           }]
+          $blamewin.top.ddiff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { git_show $rev }
+           }]
+          $blamewin.top.rdiff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { git_patch $file $rev }
+           }]
+         }
+      }
+
+      set_tooltips $blamewin.top.workdir \
+        {"Open the Working Directory Browser"}
+      set_tooltips $blamewin.top.viewfile \
+        {"View a version of the file"}
+      set_tooltips $blamewin.top.log \
+        {"Revision Log of the file"}
+      set_tooltips $blamewin.top.ddiff \
+        {"List changed files in a commit"}
+      set_tooltips $blamewin.top.rdiff \
+        {"Show file changes in a commit"}
 
 
       # Define the colors
@@ -334,7 +429,7 @@ namespace eval ::annotate {
       }
 
       gen_log:log C "$commandline"
-      busy_start $w
+      busy_start $blamewin
       set exec_cmd [exec::new "$commandline"]
       set log [$exec_cmd\::output]
 
@@ -387,7 +482,7 @@ namespace eval ::annotate {
       set nrevs [llength $revlist]
       if {$nrevs == 0} {
         set msg "No output for $commandline"
-        cvsfail $msg $w
+        cvsfail $msg $blamewin
         return;
       }
       gen_log:log D "$revlist"
@@ -412,23 +507,24 @@ namespace eval ::annotate {
       set ll [string length [llength $log_lines]]
       foreach logline [lrange $log_lines 0 end-1] {
         incr lc
-        $blameproc $w.text $logline $lc
+        $blameproc $blamewin.text $logline $lc
       }
 
-      $w.text yview moveto 0
+      $blamewin.text yview moveto 0
       update idletasks
-      $w.text configure -state disabled
-      bind $w.bottom.dayentry <Return> [namespace code {redo $w}]
-      $w.bottom.redo configure -command [namespace code {redo $w}]
-      $w.bottom.redo configure -command [namespace code {redo $w}]
-      $w.bottom.linum configure -command [namespace code {redo $w}]
+      $blamewin.text configure -state disabled
+      bind $blamewin.bottom.dayentry <Return> [namespace code {redo $blamewin}]
+      $blamewin.bottom.redo configure -command [namespace code {redo $blamewin}]
+      $blamewin.bottom.redo configure -command [namespace code {redo $blamewin}]
+      $blamewin.bottom.linum configure -command [namespace code {redo $blamewin}]
 
       # Disable key presses and make a popup for mouse Copy
-      ro_textbindings $w.text
+      ro_textbindings $blamewin.text
+      bind $blamewin.text <ButtonPress-1> [namespace code {get_blamerev %W %x %y}]
 
       # Focus in the text widget to activate the text bindings
-      focus $w.text
-      busy_done $w
+      focus $blamewin.text
+      busy_done $blamewin
       return [namespace current]
     }
   }

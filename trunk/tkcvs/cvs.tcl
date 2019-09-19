@@ -249,7 +249,7 @@ proc cvs_remove_file {args} {
     cvs_notincvs
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set success 1
   set faillist ""
@@ -283,7 +283,7 @@ proc cvs_remove_dir {args} {
     cvs_notincvs
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
     return 
@@ -419,7 +419,8 @@ proc cvs_add {binflag args} {
     cvs_notincvs
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
@@ -449,7 +450,8 @@ proc cvs_add_dir {binflag args} {
     cvs_notincvs
     return 1
   }
-  set filelist $args
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
     return 1
@@ -630,12 +632,13 @@ proc cvs_log {detail args} {
 
   gen_log:log T "ENTER ($detail $args)"
 
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   if {$args == "."} {
     set args ""
   }
 
   busy_start .workdir.main
-  set filelist [join $args]
+
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
@@ -686,24 +689,24 @@ proc cvs_annotate {revision args} {
 
   gen_log:log T "ENTER ($revision $args)"
 
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
   if {$revision == "trunk"} {
     set revision ""
   }
   if {$revision != ""} {
-    # We were given a revision
     set revflag "-r$revision"
   } else {
     set revflag ""
   }
 
-  set filelist $args
   if {$filelist == ""} {
     cvsfail "Annotate:\nPlease select one or more files !" .workdir
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
-  foreach file $filelist {
-    annotate::new $revflag "$file" "cvs"
+  foreach file [join $filelist] {
+    annotate::new $revflag $file "cvs"
   }
   gen_log:log T "LEAVE"
 }
@@ -741,7 +744,7 @@ proc cvs_commit {revision comment args} {
     return 1
   }
 
-  set filelist [lindex $args 0]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   # changed the message to be a little more explicit.  -sj
   set commit_output ""
@@ -816,7 +819,7 @@ proc cvs_tag {tagname force b_or_t updflag args} {
     return 1
   }
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set command "$cvs tag"
   if {$b_or_t == "branch"} {
@@ -858,7 +861,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
 
   gen_log:log T "ENTER (tagname=$tagname k=$k no_tag=$no_tag recurse=$recurse prune=$prune d=$d dir=$dir args=$args)"
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   #
   # cvs update [-APCdflRp] [-k kopt] [-r rev] [-D date] [-j rev]
   #
@@ -1008,7 +1011,7 @@ proc cvs_merge {parent from since frombranch args} {
     #set realfrom "HEAD"
   #}
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set mergetags [assemble_mergetags $frombranch]
   set curr_tag [lindex $mergetags 0]
@@ -1119,7 +1122,7 @@ proc cvs_status {detail args} {
   }
 
   busy_start .workdir.main
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
@@ -1387,7 +1390,7 @@ proc cvs_merge_conflict {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   if {$filelist == ""} {
     cvsfail "Please select some files to merge first!"
     return
@@ -1502,7 +1505,7 @@ proc cvs_release {delflag args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   foreach directory $filelist {
     if {! [file isdirectory $directory]} {
@@ -1716,7 +1719,7 @@ proc cvs_ascii { args } {
     cvs_notincvs
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   gen_log:log D "Changing sticky flag"
   gen_log:log D "$cvs admin -kkv $filelist"
@@ -1738,7 +1741,7 @@ proc cvs_binary { args } {
     cvs_notincvs
     return 1
   }
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   gen_log:log D "Changing sticky flag"
   gen_log:log D "$cvs admin -kb $filelist"
@@ -1757,7 +1760,7 @@ proc cvs_revert {args} {
   global cvs
 
   gen_log:log T "ENTER ($args)"
-  set filelist [join $args]
+  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   if {$filelist == ""} {
     set mess "This will revert (discard) your changes to ** ALL ** files in this directory"

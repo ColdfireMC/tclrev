@@ -1,3 +1,12 @@
+Release 9.2.4 September, 2019
+
+- Put some buttons on top of the annotation browser so that when you
+  click on a line of text, it puts the revision number in an entry
+  and you can view or show the log of that revision of the file.
+  In git, you can also show the changed files and show the difference
+  of that revision from the previous one.
+
+
 Release 9.2.3 September, 2019
 
 - Got the colors working properly for Git annotate. Now newer ones are
