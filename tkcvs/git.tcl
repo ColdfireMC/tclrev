@@ -1070,7 +1070,6 @@ proc git_fast_diagram {files} {
   global cvsglb
 
   gen_log:log T "ENTER ($files)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
   set cvsglb(lightning) 1
 
