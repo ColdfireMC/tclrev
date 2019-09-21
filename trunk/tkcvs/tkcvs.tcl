@@ -396,15 +396,16 @@ if {[info exists lcfile]} {
   cd $d
 }
 
-# Thought better of saving this
-catch unset cvscfg(svnconform_seen)
-
 if {![info exists cvscfg(ignore_file_filter)]} {
   set cvscfg(ignore_file_filter) ""
 }
-# Remember what the setting was.  We'll have to restore it after
-# leaving a directory with a .cvsignore file.
-set cvsglb(default_ignore_filter) $cvscfg(ignore_file_filter)
+if {[info exists cvscfg(file_filter)]} {
+  unset cvscfg(file_filter)
+}
+if {![info exists cvscfg(show_file_filter)]} {
+  set cvscfg(show_file_filter) "*"
+}
+
 load_all_images
 
 set cvsglb(root) ""

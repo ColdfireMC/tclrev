@@ -122,10 +122,14 @@ proc svn_lock {do files} {
 
 # Get stuff for main workdir browser
 proc svn_workdir_status {} {
+  global cvscfg
+  global cvsglb
   global cmd
   global Filelist
 
   gen_log:log T "ENTER"
+
+  # One command gets all the status information
   set cmd(svn_status) [exec::new "svn status -uvN --xml"]
   set xmloutput [$cmd(svn_status)\::output]
   set entrylist [regexp -all -inline {<entry.*?</entry>} $xmloutput]
@@ -134,6 +138,7 @@ proc svn_workdir_status {} {
     $cmd(svn_status)\::destroy
     catch {unset cmd(svn_status)}
   }
+
   # do very simple xml parsing
   foreach entry $entrylist {
     set filename ""
@@ -523,6 +528,7 @@ proc svn_commit {comment args} {
     return 1
   }
 
+  set filelist [join $filelist]
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks

@@ -100,20 +100,22 @@ proc workdir_setup {} {
   pack .workdir.bottom.filters -side top -fill x
 
   label .workdir.bottom.filters.showlbl -text "Show:" -anchor w
-  entry .workdir.bottom.filters.showentry -textvariable cvscfg(file_filter) -width 12
+  entry .workdir.bottom.filters.showentry -width 12 \
+     -textvariable cvscfg(show_file_filter)
   label .workdir.bottom.filters.hidelbl -text "   Hide:" -anchor w
   entry .workdir.bottom.filters.hideentry -width 12 \
-     -textvariable cvsglb(default_ignore_filter)
+     -textvariable cvscfg(ignore_file_filter)
   label .workdir.bottom.filters.space -text "    "
   button .workdir.bottom.filters.cleanbutton -text "Clean:" \
      -pady 0 -highlightthickness 0 \
      -command workdir_cleanup
   entry .workdir.bottom.filters.cleanentry -width 12 \
      -textvariable cvscfg(clean_these)
+  label .workdir.bottom.filters.vcshidelbl -text " \[vcs\]ignore"
+  entry .workdir.bottom.filters.vcshideentry -textvariable cvsglb(vcs_hidden_files) \
+     -width 8 -state readonly
   bind .workdir.bottom.filters.showentry <Return> {setup_dir}
-  bind .workdir.bottom.filters.hideentry <Return> {
-     set cvsglb(default_ignore_filter) [.workdir.bottom.filters.hideentry get]
-     setup_dir}
+  bind .workdir.bottom.filters.hideentry <Return> {setup_dir}
   bind .workdir.bottom.filters.cleanentry <Return> {workdir_cleanup}
   pack .workdir.bottom.filters.showlbl -side left
   pack .workdir.bottom.filters.showentry -side left
@@ -122,6 +124,8 @@ proc workdir_setup {} {
   pack .workdir.bottom.filters.space -side left
   pack .workdir.bottom.filters.cleanbutton -side left -ipadx 2 -ipady 0
   pack .workdir.bottom.filters.cleanentry -side left
+  pack .workdir.bottom.filters.vcshidelbl -side left
+  pack .workdir.bottom.filters.vcshideentry -side left
 
   frame .workdir.bottom.buttons -relief groove -bd 2
   frame .workdir.bottom.buttons.funcs -relief groove -bd 2
@@ -551,8 +555,8 @@ proc setup_dir { } {
   global module_dir
   global incvs insvn inrcs ingit
   global cvscfg
-  global current_tagname
   global cvsglb
+  global current_tagname
 
   gen_log:log T "ENTER"
 
@@ -569,6 +573,7 @@ proc setup_dir { } {
 
   set module_dir ""
   set current_tagname ""
+  set cvsglb(vcs_hidden_files) {}
 
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   gen_log:log D "incvs=$incvs inrcs=$inrcs insvn=$insvn ingit=$ingit"
@@ -596,6 +601,7 @@ proc setup_dir { } {
   .workdir.menubar.reports entryconfigure "Log" -state disabled
   .workdir.menubar.reports entryconfigure "Info" -state disabled
   # Start with the revision-control buttons disabled
+  .workdir.bottom.filters.vcshidelbl configure -text "hidden by vcs"
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
   .workdir.bottom.buttons.dirfuncs.rdiff configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
@@ -933,32 +939,42 @@ proc setup_dir { } {
 
   set cvsglb(current_selection) {}
 
-  set cvscfg(ignore_file_filter) $cvsglb(default_ignore_filter)
-
-  if { [ file exists ".cvsignore" ] } {
-    set fileId [ open ".cvsignore" "r" ]
-    while { [ eof $fileId ] == 0 } {
-      gets $fileId line
-      append cvscfg(ignore_file_filter) " $line"
+  # Check for VCS-specific ignore filters
+  if {$incvs} {
+    .workdir.bottom.filters.vcshidelbl configure -text " .cvsignore"
+    if { [ file exists ".cvsignore" ] } {
+      set fileId [ open ".cvsignore" "r" ]
+      while { [ eof $fileId ] == 0 } {
+        gets $fileId line
+        append cvsglb(vcs_hidden_files) " $line"
+      }
+      close $fileId
     }
-    close $fileId
-  } else {
-    if {$insvn} {
-      # Have to do eval exec because we need the error output
-      set command "svn propget svn:ignore"
-      gen_log:log C "$command"
-      set ret [catch {eval "exec $command"} output]
-      if {$ret} {
-        #gen_log:log E "$output"
-      } else {
-        gen_log:log F "$output"
-        foreach infoline [split $output "\n"] {
-          append cvscfg(ignore_file_filter) " $infoline"
-        }
+  } elseif {$insvn} {
+    .workdir.bottom.filters.vcshidelbl configure -text " svn:ignore"
+    # Have to do eval exec because we need the error output
+    set command "svn propget svn:ignore ."
+    gen_log:log C "$command"
+    set ret [catch {eval "exec $command"} output]
+    if {$ret} {
+      gen_log:log E "$output"
+    } else {
+      gen_log:log F "$output"
+      foreach infoline [split $output "\n"] {
+        append cvsglb(vcs_hidden_files) " $infoline"
       }
     }
+  } elseif {$ingit} {
+    .workdir.bottom.filters.vcshidelbl configure -text " .gitignore"
+    if { [ file exists ".gitignore" ] } {
+      set fileId [ open ".gitignore" "r" ]
+      while { [ eof $fileId ] == 0 } {
+        gets $fileId line
+        append cvsglb(vcs_hidden_files) " $line"
+      }
+      close $fileId
+    }
   }
-
   set filelist [ getFiles ]
   directory_list $filelist
   # Update, otherwise it won't be mapped before we restore the scroll position
@@ -1079,6 +1095,10 @@ proc directory_list { filenames } {
   }
 
   gen_log:log D "Sending all files to the canvas"
+  set n_show [llength [array names Filelist]]
+  if {$n_show == 0} {
+    cvsalwaysconfirm "No files matched" .workdir
+  }
   foreach i [array names Filelist *:status] {
     regsub {:status$} $i "" j
     # If it's locally removed or missing, it may not have
@@ -1214,8 +1234,10 @@ proc cvsroot_check { dir } {
 
   lassign {0 0 0 0} incvs insvn inrcs ingit
 
-  if {[file isfile [file join $dir CVS Root]]} {
-    set incvs [ read_cvs_dir [file join $dir CVS] ]
+  set cvsrootfile [file join $dir CVS Root]
+  if {[file isfile $cvsrootfile]} {
+    gen_log:log C "$cvsrootfile"
+    set incvs [ read_cvs_dir [file join $dir CVS]]
     # Outta here, don't check for svn or rcs
     if {$incvs} {
       gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
@@ -1271,7 +1293,7 @@ proc cvsroot_check { dir } {
       find_git_remote $dir
     }
   } else {
-    gen_log:log E "gitout $gitout"
+    #gen_log:log E "gitout $gitout"
     set ingit 0
   }
   gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
@@ -1292,8 +1314,8 @@ proc isCmDirectory { file } {
   return $value
 }
 
-# Get the files in the current working directory.  Use the file_filter
-# values Add hidden files if desired by the user.  Sort them to match
+# Get the files in the current working directory. Use the file_filter
+# values. Add hidden files if desired by the user. Sort them to match
 # the ordering that will be returned by cvs commands (this matches the
 # default ls ordering.).
 proc getFiles { } {
@@ -1304,26 +1326,29 @@ proc getFiles { } {
   set filelist ""
 
   # make sure the file filter is at least set to "*".
-  if { $cvscfg(file_filter) == "" } {
-    set cvscfg(file_filter) "* .svn"
+  if { $cvscfg(show_file_filter) == "" } {
+    set cvscfg(show_file_filter) "*"
   }
 
-  # get the initial file list, including hidden if requested
+  # get the initial file list, including dotfiles if requested, filtered by show_file_filter
   if {$cvscfg(allfiles)} {
     # get hidden as well
-    foreach item $cvscfg(file_filter) {
+    foreach item $cvscfg(show_file_filter) {
+      gen_log:log C "glob -nocomplain .$item $item"
       set filelist [ concat [ glob -nocomplain .$item $item ] $filelist ]
     }
   } else {
-    foreach item $cvscfg(file_filter) {
+    foreach item $cvscfg(show_file_filter) {
+      gen_log:log C "glob -nocomplain $item"
       set filelist [ concat [ glob -nocomplain $item ] $filelist ]
     }
   }
   #gen_log:log D "filelist ($filelist)"
 
-  # ignore files if requested
-  if { $cvscfg(ignore_file_filter) != "" } {
-    foreach item $cvscfg(ignore_file_filter) {
+  # ignore files if requested by ingore_file_filter
+  set ignore_file_filter [concat $cvscfg(ignore_file_filter) $cvsglb(vcs_hidden_files)]
+  if { $ignore_file_filter != "" } {
+    foreach item $ignore_file_filter {
       # for each pattern
       if { $item != "*" } {
         # if not "*"
@@ -1355,7 +1380,6 @@ proc getFiles { } {
     catch { set filelist [ concat "CVS" $filelist ] }
   }
 
-  set cvscfg(ignore_file_filter) $cvsglb(default_ignore_filter)
   gen_log:log T "return ($filelist)"
   return $filelist
 }
@@ -1422,7 +1446,7 @@ proc save_options { } {
   set BOOLopts { allfiles auto_status confirm_prompt \
                  gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
                  status_filter recurse logging blame_linenums use_cvseditor }
-  set STRGopts { file_filter ignore_file_filter clean_these editor preftab \
+  set STRGopts { show_file_filter ignore_file_filter clean_these editor preftab \
                  gitblame_since gitbranchgroups gitlog_opts gitlog_since \
                  gitmaxbranch gitmaxhist gitbranchregex \
                  printer log_classes lastdir sort_pref editor editorargs \

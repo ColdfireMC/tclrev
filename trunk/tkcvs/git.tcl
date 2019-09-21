@@ -31,14 +31,22 @@ proc git_workdir_status {} {
 
   gen_log:log T "ENTER"
 
-  read_git_dir [pwd]
-  set module_dir $cvsglb(relpath)
+  #read_git_dir [pwd]
+  #set module_dir $cvsglb(relpath)
 
-  set statfiles {}
+
   # Get the status of the files that git reports (current level only)
   # If they're up-to-date, git status is mute about them
   set cmd(git_status) [exec::new "git status -u --porcelain ."]
-  foreach statline [split [$cmd(git_status)\::output] "\n" ] {
+  set status_lines  [split [$cmd(git_status)\::output] "\n"]
+
+  if [info exists cmd(git_status)] {
+    $cmd(git_status)\::destroy
+    catch {unset cmd(git_status)}
+  }
+
+  set statfiles {}
+  foreach statline $status_lines {
     gen_log:log D "$statline"
     if {[string length $statline] < 1} {
       continue
