@@ -297,7 +297,7 @@ set cvscfg(ldetail)            "summary"
 # pattern that can be used for a pattern for 'ls'. An empty string
 # is equivalent to the entire directory (minus hidden files);
 # i.e., ls *
-set cvscfg(file_filter)        ""
+set cvscfg(show_file_filter)   ""
 set cvscfg(ignore_file_filter) "*.a *.o *~"
 set cvscfg(clean_these)        "*.bak *~ .#* *tmp #* *%"
 

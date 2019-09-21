@@ -916,7 +916,7 @@ Filter out unknown files (status "?") from CVS Check and CVS Update reports.
 Let CVS invoke an editor for commit log messages rather than having tkcvs use its own input box.  By doing this, your site's commit template (rcsinfo) can be used.
 
 <h2>File filters</h2>
-<h3>cvscfg(file_filter)</h3>
+<h3>cvscfg(show_file_filter)</h3>
 Pattern for which files to list. Empty string is equivalent to the entire directory (minus hidden files)
 <h3>cvscfg(ignore_file_filter)</h3>
 Pattern used in the workdir filter for files to be ignored

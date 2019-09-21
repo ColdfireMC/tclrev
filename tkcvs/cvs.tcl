@@ -82,6 +82,7 @@ proc cvs_sandbox_filetags {mcode filenames} {
 
 proc cvs_workdir_status {} {
   global cvscfg
+  global cvsglb
   global cvs
   global Filelist
 
@@ -100,85 +101,89 @@ proc cvs_workdir_status {} {
     set cmd(cvs_lockers) [exec::new "$cvs log"]
     set lockers_lines [split [$cmd(cvs_lockers)\::output] "\n"]
   }
-  if {[info exists cmd(cvs_status)]} {
-    # gets cvs status in current directory only, pulling out lines that include
-    # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
-    # into an array.
 
-    set datestatus_seen 0
+  if {[info exists cmd(cvs_status)]} {
     $cmd(cvs_status)\::destroy
     catch {unset cmd(cvs_status)}
-    foreach logline $status_lines {
-      if {[string match "File:*" $logline]} {
-        regsub -all {\t+} $logline "\t" logline
-        set line [split [string trim $logline] "\t"]
-        gen_log:log D "$line"
-        # Should be able to do these regsubs in one expression
-        regsub {File: } [lindex $line 0] "" filename
-        regsub {\s*$} $filename "" filename
-        regsub {Status: } [lindex $line 1] "" status
-        set Filelist($filename:status) $status
-        # Don't set editors to null because we'll use its presence
-        # or absence to see if we need to re-read the repository when
-        # we ask to map the editors column
-      } elseif {[string match "*Working revision:*" $logline]} {
-        regsub -all {\t+} $logline "\t" logline
-        set line [split [string trim $logline] "\t"]
-        gen_log:log D "$line"
-        set revision [lindex $line 1]
-        regsub {New .*} $revision "New" revision
-        set date [lindex $line 2]
-        #puts "from Working Revision: $date"
-        # The date field is not supplied to remote clients.
-        if {$date == "" } {
-         if {! ([string match "New *" $date ] || [string match "Result *" $date])} {
-           catch {set date [clock format [file mtime $filename] -format $cvscfg(dateformat)]}
-           if {! $datestatus_seen} {
-             # We only need to see this message once per directory
-             set datestatus_seen 1
-             gen_log:log E "No date supplied by remote CVS server. Using \[file mtime\]"
-           }
-         }
-        } else {
-          # CVS outputs time strings tcl can't handle, such as
-          # ones with +0100.  Let's discard them rather than
-          # trying to convert them.
-          set ret [catch {clock scan $date -gmt yes} ans]
-          if {$ret == 0} {
-            set juliandate $ans
-            set date [clock format $juliandate -format $cvscfg(dateformat)]
-            #puts "Clock Scan on $ans: $date"
-          } else {
-            gen_log:log E "$ans"
+  }
+
+  # get cvs status in current directory only, reading lines that include
+  # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
+  # into an array.
+
+  set datestatus_seen 0
+
+  foreach logline $status_lines {
+    if {[string match "File:*" $logline]} {
+      regsub -all {\t+} $logline "\t" logline
+      set line [split [string trim $logline] "\t"]
+      gen_log:log D "$line"
+      # Clean up the file name
+      regsub {File:\s+} [lindex $line 0] "" filename
+      regsub {^no file } $filename {} filename
+      regsub {\s*$} $filename "" filename
+      regsub {Status: } [lindex $line 1] "" status
+      set Filelist($filename:status) $status
+      # Don't set editors to null because we'll use its presence
+      # or absence to see if we need to re-read the repository when
+      # we ask to map the editors column
+    } elseif {[string match "*Working revision:*" $logline]} {
+      regsub -all {\t+} $logline "\t" logline
+      set line [split [string trim $logline] "\t"]
+      gen_log:log D "$line"
+      set revision [lindex $line 1]
+      regsub {New .*} $revision "New" revision
+      set date [lindex $line 2]
+
+      # The date field is not supplied to remote clients.
+      if {$date == "" } {
+        if {! ([string match "New *" $date ] || [string match "Result *" $date])} {
+          catch {set date [clock format [file mtime $filename] -format $cvscfg(dateformat)]}
+          if {! $datestatus_seen} {
+            # We only need to see this message once per directory
+            set datestatus_seen 1
+            gen_log:log E "No date supplied by remote CVS server. Using \[file mtime\]"
           }
         }
-        set Filelist($filename:date) $date
-        set Filelist($filename:wrev) $revision
-        set Filelist($filename:status) $status
-      } elseif {[string match "*Sticky Tag:*" $logline]} {
-        regsub -all {\t+} $logline "\t" logline
-        set line [split [string trim $logline] "\t"]
-        gen_log:log D "$line"
-        set tagline [lindex $line 1]
-        set t0 [lindex $tagline 0]
-        set t1 [lrange $tagline 1 end]
-        set stickytag ""
-        if { $t0 == "(none)" } {
-          set stickytag " on trunk"
-        } elseif {[string match "(branch:*" $t1 ]} {
-          regsub {\(branch: (.*)\)} $t1 {\1} t1
-          set stickytag " on $t0  branch"
-        } elseif {[string match "(revision:*" $t1 ]} {
-          set stickytag " $t0"
+      } else {
+        # CVS outputs time strings tcl can't handle, such as
+        # ones with +0100.  Let's discard them rather than
+        # trying to convert them.
+        set ret [catch {clock scan $date -gmt yes} ans]
+        if {$ret == 0} {
+          set juliandate $ans
+          set date [clock format $juliandate -format $cvscfg(dateformat)]
+
+        } else {
+          gen_log:log E "$ans"
         }
-        set Filelist($filename:stickytag) "$revision $stickytag"
-      } elseif {[string match "*Sticky Options:*" $logline]} {
-        regsub -all {\t+} $logline "\t" logline
-        set line [split [string trim $logline] "\t"]
-        gen_log:log D "$line"
-        set option [lindex $line 1]
-        set Filelist($filename:option) $option
       }
+      set Filelist($filename:date) $date
+      set Filelist($filename:wrev) $revision
+      set Filelist($filename:status) $status
+    } elseif {[string match "*Sticky Tag:*" $logline]} {
+      regsub -all {\t+} $logline "\t" logline
+      set line [split [string trim $logline] "\t"]
+      gen_log:log D "$line"
+      set tagline [lindex $line 1]
+      set t0 [lindex $tagline 0]
+      set t1 [lrange $tagline 1 end]
+      set stickytag ""
+      if { $t0 == "(none)" } {
+        set stickytag " on trunk"
+      } elseif {[string match "(branch:*" $t1 ]} {
+        regsub {\(branch: (.*)\)} $t1 {\1} t1
+        set stickytag " on $t0  branch"
+      } elseif {[string match "(revision:*" $t1 ]} {
+        set stickytag " $t0"
+      }
+      set Filelist($filename:stickytag) "$revision $stickytag"
+    } elseif {[string match "*Sticky Options:*" $logline]} {
+      regsub -all {\t+} $logline "\t" logline
+      set line [split [string trim $logline] "\t"]
+      gen_log:log D "$line"
+      set option [lindex $line 1]
+      set Filelist($filename:option) $option
     }
   }
 
@@ -516,7 +521,7 @@ proc add_subdirs {binflag v} {
   }
   if {[llength $plainfiles] > 0} {
     # LJZ: get local ignore file filter list
-    set ignore_file_filter $cvsglb(default_ignore_filter)
+    set ignore_file_filter $cvscfg(ignore_file_filter)
     if { [ file exists ".cvsignore" ] } {
       set fileId [ open ".cvsignore" "r" ]
       while { [ eof $fileId ] == 0 } {

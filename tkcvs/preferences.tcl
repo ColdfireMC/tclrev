@@ -53,6 +53,8 @@ proc prefs_general {w} {
   frame $w.general
   $w add $w.general -text "General" -sticky nsew
 
+  checkbutton $w.general.allfiles -text "Show Dotfiles" \
+    -variable cvscfg(allfiles) -onvalue true -offvalue false
   checkbutton $w.general.confirmation -text "Show Confirmation Dialogs" \
     -variable cvscfg(confirm_prompt) -onvalue true -offvalue false
   checkbutton $w.general.auto -text "Automatic Workdir Status" \
@@ -67,15 +69,16 @@ proc prefs_general {w} {
   entry $w.general.ediff -textvariable cvscfg(tkdiff)
 
   grid columnconf $w.general 1 -weight 1
-  grid $w.general.confirmation -sticky w -column 0 -row 0 -columnspan 2
-  grid $w.general.auto -sticky w -column 0 -row 1 -columnspan 2
-  grid $w.general.ext_editor -sticky w -column 0 -row 2 -columnspan 2
-  grid $w.general.leditor -sticky w -column 0 -row 3
-  grid $w.general.eeditor -sticky ew -column 1 -row 3 -padx 2
-  grid $w.general.ldiff -sticky w -column 0 -row 4
-  grid $w.general.ediff -sticky ew -column 1 -row 4 -padx 2
-  grid $w.general.lshell -sticky w -column 0 -row 5
-  grid $w.general.eshell -sticky ew -column 1 -row 5 -padx 2
+  grid $w.general.allfiles -sticky w -column 0 -row 0 -columnspan 2
+  grid $w.general.confirmation -sticky w -column 0 -row 1 -columnspan 2
+  grid $w.general.auto -sticky w -column 0 -row 2 -columnspan 2
+  grid $w.general.ext_editor -sticky w -column 0 -row 3 -columnspan 2
+  grid $w.general.leditor -sticky w -column 0 -row 4
+  grid $w.general.eeditor -sticky ew -column 1 -row 4 -padx 2
+  grid $w.general.ldiff -sticky w -column 0 -row 5
+  grid $w.general.ediff -sticky ew -column 1 -row 5 -padx 2
+  grid $w.general.lshell -sticky w -column 0 -row 6
+  grid $w.general.eshell -sticky ew -column 1 -row 6 -padx 2
 }
 
 # For the Branch diagrams
