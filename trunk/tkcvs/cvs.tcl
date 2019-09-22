@@ -774,6 +774,7 @@ proc cvs_commit {revision comment args} {
     set revflag "-r $revision"
   }
 
+  set filelist [join $filelist]
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     # This way a template in CVSROOT can be used.
