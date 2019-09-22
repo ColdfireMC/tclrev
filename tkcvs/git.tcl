@@ -22,7 +22,7 @@ proc read_git_dir {dirname} {
   gen_log:log D "Relative path: $cvsglb(relpath)"
 }
 
-proc git_workdir_status {} {
+proc git_workdir_status {showfiles} {
   global cvscfg
   global cvsglb
   global Filelist
@@ -34,12 +34,34 @@ proc git_workdir_status {} {
   read_git_dir [pwd]
   set module_dir $cvsglb(relpath)
 
+  # git status ignores unchanged files, so we use ls-files to list the
+  # files git is tracking. It will recurse the directories, and there may
+  # be duplicates.
+  set cmd(git_list) [exec::new "git ls-files ."]
+  set list_lines  [split [$cmd(git_list)\::output] "\n"]
+  catch {unset filename_array}
+  foreach l $list_lines {
+    if {$l eq ""} {continue}
+    regsub {/.*$} $l {} fname 
+    if {$fname ni $showfiles} {continue}
+    set filename_array($fname) ""
+  }
+  set git_ls_list [lsort  [array names filename_array]]
+  foreach g $git_ls_list {
+    gen_log:log D "$g"
+    # Not really, but the ones that aren't will be overwritten
+    set Filelist($g:status) "Up-to-date"
+  }
 
   # Get the status of the files that git reports (current level only)
   # If they're up-to-date, git status is mute about them
   set cmd(git_status) [exec::new "git status -u --porcelain ."]
   set status_lines  [split [$cmd(git_status)\::output] "\n"]
 
+  if [info exists cmd(git_list)] {
+    $cmd(git_list)\::destroy
+    catch {unset cmd(git_list)}
+  }
   if [info exists cmd(git_status)] {
     $cmd(git_status)\::destroy
     catch {unset cmd(git_status)}
@@ -61,64 +83,60 @@ proc git_workdir_status {} {
       continue
     }
     switch -glob -- $status {
-        {M } {
-         set Filelist($f:status) "Modified, staged"
-         gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        { M} -
-        {MM} {
+      {M } {
+        set Filelist($f:status) "Modified, staged"
+        gen_log:log D "$statline -> $Filelist($f:status)"
+      }
+      { M} -
+      {MM} {
          set Filelist($f:status) "Modified, unstaged"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {A } {
+      }
+      {A } {
          set Filelist($f:status) "Added"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {AD} {
+      }
+      {AD} {
          set Filelist($f:status) "Added, missing"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {D } {
+      }
+      {D } {
          set Filelist($f:status) "Removed"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        { D} {
+      }
+      { D} {
          set Filelist($f:status) "Missing"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {R*} {
+      }
+      {R*} {
          set Filelist($f:status) "Renamed"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {C*} {
+      }
+      {C*} {
          set Filelist($f:status) "Copied"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {AA} -
-        {AU} -
-        {DD} -
-        {DU} -
-        {UA} -
-        {UD} -
-        {UU} {
+      }
+      {AA} -
+      {AU} -
+      {DD} -
+      {DU} -
+      {UA} -
+      {UD} -
+      {UU} {
          set Filelist($f:status) "Conflict"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        {??} {
+      }
+      {??} {
+         if {[string match {.*} $f] && ! $cvscfg(allfiles)} {continue}
+         if {$f ni $showfiles} {continue}
          set Filelist($f:status) "Not managed by Git"
          gen_log:log D "$statline -> $Filelist($f:status)"
-        }
-        default {
-         set Filelist($f:status) "Up-to-date"
-         gen_log:log D "$statline -> $Filelist($f:status)"
-       }
+      }
     }
-    # So they're not undefined
-    catch {set Filelist($f:date) \
-       [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
-    set Filelist($f:stickytag) ""
-    set Filelist($f:editors) ""
   }
+  # So they're not undefined
+  catch {set Filelist($f:date) \
+      [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
 
   if {$cvscfg(gitdetail)} {
     # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
@@ -126,9 +144,8 @@ proc git_workdir_status {} {
     foreach i [array names Filelist *:status] {
       regsub {:status$} $i {} f
       gen_log:log D "$f $Filelist($f:status)"
-      if {$Filelist($f:status) eq "Not managed by Git"} {
-        continue
-      }
+      if {$Filelist($f:status) eq "Not managed by Git"} { continue }
+      if {$Filelist($f:status) eq "<directory>"} { continue }
       # --porcelain=1 out: XY <filename>, where X is the modification state of the index
       #   and Y is the state of the work tree.  ' ' = unmodified.
       # --porcelain=2 out has an extra integer field before the status and 6 extra
@@ -139,14 +156,6 @@ proc git_workdir_status {} {
       set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
       set cmd(git_log) [exec::new "$command"]
       set log_out [$cmd(git_log)\::output]
-      if {[string length $log_out] > 0} {
-        # git log returned something, but git status didn't, so
-        # I guess it must be up-to-date
-        if {! [info exists Filelist($f:status)] || ($Filelist($f:status) eq "<file>")} {
-          set Filelist($f:status) "Up-to-date"
-          gen_log:log D "$Filelist($f:status)"
-        }
-      }
       foreach log_line [split $log_out "\n"] {
         if {[string length $log_line] > 0} {
           set good_line $log_line
