@@ -1087,7 +1087,8 @@ proc directory_list { filenames } {
   } elseif {$ingit} {
     .workdir.main.tree heading wrevcol -text "Commit ID"
     .workdir.main.tree heading editcol -text "Committer"
-    git_workdir_status
+    # We need the filenames in git for ignore_file_filter
+    git_workdir_status $filenames
   }
 
   gen_log:log D "Sending all files to the canvas"
