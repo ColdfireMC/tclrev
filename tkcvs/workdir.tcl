@@ -1080,15 +1080,11 @@ proc directory_list { filenames } {
     .workdir.main.tree heading wrevcol -text "Revision"
     .workdir.main.tree heading editcol -text "Locked by"
     rcs_workdir_status
-  }
-
-  if {$insvn} {
+  } elseif {$insvn} {
     .workdir.main.tree heading wrevcol -text "Revision"
     .workdir.main.tree heading editcol -text "Author"
     svn_workdir_status
-  }
-
-  if {$ingit} {
+  } elseif {$ingit} {
     .workdir.main.tree heading wrevcol -text "Commit ID"
     .workdir.main.tree heading editcol -text "Committer"
     git_workdir_status
@@ -1352,6 +1348,7 @@ proc getFiles { } {
       # for each pattern
       if { $item != "*" } {
         # if not "*"
+        set idx [lsearch $filelist $item]
         while { [set idx [lsearch $filelist $item]] != -1 } {
           # for each occurence, delete
           catch { set filelist [ lreplace $filelist $idx $idx ] }

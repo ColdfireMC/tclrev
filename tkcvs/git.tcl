@@ -31,8 +31,8 @@ proc git_workdir_status {} {
 
   gen_log:log T "ENTER"
 
-  #read_git_dir [pwd]
-  #set module_dir $cvsglb(relpath)
+  read_git_dir [pwd]
+  set module_dir $cvsglb(relpath)
 
 
   # Get the status of the files that git reports (current level only)
@@ -45,9 +45,7 @@ proc git_workdir_status {} {
     catch {unset cmd(git_status)}
   }
 
-  set statfiles {}
   foreach statline $status_lines {
-    gen_log:log D "$statline"
     if {[string length $statline] < 1} {
       continue
     }
@@ -59,63 +57,60 @@ proc git_workdir_status {} {
     # Trim path
     regsub "^$module_dir/" $f "" f
     if {[regexp {/} $f]} {
+      gen_log:log D "$statline -> SKIP"
       continue
     }
-    lappend statfiles "$f"
     switch -glob -- $status {
         {M } {
          set Filelist($f:status) "Modified, staged"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
-        { M} {
-         set Filelist($f:status) "Modified, unstaged"
-         gen_log:log D "$Filelist($f:status)"
-        }
+        { M} -
         {MM} {
          set Filelist($f:status) "Modified, unstaged"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         {A } {
          set Filelist($f:status) "Added"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         {AD} {
          set Filelist($f:status) "Added, missing"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         {D } {
          set Filelist($f:status) "Removed"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         { D} {
          set Filelist($f:status) "Missing"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         {R*} {
          set Filelist($f:status) "Renamed"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         {C*} {
          set Filelist($f:status) "Copied"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
-        {AA}
-        {AU}
-        {DD}
-        {DU}
-        {UA}
-        {UD}
+        {AA} -
+        {AU} -
+        {DD} -
+        {DU} -
+        {UA} -
+        {UD} -
         {UU} {
          set Filelist($f:status) "Conflict"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         {??} {
          set Filelist($f:status) "Not managed by Git"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
         }
         default {
          set Filelist($f:status) "Up-to-date"
-         gen_log:log D "$Filelist($f:status)"
+         gen_log:log D "$statline -> $Filelist($f:status)"
        }
     }
     # So they're not undefined
@@ -126,11 +121,14 @@ proc git_workdir_status {} {
   }
 
   if {$cvscfg(gitdetail)} {
-  # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
-  # by the gitdetail variable
-    set globfiles [glob -nocomplain *]
-    set allfiles [lsort -unique -dictionary [concat $statfiles $globfiles]]
-    foreach f $allfiles {
+    # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
+    # by the gitdetail variable
+    foreach i [array names Filelist *:status] {
+      regsub {:status$} $i {} f
+      gen_log:log D "$f $Filelist($f:status)"
+      if {$Filelist($f:status) eq "Not managed by Git"} {
+        continue
+      }
       # --porcelain=1 out: XY <filename>, where X is the modification state of the index
       #   and Y is the state of the work tree.  ' ' = unmodified.
       # --porcelain=2 out has an extra integer field before the status and 6 extra
@@ -162,7 +160,6 @@ proc git_workdir_status {} {
       set Filelist($f:stickytag) $hash
       catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
       set Filelist($f:editors) $wwho
-      gen_log:log D "$Filelist($f:stickytag)\t$Filelist($f:date)\t$Filelist($f:editors)"
       if {[file isdirectory $f]} {
         if {[string length $log_out] > 0} {
           set Filelist($f:status) "<directory:GIT>"
@@ -170,7 +167,6 @@ proc git_workdir_status {} {
           set Filelist($f:status) "<directory>"
         }
       }
-      gen_log:log D "$Filelist($f:status)"
     }
   }
 
@@ -732,6 +728,7 @@ proc git_commit {comment args} {
     return 1
   }
 
+  set filelist [join $filelist]
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks

@@ -227,21 +227,17 @@ proc svn_workdir_status {} {
             "locked" { append displaymod "/Locked" }
         }
     }
-    set Filelist($filename:wrev) $wrev
-    set Filelist($filename:status) $displaymod
-    set Filelist($filename:stickytag) "$wrev $crev"
-    if {$wrev != "" && $crev != ""} {
-      #set Filelist($filename:stickytag) "working:$wrev committed:$crev"
-      set Filelist($filename:stickytag) "$wrev   (committed:$crev)"
+    if {$wcstatus ne "unversioned"} {
+      set Filelist($filename:wrev) $wrev
+      set Filelist($filename:status) $displaymod
+      set Filelist($filename:stickytag) "$wrev $crev"
+      if {$wrev != "" && $crev != ""} {
+        #set Filelist($filename:stickytag) "working:$wrev committed:$crev"
+        set Filelist($filename:stickytag) "$wrev   (committed:$crev)"
+      }
+      set Filelist($filename:option) ""
+      set Filelist($filename:editors) "$cauthor"
     }
-    set Filelist($filename:option) ""
-    set Filelist($filename:editors) "$cauthor"
-    #gen_log:log D " \
-       \"$Filelist($filename:status)\" \
-       \"$wrev (committed:$crev)\" \
-       \"$Filelist($filename:editors)\" \
-       \"$filename\" \
-       "
   }
   gen_log:log T "LEAVE"
 }
