@@ -89,7 +89,7 @@ namespace eval ::exec {
           if {[catch {close $procout} res]} {
             #gen_log:log E "  Close Failed - errorCode $errorCode"
             set ExecDone [list 1 $res $errorCode]
-            gen_log:log E "  ExecDone $ExecDone"
+            #gen_log:log E "  ExecDone $ExecDone"
             if {$errmsg == ""} { set errmsg $res }
 
             [namespace current]::err_handler
@@ -106,7 +106,7 @@ namespace eval ::exec {
             # If we don't pop up an error dialog, let's at least try to show
             # what happened in the viewer window, if there is one
             if {$viewer != {}} {
-              $v_w.text insert end "\n$res" stderr
+              #$v_w.text insert end "\n$res" stderr
               if {[tell $procerr]} {
                 seek $procerr 0
                 while {[gets $procerr erline] != -1} {
