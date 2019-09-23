@@ -7,10 +7,9 @@ Release 9.2.4 September, 2019
   of that revision from the previous one.
 
 - Re=worked Hide and Show a litte. They weren't working for SVN at all,
-  and not quite working as advertized for CVS. For Git, I let the work
+  and not quite working as advertized for CVS. For Git, it works
   differently, not forcing a tracked file to show, as cvs:ignore and
-  svn:ignore do. Git works differently, and hides them even if they're
-  tracked.
+  svn:ignore do.
 
 
 Release 9.2.3 September, 2019
