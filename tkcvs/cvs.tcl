@@ -50,18 +50,22 @@ proc cvs_sandbox_runcmd {command output_var} {
 # cvs_sandbox_filetags
 #   assume that the sandbox contains the checked out files
 #   return a list of all the tags in the files
-proc cvs_sandbox_filetags {mcode filenames} {
+proc cvs_sandbox_filetags {mcode args} {
   global cvscfg
   global cvs
 
   set pid [pid]
   set cwd [pwd]
-  gen_log:log T "ENTER ($mcode $filenames)"
+  gen_log:log T "ENTER ($mcode $args)"
   
+  set filenames [join $args]
+  set command "$cvs log"
   cd [file join $cvscfg(tmpdir) cvstmpdir.$pid $mcode]
-  set commandline "$cvs log $filenames"
-  gen_log:log C "$commandline"
-  set ret [catch {eval "exec $commandline"} view_this]
+  foreach f $filenames {
+    append command " \$f\""
+  }
+  gen_log:log C "$command"
+  set ret [catch {eval "exec $command"} view_this]
   if {$ret} {
     cd $cwd
     cvsfail $view_this .merge
@@ -254,8 +258,9 @@ proc cvs_remove_file {args} {
     cvs_notincvs
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
+  # Unix-remove the files
   set success 1
   set faillist ""
   foreach file $filelist {
@@ -271,7 +276,12 @@ proc cvs_remove_file {args} {
     return
   }
 
-  set cmd(cvscmd) [exec::new "$cvs remove $filelist"]
+  # cvs-remove them
+  set command "$cvs remove"
+  foreach f $filelist {
+    append command " \$f\""
+  }
+  set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
@@ -288,7 +298,7 @@ proc cvs_remove_dir {args} {
     cvs_notincvs
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
     return 
@@ -324,7 +334,7 @@ proc cvs_remove_dir {args} {
   gen_log:log T "LEAVE"
 }
 
-# This sets the edit flag for a file asking for confirmation first.
+# This sets the edit flag for a file, asking for confirmation first.
 proc cvs_edit {args} {
   global cvs
   global incvs
@@ -337,7 +347,9 @@ proc cvs_edit {args} {
     return 1
   }
 
-  foreach file [join $args] {
+  set filelist [join $args]
+
+  foreach file $filelist {
     regsub -all {\$} $file {\$} file
     set commandline "$cvs edit \"$file\""
     gen_log:log C "$commandline"
@@ -365,8 +377,9 @@ proc cvs_unedit {args} {
     cvs_notincvs
     return 1
   }
+  set filelist [join $args]
 
-  foreach file [join $args] {
+  foreach file $filelist {
     # Unedit may hang asking for confirmation if file is not up-to-date
     regsub -all {\$} $file {\$} file
     set commandline "$cvs -n update \"$file\""
@@ -424,7 +437,7 @@ proc cvs_add {binflag args} {
     cvs_notincvs
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$filelist == ""} {
     set mess "This will add all new files"
@@ -435,10 +448,16 @@ proc cvs_add {binflag args} {
     }  
   }
 
+  set command "$cvs add $binflag"
+
   if {$filelist == ""} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
+  } else {
+    foreach f $filelist {
+      append command " \$f\""
+    }
   }
-  set cmd(cvscmd) [exec::new "$cvs add $binflag $filelist"]
+  set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
@@ -455,7 +474,7 @@ proc cvs_add_dir {binflag args} {
     cvs_notincvs
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
@@ -637,18 +656,18 @@ proc cvs_log {detail args} {
 
   gen_log:log T "ENTER ($detail $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
   if {$args == "."} {
     set args ""
   }
+  set filelist [join $args]
 
   busy_start .workdir.main
 
+  set command "$cvs log"
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
   }
-
   switch -- $detail {
     latest {
       # -N means don't list tags
@@ -658,9 +677,12 @@ proc cvs_log {detail args} {
       append flags "-Nt "
     }
   }
-
+  append command " $flags"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
   set logcmd [viewer::new "CVS log ($detail)"]
-  $logcmd\::do "$cvs log $flags $filelist" 0 hilight_rcslog
+  $logcmd\::do "$command" 0 hilight_rcslog
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"
@@ -694,7 +716,7 @@ proc cvs_annotate {revision args} {
 
   gen_log:log T "ENTER ($revision $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$revision == "trunk"} {
     set revision ""
@@ -710,7 +732,7 @@ proc cvs_annotate {revision args} {
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
-  foreach file [join $filelist] {
+  foreach file $filelist {
     annotate::new $revflag $file "cvs"
   }
   gen_log:log T "LEAVE"
@@ -749,7 +771,7 @@ proc cvs_commit {revision comment args} {
     return 1
   }
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   # changed the message to be a little more explicit.  -sj
   set commit_output ""
@@ -774,13 +796,14 @@ proc cvs_commit {revision comment args} {
     set revflag "-r $revision"
   }
 
-  set filelist [join $filelist]
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     # This way a template in CVSROOT can be used.
     update idletasks
-    set commandline \
-      "$cvscfg(terminal) $cvs commit -R $revflag $filelist"
+    set commandline "$cvscfg(terminal) $cvs commit -R $revflag"
+    foreach f $filelist {
+      append commandline " \"$f\""
+    }
     gen_log:log C "$commandline"
     set ret [catch {eval "exec $commandline"} view_this]
     if {$ret} {
@@ -794,9 +817,13 @@ proc cvs_commit {revision comment args} {
       return 1
     }
     set v [viewer::new "CVS Commit"]
+    set commandline "$cvs commit -R $revflag -m \"$comment\""
     regsub -all "\"" $comment "\\\"" comment
+    foreach f $filelist {
+      append commandline " \"$f\""
+    }
     # Lets not show stderr as it does a lot of "examining"
-    $v\::do "$cvs commit -R $revflag -m \"$comment\" $filelist" 0
+    $v\::do "$commandline" 0
     $v\::wait
   }
 
@@ -825,7 +852,7 @@ proc cvs_tag {tagname force b_or_t updflag args} {
     return 1
   }
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   set command "$cvs tag"
   if {$b_or_t == "branch"} {
@@ -834,7 +861,10 @@ proc cvs_tag {tagname force b_or_t updflag args} {
   if {$force == "yes"} {
     append command " -F"
   }
-  append command " $tagname $filelist"
+  append command " $tagname"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
   # In new dialog, this isn't supposed to happen, but let's check anyway
   if {$b_or_t == "branch" && $force == "yes"} {
     cvsfail "Moving a branch tag isn't allowed" .workdir
@@ -848,7 +878,10 @@ proc cvs_tag {tagname force b_or_t updflag args} {
 
   if {$updflag == "yes"} {
     # update so we're on the branch
-    set command "$cvs update -r $tagname $filelist"
+    set command "$cvs update -r $tagname"
+    foreach f $filelist {
+      append command " \"$f\""
+    }
     $v\::do "$command" 0 status_colortags
     $v\::wait
   }
@@ -867,7 +900,8 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
 
   gen_log:log T "ENTER (tagname=$tagname k=$k no_tag=$no_tag recurse=$recurse prune=$prune d=$d dir=$dir args=$args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  # Because this is called from an eval, the args aren't a list
+  set filelist $args
   #
   # cvs update [-APCdflRp] [-k kopt] [-r rev] [-D date] [-j rev]
   #
@@ -879,7 +913,6 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
     set kmsg "\nUsing binary mode (-kb)."
     append commandline " -kb"
   }
-
   if { $tagname == "HEAD" } {
     append mess "\nYour local files will be updated to the"
     append mess " latest main trunk (head) revision (-A)."
@@ -901,20 +934,20 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
     append mess " that is not here in your local directory,"
     if { $d == "Yes" } {
       append mess " it will be checked out at this time (-d).\n"
-      if {$dir != " "} {
+      if {$dir ne " "} {
         append mess "($dir only)\n"
       }
-      append commandline " -d $dir"
+      append commandline " -d \"$dir\""
     } else {
       append mess " it will not be checked out.\n"
     }
   }
 
-  if { $tagname != "BASE"  && $tagname != "HEAD" } {
+  if { $tagname ne "BASE" && $tagname ne "HEAD" } {
     append mess "\nYour local files will be updated to the"
     append mess " tagged revision (-r $tagname)."
     append mess "  If a file does not have the tag,"
-    if { $no_tag == "Remove" } {
+    if { $no_tag eq "Remove" } {
       append mess " it will be removed from your local directory.\n"
       append commandline " -r $tagname"
     } elseif { $no_tag == "Get_head" } {
@@ -923,7 +956,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
     }
   }
 
-  if {$filelist == ""} {
+  if {$filelist eq ""} {
     set filemsg    "\nYou are about to download from"
     append filemsg " the repository to your local"
     append filemsg " filespace the files which"
@@ -938,10 +971,10 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
     append filemsg " the repository to your local"
     append filemsg " filespace these files if they"
     append filemsg " have changed:\n"
-
-    foreach file $filelist {
-      append filemsg "\n\t$file"
-      append commandline " \"$file\""
+    foreach f $filelist {
+      append commandline " \"$f\""
+      #regsub -all {\s+} $f {\ } ftext
+      append filemsg "\n\t$f"
     }
   }
   append filemsg "\nIf you have made local changes, they will"
@@ -949,10 +982,9 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   set mess "$filemsg $mess $kmsg"
   append mess "\n\nAre you sure?"
 
-  if {[cvsconfirm $mess .workdir] == "ok"} {
-
+  if {[cvsconfirm $mess .workdir] eq "ok"} {
     set co_cmd [viewer::new "CVS Update"]
-    $co_cmd\::do $commandline 0 status_colortags
+    $co_cmd\::do "$commandline" 0 status_colortags
     auto_setup_dir $co_cmd
   }
   gen_log:log T "LEAVE"
@@ -964,29 +996,37 @@ proc cvs_opt_update {} {
 
   gen_log:log T "ENTER"
 
+  set command "cvs_update"
   if { $cvsglb(updatename) == "" } {
     set tagname "BASE"
   } else {
     set tagname $cvsglb(updatename)
   }
+
   if { $cvsglb(get_all_dirs) == "No" } { set cvsglb(getdirname) "" }
   if { $cvsglb(getdirname) == "" } {
     set dirname " "
   } else {
     set dirname $cvsglb(getdirname)
   }
-  #puts "from update_setup, tagname $tagname.  norm_bin $cvsglb(norm_bin)"
+puts "dirname \"$dirname\""
+
   if { $cvsglb(tagmode_selection) == "Keep" } {
     set tagname "BASE"
   } elseif { $cvsglb(tagmode_selection) == "Trunk" } {
     set tagname "HEAD"
   }
+  append command " $tagname"
+  append command " {$cvsglb(norm_bin)} {$cvsglb(action_notag)} {$cvsglb(update_recurse)} {$cvsglb(update_prune)} {$cvsglb(get_all_dirs)}"
+  append command " \"$dirname\""
 
-  eval "cvs_update {$tagname} {$cvsglb(norm_bin)} \
-       {$cvsglb(action_notag)} \
-       {$cvsglb(update_recurse)} {$cvsglb(update_prune)} \
-       {$cvsglb(get_all_dirs)} {$dirname} \
-       [workdir_list_files]"
+  set filenames [workdir_list_files]
+  foreach f $filenames {
+    append command " \"$f\""
+  }
+  gen_log:log C "$command"
+puts "$command"
+  eval "$command"
 
   gen_log:log T "LEAVE"
 }
@@ -1017,7 +1057,7 @@ proc cvs_merge {parent from since frombranch args} {
     #set realfrom "HEAD"
   #}
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   set mergetags [assemble_mergetags $frombranch]
   set curr_tag [lindex $mergetags 0]
@@ -1035,11 +1075,15 @@ proc cvs_merge {parent from since frombranch args} {
     return
   }
 
+  set commandline "$cvs update -d"
   # Do the update here, and defer the tagging until later
   if {$since == {}} {
-    set commandline "$cvs update -d -j$from $filelist"
+    append commandline " -j$from"
   } else {
-    set commandline "$cvs update -d -j$since -j$from $filelist"
+    append commandline " -j$since -j$from"
+  }
+  foreach f $filelist {
+    append commandline " \"$f\""
   }
   set v [viewer::new "CVS Join"]
   $v\::do "$commandline" 1 status_colortags
@@ -1065,17 +1109,17 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
 
   gen_log:log T "ENTER (\"$from\" \"$totag\" \"$fromtag\" $args)"
 
-  set filelist ""
-  foreach f $args {
-    append filelist "\"$f\" "
-  }
+  set filelist [join $args]
   set realfrom "$frombranch"
   if {$frombranch eq $cvscfg(mergetrunkname)} {
     set realfrom "HEAD"
   }
 
-  # It's muy importante to make sure everything is OK at this point
-  set commandline "$cvs -n -q update $filelist"
+  # Do an update first, to make sure everything is OK at this point
+  set commandline "$cvs -n -q update"
+  foreach f $filelist {
+    append commandline " \"$f\""
+  }
   gen_log:log C "$commandline"
   set ret [catch {eval "exec $commandline"} view_this]
   set logmode [expr {$ret ? {E} : {D}}]
@@ -1089,21 +1133,31 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
     }
   }
   # Do the commit
+  set commandline "$cvs commit -m \"Merge from $from\""
+  foreach f $filelist {
+    append commandline " \"$f\""
+  }
   set v [viewer::new "CVS Commit and Tag a Merge"]
-  $v\::log "$cvs commit -m \"Merge from $from\" $filelist\n"
-  $v\::do "$cvs commit -m \"Merge from $from\" $filelist" 1
+  $v\::log "$commandline\n"
+  $v\::do "$commandline" 1
   $v\::wait
   # Tag if desired
   if {$cvscfg(auto_tag) && $totag != ""} {
     # First, the "from" file that's not in this branch (needs -r)
-    set commandline "$cvs tag -F -r$realfrom $totag $filelist"
+    set commandline "$cvs tag -F -r$realfrom $totag"
+    foreach f $filelist {
+      append commandline " \"$f\""
+    }
     $v\::log "$commandline\n"
     $v\::do "$commandline" 1
     $v\::wait
   }
   if {$cvscfg(auto_tag) && $fromtag != ""} {
     # Now, the version that's in the current branch
-    set commandline "$cvs tag -F $fromtag $filelist"
+    set commandline "$cvs tag -F $fromtag"
+    foreach f $filelist {
+      append commandline " \"$f\""
+    }
     $v\::log "$commandline\n"
     $v\::do "$commandline" 1
     $v\::wait
@@ -1128,14 +1182,20 @@ proc cvs_status {detail args} {
   }
 
   busy_start .workdir.main
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
+  set filelist [join $args]
+
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
   }
 
   # support verious levels of verboseness.
-  set statcmd [exec::new "$cvs -Q status $flags $filelist"]
+  set command  "$cvs -Q status $flags"
+  foreach f $filelist {
+    append commandline " \"$f\""
+  }
+  set statcmd [exec::new "$commandline"]
   set raw_status [$statcmd\::output]
   $statcmd\::destroy
 
@@ -1396,7 +1456,7 @@ proc cvs_merge_conflict {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
   if {$filelist == ""} {
     cvsfail "Please select some files to merge first!"
     return
@@ -1511,7 +1571,7 @@ proc cvs_release {delflag args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   foreach directory $filelist {
     if {! [file isdirectory $directory]} {
@@ -1725,18 +1785,21 @@ proc cvs_ascii { args } {
     cvs_notincvs
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   gen_log:log D "Changing sticky flag"
-  gen_log:log D "$cvs admin -kkv $filelist"
-  set cmd(cvscmd) [exec::new "$cvs admin -kkv $filelist"]
+  set command "$cvs admin -kkv"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
 }
 
 # This converts an ASCII file to binary
-proc cvs_binary { args } {
+proc cvs_binary {args} {
   global cvs
   global cvscfg
   global incvs
@@ -1747,11 +1810,14 @@ proc cvs_binary { args } {
     cvs_notincvs
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   gen_log:log D "Changing sticky flag"
-  gen_log:log D "$cvs admin -kb $filelist"
-  set cmd(cvscmd) [exec::new "$cvs admin -kb $filelist"]
+  set command "$cvs admin -kb"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
 
   gen_log:log T "LEAVE"
@@ -1766,7 +1832,7 @@ proc cvs_revert {args} {
   global cvs
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$filelist == ""} {
     set mess "This will revert (discard) your changes to ** ALL ** files in this directory"
@@ -1786,13 +1852,18 @@ proc cvs_revert {args} {
   # update -C option appeared in 1.11
   set versionsplit [split $cvsglb(cvs_version) {.}]
   set major [lindex $versionsplit 1]
+  set command "$cvs update"
   if {$major < 11} {
     gen_log:log F "DELETE $filelist"
     file delete $filelist
-    set cmd(cvscmd) [exec::new "$cvs update $filelist"]
   } else {
-    set cmd(cvscmd) [exec::new "$cvs update -C $filelist"]
+    append command " -C"
   }
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set cmd(cvscmd) [exec::new "$command"]
+
   
   auto_setup_dir $cmd(cvscmd)
 
@@ -2132,18 +2203,19 @@ proc cvs_directory_merge {} {
 
 # Sends files to the CVS branch browser one at a time.  Called from
 # workdir browser
-proc cvs_branches {files} {
+proc cvs_branches {args} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($files)"
+  gen_log:log T "ENTER ($args)"
 
-  if {$files == {}} {
-    cvsfail "Please select one or more files!" .workdir
+  set filelist [join $args]
+  if {$filelist == ""} {
+    cvsfail "Please select one or more args!" .workdir
     return
   }
 
-  foreach file $files {
+  foreach file $filelist {
     ::cvs_branchlog::new "CVS,loc" "$file"
   }
   gen_log:log T "LEAVE"
@@ -2161,9 +2233,6 @@ namespace eval ::cvs_branchlog {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
       set how [uplevel {concat $how}]
-      #global cvsglb
-      #global logcfg
-      #global cvs
       variable filename
       variable command
       variable cmd_log
