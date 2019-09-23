@@ -468,12 +468,12 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_annotate "" "$lcfile"
+    cvs_annotate "" $lcfile
   } elseif {$insvn} {
-    svn_annotate BASE "$lcfile"
+    svn_annotate BASE $lcfile
   } elseif {$ingit} {
     read_git_dir .
-    git_annotate "$current_tagname" "$lcfile"
+    git_annotate $current_tagname $lcfile
   } else {
     puts "File doesn't seem to be in CVS, SVN, or GIT"
   }

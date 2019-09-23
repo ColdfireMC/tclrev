@@ -22,6 +22,7 @@ namespace eval ::annotate {
 
       global cvs
       global tcl_platform
+      global incvs insvn inrcs ingit
 
       proc redo {w} {
         variable log_lines
@@ -244,7 +245,7 @@ namespace eval ::annotate {
            set sinceflag ""
          }
          set blameproc git_annotate_color
-         set commandline "git annotate --abbrev-commit $sinceflag $revision \"$file\""
+         set commandline "git annotate --abbrev-commit $sinceflag $revision $file"
        }
        "git_range" {
          if {$cvscfg(gitblame_since) != ""} {
@@ -254,7 +255,7 @@ namespace eval ::annotate {
            set sinceflag ""
          }
          set blameproc git_annotate_color
-         set commandline "git annotate --abbrev-commit $sinceflag -L$L1,$L2 $revision \"$file\""
+         set commandline "git annotate --abbrev-commit $sinceflag -L$L1,$L2 $revision $file"
        }
        default {
          cvsfail "I don't understand flag \"$type\""
@@ -278,6 +279,7 @@ namespace eval ::annotate {
       button $blamewin.top.log -image Log
       button $blamewin.top.ddiff -image Difflines
       button $blamewin.top.rdiff -image Patches
+      button $blamewin.top.diff -image Diff
       button $blamewin.top.workdir -image Workdir -command {workdir_setup}
 
       frame $blamewin.bottom
@@ -317,9 +319,13 @@ namespace eval ::annotate {
       pack $blamewin.top.reventry -side left
       pack $blamewin.top.viewfile \
            $blamewin.top.log \
-           $blamewin.top.ddiff \
-           $blamewin.top.rdiff \
         -in $blamewin.top -side left -ipadx 4 -ipady 4
+      if {$ingit} {
+        pack $blamewin.top.diff \
+             $blamewin.top.ddiff \
+             $blamewin.top.rdiff \
+          -in $blamewin.top -side left -ipadx 4 -ipady 4
+      }
       
       pack $blamewin.top.workdir -side right
 
@@ -375,6 +381,13 @@ namespace eval ::annotate {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { git_log_rev $rev $file}
            }]
+          $blamewin.top.diff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} {
+                comparediff_r $rev^ $rev $blamewin $file
+              }
+           }]
           $blamewin.top.ddiff configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
@@ -394,6 +407,8 @@ namespace eval ::annotate {
         {"View a version of the file"}
       set_tooltips $blamewin.top.log \
         {"Revision Log of the file"}
+      set_tooltips $blamewin.top.diff \
+        {"Compare version with its predecessor"}
       set_tooltips $blamewin.top.ddiff \
         {"List changed files in a commit"}
       set_tooltips $blamewin.top.rdiff \
@@ -464,7 +479,7 @@ namespace eval ::annotate {
          set revlen [string length [lindex $line 0]]
          # All the commit hashes are the same length, and we only need to know for rev-list
          set blameproc git_annotate_color
-         set rl_cmd "git rev-list $sinceflag --abbrev-commit --abbrev=$revlen --reverse $revision \"$file\""
+         set rl_cmd "git rev-list $sinceflag --abbrev-commit --abbrev=$revlen --reverse $revision $file"
          set cmd_revlist [exec::new $rl_cmd {} 0 {} 1]
          set revlist_output [$cmd_revlist\::output]
          $cmd_revlist\::destroy

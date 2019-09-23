@@ -571,7 +571,7 @@ proc git_log_rev {rev file} {
   } else {
     append title " $cvscfg(gitlog_opts)"
   }
-  append commandline " \"$file\""
+  append commandline " $file"
   append title " $file"
 
   set v_log [viewer::new "$title"]
@@ -611,8 +611,8 @@ proc git_patch { filename {rev1 {}} {rev2 {}} } {
   } elseif {$rev2 != {} } {
     set args "$rev2^ $rev2"
   }
-  if {$filename != {}} {
-    append args " \"$filename\""
+  if {$filename != ""} {
+    append args " $filename"
   }
   set title "SVN diff $args"
 
@@ -1025,8 +1025,8 @@ proc git_annotate {revision args} {
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
-  foreach file [join $filelist] {
-    annotate::new $revflag $file "git"
+  foreach file $filelist {
+    annotate::new $revflag \"$file\" "git"
   }
   gen_log:log T "LEAVE"
 }
