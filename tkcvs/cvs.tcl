@@ -817,8 +817,8 @@ proc cvs_commit {revision comment args} {
       return 1
     }
     set v [viewer::new "CVS Commit"]
-    set commandline "$cvs commit -R $revflag -m \"$comment\""
     regsub -all "\"" $comment "\\\"" comment
+    set commandline "$cvs commit -R $revflag -m \"$comment\""
     foreach f $filelist {
       append commandline " \"$f\""
     }

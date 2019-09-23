@@ -314,8 +314,6 @@ proc workdir_list_files {} {
   global DirList
   global cvsglb
 
-  gen_log:log T "ENTER (cvsglb(current_selection) = $cvsglb(current_selection))"
-
   set wt .workdir.main.tree
   set cvsglb(current_selection) {}
   set DirList($wt:selection) {}

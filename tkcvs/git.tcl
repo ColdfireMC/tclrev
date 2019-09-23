@@ -75,9 +75,12 @@ proc git_workdir_status {showfiles} {
     #  M Dir2/F2.txt
     set status [string range $statline 0 1]
     # Strip quotes
-    set f [string trim [lrange $statline 1 end] "\""]
+    set f [string trim [join [lrange $statline 1 end]] "\""]
     # Trim path
-    regsub "^$module_dir/" $f "" f
+    set dirname [file dirname $f]
+    if {$dirname eq $module_dir} {
+      set f [file tail $f]
+    }
     if {[regexp {/} $f]} {
       gen_log:log D "$statline -> SKIP"
       continue
@@ -357,18 +360,13 @@ proc git_log {detail args} {
   set flags ""
   set filter ""
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
-  if {[llength $filelist] == 0} {
+  if {$filelist eq ""} {
     set filelist {.}
   }
-  if {[llength $filelist] > 1} {
-    set title "Git Log ($detail)"
-  } else {
-    set title "Git Log $filelist ($detail)"
-  }
+  set title "Git Log $filelist ($detail)"
 
-return
   set commandline "git log"
   switch -- $detail {
     latest {
@@ -402,21 +400,32 @@ return
 # does git rm from workdir browser
 proc git_rm {args} {
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
-  set command [exec::new "git rm $filelist"]
-  auto_setup_dir $command
+  set filelist [join $args]
+
+  set command "git rm"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set exec_cmd [exec::new "$command"]
+  auto_setup_dir $exec_cmd
 
   gen_log:log T "LEAVE"
 }
 
 # does git rm -r from workdir browser popup menu
 proc git_remove_dir {args} {
-  gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
-  set command [exec::new "git rm -r $filelist"]
-  auto_setup_dir $command
+  gen_log:log T "ENTER ($args)"
+
+  set filelist [join $args]
+
+  set command "git rm -r"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set exec_cmd [exec::new "$command"]
+  auto_setup_dir $exec_cmd
 
   gen_log:log T "LEAVE"
 }
@@ -426,7 +435,9 @@ proc git_add {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
+  set filelist [join $args]
+
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
@@ -436,10 +447,16 @@ proc git_add {args} {
     }
   }
 
+  set command "git add"
+
   if {$filelist == ""} {
-    append filelist [glob -nocomplain $cvscfg(aster) .??*]
+    append command [glob -nocomplain $cvscfg(aster) .??*]
+  } else {
+    foreach f $filelist {
+      append command " \"$f\""
+    }
   }
-  set addcmd [exec::new "git add $filelist"]
+  set addcmd [exec::new "$command"]
   auto_setup_dir $addcmd
 
   gen_log:log T "LEAVE"
@@ -483,9 +500,13 @@ proc git_reset {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
+
+  set commandline "git reset"
+  foreach f $filelist {
+    append commandline " \"$f\""
+  }
   gen_log:log D "Reverting $filelist"
-  set commandline "git reset $filelist"
   set v [viewer::new "Git Reset"]
   $v\::do "$commandline"
   $v\::wait
@@ -504,7 +525,9 @@ proc git_status {detail args} {
   gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
+  set filelist [join $args]
+
   set flags ""
   set title "Git Status ($detail)"
   # Hide unknown files if desired
@@ -522,10 +545,13 @@ proc git_status {detail args} {
       append flags " --verbose"
     }
   }
+  set commandline "git status $flags"
   # There doesn't seem to be a way to suppress color. This option is invalid.
   #append flags " --no-color"
+  foreach f $filelist {
+    append commandline " \"$f\""
+  }
   set stat_cmd [viewer::new $title]
-  set commandline "git status $flags $filelist"
   $stat_cmd\::do "$commandline" 0
 
   busy_done .workdir.main
@@ -718,7 +744,7 @@ proc git_commit {comment args} {
 
   gen_log:log T "ENTER ($comment $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   set commit_output ""
   if {$filelist == ""} {
@@ -737,12 +763,13 @@ proc git_commit {comment args} {
     return 1
   }
 
-  set filelist [join $filelist]
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks
-    set command \
-      "$cvscfg(terminal) git commit $filelist"
+    set command "$cvscfg(terminal) git commit"
+    foreach f $filelist {
+      append  command " \"$f\""
+    }
     gen_log:log C "$command"
     set ret [catch {eval "exec $command"} view_this]
     if {$ret} {
@@ -757,7 +784,11 @@ proc git_commit {comment args} {
     }
     set v [viewer::new "Git Commit"]
     regsub -all "\"" $comment "\\\"" comment
-    $v\::do "git commit -m \"$comment\" $filelist" 1
+    set commandline "git commit -m  \"$comment\""
+    foreach f $filelist {
+      append commandline " \"$f\""
+    }
+    $v\::do "$commandline" 1
     $v\::wait
   }
 
@@ -777,14 +808,16 @@ proc git_tag {tagname annotate comment args} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   set command "git tag "
   if {$annotate == "yes"} {
     append command "-a -m \"$comment\""
   }
-  append command " $tagname $filelist"
-
+  append command " $tagname"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
   set v [viewer::new "Git Tag"]
   $v\::do "$command" 1
   $v\::wait
@@ -806,15 +839,21 @@ proc git_branch {branchname updflag args} {
     cvsfail "You must enter a branch name!" .workdir
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
-  set command "git branch $branchname $filelist"
+  set command "git branch $branchname"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
   set v [viewer::new "Git Branch"]
   $v\::do "$command" 1"
   $v\::wait
 
   if {$updflag == "yes"} {
-    set command "git checkout $branchname $filelist"
+    set command "git checkout $branchname"
+    foreach f $filelist {
+      append command " \"$f\""
+    }
     $v\::log "$command"
     $v\::do "$command" 0
     $v\::wait
@@ -828,7 +867,7 @@ proc git_branch {branchname updflag args} {
 }
 
 # git checkout with options - called from Update with Options in workdir browser
-proc git_opt_update {args} {
+proc git_opt_update {} {
   global cvscfg
   global cvsglb
 
@@ -860,7 +899,7 @@ proc git_checkout {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$filelist == ""} {
     append mess "\nThis will download from"
@@ -936,7 +975,7 @@ proc git_merge_conflict {args} {
     cvsfail "Please select one file." .workdir
     return
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   # See if it's really a conflict file
   foreach file $filelist {
@@ -955,7 +994,10 @@ proc git_merge_conflict {args} {
 
     if { $match != 1 } {
       cvsfail "$file does not appear to have a conflict." .workdir
-      continue
+      continue   foreach f $filelist {
+      append commandline " \"$f\""
+    }
+
     }
     set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
     gen_log:log C "$tkdiff_command"
@@ -970,7 +1012,7 @@ proc git_annotate {revision args} {
 
   gen_log:log T "ENTER ($revision $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$revision != ""} {
     set revflag "$revision"
@@ -1032,7 +1074,7 @@ proc git_fileview {revision path args} {
 
   gen_log:log T "ENTER ($revision $path $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   foreach filename $filelist {
     if {$path ne ""} {

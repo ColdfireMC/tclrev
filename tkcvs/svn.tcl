@@ -101,18 +101,23 @@ proc read_svn_dir {dirname} {
   return 1
 }
 
-proc svn_lock {do files} {
+proc svn_lock {do args} {
   global cvscfg
 
-  if {$files == {}} {
+  set filelist [join $args]
+
+  if {$filelist == ""} {
     cvsfail "Please select one or more files!" .workdir
     return
   }
   switch -- $do {
-    lock { set commandline "svn lock $files"}
-    unlock { set commandline "svn unlock $files"}
+    lock { set commandline "svn lock"}
+    unlock { set commandline "svn unlock"}
   }
-  set cmd [::exec::new "$commandline"]
+  foreach f $filelist {
+    append commandline " \$f\""
+  }
+  set cmd [exec::new "$commandline"]
 
   if {$cvscfg(auto_status)} {
     $cmd\::wait
@@ -247,7 +252,9 @@ proc svn_add {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
+  set filelist [join $args]
+
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
@@ -258,9 +265,14 @@ proc svn_add {args} {
   }
 
   if {$filelist == ""} {
-    append filelist [glob -nocomplain $cvscfg(aster) .??*]
+    set filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
-  set addcmd [exec::new "svn add $filelist"]
+
+  set command "svn add"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set addcmd [exec::new "$command"]
   auto_setup_dir $addcmd
 
   gen_log:log T "LEAVE"
@@ -270,9 +282,14 @@ proc svn_add {args} {
 proc svn_remove {args} {
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
 
-  set command [exec::new "svn remove $filelist"]
+  set filelist [join $args]
+
+  set command "svn remove"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
+  set command [exec::new "$command"]
   auto_setup_dir $command
 
   gen_log:log T "LEAVE"
@@ -286,10 +303,13 @@ proc svn_status {detail args} {
   gen_log:log T "ENTER ($args)"
 
   busy_start .workdir.main
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
+  set filelist [join $args]
+
   set flags ""
   set title "SVN Status ($detail)"
 
+  set command "svn status"
   if {$cvscfg(status_filter)} {
     append flags " -q"
   }
@@ -304,7 +324,10 @@ proc svn_status {detail args} {
       append flags " -v"
     }
   }
-  set command "svn status $flags $filelist"
+  append command " $flags"
+  foreach f $filelist {
+    append command " \"$f\""
+  }
   set check_cmd [viewer::new "$title"]
   $check_cmd\::do "$command" 0 status_colortags
 
@@ -340,7 +363,7 @@ proc svn_update {args} {
 
   gen_log:log T "ENTER ($args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$filelist == ""} {
     append mess "\nThis will download from"
@@ -358,7 +381,6 @@ proc svn_update {args} {
   }
   append mess "\n\nAre you sure?"
 
-  #set command "svn update --accept postpone"
   set command "svn update"
 
   if {[cvsconfirm $mess .workdir] == "ok"} {
@@ -505,7 +527,7 @@ proc svn_commit {comment args} {
 
   gen_log:log T "ENTER ($comment $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   set commit_output ""
   if {$filelist == ""} {
@@ -524,12 +546,13 @@ proc svn_commit {comment args} {
     return 1
   }
 
-  set filelist [join $filelist]
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks
-    set command \
-      "$cvscfg(terminal) svn commit $filelist"
+    set command "$cvscfg(terminal) svn commit"
+    foreach f $filelist {
+      append command " \"$f\""
+    }
     gen_log:log C "$command"
     set ret [catch {eval "exec $command"} view_this]
     if {$ret} {
@@ -544,7 +567,11 @@ proc svn_commit {comment args} {
     }
     set v [viewer::new "SVN Commit"]
     regsub -all "\"" $comment "\\\"" comment
-    $v\::do "svn commit -m \"$comment\" $filelist" 1
+    set command "svn commit -m \$comment\""
+    foreach f $filelist {
+      append command " \"$f\""
+    }
+    $v\::do "$command" 1
     $v\::wait
   }
 
@@ -555,10 +582,10 @@ proc svn_commit {comment args} {
 }
 
 # Called from workdir browser popup
-proc svn_rename_ask {args} {
+proc svn_rename_ask {file} {
 
-  gen_log:log T "ENTER ($args)"
-  set file [lindex $args 0]
+  gen_log:log T "ENTER ($file)"
+
   if {$file eq ""} {
     cvsfail "Rename:\nPlease select a file !" .workdir
     return
@@ -576,8 +603,12 @@ proc svn_rename {args} {
 
   gen_log:log T "ENTER ($args)"
 
+  set filelist [join $args]
+  set oldname [lindex $args 0]
+  set newname [lindex $args 1]
+
   set v [viewer::new "SVN rename"]
-  set command "svn rename [lindex $args 0] [lindex $args 1]"
+  set command "svn rename \"$oldname\" \"$newname\""
   $v\::do "$command"
 
   if {$cvscfg(auto_status)} {
@@ -591,7 +622,7 @@ proc svn_annotate {revision args} {
 
   gen_log:log T "ENTER ($revision $args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   if {$revision != ""} {
     set revflag "-r$revision"
@@ -604,7 +635,7 @@ proc svn_annotate {revision args} {
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
-  foreach file [join $filelist] {
+  foreach file $filelist {
     annotate::new $revflag $file "svn"
   }
   gen_log:log T "LEAVE"
@@ -874,8 +905,8 @@ proc svn_log {detail args} {
   gen_log:log T "ENTER ($detail $args)"
 
   busy_start .workdir.main
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
-  set flags ""
+
+  set filelist [join $args]
   # svn log is always recursive
 
   if {[llength $filelist] == 0} {
@@ -899,11 +930,11 @@ proc svn_log {detail args} {
     append flags "-g -v "
   }
 
+  set command "svn log $flags"
   set v [viewer::new "$title"]
   foreach file $filelist {
     $v\::log "$file\n"
-    set command "svn log $flags \"$file\""
-    $v\::do "$command" 0
+    $v\::do "$command \"$file\"" 0
     $v\::wait
   }
 
@@ -932,11 +963,14 @@ proc svn_log_rev {revision filename} {
   gen_log:log T "LEAVE"
 }
 
+# Called from popup in workdir browser
 proc svn_info {args} {
   global cvscfg
+
   gen_log:log T "ENTER ($args)"
 
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
+
   set urllist ""
   foreach file $filelist {
       append urllist $cvscfg(url)/$file
@@ -950,6 +984,7 @@ proc svn_info {args} {
   gen_log:log T "LEAVE"
 }
 
+# From workdir browser
 proc svn_merge_conflict {args} {
   global cvscfg
 
@@ -959,7 +994,7 @@ proc svn_merge_conflict {args} {
     cvsfail "Please select one file."
     return
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   # See if it's really a conflict file
   foreach file $filelist {
@@ -997,7 +1032,7 @@ proc svn_resolve {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
 
   # See if it still has a conflict
   foreach file $filelist {
@@ -1034,12 +1069,18 @@ proc svn_revert {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+
+  set filelist [join $args]
+
+  set command "svn revert"
+  foreach f $filelist {
+     append command " \"$f\""
+  }
   if {$filelist == ""} {
-    set filelist "-R ."
+    append command "-R ."
   }
   gen_log:log D "Reverting $filelist"
-  set command [exec::new "svn revert $filelist"]
+  set command [exec::new "$command"]
   auto_setup_dir $command
 
   gen_log:log T "LEAVE"
@@ -1056,7 +1097,7 @@ proc svn_tag {tagname b_or_t updflag comment args} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
-  if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
+  set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
 
   if {$b_or_t == "tag"} {
@@ -1074,7 +1115,7 @@ proc svn_tag {tagname b_or_t updflag comment args} {
   # When delivered scriptically, there can't be any spaces in the comments. This is a
   # known thing with Subversion. So we escape them.
   regsub -all { } $comment {\\ } comment
-  if { $filelist == {} } {
+  if { $filelist == "" } {
     set command "svn copy -m\"$comment\" \"$cvscfg(url)\" \"$to_url\""
     $v\::log "$command"
     $v\::do "$command"
@@ -1213,10 +1254,7 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
 
   gen_log:log T "ENTER (\"$from\" \"$totag\" \"$fromtag\" $args)"
 
-  set filelist ""
-  foreach f $args {
-    append filelist "\"$f\" "
-  }
+  set filelist [join $args]
 
   # It's muy importante to make sure everything is OK at this point
   set commandline "svn status -uq $filelist"
@@ -1233,10 +1271,14 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
     }
   }
 
+  set command "svn commit -m -m \"Merge from $from\" "
+  foreach f $filelist {
+    append command " \"$f\""
+  }
   # Do the commit
   set v [viewer::new "SVN Commit a Merge"]
-  $v\::log "svn commit -m \"Merge from $from\" $filelist\n"
-  $v\::do "svn commit -m \"Merge from $from\" $filelist" 1
+  $v\::log "$command\n"
+  $v\::do "$command" 1
   $v\::wait
 
   # Tag if desired (no means not a branch)
@@ -1250,7 +1292,6 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
     # tag the current (mergedto) branch
     svn_tag $fromtag "tag" no "tag\ after\ merge\ by\ TkCVS" $args
     # Tag the mergedfrom branch
-    if {[llength $args] > 1} {set filelist [join $args]} else {set filelist $args}
     foreach f $filelist {
       if {$f == "."} {
         svn_rcopy [safe_url $from_path] "tags" $totag $from
