@@ -478,13 +478,13 @@ namespace eval ::annotate {
          foreach logline $log_lines {
            regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
            set full_date [lrange $annot end-3 end-2]
-           if {! [info exists rev($full_date]} {
-             set rev($full_date) $revnum
+           if {! [info exists commit($full_date]} {
+             set commit($full_date) $revnum
            }
            set maxrevlen [string length $revnum]
          }
-         foreach d [lsort [array names rev]] {
-           lappend revlist $rev($d)
+         foreach d [lsort [array names commit]] {
+           lappend revlist $commit($d)
          }
        }
       }
