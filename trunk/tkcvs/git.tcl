@@ -587,11 +587,12 @@ proc git_log_rev {rev file} {
 proc git_show {rev} {
 
   gen_log:log T "ENTER ($rev)"
-  set commandline "git show --stat --oneline --no-color $rev"
+
+  set show_command "git show --stat --no-color $rev"
   set title "Git show $rev"
   set v_show [viewer::new "$title"]
   $v_show\::width 120
-  $v_show\::do $commandline 1
+  $v_show\::do $show_command 1
   $v_show\::wait
 
   gen_log:log T "LEAVE"
