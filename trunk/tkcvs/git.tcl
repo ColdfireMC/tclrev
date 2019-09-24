@@ -373,7 +373,6 @@ proc git_log {detail args} {
       append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      #append flags " --graph --all --pretty=oneline"
       append flags " --graph --all --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
       set filter truncate_git_graph
     }
@@ -591,7 +590,6 @@ proc git_show {rev} {
   set show_command "git show --stat --no-color $rev"
   set title "Git show $rev"
   set v_show [viewer::new "$title"]
-  $v_show\::width 120
   $v_show\::do $show_command 1
   $v_show\::wait
 
