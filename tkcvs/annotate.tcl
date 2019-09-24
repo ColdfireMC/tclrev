@@ -474,22 +474,17 @@ namespace eval ::annotate {
          set revlist [lsort -command sortrevs $revlist]
        }
        {git*} {
-         # The abbrev-commit length of blame may not be the same as for rev-list
-         set line [split [string trimleft [lindex $log_lines 0]]]
-         set revlen [string length [lindex $line 0]]
-         # All the commit hashes are the same length, and we only need to know for rev-list
-         set blameproc git_annotate_color
-         set rl_cmd "git rev-list $sinceflag --abbrev-commit --abbrev=$revlen --reverse $revision $file"
-         set cmd_revlist [exec::new $rl_cmd {} 0 {} 1]
-         set revlist_output [$cmd_revlist\::output]
-         $cmd_revlist\::destroy
-         set revlist_lines [split $revlist_output "\n"]
-         set revlist {}
-         foreach revnum $revlist_lines {
-           if {$revnum == ""} {continue}
-           if {$revnum ni $revlist} {
-             lappend revlist $revnum
+         # Sort by date instead of by commit number
+         foreach logline $log_lines {
+           regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
+           set full_date [lrange $annot end-3 end-2]
+           if {! [info exists rev($full_date]} {
+             set rev($full_date) $revnum
            }
+           set maxrevlen [string length $revnum]
+         }
+         foreach d [lsort [array names rev]] {
+           lappend revlist $rev($d)
          }
        }
       }
