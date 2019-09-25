@@ -287,12 +287,6 @@ if {$tcl_platform(platform) == "windows"} {
 # browser (including hidden files) by default.
 set cvscfg(allfiles)           false
 
-# set the log file detail for the button: one of
-#   "latest"     latest log message on the current branch
-#   "summary"    version number and comment string for all check-ins
-#   "verbose"    all logfile detail possible, including symbolic tags
-set cvscfg(ldetail)            "summary"
-
 # set the default pattern to be used by the filter.  Use any valid
 # pattern that can be used for a pattern for 'ls'. An empty string
 # is equivalent to the entire directory (minus hidden files);

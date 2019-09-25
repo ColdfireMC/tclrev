@@ -320,7 +320,11 @@ namespace eval ::annotate {
       pack $blamewin.top.viewfile \
            $blamewin.top.log \
         -in $blamewin.top -side left -ipadx 4 -ipady 4
-      if {$ingit} {
+      if {$insvn} {
+         pack $blamewin.top.ddiff \
+              $blamewin.top.rdiff \
+          -in $blamewin.top -side left -ipadx 4 -ipady 4
+      } elseif {$ingit} {
         pack $blamewin.top.diff \
              $blamewin.top.ddiff \
              $blamewin.top.rdiff \
@@ -341,8 +345,8 @@ namespace eval ::annotate {
         wm geometry $blamewin $cvscfg(blamegeom)
       }
 
-      switch -- $type {
-        {cvs} {
+      switch -glob -- $type {
+        {cvs*} {
           $blamewin.top.viewfile configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
@@ -356,21 +360,29 @@ namespace eval ::annotate {
           $blamewin.top.ddiff configure -state disabled
           $blamewin.top.rdiff configure -state disabled
         }
-        {svn} {
+        {svn*} {
           $blamewin.top.viewfile configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { svn_fileview $rev $file file}
+              if {$rev ne ""} { svn_fileview $rev $file "file"}
            }]
           $blamewin.top.log configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { svn_log_rev $rev $file}
+              if {$rev ne ""} { svn_log_rev $rev $file }
            }]
-          $blamewin.top.ddiff configure -state disabled
-          $blamewin.top.rdiff configure -state disabled
+          $blamewin.top.ddiff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { svn_show_rev $rev $file }
+           }]
+          $blamewin.top.rdiff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              if {$rev ne ""} { svn_difflog_rev $rev $file }
+           }]
         }
-        {git} {
+        {git*} {
           $blamewin.top.viewfile configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]

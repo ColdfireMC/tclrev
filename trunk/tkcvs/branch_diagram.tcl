@@ -221,6 +221,16 @@ namespace eval ::logcanvas {
                      svn_annotate_r [string trimleft $rev {r}] $filename
                    }
                  }]
+              $logcanvas.ddiff configure -state normal \
+                -command [namespace code {
+                     set rev1 [$logcanvas.up.revA_rvers get]
+                     svn_show_rev $rev1 $filename
+                }]
+              $logcanvas.rdiff configure -state normal \
+                -command [namespace code {
+                     set rev1 [$logcanvas.up.revA_rvers get]
+                     svn_difflog_rev $rev1 $filename
+                }]
             }
             $logcanvas.delta configure \
               -command [namespace code {
@@ -2199,7 +2209,7 @@ namespace eval ::logcanvas {
            $logcanvas.viewtags \
         -in $logcanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
-      if {$ingit} {
+      if {$insvn || $ingit} {
          pack  $logcanvas.rdiff \
                $logcanvas.ddiff \
                  -in $logcanvas.down.btnfm -side left \

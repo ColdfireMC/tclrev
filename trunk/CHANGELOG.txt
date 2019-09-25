@@ -1,15 +1,23 @@
 Release 9.2.4 September, 2019
 
-- Put some buttons on top of the annotation browser so that when you
-  click on a line of text, it puts the revision number in an entry
-  and you can view or show the log of that revision of the file.
-  In git, you can also show the changed files and show the difference
-  of that revision from the previous one.
+- Put some buttons on top of the annotation browser so that when you click on a
+  line of text, it puts the revision number in an entry and you can view or
+  show the log of that revision of the file.  In git and svn, you can also show
+  the changed files and show the difference of that revision from the previous
+  one.
 
 - Re-worked Hide and Show a litte. They weren't working for SVN at all,
   and not quite working as advertized for CVS. For Git, it works
-  differently, not forcing a tracked file to show, as cvs:ignore and
+  differently, not forcing a tracked file to show, as .cvsignore and
   svn:ignore do.
+
+- Added a label to show if the current directory has .cvsignore, svn:ignore,
+  or .gitignore
+
+- Made the log button in the workdir browser do a full list of commit
+  comments, the equivalent of "verbose." Shortened the header for CVS.
+  $cvslog(ldetail) is gone. You can still do short logs from the Reports
+  menu.
 
 
 Release 9.2.3 September, 2019
