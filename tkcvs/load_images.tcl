@@ -98,6 +98,7 @@ proc load_all_images {} {
   image create photo stat_okml -format gif -file [file join $cvscfg(bitmapdir) stat_okml.gif]
   image create photo stat_okol -format gif -file [file join $cvscfg(bitmapdir) stat_okol.gif]
   image create photo stat_ood -format gif -file [file join $cvscfg(bitmapdir) stat_ood.gif]
+  image create photo stat_oodml -format gif -file [file join $cvscfg(bitmapdir) stat_oodml.gif]
   image create photo stat_plus -format gif -file [file join $cvscfg(bitmapdir) stat_plus.gif]
   image create photo stat_ques -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
   image create photo svndir -format gif -file [file join $cvscfg(bitmapdir) dir_svn.gif]
