@@ -402,7 +402,7 @@ proc DirCanvas:makepopup {w} {
   $w.svndir_pop add command -label "Descend" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Log" \
-    -command { svn_log $cvscfg(ldetail) [workdir_list_files] }
+    -command { svn_log verbose [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Info" \
     -command { svn_info [workdir_list_files] }
   $w.svndir_pop add command -label "Browse the Log Diagram" \
@@ -437,7 +437,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_cvsok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Log" \
-    -command { cvs_log $cvscfg(ldetail) [workdir_list_files] }
+    -command { cvs_log verbose [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Browse the Log Diagram" \
     -command { cvs_branches [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Annotate/Blame" \
@@ -458,7 +458,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_svnok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Log" \
-    -command { svn_log $cvscfg(ldetail) [workdir_list_files] }
+    -command { svn_log verbose [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Info" \
     -command { svn_info [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
@@ -475,7 +475,7 @@ proc DirCanvas:makepopup {w} {
   $w.stat_gitok_pop add command -label "Edit" \
     -command { workdir_edit_file [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Log" \
-    -command { git_log $cvscfg(ldetail) [workdir_list_files] }
+    -command { git_log verbose [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Browse the Log Diagram" \
     -command { git_branches [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Annotate/Blame" \

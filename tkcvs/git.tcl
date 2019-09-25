@@ -389,7 +389,10 @@ proc git_log {detail args} {
     set command "git log --no-color $flags -- \"$file\""
     $v\::do "$command" 1 $filter
     $v\::wait
-    $v\::width 120
+    # If we're doing the graph, make the window wider
+    if {$detail eq "summary"} {
+      $v\::width 120
+    }
   }
 
   busy_done .workdir.main

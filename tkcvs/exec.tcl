@@ -420,7 +420,54 @@ namespace eval ::viewer {
             # If the next char isn't [, I don't know what this is
             if {$y != 91} {
               gen_log:log D "UNKNOWN ESCAPE $y ($nextchar)"
-              continue
+     proc svn_log {detail args} {
+  global cvsglb
+
+  gen_log:log T "ENTER ($detail $args)"
+
+  busy_start .workdir.main
+
+  set filelist [join $args]
+  # svn log is always recursive
+
+  if {[llength $filelist] == 0} {
+    set filelist {{}}
+  }
+  if {[llength $filelist] > 1} {
+    set title "SVN Log ($detail)"
+  } else {
+    set title "SVN Log $filelist ($detail)"
+  }
+  
+  switch -- $detail {
+     latest {
+       set flags "-r COMMITTED -g -v"
+     }
+     summary {
+       set flags "-q"
+     }
+     verbose {
+       # this is the default with no options. Lists the revisions.
+       set flags "-g"
+     }
+     plus {
+       # lists the changed files
+       set flags "-g -v"
+     }
+  }
+
+  set command "svn log $flags"
+  set v [viewer::new "$title"]
+  foreach file $filelist {
+    $v\::log "$file\n"
+    $v\::do "$command \"$file\"" 0
+    $v\::wait
+  }
+
+  busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+         continue
             }
             set code ""
             while {($y != 109) && ([expr {$idx - $seq}] < 5)} {
@@ -531,14 +578,15 @@ proc patch_colortags {exec line} {
 }
 
 # A filter to colorize an RCS log
-proc hilight_rcslog {exec line} {
+proc rcslog_colortags {exec line} {
+
   set tag default
-  if {[string match "=============*" $line]} {
-    set tag patched
-  } elseif  {[string match "RCS file:*" $line]} {
-    set tag patched
-  } elseif  {[string match "Working file:*" $line]} {
-    set tag patched
+  switch -glob -- $line {
+    {=============*}  { set tag patched }
+    {RCS file:*}      { set tag patched }
+    {Working file:*}  { set tag patched }
+    {-------------*}  { set tag patched }
+    default           { set tag default }
   }
 
   return [list $tag "$line"]

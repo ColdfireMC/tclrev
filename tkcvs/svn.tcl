@@ -920,21 +920,22 @@ proc svn_log {detail args} {
   
   switch -- $detail {
      latest {
-       append flags "-r COMMITTED "
+       set flags "-r COMMITTED -g -v"
      }
      summary {
-       append flags "-q "
+       set flags "-q"
      }
-  }
-  if {$detail ne "summary"} {
-    append flags "-g -v "
+     verbose {
+       # this is the default with no options. Lists the revisions.
+       set flags "-g"
+     }
   }
 
   set command "svn log $flags"
   set v [viewer::new "$title"]
   foreach file $filelist {
-    $v\::log "$file\n"
-    $v\::do "$command \"$file\"" 0
+    $v\::log "$file\n" invert
+    $v\::do "$command \"$file\"" 0 rcslog_colortags
     $v\::wait
   }
 
@@ -942,23 +943,61 @@ proc svn_log {detail args} {
   gen_log:log T "LEAVE"
 }
 
-# called from branch browser
+# Called from the annotation and branch browsers
+# Shows the file log up to a commit
 proc svn_log_rev {revision filename} {
+  global cvsglb
+
+  gen_log:log T "ENTER ($revision $filename)"
+
+  busy_start .workdir.main
+
+  set title "SVN Log ($revision) $filename"
+  
+  set v [viewer::new "$title"]
+  set command "svn log -$revision:1 \"$filename\""
+  $v\::do "$command" 0 rcslog_colortags
+
+  busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+
+# Called from the annotation and branch browsers
+# Shows the diffs of a revision against the previous one
+proc svn_difflog_rev {revision filename} {
+  global cvsglb
+
+  gen_log:log T "ENTER ($revision $filename)"
+
+  busy_start .workdir.main
+
+  set title "SVN Log -diff ($revision) $filename"
+  
+  set v [viewer::new "$title"]
+  set command "svn log --diff -$revision \"$filename\""
+  $v\::do "$command" 0 patch_colortags
+
+  busy_done .workdir.main
+  gen_log:log T "LEAVE"
+}
+
+# Called from the annotation and branch browsers
+# Shows the changed files for a commit
+proc svn_show_rev {revision filename} {
   global cvscfg
   global cvsglb
 
   gen_log:log T "ENTER ($revision $filename)"
 
-  set command "svn log --stop-on-copy -g -v "
+  set command "svn log -g -v "
   if {$revision == {}} {
     set command "$command \"$filename\""
     set v [viewer::new "SVN log $filename"]
   } else {
-    #set command "$command -$revision \"$filename\""
     set command "$command -$revision \"$filename\""
-    set v [viewer::new "SVN log Revision $revision $filename"]
+    set v [viewer::new "SVN Log ($revision) $filename"]
   }
-  $v\::do "$command"
+  $v\::do "$command" 0 rcslog_colortags
 
   gen_log:log T "LEAVE"
 }

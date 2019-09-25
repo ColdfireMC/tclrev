@@ -671,10 +671,13 @@ proc cvs_log {detail args} {
   switch -- $detail {
     latest {
       # -N means don't list tags
-      append flags "-Nr "
+      append flags " -Nr"
     }
     summary {
-      append flags "-Nt "
+      append flags " -Nt"
+    }
+    verbose {
+      append flags " -N"
     }
   }
   append command " $flags"
@@ -682,7 +685,7 @@ proc cvs_log {detail args} {
     append command " \"$f\""
   }
   set logcmd [viewer::new "CVS log ($detail)"]
-  $logcmd\::do "$command" 0 hilight_rcslog
+  $logcmd\::do "$command" 0 rcslog_colortags
 
   busy_done .workdir.main
   gen_log:log T "LEAVE"
@@ -695,7 +698,7 @@ proc cvs_log_rev {rev file} {
   gen_log:log T "ENTER ($rev $file)"
 
   set title "CVS log"
-  set commandline "$cvs log -N -S"
+  set commandline "$cvs log -N"
   if {$rev ne ""} {
     append commandline " -r:$rev"
     append title " -r:$rev"
@@ -704,7 +707,7 @@ proc cvs_log_rev {rev file} {
   append title " $file"
 
   set logcmd [viewer::new "$title"]
-  $logcmd\::do "$commandline" 0 hilight_rcslog
+  $logcmd\::do "$commandline" 0 rcslog_colortags
 
   gen_log:log T "LEAVE"
 }
@@ -1324,7 +1327,7 @@ proc cvs_filelog {filename parent {graphic {0}} } {
   } else {
     set commandline "$cvs -d $cvsglb(root) log \"$filename\""
     set logcmd [viewer::new "CVS log $filename"]
-    $logcmd\::do "$commandline" 0 hilight_rcslog
+    $logcmd\::do "$commandline" 0 rcslog_colortags
     $logcmd\::wait
   }
   cd $cwd

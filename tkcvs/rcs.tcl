@@ -376,7 +376,7 @@ proc rcs_log {detail args} {
   append commandline "$filelist"
 
   set v [viewer::new "RCS log ($detail)"]
-  $v\::do "$commandline" 0 hilight_rcslog
+  $v\::do "$commandline" 0 rcslog_colortags
   busy_done .workdir.main
 
   gen_log:log T "LEAVE"
