@@ -661,7 +661,6 @@ proc DirCanvas:choose_icon {w f rtype} {
   #  CVS doesn't know anything about this file. For example, you have created
   #     a new file and have not run add.
 
-puts  $DirList($w:$f:status)
   switch -glob -- $DirList($w:$f:status) {
    "<file>" {
      set DirList($w:$f:icon) paper
