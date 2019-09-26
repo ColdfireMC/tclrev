@@ -572,6 +572,7 @@ proc patch_colortags {exec line} {
     {^@@ }           { set tag yellow }
     {^Index}         { set tag invert }
     {^diff }         { set tag invert }
+    {^commit }       { set tag yellow }
     default          { set tag default }
   }
   #gen_log:log T "LEAVE: $tag"
