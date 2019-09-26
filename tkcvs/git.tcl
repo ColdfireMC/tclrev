@@ -370,7 +370,8 @@ proc git_log {detail args} {
   set commandline "git log"
   switch -- $detail {
     latest {
-      append flags " --pretty=oneline --max-count=1"
+      append flags " --max-count=1"
+      set filter patch_colortags
     }
     summary {
       append flags " --pretty=oneline"
