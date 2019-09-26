@@ -661,33 +661,97 @@ proc cvs_log {detail args} {
   }
   set filelist [join $args]
 
-  busy_start .workdir.main
-
-  set command "$cvs log"
+  set command "$cvs log -N"
+  set title "CVS log ($detail)"
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
   }
-  switch -- $detail {
-    latest {
-      # -N means don't list tags
-      append flags " -Nr"
-    }
-    summary {
-      append flags " -Nt"
-    }
-    verbose {
-      append flags " -N"
-    }
-  }
-  append command " $flags"
-  foreach f $filelist {
-    append command " \"$f\""
-  }
-  set logcmd [viewer::new "CVS log ($detail)"]
-  $logcmd\::do "$command" 0 rcslog_colortags
 
-  busy_done .workdir.main
+  # If verbose, output it as is
+  if {$detail eq "verbose"} {
+    foreach f $filelist {
+      append command " \"$f\""
+    }
+    set v [viewer::new "$title"]
+    $v\::do "$command" 0 rcslog_colortags
+    return
+  }
+
+  # Otherwise, we still do a verbose log but we only print some things
+  if {$detail eq "summary"} {
+    foreach f $filelist {
+      append command " \"$f\""
+    }
+    set v [viewer::new "$title"]
+    set logcmd [exec::new "$command"]
+    set log_lines [split [$logcmd\::output] "\n"]
+    foreach logline $log_lines {
+      # Beginning of a file's record
+      if {[string match "Working file:*" $logline]} {
+        $v\::log "==============================================================================\n" patched
+        $v\::log "$logline\n" patched
+      } elseif {[string match "----------------------------" $logline]} {
+        $v\::log "$logline\n" patched
+      } elseif {[string match "revision *"  $logline]} {
+        $v\::log "$logline"
+      } elseif {[string match "date:*"  $logline]} {
+        regsub {;\s+state.*$} $logline {} info
+        $v\::log "  $info\n"
+      }
+    }
+  } elseif {$detail eq "latest"} {
+    foreach f $filelist {
+      append command " \"$f\""
+    }
+    set v [viewer::new "$title"]
+    set logcmd [exec::new "$command"]
+    set log_lines [split [$logcmd\::output] "\n"]
+    set br 0
+    while {[llength $log_lines] > 0} {
+      set logline [join [lrange $log_lines 0 0]]
+      set log_lines [lrange $log_lines 1 end]
+
+      # Beginning of a file's record
+      if {[string match "Working file:*" $logline]} {
+        $v\::log "$logline\n" patched
+        while {[llength $log_lines] > 0} {
+          set log_lines [lrange $log_lines 1 end]
+          set logline [join [lrange $log_lines 0 0]]
+          #gen_log:log D " ! $logline !"
+
+          # Reason to skip
+          if {[string match "*selected revisions: 0" $logline]} {
+            $v\::log "No revisions on branch\n"
+            $v\::log "==============================================================================\n" patched
+            #set br 0
+            break
+          }
+          # Beginning of a revision
+          if {[string match "----------------------------" $logline]} {
+            #gen_log:log D "  !! $logline !!"
+            #$v\::log "$logline\n"
+            while {[llength $log_lines] > 0} {
+              set log_lines [lrange $log_lines 1 end]
+              set logline [join [lrange $log_lines 0 0]]
+              #gen_log:log D "        $logline"
+              if { [string match "========================*" $logline] ||
+                  [string match "--------------*" $logline]} {
+                $v\::log "==============================================================================\n" patched
+                set br 1
+                break
+              } else {
+                $v\::log "$logline\n"
+              }
+            }
+          }
+          # If we broke out of the inside loop, break out of this one too
+          if {$br == 1} {set br 0; break}
+        }
+      }
+    }
+  }
+
   gen_log:log T "LEAVE"
 }
 
@@ -1184,8 +1248,6 @@ proc cvs_status {detail args} {
     set args ""
   }
 
-  busy_start .workdir.main
-
   set filelist [join $args]
 
   set flags ""
@@ -1196,9 +1258,9 @@ proc cvs_status {detail args} {
   # support verious levels of verboseness.
   set command  "$cvs -Q status $flags"
   foreach f $filelist {
-    append commandline " \"$f\""
+    append command " \"$f\""
   }
-  set statcmd [exec::new "$commandline"]
+  set statcmd [exec::new "$command"]
   set raw_status [$statcmd\::output]
   $statcmd\::destroy
 
