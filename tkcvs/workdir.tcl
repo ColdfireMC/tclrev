@@ -592,7 +592,7 @@ proc setup_dir { } {
 
   # Start without revision-control menu
   gen_log:log D "CONFIGURE VCS MENUS"
-  foreach label {"RCS" "CVS" "SVN" "GIT"} {
+  foreach label {"RCS" "CVS" "SVN" "GIT" "Git Tools"} {
     if {! [catch {set vcsmenu_idx [.workdir.menubar index "$label"]}]} {
       .workdir.menubar delete $vcsmenu_idx
     }
@@ -853,6 +853,8 @@ proc setup_dir { } {
     gen_log:log D "CONFIGURE GIT MENUS"
     .workdir.menubar insert [expr {$filemenu_idx + 1}] cascade -label "GIT" \
       -menu .workdir.menubar.git
+    .workdir.menubar insert [expr {$filemenu_idx + 2}] cascade -label "Git Tools" \
+      -menu .workdir.menubar.gitopts
     .workdir.top.bmodbrowse configure -image Modules_git -command modbrowse_run
     .workdir.top.lmodule configure -text "path"
     .workdir.top.ltagname configure -text "branch"
