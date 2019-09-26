@@ -569,6 +569,7 @@ proc patch_colortags {exec line} {
     { is removed;}   { set tag removed }
     {^\+}            { set tag added }
     {^\-}            { set tag removed }
+    {^@@ }           { set tag yellow }
     {^Index}         { set tag invert }
     {^diff }         { set tag invert }
     default          { set tag default }
