@@ -373,11 +373,12 @@ proc git_log {detail args} {
       append flags " --pretty=oneline --max-count=1"
     }
     summary {
-      append flags " --graph --all --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
-      set filter truncate_git_graph
+      append flags " --pretty=oneline"
+      #set filter patch_colortags
     }
     verbose {
-      append flags " --all"
+      append flags " --pretty=full --all"
+      set filter patch_colortags
     }
   }
 
@@ -390,9 +391,6 @@ proc git_log {detail args} {
     $v\::do "$command" 1 $filter
     $v\::wait
     # If we're doing the graph, make the window wider
-    if {$detail eq "summary"} {
-      $v\::width 120
-    }
   }
 
   busy_done .workdir.main
@@ -566,20 +564,20 @@ proc git_log_rev {rev file} {
 
   gen_log:log T "ENTER ($rev $file)"
   set title "Git log"
-  set commandline "git log --graph --all $cvscfg(gitlog_opts) --format=%h\\ \\ %aN\\ %s\\DdDdD%d"
+  set commandline "git log"
   if {$rev ne ""} {
     append commandline " $rev"
     append title " $rev"
   } else {
+    append commandline " $cvscfg(gitlog_opts)"
     append title " $cvscfg(gitlog_opts)"
   }
   append commandline " $file"
   append title " $file"
 
   set v_log [viewer::new "$title"]
-  $v_log\::width 120
-  $v_log\::do $commandline 1 truncate_git_graph
-  $v_log\::wait
+  #$v_log\::width 120
+  $v_log\::do $commandline 1 patch_colortags
 
   gen_log:log T "LEAVE"
 }
@@ -620,7 +618,7 @@ proc git_patch { filename {rev1 {}} {rev2 {}} } {
 
   set title "Git diff $args"
   set v_show [viewer::new "$title"]
-  $v_show\::width 120
+  #$v_show\::width 120
   $v_show\::do "$command $args" 1 patch_colortags
   $v_show\::wait
 
