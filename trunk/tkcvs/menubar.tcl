@@ -30,8 +30,17 @@ proc menubar_menus {topwin} {
   if {$ingit} {
     if {$topwin eq ".workdir"} {
       $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
-      $topwin.menubar.gitopts add command -label "GiTk" \
+      $topwin.menubar.gitopts add command -label "gitk" \
          -command { cvs_execcmd gitk --all [workdir_list_files] }
+      if {[auto_execok gitk] eq ""} {
+        $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
+      }
+      $topwin.menubar.gitopts add command -label "git-gui" \
+         -command { cvs_execcmd git-gui --all [workdir_list_files] }
+      if {[auto_execok git-gui] eq ""} {
+        $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
+      }
+    } elseif {[string match {.logcan*} $topwin] || [string match {.annot*} $topwin]} {
     } elseif {[string match {.logcan*} $topwin] || [string match {.annot*} $topwin]} {
       # For branch and blame
       $topwin.menubar add cascade -label "Git" -menu [menu $topwin.menubar.gitopts]
@@ -161,8 +170,6 @@ proc workdir_menus {topwin} {
 
   # GIT - create it now, but place it later
   menu $topwin.menubar.git
-  #$topwin.menubar.git add command -label "GiTk" \
-     -command {cvs_execcmd gitk --all [workdir_list_files]}
   $topwin.menubar.git add separator
   $topwin.menubar.git add command -label "Checkout/Update" -underline 6 \
      -command {git_checkout [workdir_list_files]}
@@ -272,10 +279,19 @@ proc git_annotate_menu {topwin files} {
   global cvscfg
   global git_log_opt
 
+  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
   # gitk takes maximum one filename
   set file [lindex $files 0]
-  $topwin.menubar.gitopts add command -label "GiTk" \
-     -command "cvs_execcmd gitk --all $file"
+  $topwin.menubar.gitopts add command -label "gitk" \
+      -command "cvs_execcmd gitk --all $file"
+   if {[auto_execok gitk] eq ""} {
+     $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
+   }
+   $topwin.menubar.gitopts add command -label "git-gui" \
+      -command { cvs_execcmd git-gui --all [workdir_list_files] }
+   if {[auto_execok git-gui] eq ""} {
+     $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
+   }
 }
 
 # Actions and preferences for Git
@@ -283,10 +299,19 @@ proc git_branch_menu {topwin files} {
   global cvscfg
   global git_log_opt
 
+  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
   # gitk takes maximum one filename
   set file [lindex $files 0]
-  $topwin.menubar.gitopts add command -label "GiTk" \
-     -command "cvs_execcmd gitk --all $file"
+  $topwin.menubar.gitopts add command -label "gitk" \
+      -command "cvs_execcmd gitk --all $file"
+  if {[auto_execok gitk] eq ""} {
+    $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
+  }
+  $topwin.menubar.gitopts add command -label "git-gui" \
+     -command { cvs_execcmd git-gui --all [workdir_list_files] }
+  if {[auto_execok git-gui] eq ""} {
+    $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
+  }
   $topwin.menubar.gitopts add separator
   $topwin.menubar.gitopts add cascade -label "Git log options" -menu [menu $topwin.menubar.gitopts.logopts]
   set all_gitlog_opts [list  "--first-parent" "--full-history" "--sparse" "--no-merges"]
