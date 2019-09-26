@@ -218,18 +218,20 @@ namespace eval ::logcanvas {
                    if {$rev == ""} {
                      svn_annotate_r "" $filename
                    } else {
-                     svn_annotate_r [string trimleft $rev {r}] $filename
+                     set revA [$logcanvas.up.revA_rvers get]
+                     set A [string trimleft $revA {r}]
+                     svn_annotate_r $A "$revpath($revA)" 
                    }
                  }]
               $logcanvas.ddiff configure -state normal \
                 -command [namespace code {
-                     set rev1 [$logcanvas.up.revA_rvers get]
-                     svn_show_rev $rev1 $filename
+                   set revA [$logcanvas.up.revA_rvers get]
+                   svn_show_rev $revA "$revpath($revA)"
                 }]
               $logcanvas.rdiff configure -state normal \
                 -command [namespace code {
-                     set rev1 [$logcanvas.up.revA_rvers get]
-                     svn_difflog_rev $rev1 $filename
+                   set revA [$logcanvas.up.revA_rvers get]
+                   svn_difflog_rev $revA "$revpath($revA)"
                 }]
             }
             $logcanvas.delta configure \

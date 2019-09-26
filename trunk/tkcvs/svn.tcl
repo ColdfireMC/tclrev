@@ -950,15 +950,12 @@ proc svn_log_rev {revision filename} {
 
   gen_log:log T "ENTER ($revision $filename)"
 
-  busy_start .workdir.main
-
   set title "SVN Log ($revision) $filename"
   
   set v [viewer::new "$title"]
   set command "svn log -$revision:1 \"$filename\""
   $v\::do "$command" 0 rcslog_colortags
 
-  busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 
@@ -969,15 +966,12 @@ proc svn_difflog_rev {revision filename} {
 
   gen_log:log T "ENTER ($revision $filename)"
 
-  busy_start .workdir.main
-
   set title "SVN Log -diff ($revision) $filename"
   
   set v [viewer::new "$title"]
   set command "svn log --diff -$revision \"$filename\""
   $v\::do "$command" 0 patch_colortags
 
-  busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 

@@ -17,7 +17,7 @@ proc load_all_images {} {
   image create photo CheckoutOpts -format gif -file [file join $cvscfg(bitmapdir) checkout_opts.gif]
   image create photo Conflict -format gif -file [file join $cvscfg(bitmapdir) conflict.gif]
   image create photo Delete -format gif -file [file join $cvscfg(bitmapdir) delete.gif]
-  image create photo Diff -format gif -file [file join $cvscfg(bitmapdir) diff.gif]
+  image create photo Diff -format gif -file [file join $cvscfg(bitmapdir) delta_feather.gif]
   image create photo Difflines -format gif -file [file join $cvscfg(bitmapdir) difflines.gif]
   image create photo DirBranches -format gif -file [file join $cvscfg(bitmapdir) dirbranch.gif]
   image create photo Dir_new -format gif -file [file join $cvscfg(bitmapdir) folder_new.gif]
