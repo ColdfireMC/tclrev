@@ -19,6 +19,10 @@ Release 9.2.4 September, 2019
   $cvslog(ldetail) is gone. You can still do short logs from the Reports
   menu.
 
+- Added a toolbar menu for the annotation browser.
+
+- The "Go" bookmarks menu didn't really work with the module browser. Fixed.
+
 
 Release 9.2.3 September, 2019
 

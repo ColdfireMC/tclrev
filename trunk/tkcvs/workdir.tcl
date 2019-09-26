@@ -527,8 +527,14 @@ proc change_dir {new_dir} {
   gen_log:log F "CD $cwd"
   # Deleting the tree discards the saved scroll position
   # so we start with yview 0 in a new directory
-  DirCanvas:deltree .workdir.main.tree
-  setup_dir
+  if {[winfo exists .workdir]} {
+    DirCanvas:deltree .workdir.main.tree
+    setup_dir
+  }
+  if {[winfo exists .modbrowse]} {
+     cvsroot_check $cwd
+     modbrowse_run
+  }
 
   gen_log:log T "LEAVE"
 }

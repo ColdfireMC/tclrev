@@ -2234,7 +2234,7 @@ namespace eval ::logcanvas {
       set_tooltips $logcanvas.annotate \
         {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \
-        {"Compare two versions of the file"}
+        {"Compare two versions of the file side by side"}
       set_tooltips $logcanvas.delta \
         {"Merge to current"}
       set_tooltips $logcanvas.viewtags \

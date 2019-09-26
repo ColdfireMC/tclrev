@@ -10,6 +10,7 @@ proc menubar_menus {topwin} {
   global execmenu
   global bookmarks
   global git_log_opt
+  global ingit
 
   gen_log:log T "ENTER"
   set startdir "[pwd]"
@@ -25,23 +26,33 @@ proc menubar_menus {topwin} {
   $topwin.menubar add cascade -label "File" -menu [menu $topwin.menubar.file] -underline 0
   if {$topwin eq ".workdir"} {
     $topwin.menubar add cascade -label "Options" -menu [menu $topwin.menubar.options] -underline 0
-  } else {
-    $topwin.menubar add cascade -label "Git" -menu [menu $topwin.menubar.gitopts]
+  }
+  if {$ingit} {
+    if {$topwin eq ".workdir"} {
+      $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
+      $topwin.menubar.gitopts add command -label "GiTk" \
+         -command { cvs_execcmd gitk --all [workdir_list_files] }
+    } elseif {[string match {.logcan*} $topwin] || [string match {.annot*} $topwin]} {
+      # For branch and blame
+      $topwin.menubar add cascade -label "Git" -menu [menu $topwin.menubar.gitopts]
+    }
   }
 
-  $topwin.menubar add cascade -label "Go" -menu [menu $topwin.menubar.goto] -underline 0
-  $topwin.menubar.goto add command -label "Go Home" \
-     -command {change_dir $cvscfg(home)}
-  $topwin.menubar.goto add command -label "Add Bookmark" \
-     -command add_bookmark
-  $topwin.menubar.goto add command -label "Delete Bookmark" \
+  if {$topwin eq ".workdir" || $topwin eq ".modbrowse"} {
+    $topwin.menubar add cascade -label "Go" -menu [menu $topwin.menubar.goto] -underline 0
+    $topwin.menubar.goto add command -label "Go Home" \
+       -command {change_dir $cvscfg(home)}
+    $topwin.menubar.goto add command -label "Add Bookmark" \
+       -command add_bookmark
+    $topwin.menubar.goto add command -label "Delete Bookmark" \
      -command delete_bookmark_dialog
-  $topwin.menubar.goto add separator
-  foreach mark [lsort [array names bookmarks]] {
-    # Backward compatibility.  Value used to be a placeholder, is now a revsystem type
-    if {$bookmarks($mark) == "t"} {set bookmarks($mark) ""}
-    $topwin.menubar.goto add command -label "$mark $bookmarks($mark)" \
-       -command "change_dir \"$mark\""
+    $topwin.menubar.goto add separator
+    foreach mark [lsort [array names bookmarks]] {
+      # Backward compatibility.  Value used to be a placeholder, is now a revsystem type
+      if {$bookmarks($mark) == "t"} {set bookmarks($mark) ""}
+      $topwin.menubar.goto add command -label "$mark $bookmarks($mark)" \
+         -command "change_dir \"$mark\""
+    }
   }
   # Have to do this after the apple menu
   $topwin configure -menu $topwin.menubar
@@ -150,7 +161,7 @@ proc workdir_menus {topwin} {
 
   # GIT - create it now, but place it later
   menu $topwin.menubar.git
-  $topwin.menubar.git add command -label "GiTk" \
+  #$topwin.menubar.git add command -label "GiTk" \
      -command {cvs_execcmd gitk --all [workdir_list_files]}
   $topwin.menubar.git add separator
   $topwin.menubar.git add command -label "Checkout/Update" -underline 6 \
@@ -256,14 +267,15 @@ proc workdir_menus {topwin} {
   gen_log:log T "LEAVE"
 }
 
-# Menubar for the Branch Browser
-proc branch_menus {topwin} {
-  $topwin.menubar.options add separator
-  $topwin.menubar.options add checkbutton -label "Tracing On/Off" \
-     -variable cvscfg(logging) -onvalue true -offvalue false \
-     -command log_toggle
-  $topwin.menubar.options add command -label "Save Options" -underline 0 \
-     -command save_options
+# Actions and preferences for Git
+proc git_annotate_menu {topwin files} {
+  global cvscfg
+  global git_log_opt
+
+  # gitk takes maximum one filename
+  set file [lindex $files 0]
+  $topwin.menubar.gitopts add command -label "GiTk" \
+     -command "cvs_execcmd gitk --all $file"
 }
 
 # Actions and preferences for Git
