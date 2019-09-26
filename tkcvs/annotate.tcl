@@ -268,6 +268,12 @@ namespace eval ::annotate {
 
       # Make the window
       toplevel $blamewin
+      menubar_menus $blamewin
+      help_menu $blamewin
+      if {$ingit} {
+       git_annotate_menu $blamewin $file
+      }
+
       text $blamewin.text -setgrid yes -exportselection 1 \
         -relief sunken -border 2 -height 40 -width 122 \
         -yscroll "$blamewin.scroll set"
@@ -420,7 +426,7 @@ namespace eval ::annotate {
       set_tooltips $blamewin.top.log \
         {"Revision Log of the file"}
       set_tooltips $blamewin.top.diff \
-        {"Compare version with its predecessor"}
+        {"Compare a version with its predecessor side by side"}
       set_tooltips $blamewin.top.ddiff \
         {"List changed files in a commit"}
       set_tooltips $blamewin.top.rdiff \
