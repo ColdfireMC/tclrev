@@ -36,12 +36,16 @@ proc copy_paste_popup {win X Y} {
 proc ro_textbindings {txtw} {
 
   #gen_log:log T "ENTER ($txtw)"
+  bind $txtw <KeyPress>   {break}
+
   bind $txtw <Key-Home>   {catch {%W yview moveto 0};break}
   bind $txtw <Key-Up>     {catch {%W yview scroll -1 units};break}
+  bind $txtw <Key-Prior>  {catch {%W yview scroll -1 pages};break}
+  bind $txtw <Key-Next>   {catch {%W yview scroll  1 pages};break}
   bind $txtw <Key-Down>   {catch {%W yview scroll  1 units};break}
+  bind $txtw <Key-End>    {catch {%W yview moveto 1};break}
   bind $txtw <Key-Left>   {catch {%W xview scroll -1 units};break}
   bind $txtw <Key-Right>  {catch {%W xview scroll  1 units};break}
-  bind $txtw <Key-End>    {catch {%W yview moveto 1};break}
 
   bind $txtw <Control-Key-c> {tk_textCopy %W;break}
   bind $txtw <Meta-Key-c>    {tk_textCopy %W;break}

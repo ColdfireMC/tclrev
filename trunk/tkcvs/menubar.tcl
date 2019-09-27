@@ -258,7 +258,7 @@ proc git_branch_menu {topwin files} {
   global git_log_opt
 
   git_tools_menu $topwin
-  $topwin.menubar.gitopts add cascade -label "Git log options" -menu [menu $topwin.menubar.gitopts.logopts]
+  $topwin.menubar.gittools add cascade -label "Git log options" -menu [menu $topwin.menubar.gittools.logopts]
   set all_gitlog_opts [list  "--first-parent" "--full-history" "--sparse" "--no-merges"]
   foreach o $all_gitlog_opts {
     if {$o in $cvscfg(gitlog_opts)} {
@@ -268,7 +268,7 @@ proc git_branch_menu {topwin files} {
     }
   }
   foreach opt $all_gitlog_opts {
-     $topwin.menubar.gitopts.logopts add checkbutton -label $opt \
+     $topwin.menubar.gittools.logopts add checkbutton -label $opt \
        -variable git_log_opt($opt) -onvalue 1 -offvalue 0 \
        -command {
            global cvscfg
@@ -284,12 +284,12 @@ proc git_branch_menu {topwin files} {
            gen_log:log D "cvscfg(gitlog_opts) $cvscfg(gitlog_opts)"
       }
     }
-    $topwin.menubar.gitopts add cascade -label "Branches groups" -menu [menu $topwin.menubar.gitopts.branches]
-    $topwin.menubar.gitopts.branches add radiobutton -label " File-specific" \
+    $topwin.menubar.gittools add cascade -label "Branches groups" -menu [menu $topwin.menubar.gittools.branches]
+    $topwin.menubar.gittools.branches add radiobutton -label " File-specific" \
       -variable cvscfg(gitbranchgroups) -value "F"
-    $topwin.menubar.gitopts.branches add radiobutton -label " All Local" \
+    $topwin.menubar.gittools.branches add radiobutton -label " All Local" \
       -variable cvscfg(gitbranchgroups) -value "FL"
-    $topwin.menubar.gitopts.branches add radiobutton -label " Local + Remote" \
+    $topwin.menubar.gittools.branches add radiobutton -label " Local + Remote" \
       -variable cvscfg(gitbranchgroups) -value "FLR"
 }
 
@@ -419,6 +419,9 @@ proc about_menus {aboutmenu} {
 }
 
 proc git_tools_menu {topwin} {
+  if [winfo exists  $topwin.menubar.gittools] {
+    return
+  }
   $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gittools]
   $topwin.menubar.gittools add command -label "gitk" \
          -command { cvs_execcmd gitk --all [workdir_list_files] }
