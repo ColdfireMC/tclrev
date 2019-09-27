@@ -265,7 +265,7 @@ proc workdir_setup {} {
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bannotate \
      {"Revision where each line was modified (annotate/blame)"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bdiff \
-     {"Compare the selected files with the committed version"}
+     {"Side-by-side comparison of files to the committed version"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bconflict \
      {"Merge Conflicts using TkDiff"}
 

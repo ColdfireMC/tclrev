@@ -2163,6 +2163,8 @@ namespace eval ::logcanvas {
           comparediff_r [$logcanvas.up.revA_rvers get] \
           [$logcanvas.up.revB_rvers get] $logcanvas $filename
         }]
+      button $logcanvas.rdiff -image Patches
+      button $logcanvas.ddiff -image Difflines
       button $logcanvas.delta -image Mergediff
       button $logcanvas.viewtags -image Tags \
         -command [namespace code {
@@ -2180,8 +2182,6 @@ namespace eval ::logcanvas {
                    }
                    view_output::new Tags $taglist
                  }]
-      button $logcanvas.ddiff -image Difflines
-      button $logcanvas.rdiff -image Patches
       button $logcanvas.close -text "Close" \
         -command [namespace code {
                  global cvscfg
@@ -2207,8 +2207,6 @@ namespace eval ::logcanvas {
            $logcanvas.log \
            $logcanvas.annotate \
            $logcanvas.diff \
-           $logcanvas.delta \
-           $logcanvas.viewtags \
         -in $logcanvas.down.btnfm -side left \
         -ipadx 4 -ipady 4
       if {$insvn || $ingit} {
@@ -2217,6 +2215,10 @@ namespace eval ::logcanvas {
                  -in $logcanvas.down.btnfm -side left \
                  -ipadx 4 -ipady 4
       }
+      pack $logcanvas.delta \
+           $logcanvas.viewtags \
+        -in $logcanvas.down.btnfm -side left \
+        -ipadx 4 -ipady 4
       pack $logcanvas.down.closefm -side right -expand yes -fill x
       pack $logcanvas.close \
         -in $logcanvas.down.closefm -side right -padx 15
@@ -2234,7 +2236,7 @@ namespace eval ::logcanvas {
       set_tooltips $logcanvas.annotate \
         {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \
-        {"Compare two versions of the file side by side"}
+        {"Side-by-side comparison of two versions of the file"}
       set_tooltips $logcanvas.delta \
         {"Merge to current"}
       set_tooltips $logcanvas.viewtags \
