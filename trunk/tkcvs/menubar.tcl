@@ -419,16 +419,16 @@ proc about_menus {aboutmenu} {
 }
 
 proc git_tools_menu {topwin} {
-  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
-  $topwin.menubar.gitopts add command -label "gitk" \
+  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gittools]
+  $topwin.menubar.gittools add command -label "gitk" \
          -command { cvs_execcmd gitk --all [workdir_list_files] }
   if {[auto_execok gitk] eq ""} {
-        $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
+        $topwin.menubar.gittools entryconfigure "gitk" -state disabled
   }
-  $topwin.menubar.gitopts add command -label "git-gui" \
+  $topwin.menubar.gittools add command -label "git-gui" \
          -command { cvs_execcmd git-gui --all [workdir_list_files] }
   if {[auto_execok git-gui] eq ""} {
-    $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
+    $topwin.menubar.gittools entryconfigure "git-gui" -state disabled
   }
 }
 
