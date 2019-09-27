@@ -139,6 +139,7 @@ if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
 
 # Hilight colors.  Get the colorful ones.
 entry .testent
+wm withdraw .
 set cvsglb(textbg) white
 set cvsglb(textfg) black
 set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
