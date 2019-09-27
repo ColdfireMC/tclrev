@@ -378,7 +378,8 @@ proc git_log {detail args} {
       #set filter patch_colortags
     }
     verbose {
-      append flags " --pretty=full --all"
+      # medium has the date, but full doesn't
+      append flags " --pretty=medium --all"
       set filter patch_colortags
     }
   }

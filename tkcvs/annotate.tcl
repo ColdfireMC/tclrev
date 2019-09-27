@@ -30,21 +30,21 @@ namespace eval ::annotate {
         variable blameproc
         variable lc
 
-        gen_log:log T "ENTER ($blamewin)"
+        gen_log:log T "ENTER ($w)"
 
         catch {unset revcolors}
-        $blamewin.text configure -state normal
-        $blamewin.text delete 1.0 end
-        busy_start $blamewin
+        $w.text configure -state normal
+        $w.text delete 1.0 end
+        busy_start $w
         set lc 0
         foreach logline [lrange $log_lines 0 end-1] {
           incr lc
-          $blameproc $blamewin.text $logline $lc
+          $blameproc $w.text $logline $lc
         }
-        $blamewin.text configure -state disabled
+        ro_textbindings $w.text
         # Focus in the text widget to activate the text bindings
-        focus $blamewin.text
-        busy_done $blamewin
+        focus $w.text
+        busy_done $w
         update idletasks
         gen_log:log T "LEAVE"
       }
@@ -360,8 +360,6 @@ namespace eval ::annotate {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { cvs_log_rev $rev $file }
            }]
-          $blamewin.top.ddiff configure -state disabled
-          $blamewin.top.rdiff configure -state disabled
         }
         {svn*} {
           $blamewin.top.viewfile configure -state normal \
@@ -537,7 +535,6 @@ namespace eval ::annotate {
 
       $blamewin.text yview moveto 0
       update idletasks
-      $blamewin.text configure -state disabled
       bind $blamewin.bottom.dayentry <Return> [namespace code {redo $blamewin}]
       $blamewin.bottom.redo configure -command [namespace code {redo $blamewin}]
       $blamewin.bottom.redo configure -command [namespace code {redo $blamewin}]
@@ -550,6 +547,7 @@ namespace eval ::annotate {
       # Focus in the text widget to activate the text bindings
       focus $blamewin.text
       busy_done $blamewin
+      ro_textbindings $blamewin.text
       return [namespace current]
     }
   }
