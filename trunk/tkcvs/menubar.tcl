@@ -27,25 +27,8 @@ proc menubar_menus {topwin} {
   if {$topwin eq ".workdir"} {
     $topwin.menubar add cascade -label "Options" -menu [menu $topwin.menubar.options] -underline 0
   }
-  if {$ingit} {
-    if {$topwin eq ".workdir"} {
-      $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
-      $topwin.menubar.gitopts add command -label "gitk" \
-         -command { cvs_execcmd gitk --all [workdir_list_files] }
-      if {[auto_execok gitk] eq ""} {
-        $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
-      }
-      $topwin.menubar.gitopts add command -label "git-gui" \
-         -command { cvs_execcmd git-gui --all [workdir_list_files] }
-      if {[auto_execok git-gui] eq ""} {
-        $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
-      }
-    } elseif {[string match {.logcan*} $topwin] || [string match {.annot*} $topwin]} {
-    } elseif {[string match {.logcan*} $topwin] || [string match {.annot*} $topwin]} {
-      # For branch and blame
-      $topwin.menubar add cascade -label "Git" -menu [menu $topwin.menubar.gitopts]
-    }
-  }
+  # Add the git tools menu to all main windows. It will be hidden if not needed.
+  git_tools_menu $topwin
 
   if {$topwin eq ".workdir" || $topwin eq ".modbrowse"} {
     $topwin.menubar add cascade -label "Go" -menu [menu $topwin.menubar.goto] -underline 0
@@ -66,10 +49,9 @@ proc menubar_menus {topwin} {
   # Have to do this after the apple menu
   $topwin configure -menu $topwin.menubar
 
-  $topwin.menubar.file add separator
   $topwin.menubar.file add command -label "Shell" -underline 0 \
      -command { exec::new $cvscfg(shell) }
-  $topwin.menubar.file add separator
+  #$topwin.menubar.file add separator
   $topwin.menubar.file add command -label "Close window" -underline 1 \
      -command {$topwin.close invoke}
   $topwin.menubar.file add command -label Exit -underline 1 \
@@ -91,7 +73,7 @@ proc workdir_menus {topwin} {
   # File menu
   $topwin.menubar.file insert 1 command -label "Browse Modules" -underline 0 \
      -command modbrowse_run
-  $topwin.menubar.file insert 1 separator
+  #$topwin.menubar.file add separator
   $topwin.menubar.file insert 1 command -label "Cleanup Directory" -underline 4 \
      -command workdir_cleanup
   $topwin.menubar.file insert 1 command -label "Make New Directory" -underline 0 \
@@ -170,7 +152,6 @@ proc workdir_menus {topwin} {
 
   # GIT - create it now, but place it later
   menu $topwin.menubar.git
-  $topwin.menubar.git add separator
   $topwin.menubar.git add command -label "Checkout/Update" -underline 6 \
      -command {git_checkout [workdir_list_files]}
   $topwin.menubar.git add command -label "Update with Options" -underline 13 \
@@ -234,7 +215,6 @@ proc workdir_menus {topwin} {
   $topwin.menubar.options add checkbutton -label "Git Detailed Status" \
      -variable cvscfg(gitdetail) -onvalue true -offvalue false \
      -command { setup_dir }
-  $topwin.menubar.options add separator
 
   # User-defined commands
   if { [info exists cvsmenu] || \
@@ -249,14 +229,12 @@ proc workdir_menus {topwin} {
       }
     }
     if {[info exists usermenu]} {
-      $topwin.menubar.user add separator
       foreach item [array names usermenu] {
         $topwin.menubar.user add command -label $item \
            -command "eval cvs_catchcmd $usermenu($item) \[workdir_list_files\]"
       }
     }
     if {[info exists execmenu]} {
-      $topwin.menubar.user add separator
       foreach item [array names execmenu] {
         $topwin.menubar.user add command -label $item \
            -command "eval cvs_execcmd $execmenu($item) \[workdir_list_files\]"
@@ -275,44 +253,11 @@ proc workdir_menus {topwin} {
 }
 
 # Actions and preferences for Git
-proc git_annotate_menu {topwin files} {
-  global cvscfg
-  global git_log_opt
-
-  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
-  # gitk takes maximum one filename
-  set file [lindex $files 0]
-  $topwin.menubar.gitopts add command -label "gitk" \
-      -command "cvs_execcmd gitk --all $file"
-   if {[auto_execok gitk] eq ""} {
-     $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
-   }
-   $topwin.menubar.gitopts add command -label "git-gui" \
-      -command { cvs_execcmd git-gui --all [workdir_list_files] }
-   if {[auto_execok git-gui] eq ""} {
-     $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
-   }
-}
-
-# Actions and preferences for Git
 proc git_branch_menu {topwin files} {
   global cvscfg
   global git_log_opt
 
-  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
-  # gitk takes maximum one filename
-  set file [lindex $files 0]
-  $topwin.menubar.gitopts add command -label "gitk" \
-      -command "cvs_execcmd gitk --all $file"
-  if {[auto_execok gitk] eq ""} {
-    $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
-  }
-  $topwin.menubar.gitopts add command -label "git-gui" \
-     -command { cvs_execcmd git-gui --all [workdir_list_files] }
-  if {[auto_execok git-gui] eq ""} {
-    $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
-  }
-  $topwin.menubar.gitopts add separator
+  git_tools_menu $topwin
   $topwin.menubar.gitopts add cascade -label "Git log options" -menu [menu $topwin.menubar.gitopts.logopts]
   set all_gitlog_opts [list  "--first-parent" "--full-history" "--sparse" "--no-merges"]
   foreach o $all_gitlog_opts {
@@ -355,7 +300,6 @@ proc help_menu {topwin} {
   $topwin.menubar add cascade -label "Help" -menu $topwin.menubar.help -underline 0
 
   menu $topwin.menubar.help
-  $topwin.menubar.help add separator
   $topwin.menubar.help add command -label "Current Directory Display" \
      -command current_directory
   $topwin.menubar.help add command -label "Module Browser" \
@@ -472,5 +416,19 @@ proc about_menus {aboutmenu} {
      -command {prefdialog}
   $aboutmenu add command -label Exit -underline 1 \
      -command { exit_cleanup 1 }
+}
+
+proc git_tools_menu {topwin} {
+  $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gitopts]
+  $topwin.menubar.gitopts add command -label "gitk" \
+         -command { cvs_execcmd gitk --all [workdir_list_files] }
+  if {[auto_execok gitk] eq ""} {
+        $topwin.menubar.gitopts entryconfigure "gitk" -state disabled
+  }
+  $topwin.menubar.gitopts add command -label "git-gui" \
+         -command { cvs_execcmd git-gui --all [workdir_list_files] }
+  if {[auto_execok git-gui] eq ""} {
+    $topwin.menubar.gitopts entryconfigure "git-gui" -state disabled
+  }
 }
 

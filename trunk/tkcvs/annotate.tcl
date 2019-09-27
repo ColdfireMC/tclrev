@@ -270,9 +270,6 @@ namespace eval ::annotate {
       toplevel $blamewin
       menubar_menus $blamewin
       help_menu $blamewin
-      if {$ingit} {
-       git_annotate_menu $blamewin $file
-      }
 
       text $blamewin.text -setgrid yes -exportselection 1 \
         -relief sunken -border 2 -height 40 -width 122 \
@@ -327,13 +324,13 @@ namespace eval ::annotate {
            $blamewin.top.log \
         -in $blamewin.top -side left -ipadx 4 -ipady 4
       if {$insvn} {
-         pack $blamewin.top.ddiff \
-              $blamewin.top.rdiff \
+         pack $blamewin.top.rdiff \
+              $blamewin.top.ddiff \
           -in $blamewin.top -side left -ipadx 4 -ipady 4
       } elseif {$ingit} {
         pack $blamewin.top.diff \
-             $blamewin.top.ddiff \
              $blamewin.top.rdiff \
+             $blamewin.top.ddiff \
           -in $blamewin.top -side left -ipadx 4 -ipady 4
       }
       
@@ -426,7 +423,7 @@ namespace eval ::annotate {
       set_tooltips $blamewin.top.log \
         {"Revision Log of the file"}
       set_tooltips $blamewin.top.diff \
-        {"Compare a version with its predecessor side by side"}
+        {"Side-by-side comparison of a version to its predecessor"}
       set_tooltips $blamewin.top.ddiff \
         {"List changed files in a commit"}
       set_tooltips $blamewin.top.rdiff \
