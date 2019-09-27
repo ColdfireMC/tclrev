@@ -51,9 +51,7 @@ proc menubar_menus {topwin} {
 
   $topwin.menubar.file add command -label "Shell" -underline 0 \
      -command { exec::new $cvscfg(shell) }
-  #$topwin.menubar.file add separator
-  $topwin.menubar.file add command -label "Close window" -underline 1 \
-     -command {$topwin.close invoke}
+  $topwin.menubar.file add separator
   $topwin.menubar.file add command -label Exit -underline 1 \
      -command { exit_cleanup 1 }
 }

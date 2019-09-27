@@ -1085,7 +1085,6 @@ proc git_fileview {revision path args} {
       set filepath "$filename"
     }
     set command "git show \"$revision:$filepath\""
-    #set command "git show [list $revision:$filepath]"
     set v [viewer::new "$filepath Revision $revision"]
     $v\::do "$command"
 
