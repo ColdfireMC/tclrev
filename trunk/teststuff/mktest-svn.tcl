@@ -138,6 +138,8 @@ proc delfile {filename branch} {
 
 proc commit {comment} {
   set exec_cmd "svn commit -m \"$comment\""
+  # This is so the timestamp is different from the last commit
+  after 1000
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -275,6 +277,13 @@ checkout_branch "$SVNROOT" "$taghead(trunk)"
 puts "==============================="
 puts "First revision on $taghead(trunk)"
 cd svn_test_$taghead(trunk)
+set exec_cmd "svn propset -R svn:ignore .DS_Store ."
+puts "$exec_cmd"
+set ret [catch {eval "exec $exec_cmd"} out]
+if {$ret} {
+  puts $out
+}
+
 modfiles "Main 1"
 writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt $taghead(trunk)

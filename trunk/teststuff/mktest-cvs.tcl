@@ -183,6 +183,8 @@ proc delfile {filename branch} {
 
 proc commit {comment} {
   set exec_cmd "cvs commit -m \"$comment\""
+  # This is so the timestamp is different from the last commit
+  after 1000
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -317,6 +319,9 @@ checkout_branch "cvs_test" "trunk"
 puts "==============================="
 puts "First revision on trunk"
 cd cvs_test_trunk
+writefile .cvsignore ".DS_Store"
+addfile .cvsignore trunk
+
 modfiles "Main 1"
 writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt trunk
