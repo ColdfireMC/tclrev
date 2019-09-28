@@ -253,6 +253,8 @@ proc commit {comment} {
 
   # Finally, do it
   set exec_cmd "git commit -m \"$comment\""
+  # This is so the timestamp is different from the last commit
+  after 1000
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -380,6 +382,9 @@ cd $WD
 puts "==============================="
 puts "First revision on trunk"
 cd $Master
+writefile .gitignore ".DS_Store"
+addfile .gitignnore trunk
+
 modfiles "Main 1"
 writefile Ftrunk.txt "Main 1"
 addfile Ftrunk.txt master

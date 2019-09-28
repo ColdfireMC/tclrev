@@ -27,7 +27,7 @@ proc checkin_files {topdir} {
     # Escape the spaces in filenames
     regsub -all { } $filename {\ } filename
     regsub -all { } $rcsfile {\ } rcsfile
-    set exec_cmd "ci -u -t-small_text_file -m\"Initial\\\ checkin\" $filename $rcsfile"
+    set exec_cmd "ci -u -i -t-small_text_file -m\"Initial\\\ checkin\" $filename $rcsfile"
     puts "$exec_cmd"
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
@@ -41,7 +41,7 @@ proc checkin_files {topdir} {
       # Escape the spaces in filenames
       regsub -all { } F$n.txt {\ } F$n.txt
       regsub -all { } $rcsfile {\ } rcsfile
-      set exec_cmd "ci -u -t-small_text_file -m\"Initial\\\ checkin\" F$n.txt $rcsfile"
+      set exec_cmd "ci -u -i -t-small_text_file -m\"Initial\\\ checkin\" F$n.txt $rcsfile"
       puts "$exec_cmd"
       set ret [catch {eval "exec $exec_cmd"} out]
       puts $out
@@ -87,7 +87,7 @@ proc writefile {filename string} {
 proc addfile {filename} {
 
   puts "Add $filename"
-  set exec_cmd "ci -u -t-small_text_file -m\"Initial\\\ checkin\" $filename"
+  set exec_cmd "ci -u -i -t-small_text_file -m\"Initial\\\ checkin\" $filename"
   puts "$exec_cmd"
   set ret [catch {eval "exec $exec_cmd"} out]
   puts $out
@@ -192,7 +192,8 @@ proc commit {comment} {
   while { [gets $fl item] >= 0} {
     regsub -all { } $item {\ } filename
     regsub -all { } $comment {\\\ } comment
-    set exec_cmd "ci -u -t-small_text_file -m\"$comment\" $filename"
+    #set exec_cmd "ci -u -t-small_text_file -m\"$comment\" $filename"
+    set exec_cmd "ci -u -m\"$comment\" $filename"
     puts $exec_cmd
     set ret [catch {eval "exec $exec_cmd"} out]
     puts $out
