@@ -79,10 +79,9 @@ proc rcs_checkin {revision comment args} {
   foreach file $filelist {
     append commit_output "\n$file"
   }
-  set mess "This will commit your changes to:$commit_output"
+  set mess "Thi/ will commit your changes to:$commit_output"
   append mess "\n\nAre you sure?"
   set commit_output ""
-
   if {[cvsconfirm $mess .workdir] != "ok"} {
     return 1
   }
@@ -114,7 +113,14 @@ proc rcs_checkin {revision comment args} {
     regsub -all {"} $comment {\"} comment
     regsub -all { } $comment {\ } comment
     regsub -all {\n} $comment {\\n} comment
-    set commandline "ci $revflag -m\"$comment\" $filelist"
+
+    set now [clock format [clock seconds] -format "$cvscfg(dateformat)"]
+    set description "Created $now"
+    regsub -all { } $description {_} description
+
+    # The -t is necessary if it's the initial commit (aka "add" in other systems.)
+    # It's ignored otherwise, so it does no harm.
+    set commandline "ci $revflag -t-$description -m\"$comment\" $filelist"
     $v\::do "$commandline" 1
     $v\::wait
   }
