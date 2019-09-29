@@ -567,7 +567,7 @@ proc svn_commit {comment args} {
     }
     set v [viewer::new "SVN Commit"]
     regsub -all "\"" $comment "\\\"" comment
-    set command "svn commit -m \$comment\""
+    set command "svn commit -m \"$comment\""
     foreach f $filelist {
       append command " \"$f\""
     }
