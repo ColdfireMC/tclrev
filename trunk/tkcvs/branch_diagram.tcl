@@ -226,12 +226,22 @@ namespace eval ::logcanvas {
               $logcanvas.ddiff configure -state normal \
                 -command [namespace code {
                    set revA [$logcanvas.up.revA_rvers get]
-                   svn_show_rev $revA "$revpath($revA)"
+                   set revB [$logcanvas.up.revB_rvers get]
+                   if {$revB == ""} {
+                     svn_show_rev $revA "$revpath($revA)"
+                   } elseif {$revA == ""} {
+                     svn_show_rev $revB "$revpath($revB)"
+                   }
                 }]
               $logcanvas.rdiff configure -state normal \
                 -command [namespace code {
                    set revA [$logcanvas.up.revA_rvers get]
-                   svn_difflog_rev $revA "$revpath($revA)"
+                   set revB [$logcanvas.up.revB_rvers get]
+                   if {$revB == ""} {
+                     svn_difflog_rev $revA "$revpath($revA)"
+                   } elseif {$revA == ""} {
+                     svn_difflog_rev $revB "$revpath($revB)"
+                   }
                 }]
             }
             $logcanvas.delta configure \
