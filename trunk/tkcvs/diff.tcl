@@ -49,16 +49,16 @@ proc comparediff_r {rev1 rev2 parent filename} {
   }
 
   if {$rev1 != {}} {
-    set rev1 [string trimleft $rev1 {r}]
-    if {! $insvn} {
-      set rev1 "-r \"$rev1\""
+    if {$insvn} {
+      set rev1 [string trimleft $rev1 {r}]
     }
+    set rev1 "-r $rev1"
   }
   if {$rev2 != {}} {
-    set rev2 [string trimleft $rev2 {r}]
-    if {! $insvn} {
-      set rev2 "-r \"$rev2\""
+    if {$insvn} {
+      set rev2 [string trimleft $rev2 {r}]
     }
+    set rev2 "-r $rev2"
   }
  
   set commandline "$cvscfg(tkdiff) $rev1 $rev2 $filename"

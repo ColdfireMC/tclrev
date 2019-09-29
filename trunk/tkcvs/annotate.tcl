@@ -62,10 +62,46 @@ namespace eval ::annotate {
         regexp {^\s*(\S+)\s+(\S+)} $linetext all f1 f2 orig_line 
         $parent.top.reventry delete 0 end
         if $cvscfg(blame_linenums) {
-          $parent.top.reventry insert end $f2
+          set selected_rev $f2
         } else {
-          $parent.top.reventry insert end $f1
+          set selected_rev $f1
         }
+        $parent.top.reventry insert end $selected_rev
+      }
+
+      # We already made a sorted revision list in order to do the heat map, so
+      # we can use it for free to find the revision previous to the selected
+      # one
+      proc previous_rev {rev} {
+        variable revlist
+        variable type
+        variable blamewin
+
+        set is_svn 0
+        if {[string match {svn*} $type]} {
+          set is_svn 1
+        }
+        if {$is_svn} {
+          set rev [string trimleft $rev {r}]
+        }
+        # Find the selected revision in the list
+        set ind [lsearch $revlist $rev]
+        # Get the previous one
+        set previous_rev [lindex $revlist $ind-1]
+
+        if {$previous_rev eq ""} {
+          if {$ind == 0} {
+            cvsfail "Please select a revision other than the first one!" $blamewin
+          } else {
+            cvsfail "Please select a revision!" $blamewin
+          }
+        }
+        if {$is_svn} {
+          set previous_rev "r$previous_rev"
+        }
+
+        gen_log:log T "LEAVE ($previous_rev)"
+        return $previous_rev
       }
 
       proc cvs_annotate_color {w logline ln} {
@@ -322,14 +358,10 @@ namespace eval ::annotate {
       pack $blamewin.top.reventry -side left
       pack $blamewin.top.viewfile \
            $blamewin.top.log \
+           $blamewin.top.diff \
         -in $blamewin.top -side left -ipadx 4 -ipady 4
-      if {$insvn} {
-         pack $blamewin.top.rdiff \
-              $blamewin.top.ddiff \
-          -in $blamewin.top -side left -ipadx 4 -ipady 4
-      } elseif {$ingit} {
-        pack $blamewin.top.diff \
-             $blamewin.top.rdiff \
+      if {$insvn || $ingit} {
+        pack $blamewin.top.rdiff \
              $blamewin.top.ddiff \
           -in $blamewin.top -side left -ipadx 4 -ipady 4
       }
@@ -360,6 +392,14 @@ namespace eval ::annotate {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { cvs_log_rev $rev $file }
            }]
+          $blamewin.top.diff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              set previous [previous_rev $rev]
+              if {$previous ne ""} {
+                comparediff_r $previous $rev $blamewin $file
+              }
+           }]
         }
         {svn*} {
           $blamewin.top.viewfile configure -state normal \
@@ -371,6 +411,14 @@ namespace eval ::annotate {
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { svn_log_rev $rev $file }
+           }]
+          $blamewin.top.diff configure -state normal \
+           -command [namespace code {
+              set rev [$blamewin.top.reventry get]
+              set previous [previous_rev $rev]
+              if {$previous ne ""} {
+                comparediff_r $previous $rev $blamewin $file
+              }
            }]
           $blamewin.top.ddiff configure -state normal \
            -command [namespace code {
@@ -419,7 +467,7 @@ namespace eval ::annotate {
       set_tooltips $blamewin.top.viewfile \
         {"View a version of the file"}
       set_tooltips $blamewin.top.log \
-        {"Revision Log of the file"}
+        {"Revision log of the file"}
       set_tooltips $blamewin.top.diff \
         {"Side-by-side comparison of a version to its predecessor"}
       set_tooltips $blamewin.top.ddiff \

@@ -469,7 +469,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_annotate "" $lcfile
+    cvs_annotate $current_tagname $lcfile
   } elseif {$insvn} {
     svn_annotate BASE $lcfile
   } elseif {$ingit} {

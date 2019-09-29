@@ -2232,7 +2232,7 @@ namespace eval ::logcanvas {
       set_tooltips $logcanvas.view \
         {"View a version of the file"}
       set_tooltips $logcanvas.log \
-        {"Revision Log of the file"}
+        {"Revision log of the file"}
       set_tooltips $logcanvas.annotate \
         {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \
