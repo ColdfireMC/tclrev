@@ -261,7 +261,7 @@ proc workdir_setup {} {
   set_tooltips .workdir.bottom.buttons.cvsfuncs.blogfile \
      {"Graphical Branch Diagram of the selected files"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bfilelog \
-     {"Revision Log of the selected files"}
+     {"Revision log of the selected files"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bannotate \
      {"Revision where each line was modified (annotate/blame)"}
   set_tooltips .workdir.bottom.buttons.cvsfuncs.bdiff \

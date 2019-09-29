@@ -6,6 +6,9 @@ Release 9.2.4 September, 2019
   the changed files and show the difference of that revision from the previous
   one.
 
+- Taught the revision browser to do a diff with the revision previous to
+  the selected one.
+
 - Re-worked Hide and Show a litte. They weren't working for SVN at all,
   and not quite working as advertized for CVS. For Git, it works
   differently, not forcing a tracked file to show, as .cvsignore and
