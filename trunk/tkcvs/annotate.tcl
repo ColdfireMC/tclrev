@@ -207,7 +207,7 @@ namespace eval ::annotate {
 
         # Separate the line into annotations and content
         regexp {^\s*(\d+)\s+(.*?\) )(.*$)} $logline all revnum annotations orig_line
-        regexp {(\S+).*\((.*?)\)} $annotations all who when
+        regexp {^(\S+) ([-\d]*)} $annotations all who when
         if {$revnum == "Skipping"} {
           cvsfail "Skipping binary file" $w
           return
@@ -246,7 +246,7 @@ namespace eval ::annotate {
        "svn" -
        "svn_r" {
          set blameproc svn_annotate_color
-         set commandline "svn blame -v $revision \"$file\""
+         set commandline "svn annotate -v $revision \"$file\""
        }
        "cvs" {
          set blameproc cvs_annotate_color
