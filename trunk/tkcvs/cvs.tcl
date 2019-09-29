@@ -2677,13 +2677,13 @@ namespace eval ::cvs_branchlog {
 
         set revkind(1) "root"
 
-        foreach r [lsort -command sortrevs [array names revkind]] {
+        foreach r [lsort -dictionary [array names revkind]] {
           gen_log:log D "revkind($r) $revkind($r)"
         }
         # Sort the revision and branch lists and remove duplicates
         foreach r [array names branchrevs] {
           set branchrevs($r) \
-            [lsort -unique -decreasing -command sortrevs $branchrevs($r)]
+            [lsort -unique -decreasing -dictionary $branchrevs($r)]
           #gen_log:log D "branchrevs($r) $branchrevs($r)"
         }
 
@@ -2693,7 +2693,7 @@ namespace eval ::cvs_branchlog {
 
         foreach r [array names revbranches] {
           set revbranches($r) \
-            [lsort -unique -command sortrevs $revbranches($r)]
+            [lsort -unique -dictionary $revbranches($r)]
           #gen_log:log D "revbranches($r) $revbranches($r)"
         }
         # Find out where to put the working revision icon (if anywhere)
@@ -2796,16 +2796,3 @@ namespace eval ::cvs_branchlog {
   }
 }
 
-# Proc for lsort -command, to sort revision numbers
-# Return -1 if a<b, 0 if a=b, and 1 if a>b
-proc sortrevs {a b} {
-    foreach ax [split $a {.}] bx [split $b {.}] {
-	if {$ax < $bx} {
-	    return -1
-	}\
-	elseif {$ax > $bx} {
-	    return 1
-	}
-    }
-    return 0
-}

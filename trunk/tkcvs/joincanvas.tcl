@@ -243,7 +243,7 @@ namespace eval joincanvas {
         parse_cvslog_tags $filelog
 
         # Sort the branch revisions
-        set tagrevlist [lsort -command sortrevs [array names tags]]
+        set tagrevlist [lsort -dictionary [array names tags]]
         # Get rid of duplicates
         set revlist ""
         foreach t $tagrevlist {
@@ -312,7 +312,7 @@ namespace eval joincanvas {
           }
         }
         set treelist [concat $revlist $treelist]
-        set treelist [lsort -command sortrevs $treelist]
+        set treelist [lsort -dictionary $treelist]
 
         # Now prepare to draw the revision tree
         # Root first

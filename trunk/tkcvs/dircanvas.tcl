@@ -229,7 +229,7 @@ proc DirCanvas:sort_by_col {wt col sense} {
   foreach item [$wt children {}] {
     lappend list_by_name [list [$wt set $item filecol] $item]
   }
-  set list_by_name [lsort -index 0 $list_by_name]
+  set list_by_name [lsort -dictionary -index 0 $list_by_name]
 
   # Collect the values from the column we want to sort by, together
   # with the row index
@@ -244,7 +244,7 @@ proc DirCanvas:sort_by_col {wt col sense} {
 
   # Re-order the rows in the order obtained above
   set r -1
-  foreach info [lsort $sense -index 0 $column_items] {
+  foreach info [lsort -dictionary $sense -index 0 $column_items] {
     $wt move [lindex $info 1] {} [incr r]
   }
 

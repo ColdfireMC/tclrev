@@ -532,7 +532,7 @@ namespace eval ::annotate {
              }
            }
          }
-         set revlist [lsort -command sortrevs $revlist]
+         set revlist [lsort -dictionary $revlist]
        }
        {git*} {
          # Sort by date instead of by commit number
