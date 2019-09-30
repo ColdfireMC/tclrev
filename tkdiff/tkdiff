@@ -1379,7 +1379,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
         # use them - dr
         if {$rev != ""} {
             set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
-            set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $fn"
+            set finfo(${A}tmp,$ndx) "$cmd cat -r $rev \"$fn\""
         } else {
             if {[regexp {://} $fn]} {
                 if {![regsub {^.*@} $fn {} rev]} {
@@ -1394,7 +1394,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
                 }
             } else {
                 if {$rev == ""} {set rev "HEAD"}
-                set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $fn"
+                set finfo(${A}tmp,$ndx) "$cmd cat -r $rev \"$fn\""
                 set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
             }
         }
@@ -1460,8 +1460,8 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
         set finfo(${A}lbl,$ndx) "$fn (ClearCase $rev)"
 
         # list given file
-        debug-info "exec $cmd ls -s $fn"
-        catch {exec $cmd ls -s $fn} ctls
+        debug-info "exec $cmd ls -s \"$fn\""
+        catch {exec $cmd ls -s \"$fn\"} ctls
         # get the path name to file AND the (present?) revision info
         #   (either CHECKEDOUT or a number)
         if {![regexp {(\S+)/([^/]+)$} $ctls dummy path checkedout]} {
@@ -1481,8 +1481,8 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
         }
 
         # Search history of the file for the designated version on our branch
-        debug-info "exec $cmd lshistory -last 50 $fn"
-        catch {exec $cmd lshistory -last 50 $fn} ctlshistory
+        debug-info "exec $cmd lshistory -last 50 \"$fn\""
+        catch {exec $cmd lshistory -last 50 \"$fn\"} ctlshistory
         set lines [split $ctlshistory "\n"]
         set predecessor ""
         foreach l $lines {
@@ -1506,10 +1506,10 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
             # in hg, the revision for cat defaults to the parent revision
             # of the working directory
             set finfo(${A}lbl,$ndx) "$fn (HG PARENT)"
-            set finfo(${A}tmp,$ndx) "$cmd cat $fn"
+            set finfo(${A}tmp,$ndx) "$cmd cat \"$fn\""
         } else {
             set finfo(${A}lbl,$ndx) "$fn (HG $rev)"
-            set finfo(${A}tmp,$ndx) "$cmd cat $hgopt $fn"
+            set finfo(${A}tmp,$ndx) "$cmd cat $hgopt \"$fn\""
         }
 
         }
