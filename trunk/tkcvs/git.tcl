@@ -155,8 +155,8 @@ proc git_workdir_status {showfiles} {
       # fields before the filename.
       # XY, now the second field, has "." for unmodified.
       set good_line ""
-      # Format: short hash, commit time, committer
-      set command "git log -n 1 --format=%h|%ct|%cn -- \"$f\""
+      # Format: short hash, commit time, committer, author
+      set command "git log -n 1 --format=%h|%ct|%cn|%an -- \"$f\""
       set cmd(git_log) [exec::new "$command"]
       set log_out [$cmd(git_log)\::output]
       foreach log_line [split $log_out "\n"] {
@@ -168,10 +168,14 @@ proc git_workdir_status {showfiles} {
       set items [split $good_line "|"]
       set hash [string trim [lindex $items 0] "\""]
       set wdate [string trim [lindex $items 1] "\""]
-      set wwho [string trim [lindex $items 2] "\""]
+      set committer [string trim [lindex $items 2] "\""]
+      set author [string trim [lindex $items 3] "\""]
       set Filelist($f:stickytag) $hash
       catch {set Filelist($f:date) [clock format $wdate -format $cvscfg(dateformat)]}
-      set Filelist($f:editors) $wwho
+      set Filelist($f:editors) "$committer"
+      if {$author ne $committer} {
+        append Filelist($f:editors) " for $author"
+      }
       if {[file isdirectory $f]} {
         if {[string length $log_out] > 0} {
           set Filelist($f:status) "<directory:GIT>"

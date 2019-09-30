@@ -203,10 +203,10 @@ proc workdir_menus {topwin} {
   $topwin.menubar.options add checkbutton -label "Date Column" \
      -variable cvscfg(showdatecol) -onvalue true -offvalue false \
      -command "DirCanvas:displaycolumns $topwin.main.tree"
-  $topwin.menubar.options add checkbutton -label "Revision/Hash Column" \
+  $topwin.menubar.options add checkbutton -label "Revision Column" \
      -variable cvscfg(showwrevcol) -onvalue true -offvalue false \
      -command "DirCanvas:displaycolumns $topwin.main.tree"
-  $topwin.menubar.options add checkbutton -label "Editor/Author/Locker Column" \
+  $topwin.menubar.options add checkbutton -label "Author Column" \
      -variable cvscfg(showeditcol) -onvalue true -offvalue false \
      -command "DirCanvas:displaycolumns $topwin.main.tree"
   $topwin.menubar.options add separator

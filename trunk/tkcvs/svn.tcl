@@ -115,7 +115,7 @@ proc svn_lock {do args} {
     unlock { set commandline "svn unlock"}
   }
   foreach f $filelist {
-    append commandline " \$f\""
+    append commandline " \"$f\""
   }
   set cmd [exec::new "$commandline"]
 
@@ -159,11 +159,17 @@ proc svn_workdir_status {} {
       regexp  {item=\"(\w+)\"} $repstatusheader tmp repstatus
       if { [ regexp  {<lock>.*</lock>} $repstatusent replock ] } {
         set lockstatus "locked"
+        regexp  {<owner>(.*?)</owner>} $replock tmp locker
+        regexp  {<created>(.*?)</created>} $replock tmp lockdate
+        regsub  {T.*$} $lockdate lockdate
+        #gen_log:log D "LOCK $locker $lockdate"
+        set file_locker($filename) "$locker@$lockdate"
       }
     } else {
       set repstatus ""
     }
     regexp  {<author>(.*)</author>} $wcstatusent tmp cauthor
+    regexp  {<date>(.*)</date>} $wcstatusent tmp cdate
     regexp  {<commit\s+revision=\"(\d+)\"} $wcstatusent tmp crev
     regexp  {<wc\-status\s+([^>]*)>} $wcstatusent tmp wcstatusheader
     regexp  {item=\"(\w+)\"} $wcstatusheader tmp wcstatus
@@ -190,7 +196,6 @@ proc svn_workdir_status {} {
     if [file isdirectory $filename] {
       set displaymod "<dir> "
     }
-
 
     set mayhavelock false
     switch -exact -- $wcstatus {
@@ -237,11 +242,22 @@ proc svn_workdir_status {} {
       set Filelist($filename:status) $displaymod
       set Filelist($filename:stickytag) "$wrev $crev"
       if {$wrev != "" && $crev != ""} {
-        #set Filelist($filename:stickytag) "working:$wrev committed:$crev"
         set Filelist($filename:stickytag) "$wrev   (committed:$crev)"
       }
+      # The date is in a weird format, like "2019-09-28T05:49:03.648859Z"
+      #gen_log:log D "DATE: \"$cdate\""
+      regsub {.[\d]*Z$} $cdate {} chopdate
+      #gen_log:log D " $chopdate"
+      if {! [catch {set newdate [clock scan "$chopdate" -format "%Y-%m-%dT%H:%M:%S"]}] } {
+        set Filelist($filename:date) [clock format $newdate -format $cvscfg(dateformat)]
+      }
+
       set Filelist($filename:option) ""
       set Filelist($filename:editors) "$cauthor"
+      if {[info exists file_locker($filename)]} {
+        regsub {T.*$} $file_locker($filename) {} file_locker($filename)
+        append Filelist($filename:editors) " lock:$file_locker($filename)"
+      }
     }
   }
   gen_log:log T "LEAVE"
@@ -910,7 +926,7 @@ proc svn_log {detail args} {
   # svn log is always recursive
 
   if {[llength $filelist] == 0} {
-    set filelist {{}}
+    set filelist {.}
   }
   if {[llength $filelist] > 1} {
     set title "SVN Log ($detail)"
