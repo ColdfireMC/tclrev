@@ -116,7 +116,7 @@ if { [winfo depth .] == 1 } {
 # description of date formats.
 #
 #set cvscfg(dateformat) "%Y/%m/%d %H:%M:%S"
-set cvscfg(dateformat) "%Y/%m/%d %H:%M"
+set cvscfg(dateformat) "%Y-%m-%d %H:%M:%S"
 # Format for mergeto- and mergefrom- tags.  The _BRANCH_ part must be
 # left as-is, but you can change the prefix and the date format, for
 # example "mergeto_BRANCH_%d%b%y".  The date format must be the same

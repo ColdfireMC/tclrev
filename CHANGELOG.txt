@@ -9,7 +9,7 @@ Release 9.2.4 September, 2019
 - Taught the revision browser to do a diff with the revision previous to
   the selected one.
 
-- Re-worked Hide and Show a litte. They weren't working for SVN at all,
+- Re-worked Hide and Show a little. They weren't working for SVN at all,
   and not quite working as advertized for CVS. For Git, it works
   differently, not forcing a tracked file to show, as .cvsignore and
   svn:ignore do.
@@ -21,6 +21,13 @@ Release 9.2.4 September, 2019
   comments, the equivalent of "verbose." Shortened the header for CVS.
   $cvslog(ldetail) is gone. You can still do short logs from the Reports
   menu.
+
+- In the working directory browser, got CVS and SVN to show the log
+  date. In CVS, it takes a little longer because it has to do one "cvs log"
+  command. It won't do it if the date column isn't mapped, though.
+
+- If there are locked files in CVS or SVN, or editors in CVS, put that
+  in the Authors column, appended to the author's name
 
 - Added a toolbar menu for the annotation browser.
 

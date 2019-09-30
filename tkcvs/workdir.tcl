@@ -1072,16 +1072,9 @@ proc directory_list { filenames } {
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
   if {$incvs} {
     .workdir.main.tree heading wrevcol -text "Revision"
-    if {$cvscfg(econtrol)} {
-      .workdir.main.tree heading editcol -text "Editors"
-    } elseif {$cvscfg(cvslock)} {
-      .workdir.main.tree heading editcol -text "Locked by"
-    } else {
-      .workdir.main.tree heading editcol -text "Author"
-    }
+    .workdir.main.tree heading editcol -text "Author"
     cvs_workdir_status
   }
-
   if {$inrcs} {
     .workdir.main.tree heading wrevcol -text "Revision"
     .workdir.main.tree heading editcol -text "Locked by"

@@ -544,7 +544,7 @@ namespace eval ::annotate {
            }
            set maxrevlen [string length $revnum]
          }
-         foreach d [lsort [array names commit]] {
+         foreach d [lsort -dictionary [array names commit]] {
            lappend revlist $commit($d)
          }
        }

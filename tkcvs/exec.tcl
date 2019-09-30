@@ -584,7 +584,7 @@ proc rcslog_colortags {exec line} {
 
   set tag default
   switch -glob -- $line {
-    {=============*}  { set tag patched }
+    {=============*}  { set tag invert }
     {RCS file:*}      { set tag patched }
     {Working file:*}  { set tag patched }
     {-------------*}  { set tag patched }

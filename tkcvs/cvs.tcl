@@ -92,18 +92,24 @@ proc cvs_workdir_status {} {
 
   gen_log:log T "ENTER"
 
-  # Unless the Editors column is mapped, we get all the information we
-  # need from cvs -n -q status. Only invoke command to get editors
-  # or lockers if requested
+  # We mostly get the information we need from cvs -n -q status. But for
+  # lockers, we need cvs log.  For editors, we need the separate cvs editors
+  # command. If the server isn't local, we need the log to get the author, too.
   set cmd(cvs_status) [exec::new "$cvs -n -q status -l"]
   set status_lines [split [$cmd(cvs_status)\::output] "\n"]
-  if {$cvscfg(showeditcol)} {
+  if {$cvscfg(cvslock) && $cvscfg(showeditcol)} {
+    set cmd(cvs_get_log) [exec::new "$cvs log -N -l"]
+    set cvslog_lines [split [$cmd(cvs_get_log)\::output] "\n"]
+  }
+  if {$cvscfg(showdatecol) && ! [string match {:local:*} $cvscfg(cvsroot)] } {
+    if {! [info exists cmd(cvs_get_log)]} {
+      set cmd(cvs_get_log) [exec::new "$cvs log -N -l"]
+      set cvslog_lines [split [$cmd(cvs_get_log)\::output] "\n"]
+    }
+  }
+  if {$cvscfg(econtrol) && $cvscfg(showeditcol)} {
     set cmd(cvs_editors) [exec::new "$cvs -n -q editors -l"]
     set editors_lines [split [$cmd(cvs_editors)\::output] "\n"]
-  }
-  if {$cvscfg(cvslock)} {
-    set cmd(cvs_lockers) [exec::new "$cvs log"]
-    set lockers_lines [split [$cmd(cvs_lockers)\::output] "\n"]
   }
 
   if {[info exists cmd(cvs_status)]} {
@@ -114,9 +120,6 @@ proc cvs_workdir_status {} {
   # get cvs status in current directory only, reading lines that include
   # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
   # into an array.
-
-  set datestatus_seen 0
-
   foreach logline $status_lines {
     if {[string match "File:*" $logline]} {
       regsub -all {\t+} $logline "\t" logline
@@ -140,28 +143,6 @@ proc cvs_workdir_status {} {
       set date [lindex $line 2]
 
       # The date field is not supplied to remote clients.
-      if {$date == "" } {
-        if {! ([string match "New *" $date ] || [string match "Result *" $date])} {
-          catch {set date [clock format [file mtime $filename] -format $cvscfg(dateformat)]}
-          if {! $datestatus_seen} {
-            # We only need to see this message once per directory
-            set datestatus_seen 1
-            gen_log:log E "No date supplied by remote CVS server. Using \[file mtime\]"
-          }
-        }
-      } else {
-        # CVS outputs time strings tcl can't handle, such as
-        # ones with +0100.  Let's discard them rather than
-        # trying to convert them.
-        set ret [catch {clock scan $date -gmt yes} ans]
-        if {$ret == 0} {
-          set juliandate $ans
-          set date [clock format $juliandate -format $cvscfg(dateformat)]
-
-        } else {
-          gen_log:log E "$ans"
-        }
-      }
       set Filelist($filename:date) $date
       set Filelist($filename:wrev) $revision
       set Filelist($filename:status) $status
@@ -193,6 +174,7 @@ proc cvs_workdir_status {} {
 
   if {[info exists cmd(cvs_editors)]} {
     set filename {}
+    set editors {}
     $cmd(cvs_editors)\::destroy
     catch {unset cmd(cvs_editors)}
     foreach logline $editors_lines {
@@ -209,7 +191,8 @@ proc cvs_workdir_status {} {
         append editors ",[lindex $line 1]"
       } else {
         if {$filename != {}} {
-          set Filelist($filename:editors) $editors
+          #set Filelist($filename:editors) $editors
+          set file_editors($filename) $editorsregsub {:status$} $i "" j
         }
         set filename $f
         set editors [lindex $line 1]
@@ -217,30 +200,72 @@ proc cvs_workdir_status {} {
       gen_log:log D " $filename   $editors"
     }
     if {$filename != {}} {
-      set Filelist($filename:editors) $editors
+      set file_editors($filename) $editors
     }
   }
 
-  if {[info exists cmd(cvs_lockers)]} {
+  if {[info exists cmd(cvs_get_log)]} {
     set filename {}
-    set lockers {}
-    $cmd(cvs_lockers)\::destroy
-    catch {unset cmd(cvs_lockers)}
-    foreach line $lockers_lines {
+    set date {}
+    $cmd(cvs_get_log)\::destroy
+    catch {unset cmd(cvs_get_log)}
+    foreach line $cvslog_lines {
       if {[string match "Working file: *" $line]} {
         gen_log:log D "$line"
         regsub "Working file: " $line "" filename
-      }
-      if {[string match "*locked by:*" $line]} {
+      } elseif {[string match "*locked by:*" $line]} {
         gen_log:log D "$line"
         if {$filename != {}} {
           set p [lindex $line 4]
           set r [lindex $line 1]
           set p [string trimright $p {;}]
           gen_log:log D " $filename   $p\($r\)"
-          append Filelist($filename:editors) $p\($r\)
+          append file_lockers($filename) "$p\($r\)"
+        }
+      } elseif {[string match "date:*" $line]} {
+        #The date line also has the name of the author
+        set parts [split $line ";"]
+        foreach p $parts {
+          set eqn [split $p ":"];
+          set eqname [string trim [lindex $eqn 0]]
+          set eqval  [string trim [join [lrange $eqn 1 end] ":"]]
+          switch -exact -- $eqname {
+            {date} {
+              # Sometimes the date has a timezone and sometimes not.
+              # In that case it's the 3rd field
+              set date [lrange $eqval 0 1]
+              # Sometimes it's separated by slashes and sometimes by hyphens
+              regsub -all {/} $date {-} Filelist($filename:date)
+              set Filelist($filename:date)
+            }
+            {author} {
+              set file_authors($filename) $eqval
+            }
+          }
         }
       }
+    }
+  }
+  foreach a [array names Filelist *:status] {
+    regsub {:status$} $a "" f
+    set Filelist($f:editors) ""
+    # Format the date
+    if [info exists Filelist($f:date)] {
+      #gen_log:log D "Filelist($f:date) \"$Filelist($f:date)\""
+      if {! [catch {set newdate [clock scan "$Filelist($f:date)" -format "%Y-%m-%d %H:%M:%S"]}] } {
+        set Filelist($f:date) [clock format $newdate -format $cvscfg(dateformat)]
+      }
+    }
+    #gen_log:log D " Filelist($f:date) $Filelist($f:date)"
+    # String the authors, editors, and lockers into one field
+    if [info exists file_authors($f)] {
+      set Filelist($f:editors) $file_authors($f)
+    }
+    if [info exists file_lockers($f)] {
+      append Filelist($f:editors) " locks:$file_lockers($f)"
+    }
+    if [info exists file_editors($f)] {
+      append Filelist($f:editors) " editors:$file_editors($f)"
     }
   }
   gen_log:log T "LEAVE"
@@ -662,7 +687,6 @@ proc cvs_log {detail args} {
   set filelist [join $args]
 
   set command "$cvs log -N"
-  set title "CVS log ($detail)"
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
@@ -672,6 +696,11 @@ proc cvs_log {detail args} {
   if {$detail eq "verbose"} {
     foreach f $filelist {
       append command " \"$f\""
+    }
+    if {[llength $filelist] <= 1} {
+      set title "CVS log $filelist ($detail)"
+    } else {
+      set title "CVS log ($detail)"
     }
     set v [viewer::new "$title"]
     $v\::do "$command" 0 rcslog_colortags
@@ -683,7 +712,7 @@ proc cvs_log {detail args} {
     foreach f $filelist {
       append command " \"$f\""
     }
-    set v [viewer::new "$title"]
+    set v [viewer::new "CVS log ($detail)"]
     set logcmd [exec::new "$command"]
     set log_lines [split [$logcmd\::output] "\n"]
     foreach logline $log_lines {
@@ -704,7 +733,7 @@ proc cvs_log {detail args} {
     foreach f $filelist {
       append command " \"$f\""
     }
-    set v [viewer::new "$title"]
+    set v [viewer::new "CVS log($detail)"]
     set logcmd [exec::new "$command"]
     set log_lines [split [$logcmd\::output] "\n"]
     set br 0
@@ -1076,7 +1105,6 @@ proc cvs_opt_update {} {
   } else {
     set dirname $cvsglb(getdirname)
   }
-puts "dirname \"$dirname\""
 
   if { $cvsglb(tagmode_selection) == "Keep" } {
     set tagname "BASE"
@@ -1092,7 +1120,6 @@ puts "dirname \"$dirname\""
     append command " \"$f\""
   }
   gen_log:log C "$command"
-puts "$command"
   eval "$command"
 
   gen_log:log T "LEAVE"
