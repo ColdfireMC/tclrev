@@ -204,10 +204,8 @@ namespace eval ::logcanvas {
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
                    # Let's be generous and let either A or B be selected
-                   if {$revB == ""} {
-                     comparediff_r "$revpath($revA)@$A" "" $logcanvas $filename
-                   } elseif {$revA == ""} {
-                     comparediff_r "" "$revpath($revB)@$B" $logcanvas $filename
+                   if {$revA eq "" || $revB eq ""} {
+                     cvsfail "Please select two revisions!" $logcanvas
                    } else {
                      comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
                    }
@@ -227,9 +225,9 @@ namespace eval ::logcanvas {
                 -command [namespace code {
                    set revA [$logcanvas.up.revA_rvers get]
                    set revB [$logcanvas.up.revB_rvers get]
-                   if {$revB == ""} {
+                   if {$revA ne ""} {
                      svn_show_rev $revA "$revpath($revA)"
-                   } elseif {$revA == ""} {
+                   } elseif {$revB ne ""} {
                      svn_show_rev $revB "$revpath($revB)"
                    }
                 }]
@@ -237,9 +235,9 @@ namespace eval ::logcanvas {
                 -command [namespace code {
                    set revA [$logcanvas.up.revA_rvers get]
                    set revB [$logcanvas.up.revB_rvers get]
-                   if {$revB == ""} {
+                   if {$revA ne ""} {
                      svn_difflog_rev $revA "$revpath($revA)"
-                   } elseif {$revA == ""} {
+                   } elseif {$revB ne ""} {
                      svn_difflog_rev $revB "$revpath($revB)"
                    }
                 }]

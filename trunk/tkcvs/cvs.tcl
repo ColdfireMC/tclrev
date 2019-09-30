@@ -262,7 +262,7 @@ proc cvs_workdir_status {} {
       set Filelist($f:editors) $file_authors($f)
     }
     if [info exists file_lockers($f)] {
-      append Filelist($f:editors) " locks:$file_lockers($f)"
+      append Filelist($f:editors) " lock:$file_lockers($f)"
     }
     if [info exists file_editors($f)] {
       append Filelist($f:editors) " editors:$file_editors($f)"
