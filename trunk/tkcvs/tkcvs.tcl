@@ -448,16 +448,15 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_branches "$lcfile"
+    cvs_branches [list $lcfile]
   } elseif {$inrcs} {
     set cwd [pwd]
     set module_dir ""
-    rcs_branches "$lcfile"
+    rcs_branches [list $lcfile]
   } elseif {$insvn} {
-    svn_branches "$lcfile"
+    svn_branches [list $lcfile]
   } elseif {$ingit} {
-    #git_fast_diagram "$lcfile"
-    git_branches "$lcfile"
+    git_branches [list $lcfile]
   } else {
     puts "File doesn't seem to be in CVS, SVN, RCS, or GIT"
   }
@@ -469,12 +468,12 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   }
   wm withdraw .
   if {$incvs} {
-    cvs_annotate $current_tagname $lcfile
+    cvs_annotate $current_tagname [list $lcfile]
   } elseif {$insvn} {
-    svn_annotate BASE $lcfile
+    svn_annotate BASE [list $lcfile]
   } elseif {$ingit} {
     read_git_dir .
-    git_annotate $current_tagname $lcfile
+    git_annotate $current_tagname [list $lcfile]
   } else {
     puts "File doesn't seem to be in CVS, SVN, or GIT"
   }
