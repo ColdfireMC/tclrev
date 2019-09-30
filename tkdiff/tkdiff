@@ -1316,7 +1316,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
 
     # Establish SYNTAX of how a revision is specified per the SCM system
     if {"$r" == ""} {
-        set rev "HEAD"
+        set rev ""
         set acopt ""
         set cvsopt ""
         set svnopt ""
@@ -1361,6 +1361,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
     }
     switch -- $Scm {
     CVS {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "cvs" $cmdsfx
         # For CVS, if it isn't checked out there is neither a CVS nor RCS
         # directory.  It will however have a ,v suffix just like rcs.
@@ -1374,27 +1375,27 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
         append cmd "svn" $cmdsfx
         # Subversion command MAY have the form
         # svn diff OLD-URL[@OLDREV] NEW-URL[@NEWREV]
-        if {[regexp {://} $fn]} {
-            if {![regsub {^.*@} $fn {} rev]} { set rev "HEAD" }
-            regsub {@\d+$} $fn {} path
-            if {"$rev" == ""} {
-                set finfo(${A}tmp,$ndx) "$cmd cat $path"
-                set finfo(${A}lbl,$ndx) "$fn (SVN)"
-            } else {
-                set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $path"
-                set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
-            }
+        # Or it may not. If we got revision arguments separately,
+        # use them - dr
+        if {$rev != ""} {
+            set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
+            set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $fn"
         } else {
-            if {"$r" == "" || "$rev" == "rBASE"} {
-                set finfo(${A}lbl,$ndx) "$fn (SVN BASE)"
-            } else {
-                set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
+            if {[regexp {://} $fn]} {
+                if {![regsub {^.*@} $fn {} rev]} { set rev "HEAD" }
+                    regsub {@\d+$} $fn {} path
+                    if {"$rev" == ""} {
+                        set finfo(${A}tmp,$ndx) "$cmd cat $path"
+                        set finfo(${A}lbl,$ndx) "$fn (SVN)"
+                    } else {
+                        set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $path"
+                        set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
+                    }
+                }
             }
-            set finfo(${A}tmp,$ndx) "$cmd cat $svnopt \"$fn\""
-        }
-
         }
     GIT {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "git" $cmdsfx
         # Won't work if you aren't actually INSIDE the work tree
         if {[is-git-repository]} {
@@ -1410,38 +1411,45 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
         } {set msg "Please re-start from within a Git work tree."}
         }
     BK {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "bk" $cmdsfx
         set finfo(${A}lbl,$ndx) "$fn (Bitkeeper $rev)"
         set finfo(${A}tmp,$ndx) "$cmd get -p $bkopt \"$fn\""
 
         }
     SCCS {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "sccs" $cmdsfx
         set finfo(${A}lbl,$ndx) "$fn (SCCS $rev)"
         set finfo(${A}tmp,$ndx) "$cmd get -p $sccsopt \"$fn\""
         }
     RCS {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "co" $cmdsfx
         set finfo(${A}lbl,$ndx) "$fn (RCS $rev)"
         set finfo(${A}tmp,$ndx) "$cmd -p$rcsopt \"$fn\""
         }
     PVCS {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "get" $cmdsfx
         set finfo(${A}lbl,$ndx) "$fn (PVCS $rev)"
         set finfo(${A}tmp,$ndx) "$cmd -p $pvcsopt \"$fn\""
         set finfo(${A}pproc,$ndx) "filterCRCRLF"
         }
     Perforce {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "p4" $cmdsfx
         set finfo(${A}lbl,$ndx) "$fn (Perforce $rev)"
         set finfo(${A}tmp,$ndx) "$cmd print -q \"$p4file\""
         }
     Accurev {
+        if {$rev == ""} {set rev "HEAD"}
         append cmd "accurev" $cmdsfx
         set finfo(${A}lbl,$ndx) "$fn (Accurev $rev)"
         set finfo(${A}tmp,$ndx) "$cmd cat $acopt \"$fn\""
         }
     ClearCase {
+        if {$rev == ""} {set rev "HEAD"}
         # is this NOT a Windows tool (why no append of .exe?)
         set cmd "cleartool"
         set finfo(${A}lbl,$ndx) "$fn (ClearCase $rev)"
@@ -1486,6 +1494,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
 
         }
     HG {
+        if {$rev == ""} {set rev "HEAD"}
         # mercurial support
         append cmd "hg" $cmdsfx
         if {"$r" == "" || "$rev" == "PARENT"} {
