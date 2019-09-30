@@ -1382,7 +1382,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
             set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $fn"
         } else {
             if {[regexp {://} $fn]} {
-                if {![regsub {^.*@} $fn {} rev]} { set rev "HEAD" }
+                if {![regsub {^.*@} $fn {} rev]} {
                     regsub {@\d+$} $fn {} path
                     if {"$rev" == ""} {
                         set finfo(${A}tmp,$ndx) "$cmd cat $path"
@@ -1392,7 +1392,12 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
                         set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
                     }
                 }
+            } else {
+                if {$rev == ""} {set rev "HEAD"}
+                set finfo(${A}tmp,$ndx) "$cmd cat -r $rev $fn"
+                set finfo(${A}lbl,$ndx) "$fn (SVN $rev)"
             }
+        }
         }
     GIT {
         if {$rev == ""} {set rev "HEAD"}
