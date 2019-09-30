@@ -15,7 +15,7 @@ proc comparediff {args} {
   } else {
     foreach file $filelist {
       regsub -all {\$} $file {\$} file
-      gen_log:log C "$cvscfg(tkdiff) $file"
+      gen_log:log C "$cvscfg(tkdiff) \"$file\""
       set ret [catch {eval "exec $cvscfg(tkdiff) \"$file\" &"} view_this]
       if {$ret} { cvsfail $view_this .workdir }
     }
@@ -61,7 +61,7 @@ proc comparediff_r {rev1 rev2 parent filename} {
     set rev2 "-r $rev2"
   }
  
-  set commandline "$cvscfg(tkdiff) $rev1 $rev2 $filename"
+  set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$filename\""
   gen_log:log C "$commandline"
   set ret [catch {eval "exec $commandline &"} view_this]
   if {$ret} { cvsfail $view_this $parent }
@@ -90,7 +90,7 @@ proc comparediff_sandbox {rev1 rev2 parent filename} {
     set rev2 "-r \"$rev2\""
   }
  
-  set commandline "$cvscfg(tkdiff) $rev1 $rev2 $filename"
+  set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$filename\""
   gen_log:log C "$commandline"
   cvs_sandbox_runcmd $commandline view_this
 

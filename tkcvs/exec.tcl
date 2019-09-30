@@ -20,7 +20,7 @@ proc cvs_execcmd {args} {
   # called for execmenu() entries.
   #
   gen_log:log T "ENTER ($args)"
-  exec::new $args
+  exec::new [join $args]
   gen_log:log T "LEAVE"
 }
 
@@ -32,7 +32,7 @@ proc cvs_catchcmd {args} {
   #
   gen_log:log T "ENTER ($args)"
   #gen_log:log C "$args"
-  set my_viewer [viewer::new "$args"]
+  set my_viewer [viewer::new [join $args]]
   $my_viewer\::do "$args"
   gen_log:log T "LEAVE"
 }
