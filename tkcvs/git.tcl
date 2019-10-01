@@ -272,7 +272,7 @@ proc git_push {} {
   gen_log:log T "ENTER"
 
   set command "git push --dry-run"
-  set ret [catch {eval "exec $command"} dryrun_output]
+  set ret [catch {exec {*}$command} dryrun_output]
   gen_log:log C "$dryrun_output"
 
   # push will return "Everything up-to-date" if it is
@@ -311,7 +311,7 @@ proc git_fetch {} {
   gen_log:log T "ENTER"
 
   set command "git fetch --dry-run"
-  set ret [catch {eval "exec $command"} dryrun_output]
+  set ret [catch {exec {*}$command} dryrun_output]
   gen_log:log C "$dryrun_output"
 
   # Fetch is just quiet if it's up to date
@@ -777,7 +777,7 @@ proc git_commit {comment args} {
       append  command " \"$f\""
     }
     gen_log:log C "$command"
-    set ret [catch {eval "exec $command"} view_this]
+    set ret [catch {exec {*}$command} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
       gen_log:log T "LEAVE ERROR ($view_this)"
@@ -1007,7 +1007,7 @@ proc git_merge_conflict {args} {
     }
     set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
     gen_log:log C "$tkdiff_command"
-    set ret [catch {eval "exec $tkdiff_command &"} view_this]
+    set ret [catch {exec {*}$tkdiff_command &} view_this]
   }
 
   gen_log:log T "LEAVE"
@@ -1032,7 +1032,7 @@ proc git_annotate {revision args} {
     return
   }
   foreach file $filelist {
-    annotate::new $revflag \"$file\" "git"
+    annotate::new $revflag "$file" "git"
   }
   gen_log:log T "LEAVE"
 }
@@ -1048,7 +1048,7 @@ proc git_annotate_r {revision filepath} {
     set revflag ""
   }
 
-  annotate::new $revflag $filepath "git_r"
+  annotate::new $revflag "$filepath" "git_r"
   gen_log:log T "LEAVE"
 }
 
@@ -1070,7 +1070,7 @@ proc git_annotate_range {v_w revision filename} {
     return
   }
 
-  annotate::new $revision $filename "git_range" $firstline $lastline
+  annotate::new $revision "$filename" "git_range" $firstline $lastline
   gen_log:log T "LEAVE"
 }
 

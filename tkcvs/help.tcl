@@ -114,7 +114,7 @@ proc help_cvs_version {visual} {
     set whichcvs [join $whichcvs]
     set commandline "$cvs -v"
     gen_log:log C "$commandline"
-    catch {eval "exec $commandline"} cvs_output
+    catch {exec {*}$commandline} cvs_output
     set cvsglb(have_cvs) 1
   }
   set whichsvn [auto_execok svn]
@@ -122,7 +122,7 @@ proc help_cvs_version {visual} {
     set whichsvn [join $whichsvn]
     set commandline "svn --version"
     gen_log:log C "$commandline"
-    set ret [catch {eval "exec $commandline"} svn_output]
+    set ret [catch {exec {*}$commandline} svn_output]
     set cvsglb(have_svn) 1
   }
   set whichrcs [auto_execok rcs]
@@ -130,7 +130,7 @@ proc help_cvs_version {visual} {
     set whichrcs [join $whichrcs]
     set commandline "rcs --version"
     gen_log:log C "$commandline"
-    set ret [catch {eval "exec $commandline"} rcs_output]
+    set ret [catch {exec {*}$commandline} rcs_output]
     set cvsglb(have_rcs) 1
   }
   set whichgit  [auto_execok git]
@@ -138,7 +138,7 @@ proc help_cvs_version {visual} {
     set whichgit [join $whichgit]
     set commandline "git --version"
     gen_log:log C "$commandline"
-    set ret [catch {eval "exec $commandline"} git_output]
+    set ret [catch {exec {*}$commandline} git_output]
     set cvsglb(have_git) 1
   }
 

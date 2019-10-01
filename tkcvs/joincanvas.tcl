@@ -695,7 +695,7 @@ proc cvs_joincanvas { } {
   regsub -all {\$} $files {\$} files
   set commandline "$cvs -d $cvscfg(cvsroot) log $files"
   gen_log:log C "$commandline"
-  catch {eval "exec $commandline"} raw_log
+  catch {exec {*}$commandline} raw_log
   set log_lines [split $raw_log "\n"]
 
   gen_log:log D "Directory tag: $current_tagname"
@@ -752,7 +752,7 @@ proc join_getlog {filename {name_idx {}}} {
   gen_log:log T "ENTER ($filename $name_idx)"
   set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
   gen_log:log C "$commandline"
-  set ret [catch {eval "exec $commandline"} view_this]
+  set ret [catch {exec {*}$commandline} view_this]
   # If you bail, sometimes you discard a perfectly good log
   #if {$ret} {
     #cvsfail $view_this

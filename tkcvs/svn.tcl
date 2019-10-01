@@ -13,7 +13,7 @@ proc read_svn_dir {dirname} {
   # Have to do eval exec because we need the error output
   set command "svn info"
   gen_log:log C "$command"
-  set ret [catch {eval "exec $command"} output]
+  set ret [catch {exec {*}$command} output]
   if {$ret} {
     cvsfail $output
     return 0
@@ -570,7 +570,7 @@ proc svn_commit {comment args} {
       append command " \"$f\""
     }
     gen_log:log C "$command"
-    set ret [catch {eval "exec $command"} view_this]
+    set ret [catch {exec {*}$command} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
       gen_log:log T "LEAVE ERROR ($view_this)"
@@ -652,7 +652,7 @@ proc svn_annotate {revision args} {
     return
   }
   foreach file $filelist {
-    annotate::new $revflag $file "svn"
+    annotate::new $revflag "$file" "svn"
   }
   gen_log:log T "LEAVE"
 }
@@ -668,7 +668,7 @@ proc svn_annotate_r {revision filepath} {
     set revflag ""
   }
 
-  annotate::new $revflag $filepath "svn_r"
+  annotate::new $revflag "$filepath" "svn_r"
   gen_log:log T "LEAVE"
 }
 
@@ -1071,7 +1071,7 @@ proc svn_merge_conflict {args} {
     # won't let you resolve it if so.
     set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
     gen_log:log C "$tkdiff_command"
-    set ret [catch {eval "exec $tkdiff_command &"} view_this]
+    set ret [catch {exec {*}$tkdiff_command &} view_this]
   }
 
   gen_log:log T "LEAVE"
@@ -1308,7 +1308,7 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   # It's muy importante to make sure everything is OK at this point
   set commandline "svn status -uq $filelist"
   gen_log:log C "$commandline"
-  set ret [catch {eval "exec $commandline"} view_this]
+  set ret [catch {exec {*}$commandline} view_this]
   set logmode [expr {$ret ? {E} : {D}}]
   view_output::new "SVN Check" $view_this
   gen_log:log $logmode $view_this
@@ -1625,7 +1625,7 @@ namespace eval ::svn_branchlog {
         set highest_revision [string trimleft $current_revnum "r"]
         set command "svn info $path"
         gen_log:log C "$command"
-        set ret [catch {eval "exec $command"} output]
+        set ret [catch {exec {*}$command} output]
         if {$ret} {
           gen_log:log D "This file $path must not be in the trunk"
           ## cvsfail $output

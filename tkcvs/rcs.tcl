@@ -98,7 +98,7 @@ proc rcs_checkin {revision comment args} {
     set commandline \
       "$cvscfg(terminal) ci $revflag $filelist"
     gen_log:log C "$commandline"
-    set ret [catch {eval "exec $commandline"} view_this]
+    set ret [catch {exec {*}$commandline} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
       gen_log:log T "LEAVE ERROR ($view_this)"
@@ -239,7 +239,7 @@ proc rcs_workdir_status {} {
   set rcsfiles [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   set command "rlog -h $rcsfiles"
   gen_log:log C "$command"
-  set ret [catch {eval "exec $command"} raw_rcs_log]
+  set ret [catch {exec {*}$command} raw_rcs_log]
   gen_log:log F "$raw_rcs_log"
 
   # The older version (pre-5.x or something) of RCS is a lot different from
@@ -262,7 +262,7 @@ proc rcs_workdir_status {} {
         # Do rcsdiff to see if it's changed
         set command "rcsdiff \"$filename\""
         gen_log:log C "$command"
-        set ret [catch {eval "exec $command"} output]
+        set ret [catch {exec {*}$command} output]
         gen_log:log F "$output"
         set splitline [split $output "\n"]
         if [string match {====*} [lindex $splitline 0]] {
@@ -333,7 +333,7 @@ proc rcs_check {} {
   set rcsfiles [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   set command "rlog -h $rcsfiles"
   gen_log:log C "$command"
-  set ret [catch {eval "exec $command"} raw_rcs_log]
+  set ret [catch {exec {*}$command} raw_rcs_log]
   gen_log:log F "$raw_rcs_log"
 
   set rlog_lines [split $raw_rcs_log "\n"]
@@ -346,7 +346,7 @@ proc rcs_check {} {
         # Do rcsdiff to see if it's changed
         set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
         gen_log:log C "$command"
-        set ret [catch {eval "exec $command"}]
+        set ret [catch {exec {*}$command}]
         if {$ret == 1} {
           $v\::log "\nM $filename"
         }

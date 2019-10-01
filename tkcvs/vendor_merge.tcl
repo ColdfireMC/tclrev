@@ -457,7 +457,7 @@ proc merge_taglist {files} {
   gen_log:log T "ENTER ($files)"
   set commandline "$cvs -d $cvscfg(cvsroot) log $files"
   gen_log:log C "$commandline"
-  set ret [catch {eval "exec $commandline"} view_this]
+  set ret [catch {exec {*}$commandline} view_this]
   gen_log:log "C" "$view_this"
   if {$ret} {
     cvsfail $view_this .merge
