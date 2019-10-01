@@ -1382,7 +1382,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
             set finfo(${A}tmp,$ndx) "$cmd cat -r $rev \"$fn\""
         } else {
             if {[regexp {://} $fn]} {
-                if {![regsub {^.*@} $fn {} rev]} {
+                if {[regsub {^.*@} $fn {} rev]} {
                     regsub {@\d+$} $fn {} path
                     if {"$rev" == ""} {
                         set finfo(${A}tmp,$ndx) "$cmd cat $path"
