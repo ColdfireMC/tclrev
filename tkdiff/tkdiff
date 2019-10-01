@@ -1410,6 +1410,7 @@ proc get-file-rev {fn ndx {r ""} {Scm {}}} {
                 set finfo(${A}lbl,$ndx) "$fn (GIT--staged)" ;# STAGEd vrsn
                 set finfo(${A}tmp,$ndx) "$cmd show \":$prefix$fn\""
             } else {
+                set rev [string trimleft $rev {r}]
                 set finfo(${A}lbl,$ndx) "$fn (GIT $rev)" ;# REQSTd vrsn
                 set finfo(${A}tmp,$ndx) "$cmd show \"$gitopt$prefix$fn\""
             }
