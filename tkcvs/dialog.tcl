@@ -913,6 +913,7 @@ proc unedit_dialog {args} {
 proc cvs_update_options {} {
   global cvsglb
   global cvscfg
+  global current_tagname
 
   gen_log:log T "ENTER"
 
@@ -994,7 +995,7 @@ you may want to commit any local changes to that branch first."
   label .cvs_update.options.whichrev.getrev.lblentry.tlbl -text "Tag Name" -anchor w
   entry .cvs_update.options.whichrev.getrev.lblentry.tname -relief sunken \
     -textvariable cvsglb(updatename)
-  button .cvs_update.options.whichrev.getrev.lblentry.dirtag -text "Dir Tag" \
+  button .cvs_update.options.whichrev.getrev.lblentry.dirtag -text "$current_tagname" \
     -command {
     set cvsglb(updatename) $current_tagname
     }

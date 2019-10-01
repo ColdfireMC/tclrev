@@ -158,7 +158,7 @@ proc cvs_workdir_status {} {
         set stickytag " on trunk"
       } elseif {[string match "(branch:*" $t1 ]} {
         regsub {\(branch: (.*)\)} $t1 {\1} t1
-        set stickytag " on $t0  branch"
+        set stickytag " on $t0"
       } elseif {[string match "(revision:*" $t1 ]} {
         set stickytag " $t0"
       }

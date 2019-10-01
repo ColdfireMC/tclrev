@@ -23,7 +23,7 @@ proc comparediff {args} {
   gen_log:log T "LEAVE"
 }
 
-# Two files or two SVN URLs
+# Two files
 proc comparediff_files {parent file1 file2} {
   global cvscfg
 

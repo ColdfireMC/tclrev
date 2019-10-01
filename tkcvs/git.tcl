@@ -565,10 +565,11 @@ proc git_status {detail args} {
 }
 
 # called from the branch browser
-proc git_log_rev {rev file} {
+proc git_log_rev {rev filename} {
   global cvscfg
 
-  gen_log:log T "ENTER ($rev $file)"
+  gen_log:log T "ENTER ($rev $filename)"
+
   set title "Git log"
   set commandline "git log"
   if {$rev ne ""} {
@@ -578,8 +579,8 @@ proc git_log_rev {rev file} {
     append commandline " $cvscfg(gitlog_opts)"
     append title " $cvscfg(gitlog_opts)"
   }
-  append commandline " $file"
-  append title " $file"
+  append commandline " \"$filename\""
+  append title " $filename"
 
   set v_log [viewer::new "$title"]
   #$v_log\::width 120
@@ -618,7 +619,7 @@ proc git_patch { filename {rev1 {}} {rev2 {}} } {
     set args "$rev2^ $rev2"
   }
   if {$filename != ""} {
-    append args " $filename"
+    append args " \"$filename\""
   }
   set title "SVN diff $args"
 
@@ -1076,13 +1077,10 @@ proc git_annotate_range {v_w revision filename} {
 
 # View a specific revision of a file.
 # Called from branch browser
-proc git_fileview {revision path args} {
+proc git_fileview {revision path filename} {
 
-  gen_log:log T "ENTER ($revision $path $args)"
+  gen_log:log T "ENTER ($revision $path $filename)"
 
-  set filelist [join $args]
-
-  foreach filename $filelist {
     if {$path ne ""} {
       set filepath "$path/$filename"
     } else {
@@ -1099,7 +1097,6 @@ proc git_fileview {revision path args} {
       -command "git_annotate_range $v_w $revision \"$filename\""
     pack $v_w.blamefm -in $v_w.bottom -side left
     pack $v_w.blamefm.blame
-  }
 }
 
 # Sends files to the branch browser one at a time

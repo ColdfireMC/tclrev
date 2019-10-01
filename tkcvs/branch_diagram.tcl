@@ -203,9 +203,12 @@ namespace eval ::logcanvas {
                    set revB [$logcanvas.up.revB_rvers get]
                    set A [string trimleft $revA {r}]
                    set B [string trimleft $revB {r}]
-                   # Let's be generous and let either A or B be selected
-                   if {$revA eq "" || $revB eq ""} {
-                     cvsfail "Please select two revisions!" $logcanvas
+                   # Well, shucks, PREV is only prior in a direct sort of the
+                   # revisions. It may not be the actual parent.
+                   if {$revB eq ""} {
+                     comparediff_r rPREV $A $logcanvas "$filename"
+                   } elseif {$revA eq ""} {
+                     comparediff_r rPREV $B $logcanvas "$filename"
                    } else {
                      comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
                    }
@@ -355,36 +358,50 @@ namespace eval ::logcanvas {
              # can we implement this?
            } else {
              # We have a checked-out local file
-             $logcanvas.log configure \
-                  -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers get]
-                    git_log_rev $rev $filename
-                  }]
              $logcanvas.view configure -state normal \
                -command [namespace code {
                     set rev [$logcanvas.up.revA_rvers get]
                     if {$rev == ""} { set rev "$current_revnum" }
-                    git_fileview $rev $cvsglb(relpath) \"$filename\"
+                    git_fileview $rev $cvsglb(relpath) "$filename"
                }]
+             $logcanvas.log configure \
+                  -command [namespace code {
+                    set rev [$logcanvas.up.revA_rvers get]
+                    git_log_rev $rev "$filename"
+                  }]
              $logcanvas.annotate configure -state normal \
                -command [namespace code {
                    set rev [$logcanvas.up.revA_rvers get]
-                   git_annotate_r $rev $filename
+                   git_annotate_r $rev "$filename"
                }]
-             $logcanvas.delta configure -state disabled
-             $logcanvas.viewtags configure -state normal \
-               -command {git_list_tags}
+              $logcanvas.diff configure \
+                -command [namespace code {
+                   set revA [$logcanvas.up.revA_rvers get]
+                   set revB [$logcanvas.up.revB_rvers get]
+                   set A [string trimleft $revA {r}]
+                   set B [string trimleft $revB {r}]
+                   if {$revB eq ""} {
+                     comparediff_r $A^ $A $logcanvas "$filename"
+                   } elseif {$revA eq ""} {
+                     comparediff_r $B^ $B $logcanvas "$filename"
+                   } else {
+                     comparediff_r $A $B $logcanvas "$filename"
+                   }
+                }]
              $logcanvas.rdiff configure -state normal \
                -command [namespace code {
                     set rev1 [$logcanvas.up.revA_rvers get]
                     set rev2 [$logcanvas.up.revB_rvers get]
-                    git_patch $filename $rev1 $rev2
+                    git_patch "$filename" $rev1 $rev2
                }]
              $logcanvas.ddiff configure -state normal \
                -command [namespace code {
                     set rev1 [$logcanvas.up.revA_rvers get]
                     git_show $rev1
                }]
+             $logcanvas.delta configure -state disabled
+             $logcanvas.viewtags configure -state normal \
+               -command {git_list_tags}
             }
          }
          "RCS" {
@@ -2166,11 +2183,7 @@ namespace eval ::logcanvas {
       button $logcanvas.view -image Fileview
       button $logcanvas.log -image Log
       button $logcanvas.annotate -image Annotate
-      button $logcanvas.diff -image Diff \
-        -command [namespace code {
-          comparediff_r [$logcanvas.up.revA_rvers get] \
-          [$logcanvas.up.revB_rvers get] $logcanvas $filename
-        }]
+      button $logcanvas.diff -image Diff
       button $logcanvas.rdiff -image Patches
       button $logcanvas.ddiff -image Difflines
       button $logcanvas.delta -image Mergediff
