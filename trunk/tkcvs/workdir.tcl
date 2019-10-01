@@ -961,7 +961,7 @@ proc setup_dir { } {
     # Have to do eval exec because we need the error output
     set command "svn propget svn:ignore ."
     gen_log:log C "$command"
-    set ret [catch {eval "exec $command"} output]
+    set ret [catch {exec {*}$command} output]
     if {$ret} {
       gen_log:log E "$output"
     } else {
@@ -1242,7 +1242,7 @@ proc cvsroot_check { dir } {
   }
 
   gen_log:log C "svn info"
-  set svnret [catch {eval "exec svn info"} svnout]
+  set svnret [catch {exec {*}svn info} svnout]
   if {! $svnret} {
     gen_log:log F $svnout
     set insvn [ read_svn_dir $dir ]
@@ -1267,7 +1267,7 @@ proc cvsroot_check { dir } {
     # Make sure we have rcs, and bag this (silently) if we don't
     set command "rcs --version"
     gen_log:log C "$command"
-    set ret [catch {eval "exec $command"} raw_rcs_log]
+    set ret [catch {exec {*}$command} raw_rcs_log]
     gen_log:log F "$raw_rcs_log"
     if {$ret} {
        if [string match {rcs*} $raw_rcs_log] {
@@ -1280,7 +1280,7 @@ proc cvsroot_check { dir } {
   }
 
   gen_log:log C "git rev-parse --is-inside-work-tree"
-  set gitret [catch {eval "exec git rev-parse --is-inside-work-tree"} gitout]
+  set gitret [catch {exec {*}git rev-parse --is-inside-work-tree} gitout]
   if {! $gitret} {
     # revparse may return "false"
     gen_log:log F "gitout $gitout"
@@ -1330,12 +1330,12 @@ proc getFiles { } {
   if {$cvscfg(allfiles)} {
     # get hidden as well
     foreach item $cvscfg(show_file_filter) {
-      gen_log:log C "glob -nocomplain .$item $item"
+      gen_log:log T "glob -nocomplain .$item $item"
       set filelist [ concat [ glob -nocomplain .$item $item ] $filelist ]
     }
   } else {
     foreach item $cvscfg(show_file_filter) {
-      gen_log:log C "glob -nocomplain $item"
+      gen_log:log T "glob -nocomplain $item"
       set filelist [ concat [ glob -nocomplain $item ] $filelist ]
     }
   }

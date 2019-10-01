@@ -241,7 +241,7 @@ proc modbrowse_guess_vcs {} {
 
   set cvs_cmd "cvs -d $cvsglb(root) rdiff -l -s -D 01/01/1971 \"$modbrowse_module\""
   gen_log:log C $cvs_cmd
-  set cvsret [catch {eval "exec $cvs_cmd > $cvscfg(null)"} cvsout]
+  set cvsret [catch {exec {*}$cvs_cmd > $cvscfg(null)} cvsout]
   if {[string match {*Diffing*} $cvsout]} {
     gen_log:log T "LEAVE (cvs)"
     return "cvs"
@@ -251,7 +251,7 @@ proc modbrowse_guess_vcs {} {
 
   set svn_cmd "svn list $cvsglb(root)"
   gen_log:log C $svn_cmd
-  set svnret [catch {eval "exec $svn_cmd"} svnout]
+  set svnret [catch {exec {*}$svn_cmd} svnout]
   if {$svnret} {
     gen_log:log E $svnout
   } else {
@@ -261,7 +261,7 @@ proc modbrowse_guess_vcs {} {
 
   set git_cmd "git ls-remote $cvsglb(root)"
   gen_log:log C $git_cmd
-  set gitret [catch {eval "exec $git_cmd"} gitout]
+  set gitret [catch {exec {*}$git_cmd} gitout]
   if {$gitret} {
     gen_log:log E $gitout
   } else {
@@ -555,7 +555,7 @@ proc module_exit { } {
       lappend dirs $d
     }
     gen_log:log C "$cvs -Q release $dirs"
-    catch {eval "exec $cvs -Q release $dirs"}
+    catch {exec {*}$cvs -Q release $dirs}
     # Doing it this way makes it pop up an error on windows.
     # Very annoying.
     #set finish [exec::new "$cvs -Q release $dirs"]

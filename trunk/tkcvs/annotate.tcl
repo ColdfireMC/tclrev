@@ -281,7 +281,7 @@ namespace eval ::annotate {
            set sinceflag ""
          }
          set blameproc git_annotate_color
-         set commandline "git annotate --abbrev-commit $sinceflag $revision $file"
+         set commandline "git annotate --abbrev-commit $sinceflag $revision \"$file\""
        }
        "git_range" {
          if {$cvscfg(gitblame_since) != ""} {
@@ -291,7 +291,7 @@ namespace eval ::annotate {
            set sinceflag ""
          }
          set blameproc git_annotate_color
-         set commandline "git annotate --abbrev-commit $sinceflag -L$L1,$L2 $revision $file"
+         set commandline "git annotate --abbrev-commit $sinceflag -L$L1,$L2 $revision \"$file\""
        }
        default {
          cvsfail "I don't understand flag \"$type\""
