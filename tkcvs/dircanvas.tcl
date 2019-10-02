@@ -601,7 +601,7 @@ proc DirCanvas:makepopup {w} {
   # For CVS files with conflicts
   menu $w.cvs_conf_pop
   $w.cvs_conf_pop add command -label "Merge using TkDiff" \
-    -command { cvs_merge_conflict [workdir_list_files] }
+    -command { cvs_reconcile_conflict [workdir_list_files] }
   $w.cvs_conf_pop add command -label "CVS Annotate/Blame" \
     -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.cvs_conf_pop add command -label "Browse the Log Diagram" \
@@ -610,7 +610,7 @@ proc DirCanvas:makepopup {w} {
   # For SVN files with conflicts
   menu $w.svn_conf_pop
   $w.svn_conf_pop add command -label "Merge using TkDiff" \
-    -command { svn_merge_conflict [workdir_list_files] }
+    -command { svn_reconcile_conflict [workdir_list_files] }
   $w.svn_conf_pop add command -label "Mark resolved" \
     -command { svn_resolve [workdir_list_files] }
   $w.svn_conf_pop add command -label "CVS Annotate/Blame" \
@@ -621,7 +621,7 @@ proc DirCanvas:makepopup {w} {
   # For Git files with conflicts
   menu $w.git_conf_pop
   $w.git_conf_pop add command -label "Merge using TkDiff" \
-    -command { git_merge_conflict [workdir_list_files] }
+    -command { git_reconcile_conflict [workdir_list_files] }
   $w.git_conf_pop add command -label "Stage resolved conflict" \
     -command { git_add [workdir_list_files] }
 
