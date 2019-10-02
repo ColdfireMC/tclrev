@@ -973,7 +973,7 @@ proc git_clone {root tag target} {
   return
 }
 
-proc git_merge_conflict {args} {
+proc git_reconcile_conflict {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"

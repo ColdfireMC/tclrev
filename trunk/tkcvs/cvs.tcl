@@ -1542,7 +1542,7 @@ proc cvs_version {} {
   gen_log:log T "LEAVE"
 }
 
-proc cvs_merge_conflict {args} {
+proc cvs_reconcile_conflict {args} {
   global cvscfg
   global cvs
 

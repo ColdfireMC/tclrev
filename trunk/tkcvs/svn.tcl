@@ -1034,7 +1034,7 @@ proc svn_info {args} {
 }
 
 # From workdir browser
-proc svn_merge_conflict {args} {
+proc svn_reconcile_conflict {args} {
   global cvscfg
 
   gen_log:log T "ENTER ($args)"

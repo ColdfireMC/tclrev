@@ -166,7 +166,7 @@ proc workdir_setup {} {
   button .workdir.bottom.buttons.cvsfuncs.bdiff -image Diff \
      -command { comparediff [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bconflict -image Conflict \
-     -command { cvs_merge_conflict [workdir_list_files] }
+     -command { cvs_reconcile_conflict [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.btag -image Tag \
      -command { tag_dialog }
   button .workdir.bottom.buttons.cvsfuncs.bbranchtag -image Branchtag \
@@ -716,7 +716,7 @@ proc setup_dir { } {
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
       -command { svn_annotate BASE [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
-      -command { foreach f [workdir_list_files] {svn_merge_conflict \"$f\"} }
+      -command { foreach f [workdir_list_files] {svn_reconcile_conflict \"$f\"} }
     .workdir.bottom.buttons.cvsfuncs.badd_files configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bremove configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bupdate configure -state normal \
@@ -784,7 +784,7 @@ proc setup_dir { } {
       -image DirBranches -command cvs_joincanvas
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
-      -command { cvs_merge_conflict [workdir_list_files] }
+      -command { cvs_reconcile_conflict [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bfilelog configure -state normal \
       -command { cvs_log "verbose" [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bannotate configure -state normal \
@@ -871,7 +871,7 @@ proc setup_dir { } {
       -command { git_patch "" }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
-      -command { foreach f [workdir_list_files] {git_merge_conflict \"$f\"} }
+      -command { foreach f [workdir_list_files] {git_reconcile_conflict \"$f\"} }
     .workdir.bottom.buttons.cvsfuncs.blogfile configure -state normal \
       -command { git_branches [workdir_list_files] }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
