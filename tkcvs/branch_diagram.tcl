@@ -415,8 +415,8 @@ namespace eval ::logcanvas {
                   git_patch "$filename" $revA $revB
              }]
            $logcanvas.ddiff configure -state normal \
-             -command [namespace code {
-                  set revA [$logcanvas.up.revA_rvers get]598872
+               -command [namespace code {
+                  set revA [$logcanvas.up.revA_rvers get]
                   set revB [$logcanvas.up.revB_rvers get]
                   if {$revA ne ""} {
                     set rev $revA
