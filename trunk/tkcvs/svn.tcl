@@ -641,7 +641,7 @@ proc svn_annotate {revision args} {
   set filelist [join $args]
 
   if {$revision != ""} {
-    set revflag "-r$revision"
+    set revflag "-$revision"
   } else {
     set revflag ""
   }
@@ -663,7 +663,7 @@ proc svn_annotate_r {revision filepath} {
   gen_log:log T "ENTER ($revision $filepath)"
   if {$revision != ""} {
     # We were given a revision
-    set revflag "-r$revision"
+    set revflag "-$revision"
   } else {
     set revflag ""
   }

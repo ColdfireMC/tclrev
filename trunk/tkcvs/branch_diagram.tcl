@@ -143,6 +143,22 @@ namespace eval ::logcanvas {
         ClearSelection $AorB
       }
 
+      proc EitherOrHead {} {
+        variable logcanvas
+        variable sys
+
+        set revA [$logcanvas.up.revA_rvers get]
+        set revB [$logcanvas.up.revB_rvers get]
+         if {$revA ne ""} {
+           set rev $revA
+         } elseif {$revB ne ""} {
+           set rev $revB
+         } else {
+           if {$sys eq "SVN"} {set rev rHEAD} else {set rev HEAD}
+         }
+         return $rev
+       }
+
       proc ConfigureButtons {fname} {
         global cvsglb
         global module_dir
@@ -176,78 +192,52 @@ namespace eval ::logcanvas {
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$module_dir/$fname"
             $logcanvas.up.rfname configure -state readonly
-            $logcanvas.log configure \
-                -command [namespace code {
-                    set revA [$logcanvas.up.revA_rvers get]
-                    set revB [$logcanvas.up.revB_rvers get]
-                    if {$revA ne ""} {
-                      set rev $revA
-                    } elseif {$revB ne ""} {
-                      set rev $revB
-                    } else {
-                      set rev "rHEAD"
-                    }
-                    svn_log_rev $rev $filename
-                 }]
-            $logcanvas.view configure \
+            $logcanvas.view configure -state normal \
                -command [namespace code {
-                    set revA [$logcanvas.up.revA_rvers get]
-                    set revB [$logcanvas.up.revB_rvers get]
-                    if {$revA ne ""} {
-                      set rev $revA
-                    } elseif {$revB ne ""} {
-                      set rev $revB
-                    } else {
-                      set rev "rHEAD"
-                    }
-                    svn_fileview $rev $revpath($rev) "file"
+                  set rev [EitherOrHead]
+                  svn_fileview $rev $filename "file"
+               }]
+            $logcanvas.log configure -state normal \
+               -command [namespace code {
+                  svn_log_rev [EitherOrHead] $filename
                }]
             $logcanvas.diff configure \
               -command [namespace code {
                  set revA [$logcanvas.up.revA_rvers get]
                  set revB [$logcanvas.up.revB_rvers get]
+                 if {$revA eq "" || $revB eq ""} {
+                   cvsfail "Please select two revisions!" $logcanvas
+                   return
+                 }
                  set A [string trimleft $revA {r}]
                  set B [string trimleft $revB {r}]
-                 # Well, shucks, PREV is only prior in a direct sort of the
-                 # revisions. It may not be the actual parent.
-                 if {$revB eq ""} {
-                   comparediff_r rPREV $A $logcanvas "$filename"
-                 } elseif {$revA eq ""} {
-                   comparediff_r rPREV $B $logcanvas "$filename"
-                 } else {
-                   comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
-                 }
+                 comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
               }]
             $logcanvas.annotate configure \
                -command [namespace code {
-                 set rev [$logcanvas.up.revA_rvers get]
-                 if {$rev == ""} {
-                   svn_annotate_r "" $filename
-                 } else {
-                   set revA [$logcanvas.up.revA_rvers get]
-                   set A [string trimleft $revA {r}]
-                   svn_annotate_r $A "$revpath($revA)" 
-                 }
-               }]
+                 set rev [EitherOrHead]
+                 if {$rev eq "rHEAD"} {set revpath($rev) "$filename"}
+                 svn_annotate_r $rev "$revpath($rev)" 
+              }]
             $logcanvas.ddiff configure -state normal \
               -command [namespace code {
                  set revA [$logcanvas.up.revA_rvers get]
                  set revB [$logcanvas.up.revB_rvers get]
-                 if {$revA ne ""} {
-                   svn_show_rev $revA "$revpath($revA)"
-                 } elseif {$revB ne ""} {
-                   svn_show_rev $revB "$revpath($revB)"
+                 if {$revA eq "" && $revB eq ""} {
+                   cvsfail "Please select a revision!" $logcanvas
+                   return
                  }
+                 svn_show_rev $rev "$revpath($rev)"
               }]
             $logcanvas.rdiff configure -state normal \
               -command [namespace code {
                  set revA [$logcanvas.up.revA_rvers get]
                  set revB [$logcanvas.up.revB_rvers get]
-                 if {$revA ne ""} {
-                   svn_difflog_rev $revA "$revpath($revA)"
-                 } elseif {$revB ne ""} {
-                   svn_difflog_rev $revB "$revpath($revB)"
+                 if {$revA eq "" && $revB eq ""} {
+                   cvsfail "Please select a revision!" $logcanvas
+                   return
                  }
+                 svn_difflog_rev $rev "$revpath($rev)"
               }]
             $logcanvas.merge configure \
               -command [namespace code {
@@ -281,17 +271,9 @@ namespace eval ::logcanvas {
             if {$kind == "directory"} {
               $logcanvas.view configure \
                  -command [namespace code {
-                    set revA [$logcanvas.up.revA_rvers get]
-                    set revB [$logcanvas.up.revB_rvers get]
-                    if {$revA ne ""} {
-                      set rev $revA
-                    } elseif {$revB ne ""} {
-                      set rev $revB
-                    } else {
-                      set rev "rHEAD"
-                    }
-                    svn_fileview $rev $filename "directory"
-                 }]
+                   set rev [EitherOrHead]
+                   svn_fileview $rev $filename "directory"
+                }]
               $logcanvas.annotate configure -state disabled
               $logcanvas.diff configure -state disabled
               $logcanvas.rdiff configure -state disabled
@@ -318,30 +300,55 @@ namespace eval ::logcanvas {
                   }]
              $logcanvas.annotate configure \
                 -command [namespace code {
-                   cvs_annotate_r [$logcanvas.up.revA_rvers get] $filename
+                   set revA [$logcanvas.up.revA_rvers get]
+                   set revB [$logcanvas.up.revB_rvers get]
+                   if {$revA ne ""} { set rev $revA } elseif {$revB ne ""} { set rev $revB }
+                   cvs_annotate_r $rev "$filename"
                 }]
-             $logcanvas.diff configure \
+             $logcanvas.diff configure -state normal \
                 -command [namespace code {
-                   comparediff_sandbox [$logcanvas.up.revA_rvers get] \
-                     [$logcanvas.up.revB_rvers get] $logcanvas \
-                     $filename
+                   set revA [$logcanvas.up.revA_rvers get]
+                   set revB [$logcanvas.up.revB_rvers get]
+                   if {$revA eq "" || $revB eq ""} {
+                     cvsfail "Please select two revisions!" $logcanvas
+                     return
+                   }
+                   comparediff_sandbox $revA $revB $logcanvas $filename
                 }]
              $logcanvas.merge configure -state disabled
            } else {
              # We have a checked-out local file
-             $logcanvas.log configure \
-                  -command [namespace code {
-                    set rev [$logcanvas.up.revA_rvers get]
-                    cvs_log_rev $rev $filename
-                  }]
+             $logcanvas.log configure -state normal \
+               -command [namespace code {
+                 set revA [$logcanvas.up.revA_rvers get]
+                 set revB [$logcanvas.up.revB_rvers get]
+                 if {$revA ne ""} { set rev $revA } elseif {$revB ne ""} { set rev $revB }
+                 cvs_log_rev $rev $filename
+               }]
              $logcanvas.view configure \
                -command [namespace code {
-                  cvs_fileview_update [$logcanvas.up.revA_rvers get] $filename
+                 set revA [$logcanvas.up.revA_rvers get]
+                 set revB [$logcanvas.up.revB_rvers get]
+                 if {$revA ne ""} { set rev $revA } elseif {$revB ne ""} { set rev $revB }
+                 cvs_fileview_update $rev $filename
                }]
              $logcanvas.annotate configure \
                -command [namespace code {
-                 cvs_annotate [$logcanvas.up.revA_rvers get] $filename
+                 set revA [$logcanvas.up.revA_rvers get]
+                 set revB [$logcanvas.up.revB_rvers get]
+                 if {$revA ne ""} { set rev $revA } elseif {$revB ne ""} { set rev $revB }
+                 cvs_annotate $rev "$filename"
                }]
+             $logcanvas.diff configure -state normal \
+                -command [namespace code {
+                   set revA [$logcanvas.up.revA_rvers get]
+                   set revB [$logcanvas.up.revB_rvers get]
+                   if {$revA eq "" || $revB eq ""} {
+                     cvsfail "Please select two revisions!" $logcanvas
+                     return
+                   }
+                   comparediff_r $revA $revB $logcanvas $filename
+                }]
              $logcanvas.merge configure \
                  -command [namespace code {
                    set fromrev [$logcanvas.up.revA_rvers get]
@@ -383,13 +390,14 @@ namespace eval ::logcanvas {
                   git_fileview $rev $cvsglb(relpath) "$filename"
              }]
            $logcanvas.log configure \
-                -command [namespace code {
-                  set rev [$logcanvas.up.revA_rvers get]
-                  git_log_rev $rev "$filename"
+              -command [namespace code {
+                 set revA [$logcanvas.up.revA_rvers get]
+                 set revB [$logcanvas.up.revB_rvers get]
+                 if {$revA ne ""} { set rev $revA } elseif {$revB ne ""} { set rev $revB }
+                 git_log_rev $rev "$filename"
                 }]
            $logcanvas.annotate configure -state normal \
              -command [namespace code {
-                 set rev [$logcanvas.up.revA_rvers get]
                  git_annotate_r $rev "$filename"
              }]
             $logcanvas.diff configure \
