@@ -317,7 +317,7 @@ namespace eval ::annotate {
       button $blamewin.top.viewfile -image Fileview
       button $blamewin.top.log -image Log
       button $blamewin.top.ddiff -image Difflines
-      button $blamewin.top.rdiff -image Patches
+      button $blamewin.top.patchdiff -image Patches
       button $blamewin.top.diff -image Diff
       button $blamewin.top.workdir -image Workdir -command {workdir_setup}
 
@@ -361,7 +361,7 @@ namespace eval ::annotate {
            $blamewin.top.diff \
         -in $blamewin.top -side left -ipadx 4 -ipady 4
       if {$insvn || $ingit} {
-        pack $blamewin.top.rdiff \
+        pack $blamewin.top.patchdiff \
              $blamewin.top.ddiff \
           -in $blamewin.top -side left -ipadx 4 -ipady 4
       }
@@ -425,7 +425,7 @@ namespace eval ::annotate {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { svn_show_rev $rev $file }
            }]
-          $blamewin.top.rdiff configure -state normal \
+          $blamewin.top.patchdiff configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { svn_difflog_rev $rev $file }
@@ -454,7 +454,7 @@ namespace eval ::annotate {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { git_show $rev }
            }]
-          $blamewin.top.rdiff configure -state normal \
+          $blamewin.top.patchdiff configure -state normal \
            -command [namespace code {
               set rev [$blamewin.top.reventry get]
               if {$rev ne ""} { git_patch $file $rev }
@@ -472,7 +472,7 @@ namespace eval ::annotate {
         {"Side-by-side comparison of a version to its predecessor"}
       set_tooltips $blamewin.top.ddiff \
         {"List changed files in a commit"}
-      set_tooltips $blamewin.top.rdiff \
+      set_tooltips $blamewin.top.patchdiff \
         {"Show file changes in a commit"}
 
 
