@@ -733,7 +733,7 @@ proc cvs_log {detail args} {
     foreach f $filelist {
       append command " \"$f\""
     }
-    set v [viewer::new "CVS log($detail)"]
+    set v [viewer::new "CVS log ($detail)"]
     set logcmd [exec::new "$command"]
     set log_lines [split [$logcmd\::output] "\n"]
     set br 0
@@ -785,10 +785,10 @@ proc cvs_log {detail args} {
 }
 
 # called from the branch browser
-proc cvs_log_rev {rev file} {
+proc cvs_log_rev {rev filename} {
   global cvs
 
-  gen_log:log T "ENTER ($rev $file)"
+  gen_log:log T "ENTER ($rev $filename)"
 
   set title "CVS log"
   set commandline "$cvs log -N"
@@ -796,8 +796,8 @@ proc cvs_log_rev {rev file} {
     append commandline " -r:$rev"
     append title " -r:$rev"
   }
-  append commandline " \"$file\""
-  append title " $file"
+  append commandline " \"$filename\""
+  append title " $filename"
 
   set logcmd [viewer::new "$title"]
   $logcmd\::do "$commandline" 0 rcslog_colortags
@@ -828,18 +828,18 @@ proc cvs_annotate {revision args} {
     gen_log:log T "LEAVE (Unselected files)"
     return
   }
-  foreach file $filelist {
-    annotate::new $revflag "$file" "cvs"
+  foreach f $filelist {
+    annotate::new $revflag "$f" "cvs"
   }
   gen_log:log T "LEAVE"
 }
 
 # annotate/blame. Called from logcanvas
-proc cvs_annotate_r {revision file} {
+proc cvs_annotate_r {revision filename} {
   global cvs
   global cvscfg
 
-  gen_log:log T "ENTER ($revision $file)"
+  gen_log:log T "ENTER ($revision $filename)"
 
   if {$revision != ""} {
     # We were given a revision
@@ -848,7 +848,7 @@ proc cvs_annotate_r {revision file} {
     set revflag ""
   }
 
-  annotate::new $revflag "$file" "cvs_r"
+  annotate::new $revflag "$filename" "cvs_r"
   gen_log:log T "LEAVE"
 }
 
