@@ -1,7 +1,7 @@
 #!/bin/sh
 #-*-tcl-*-
 # the next line restarts using wish \
-exec wish "$0" -- ${1+"$@"}
+    exec wish "$0" -- ${1+"$@"}
 
 #
 # TkCVS Main program -- A Tk interface to CVS.
@@ -18,8 +18,8 @@ if {[info exists starkit::topdir]} {
 }
 
 if {! [info exists tk_version] } {
-   puts "Initialization failed"
-   exit 1
+  puts "Initialization failed"
+  exit 1
 }
 
 if {$tk_version < 8.5} {
@@ -32,9 +32,9 @@ if {[info exists starkit::topdir]} {
   set ScriptBin $starkit::topdir
 } else {
   if {[info exists TclRoot]} {
-     # Perhaps we are being sourced recursively.
-     # That would be bad.
-     return
+    # Perhaps we are being sourced recursively.
+    # That would be bad.
+    return
   }
   set Script [info script]
   set ScriptTail [file tail $Script]
@@ -57,7 +57,7 @@ if {[info exists starkit::topdir]} {
   
   # allow runtime replacement
   if {[info exists env(TCLROOT)]} {
-   set TclRoot $env(TCLROOT)
+    set TclRoot $env(TCLROOT)
   }
   #puts "TclRoot $TclRoot"
 }
@@ -162,7 +162,7 @@ if {$WSYS eq "x11"} {
   # If X11, see if we can sense our environment somehow
   label .testlbl -text "LABEL"
   if [get_cde_params] {
-    set theme_system "CDE" 
+    set theme_system "CDE"
     # Find out what the default gui font is
     if { ! [info exists cvscfg(guifont)] } {
       # Find out what the tk default is
@@ -175,12 +175,12 @@ if {$WSYS eq "x11"} {
   } elseif [get_gtk_params] {
     set theme_system "GTK"
     if { ! [info exists cvscfg(guifont)] } {
-    set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-       font configure TkDefaultFont -size 9
-       set cvscfg(guifont) TkDefaultFont
-       option add *Menu.font $cvscfg(guifont)
-       option add *Label.font $cvscfg(guifont)
-       option add *Button.font $cvscfg(guifont)
+      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+      font configure TkDefaultFont -size 9
+      set cvscfg(guifont) TkDefaultFont
+      option add *Menu.font $cvscfg(guifont)
+      option add *Label.font $cvscfg(guifont)
+      option add *Button.font $cvscfg(guifont)
     }
     # in KDE or Gnome or some such.  It rather rudely sets all the Tk
     # backgrounds the same which I don't like, so I'm going to use the same
@@ -196,16 +196,16 @@ if {$WSYS eq "x11"} {
     set hlfg "#ffffff"
     set textbg "#ffffff"
     set textfg "#000000"
-
+    
     shades $bg
-
+    
     set cvsglb(bg) $bg
     set cvsglb(fg) $fg
     set cvsglb(textbg) $textbg
     set cvsglb(textfg) $textfg
     set cvsglb(hlbg) $hlbg
     set cvsglb(hlfg) $hlfg
-
+    
     option add *Canvas.Background $cvsglb(shadow)
     option add *Canvas.Foreground black
     option add *Entry.Background $textbg
@@ -223,12 +223,12 @@ if {$WSYS eq "x11"} {
     option add *Button.activeForeground $fg
     option add *Menu.activeForeground $fg
     option add *Checkbutton.Background $bg
-
+    
     # checkbuttons and radiobuttons
     option add *Menu.selectColor $fg
     option add *Checkbutton.selectColor "#ffffff"
     option add *Radiobutton.selectColor "#ffffff"
-
+    
     if { ! [info exists cvscfg(guifont)] } {
       set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
       # This makes it look more classic
@@ -240,11 +240,11 @@ if {$WSYS eq "x11"} {
     }
   }
   destroy .testlbl
-
+  
   if {! [info exists cvscfg(dialogfont)]} {
     set cvscfg(dialogfont) $cvscfg(guifont)
   }
-
+  
   if {$theme_system == "CDE"} {
     # This makes it consistent with the rest of the CDE interface
     option add *Menu.font $cvscfg(guifont)
@@ -258,7 +258,7 @@ if {$WSYS eq "x11"} {
   # Find out what the tk default is
   set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
   set cvscfg(dialogfont) $cvscfg(guifont)
-
+  
   set cvsglb(bg) [lindex [.testlbl cget -background] 0]
   set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
   # canvbg is for the treeviews, not the branch browser canvas
@@ -440,7 +440,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
     set cvsglb(root) $cvscfg(cvsroot)
   }
   modbrowse_run
-# Start with Branch Browser
+  # Start with Branch Browser
 } elseif {$cvscfg(startwindow) == "log"} {
   if {! [file exists $lcfile]} {
     puts "ERROR: $lcfile doesn't exist!"
@@ -460,7 +460,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "File doesn't seem to be in CVS, SVN, RCS, or GIT"
   }
-# Start with Annotation Browser
+  # Start with Annotation Browser
 } elseif {$cvscfg(startwindow) == "blame"} {
   if {! [file exists $lcfile]} {
     puts "ERROR: $lcfile doesn't exist!"
@@ -477,7 +477,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "File doesn't seem to be in CVS, SVN, or GIT"
   }
-# Start with Directory Merge
+  # Start with Directory Merge
 } elseif {[string match {mer*} $cvscfg(startwindow)]} {
   wm withdraw .
   if {$incvs} {
@@ -487,7 +487,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   } else {
     puts "Directory doesn't seem to be in CVS or SVN"
   }
-# The usual way, with the Workdir Browser
+  # The usual way, with the Workdir Browser
 } else {
   setup_dir
 }

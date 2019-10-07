@@ -7,30 +7,30 @@ proc rcs_branches {files} {
   global cwd
   
   gen_log:log T "ENTER ($files)"
-
+  
   if {$files == {}} {
     cvsfail "Please select one or more files!" .workdir
     return
   }
-
+  
   foreach filename $files {
     ::cvs_branchlog::new RCS "$filename"
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 # check out (co) a file.  Called from the "update" button
 proc rcs_checkout {files} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($files)"
-
+  
   if {$files == {}} {
     cvsfail "Please select one or more files!" .workdir
     return
   }
-
+  
   set commandline "co -l $files"
   set v [::viewer::new "RCS Checkout"]
   $v\::do "$commandline" 1
@@ -44,7 +44,7 @@ proc rcs_checkout {files} {
 
 proc rcs_lock {do files} {
   global cvscfg
-
+  
   if {$files == {}} {
     cvsfail "Please select one or more files!" .workdir
     return
@@ -66,15 +66,15 @@ proc rcs_lock {do files} {
 proc rcs_checkin {revision comment args} {
   global cvscfg
   global inrcs
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [lindex $args 0]
   if {$filelist == ""} {
     cvsfail "Please select some files!"
     return 1
   }
-
+  
   set commit_output ""
   foreach file $filelist {
     append commit_output "\n$file"
@@ -85,18 +85,18 @@ proc rcs_checkin {revision comment args} {
   if {[cvsconfirm $mess .workdir] != "ok"} {
     return 1
   }
-
+  
   set revflag ""
   if {$revision != ""} {
     set revflag "-r $revision"
   }
-
+  
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     # This way a template in CVSROOT can be used.
     update idletasks
     set commandline \
-      "$cvscfg(terminal) ci $revflag $filelist"
+        "$cvscfg(terminal) ci $revflag $filelist"
     gen_log:log C "$commandline"
     set ret [catch {exec {*}$commandline} view_this]
     if {$ret} {
@@ -137,10 +137,10 @@ proc rcs_commit_dialog {filelist} {
 
   gen_log:log T "ENTER"
 
-  # commit any files selected via listbox selection mechanism.
+    # commit any files selected via listbox selection mechanism.
   set cvsglb(commit_list) $filelist
 
-  # If we want to use an external editor, just do it
+    # If we want to use an external editor, just do it
   if {$cvscfg(use_cvseditor)} {
     rcs_checkin "" "" $cvsglb(commit_list)
     return
@@ -176,16 +176,16 @@ proc rcs_commit_dialog {filelist} {
     -bg $cvsglb(textbg) -exportselection 1 \
     -wrap word -border 2 -setgrid yes
 
-  # Explain what it means to "commit" files
+    # Explain what it means to "commit" files
   message .commit.message -justify left -aspect 500 -relief groove -bd 2 \
-    -text "This will commit changes from your \
+        -text "This will commit changes from your \
            local, working directory into the repository."
 
   pack .commit.message -in .commit.top -padx 2 -pady 5
 
   button .commit.ok -text "OK" \
     -command {
-      #grab release .commit
+    #grab release .commit
       wm withdraw .commit
       set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
       rcs_checkin $version $cvsglb(commit_comment) $cvsglb(commit_list)
@@ -204,7 +204,7 @@ proc rcs_commit_dialog {filelist} {
     }
   button .commit.quit \
     -command {
-      #grab release .commit
+    #grab release .commit
       wm withdraw .commit
     }
  
@@ -220,7 +220,7 @@ proc rcs_commit_dialog {filelist} {
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
     -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
 
-  # Fill in the most recent commit message
+    # Fill in the most recent commit message
   .commit.comment.tcomment insert end [string trimright $cvsglb(commit_comment)]
 
   wm title .commit "Commit Changes"
@@ -242,8 +242,8 @@ proc rcs_workdir_status {} {
   set ret [catch {exec {*}$command} raw_rcs_log]
   gen_log:log F "$raw_rcs_log"
 
-  # The older version (pre-5.x or something) of RCS is a lot different from
-  # the newer versions, explaining some of the ugliness here
+    # The older version (pre-5.x or something) of RCS is a lot different from
+    # the newer versions, explaining some of the ugliness here
   set rlog_lines [split $raw_rcs_log "\n"]
   set lockers ""
   set filenames ""
@@ -259,7 +259,7 @@ proc rcs_workdir_status {} {
       set Filelist($filename:option) ""
       if {[file exists $filename]} {
         set Filelist($filename:status) "RCS Up-to-date"
-        # Do rcsdiff to see if it's changed
+    # Do rcsdiff to see if it's changed
         set command "rcsdiff \"$filename\""
         gen_log:log C "$command"
         set ret [catch {exec {*}$command} output]
@@ -305,7 +305,7 @@ proc rcs_workdir_status {} {
       if {[string match "access list:*" $rlogline]} {
         set lockers [string trimleft $lockers ","]
         set Filelist($filename:editors) $lockers
-        # No more tags after this point
+    # No more tags after this point
         continue
       }
     }
@@ -343,7 +343,7 @@ proc rcs_check {} {
       regsub {\s*$} $filename "" filename
       gen_log:log D "RCS file $filename"
       if {[file exists $filename]} {
-        # Do rcsdiff to see if it's changed
+    # Do rcsdiff to see if it's changed
         set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
         gen_log:log C "$command"
         set ret [catch {exec {*}$command}]
@@ -404,10 +404,8 @@ proc rcs_log_rev {revision filename} {
   gen_log:log T "LEAVE"
 }
 
-proc rcs_fileview_checkout {revision filename} {
-#
 # This views a specific revision of a file
-#
+proc rcs_fileview_checkout {revision filename} {
   global cvscfg
 
   gen_log:log T "ENTER ($revision $filename)"

@@ -2,7 +2,7 @@
 # Tcl Library for TkCVS
 #
 
-# 
+#
 # Contains procedures used in interaction with CVS.
 #
 
@@ -18,9 +18,9 @@ proc cvs_notincvs {} {
 proc cvs_sandbox_runcmd {command output_var} {
   global cvscfg
   global cwd
-
+  
   upvar $output_var view_this
-
+  
   # Big note: the temp directory fed to a remote servers's command line
   # needs to be seen by the server.  It can't cd to an absolute path.
   # In addition it's fussy about where you are when you do a checkout -d.
@@ -40,7 +40,7 @@ proc cvs_sandbox_runcmd {command output_var} {
   }
   cd cvstmpdir.$pid
   gen_log:log F "CD [pwd]"
-
+  
   gen_log:log C "$command"
   set ret [catch {exec {*}$command} view_this]
   gen_log:log T "RETURN $cvscfg(tmpdir)/cvstmpdir.$pid"
@@ -53,7 +53,7 @@ proc cvs_sandbox_runcmd {command output_var} {
 proc cvs_sandbox_filetags {mcode args} {
   global cvscfg
   global cvs
-
+  
   set pid [pid]
   set cwd [pwd]
   gen_log:log T "ENTER ($mcode $args)"
@@ -89,9 +89,9 @@ proc cvs_workdir_status {} {
   global cvsglb
   global cvs
   global Filelist
-
+  
   gen_log:log T "ENTER"
-
+  
   # We mostly get the information we need from cvs -n -q status. But for
   # lockers, we need cvs log.  For editors, we need the separate cvs editors
   # command. If the server isn't local, we need the log to get the author, too.
@@ -111,12 +111,12 @@ proc cvs_workdir_status {} {
     set cmd(cvs_editors) [exec::new "$cvs -n -q editors -l"]
     set editors_lines [split [$cmd(cvs_editors)\::output] "\n"]
   }
-
+  
   if {[info exists cmd(cvs_status)]} {
     $cmd(cvs_status)\::destroy
     catch {unset cmd(cvs_status)}
   }
-
+  
   # get cvs status in current directory only, reading lines that include
   # Status: or Sticky Tag:, putting each file's info (name, status, and tag)
   # into an array.
@@ -141,7 +141,7 @@ proc cvs_workdir_status {} {
       set revision [lindex $line 1]
       regsub {New .*} $revision "New" revision
       set date [lindex $line 2]
-
+      
       # The date field is not supplied to remote clients.
       set Filelist($filename:date) $date
       set Filelist($filename:wrev) $revision
@@ -171,7 +171,7 @@ proc cvs_workdir_status {} {
       set Filelist($filename:option) $option
     }
   }
-
+  
   if {[info exists cmd(cvs_editors)]} {
     set filename {}
     set editors {}
@@ -203,7 +203,7 @@ proc cvs_workdir_status {} {
       set file_editors($filename) $editors
     }
   }
-
+  
   if {[info exists cmd(cvs_get_log)]} {
     set filename {}
     set date {}
@@ -277,14 +277,14 @@ proc cvs_remove_file {args} {
   global cvs
   global incvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
   set filelist [join $args]
-
+  
   # Unix-remove the files
   set success 1
   set faillist ""
@@ -300,7 +300,7 @@ proc cvs_remove_file {args} {
     cvsfail "Remove $file failed" .workdir
     return
   }
-
+  
   # cvs-remove them
   set command "$cvs remove"
   foreach f $filelist {
@@ -308,7 +308,7 @@ proc cvs_remove_file {args} {
   }
   set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -317,7 +317,7 @@ proc cvs_remove_dir {args} {
   global cvs
   global incvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
     cvs_notincvs
@@ -326,16 +326,16 @@ proc cvs_remove_dir {args} {
   set filelist [join $args]
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
-    return 
+    return
   } else {
     set mess "This will remove the contents of these directories:\n\n"
     foreach file $filelist {
       append mess "   $file\n"
-    }  
+    }
   }
   
   set v [viewer::new "CVS Remove directory"]
-
+  
   set awd [pwd]
   foreach file $filelist {
     if {[file isdirectory $file]} {
@@ -345,14 +345,14 @@ proc cvs_remove_dir {args} {
       rem_subdirs $v
       cd $awd
       gen_log:log F "CD [pwd]"
-
+      
       set commandline "$cvs remove \"$file\""
       $v\::do "$commandline" 1 status_colortags
       $v\::wait
       $v\::clean_exec
     }
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -364,16 +364,16 @@ proc cvs_edit {args} {
   global cvs
   global incvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
-
+  
   set filelist [join $args]
-
+  
   foreach file $filelist {
     regsub -all {\$} $file {\$} file
     set commandline "$cvs edit \"$file\""
@@ -395,15 +395,15 @@ proc cvs_unedit {args} {
   global cvs
   global incvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
   set filelist [join $args]
-
+  
   foreach file $filelist {
     # Unedit may hang asking for confirmation if file is not up-to-date
     regsub -all {\$} $file {\$} file
@@ -417,7 +417,7 @@ proc cvs_unedit {args} {
       gen_log:log T "LEAVE -- cvs unedit failed"
       return
     }
-
+    
     set commandline "$cvs unedit \"$file\""
     gen_log:log C "$commandline"
     set ret [catch {exec {*}$commandline} view_this]
@@ -434,7 +434,7 @@ proc cvs_unedit {args} {
 proc cvs_history {allflag mcode} {
   global cvs
   global cvscfg
-
+  
   set all ""
   gen_log:log T "ENTER ($allflag $mcode)"
   if {$allflag == "all"} {
@@ -456,25 +456,25 @@ proc cvs_add {binflag args} {
   global cvs
   global cvscfg
   global incvs
-
+  
   gen_log:log T "ENTER ($binflag $args)"
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
     set mess "This will add these files:\n\n"
     foreach file $filelist {
       append mess "   $file\n"
-    }  
+    }
   }
-
+  
   set command "$cvs add $binflag"
-
+  
   if {$filelist == ""} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   } else {
@@ -484,7 +484,7 @@ proc cvs_add {binflag args} {
   }
   set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -493,14 +493,14 @@ proc cvs_add_dir {binflag args} {
   global cvs
   global cvscfg
   global incvs
-
+  
   gen_log:log T "ENTER ($binflag $args)"
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     cvsfail "Please select a directory!" .workdir
     return 1
@@ -508,11 +508,11 @@ proc cvs_add_dir {binflag args} {
     set mess "This will recursively add these directories:\n\n"
     foreach file $filelist {
       append mess "   $file\n"
-    }  
+    }
   }
   
   set v [viewer::new "CVS Add directory"]
-
+  
   set awd [pwd]
   foreach file $filelist {
     if {[file isdirectory $file]} {
@@ -520,13 +520,13 @@ proc cvs_add_dir {binflag args} {
       $v\::do "$commandline"
       $v\::wait
       $v\::clean_exec
-
+      
       cd $file
       gen_log:log F "CD [pwd]"
       add_subdirs $binflag $v
     }
   }
-
+  
   cd $awd
   gen_log:log F "[pwd]"
   if {$cvscfg(auto_status)} {
@@ -539,7 +539,7 @@ proc add_subdirs {binflag v} {
   global cvs
   global cvsglb
   global cvscfg
-
+  
   gen_log:log T "ENTER ($binflag $v)"
   set plainfiles {}
   foreach child  [glob -nocomplain $cvscfg(aster) .??*] {
@@ -552,7 +552,7 @@ proc add_subdirs {binflag v} {
       $v\::do "$commandline"
       $v\::wait
       $v\::clean_exec
-
+      
       set awd [pwd]
       cd $child
       gen_log:log F "CD [pwd]"
@@ -574,7 +574,7 @@ proc add_subdirs {binflag v} {
       }
       close $fileId
     }
-
+    
     # LJZ: ignore files if requested in recursive add
     if { $ignore_file_filter != "" } {
       foreach item $ignore_file_filter {
@@ -588,7 +588,7 @@ proc add_subdirs {binflag v} {
         }
       }
     }
-
+    
     # LJZ: any files left after filtering?
     if {[llength $plainfiles] > 0} {
       set commandline "$cvs add $binflag $plainfiles"
@@ -596,7 +596,7 @@ proc add_subdirs {binflag v} {
       $v\::wait
     }
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -604,7 +604,7 @@ proc rem_subdirs { v } {
   global cvs
   global incvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($v)"
   set plainfiles {}
   foreach child  [glob -nocomplain $cvscfg(aster) .??*] {
@@ -625,12 +625,12 @@ proc rem_subdirs { v } {
   }
   if {[llength $plainfiles] > 0} {
     foreach file $plainfiles {
-      gen_log:log F "DELETE $file"    
+      gen_log:log F "DELETE $file"
       file delete -force -- $file
       if {[file exists $file]} {cvsfail "Remove $file failed" .workdir}
     }
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -639,7 +639,7 @@ proc rem_subdirs { v } {
 proc cvs_fileview_update {revision filename} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($revision $filename)"
   if {$revision == {}} {
     set commandline "$cvs -d $cvscfg(cvsroot) update -p \"$filename\""
@@ -659,7 +659,7 @@ proc cvs_fileview_update {revision filename} {
 proc cvs_fileview_checkout {revision filename} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($revision)"
   if {$revision == {}} {
     set commandline "$cvs -d $cvscfg(cvsroot) checkout -p \"$filename\""
@@ -678,20 +678,20 @@ proc cvs_fileview_checkout {revision filename} {
 proc cvs_log {detail args} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($detail $args)"
-
+  
   if {$args == "."} {
     set args ""
   }
   set filelist [join $args]
-
+  
   set command "$cvs log -N"
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
   }
-
+  
   # If verbose, output it as is
   if {$detail eq "verbose"} {
     foreach f $filelist {
@@ -706,7 +706,7 @@ proc cvs_log {detail args} {
     $v\::do "$command" 0 rcslog_colortags
     return
   }
-
+  
   # Otherwise, we still do a verbose log but we only print some things
   if {$detail eq "summary"} {
     foreach f $filelist {
@@ -740,7 +740,7 @@ proc cvs_log {detail args} {
     while {[llength $log_lines] > 0} {
       set logline [join [lrange $log_lines 0 0]]
       set log_lines [lrange $log_lines 1 end]
-
+      
       # Beginning of a file's record
       if {[string match "Working file:*" $logline]} {
         $v\::log "$logline\n" patched
@@ -748,7 +748,7 @@ proc cvs_log {detail args} {
           set log_lines [lrange $log_lines 1 end]
           set logline [join [lrange $log_lines 0 0]]
           #gen_log:log D " ! $logline !"
-
+          
           # Reason to skip
           if {[string match "*selected revisions: 0" $logline]} {
             $v\::log "No revisions on branch\n"
@@ -765,7 +765,7 @@ proc cvs_log {detail args} {
               set logline [join [lrange $log_lines 0 0]]
               #gen_log:log D "        $logline"
               if { [string match "========================*" $logline] ||
-                  [string match "--------------*" $logline]} {
+                [string match "--------------*" $logline]} {
                 $v\::log "==============================================================================\n" patched
                 set br 1
                 break
@@ -780,16 +780,16 @@ proc cvs_log {detail args} {
       }
     }
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 # called from the branch browser
 proc cvs_log_rev {rev filename} {
   global cvs
-
+  
   gen_log:log T "ENTER ($rev $filename)"
-
+  
   set title "CVS log"
   set commandline "$cvs log -N"
   if {$rev ne ""} {
@@ -798,10 +798,10 @@ proc cvs_log_rev {rev filename} {
   }
   append commandline " \"$filename\""
   append title " $filename"
-
+  
   set logcmd [viewer::new "$title"]
   $logcmd\::do "$commandline" 0 rcslog_colortags
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -809,11 +809,11 @@ proc cvs_log_rev {rev filename} {
 proc cvs_annotate {revision args} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($revision $args)"
-
+  
   set filelist [join $args]
-
+  
   if {$revision == "trunk"} {
     set revision ""
   }
@@ -822,7 +822,7 @@ proc cvs_annotate {revision args} {
   } else {
     set revflag ""
   }
-
+  
   if {$filelist == ""} {
     cvsfail "Annotate:\nPlease select one or more files !" .workdir
     gen_log:log T "LEAVE (Unselected files)"
@@ -838,16 +838,16 @@ proc cvs_annotate {revision args} {
 proc cvs_annotate_r {revision filename} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($revision $filename)"
-
+  
   if {$revision != ""} {
     # We were given a revision
     set revflag "-r$revision"
   } else {
     set revflag ""
   }
-
+  
   annotate::new $revflag "$filename" "cvs_r"
   gen_log:log T "LEAVE"
 }
@@ -860,15 +860,15 @@ proc cvs_commit {revision comment args} {
   global cvs
   global cvscfg
   global incvs
-
+  
   gen_log:log T "ENTER ($revision $comment $args)"
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
-
+  
   set filelist [join $args]
-
+  
   # changed the message to be a little more explicit.  -sj
   set commit_output ""
   if {$filelist == ""} {
@@ -882,16 +882,16 @@ proc cvs_commit {revision comment args} {
   }
   append mess "\n\nAre you sure?"
   set commit_output ""
-
+  
   if {[cvsconfirm $mess .workdir] != "ok"} {
     return 1
   }
-
+  
   set revflag ""
   if {$revision != ""} {
     set revflag "-r $revision"
   }
-
+  
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     # This way a template in CVSROOT can be used.
@@ -922,7 +922,7 @@ proc cvs_commit {revision comment args} {
     $v\::do "$commandline" 0
     $v\::wait
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -935,24 +935,24 @@ proc cvs_tag {tagname force b_or_t updflag args} {
   global cvscfg
   global cvsglb
   global incvs
-
+  
   gen_log:log T "ENTER ($tagname $force $b_or_t $updflag $args)"
-
+  
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
-
+  
   if {$tagname == ""} {
     cvsfail "Please enter a tag name!" .workdir
     return 1
   }
-
+  
   set filelist [join $args]
-
+  
   set command "$cvs tag"
   if {$b_or_t == "branch"} {
-   append command " -b"
+    append command " -b"
   }
   if {$force == "yes"} {
     append command " -F"
@@ -966,12 +966,12 @@ proc cvs_tag {tagname force b_or_t updflag args} {
     cvsfail "Moving a branch tag isn't allowed" .workdir
     return
   }
-
+  
   # If it refuses to tag, it can exit with 0 but still put out some stderr
   set v [viewer::new "CVS Tag"]
   $v\::do "$command" 1
   $v\::wait
-
+  
   if {$updflag == "yes"} {
     # update so we're on the branch
     set command "$cvs update -r $tagname"
@@ -981,7 +981,7 @@ proc cvs_tag {tagname force b_or_t updflag args} {
     $v\::do "$command" 0 status_colortags
     $v\::wait
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -993,16 +993,16 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   global cvs
   global cvscfg
   global incvs
-
+  
   gen_log:log T "ENTER (tagname=$tagname k=$k no_tag=$no_tag recurse=$recurse prune=$prune d=$d dir=$dir args=$args)"
-
+  
   # Because this is called from an eval, the args aren't a list
   set filelist $args
   #
   # cvs update [-APCdflRp] [-k kopt] [-r rev] [-D date] [-j rev]
   #
   set commandline "$cvs update"
-
+  
   if { $k == "Normal" } {
     set kmsg "\nUsing normal (text) mode."
   } elseif { $k == "Binary" } {
@@ -1014,7 +1014,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
     append mess " latest main trunk (head) revision (-A)."
     append commandline " -A"
   }
-
+  
   if {$recurse == "local"} {
     append commandline " -l"
   } else {
@@ -1038,7 +1038,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
       append mess " it will not be checked out.\n"
     }
   }
-
+  
   if { $tagname ne "BASE" && $tagname ne "HEAD" } {
     append mess "\nYour local files will be updated to the"
     append mess " tagged revision (-r $tagname)."
@@ -1051,7 +1051,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
       append commandline " -f -r $tagname"
     }
   }
-
+  
   if {$filelist eq ""} {
     set filemsg    "\nYou are about to download from"
     append filemsg " the repository to your local"
@@ -1077,7 +1077,7 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   append filemsg " be merged into the new local copy.\n"
   set mess "$filemsg $mess $kmsg"
   append mess "\n\nAre you sure?"
-
+  
   if {[cvsconfirm $mess .workdir] eq "ok"} {
     set co_cmd [viewer::new "CVS Update"]
     $co_cmd\::do "$commandline" 0 status_colortags
@@ -1089,23 +1089,23 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
 # Do what was setup in the "Update with Options" dialog
 proc cvs_opt_update {} {
   global cvsglb
-
+  
   gen_log:log T "ENTER"
-
+  
   set command "cvs_update"
   if { $cvsglb(updatename) == "" } {
     set tagname "BASE"
   } else {
     set tagname $cvsglb(updatename)
   }
-
+  
   if { $cvsglb(get_all_dirs) == "No" } { set cvsglb(getdirname) "" }
   if { $cvsglb(getdirname) == "" } {
     set dirname " "
   } else {
     set dirname $cvsglb(getdirname)
   }
-
+  
   if { $cvsglb(tagmode_selection) == "Keep" } {
     set tagname "BASE"
   } elseif { $cvsglb(tagmode_selection) == "Trunk" } {
@@ -1114,14 +1114,14 @@ proc cvs_opt_update {} {
   append command " $tagname"
   append command " {$cvsglb(norm_bin)} {$cvsglb(action_notag)} {$cvsglb(update_recurse)} {$cvsglb(update_prune)} {$cvsglb(get_all_dirs)}"
   append command " \"$dirname\""
-
+  
   set filenames [workdir_list_files]
   foreach f $filenames {
     append command " \"$f\""
   }
   gen_log:log C "$command"
   eval "$command"
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1130,10 +1130,10 @@ proc cvs_merge {parent from since frombranch args} {
   global cvs
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER (\"$from\" \"$since\" \"$frombranch\" \"$args\")"
   gen_log:log D "mergetrunkname $cvscfg(mergetrunkname)"
-
+  
   # Bug # 3434817
   # there's an annoying bug in merging: the ending revision is ignored.
   # Example: there are revisions 1.1, 1.2, 1.3, 1.4 and 1.5 (HEAD). You are on
@@ -1145,19 +1145,19 @@ proc cvs_merge {parent from since frombranch args} {
   # the following command is used:
   #  cvs update -d -j1.2 -jHEAD Filename.ext
   # Obviously the second "-j" parameter is wrong, there should have been "-j1.4".
-
+  
   #set realfrom "$frombranch"
   #if {$frombranch eq $cvscfg(mergetrunkname)} {
-    #set realfrom "HEAD"
+  #set realfrom "HEAD"
   #}
-
+  
   set filelist [join $args]
-
+  
   set mergetags [assemble_mergetags $frombranch]
   set curr_tag [lindex $mergetags 0]
   set fromtag [lindex $mergetags 1]
   set totag [lindex $mergetags 2]
-
+  
   if {$since == {}} {
     set mess "Merge revision $from\n"
   } else {
@@ -1168,7 +1168,7 @@ proc cvs_merge {parent from since frombranch args} {
   if {[cvsalwaysconfirm $mess $parent] != "ok"} {
     return
   }
-
+  
   set commandline "$cvs update -d"
   # Do the update here, and defer the tagging until later
   if {$since == {}} {
@@ -1182,7 +1182,7 @@ proc cvs_merge {parent from since frombranch args} {
   set v [viewer::new "CVS Join"]
   $v\::do "$commandline" 1 status_colortags
   $v\::wait
-
+  
   if [winfo exists .workdir] {
     if {$cvscfg(auto_status)} {
       setup_dir
@@ -1190,9 +1190,9 @@ proc cvs_merge {parent from since frombranch args} {
   } else {
     workdir_setup
   }
-
+  
   dialog_merge_notice cvs $from $frombranch $fromtag $totag $filelist
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1200,15 +1200,15 @@ proc cvs_merge {parent from since frombranch args} {
 proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER (\"$from\" \"$totag\" \"$fromtag\" $args)"
-
+  
   set filelist [join $args]
   set realfrom "$frombranch"
   if {$frombranch eq $cvscfg(mergetrunkname)} {
     set realfrom "HEAD"
   }
-
+  
   # Do an update first, to make sure everything is OK at this point
   set commandline "$cvs -n -q update"
   foreach f $filelist {
@@ -1221,7 +1221,7 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
   gen_log:log $logmode $view_this
   if {$ret} {
     set mess "CVS Check shows errors which would prevent a successful\
-    commit. Please resolve them before continuing."
+        commit. Please resolve them before continuing."
     if {[cvsalwaysconfirm $mess .workdir] != "ok"} {
       return
     }
@@ -1255,9 +1255,9 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
     $v\::log "$commandline\n"
     $v\::do "$commandline" 1
     $v\::wait
-  } 
+  }
   catch {destroy .reminder}
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -1268,20 +1268,20 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
 proc cvs_status {detail args} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($detail $args)"
-
+  
   if {$args == "."} {
     set args ""
   }
-
+  
   set filelist [join $args]
-
+  
   set flags ""
   if {! $cvscfg(recurse)} {
     set flags "-l"
   }
-
+  
   # support verious levels of verboseness.
   set command  "$cvs -Q status $flags"
   foreach f $filelist {
@@ -1290,7 +1290,7 @@ proc cvs_status {detail args} {
   set statcmd [exec::new "$command"]
   set raw_status [$statcmd\::output]
   $statcmd\::destroy
-
+  
   if {$detail == "verbose"} {
     view_output::new "CVS Status ($detail)" $raw_status
   } else {
@@ -1300,7 +1300,7 @@ proc cvs_status {detail args} {
       if {[string match "*Status:*" $statline]} {
         gen_log:log D "$statline"
         if {$detail == "terse" && \
-            [string match "*Up-to-date*" $statline]} {
+              [string match "*Up-to-date*" $statline]} {
           continue
         } else {
           regsub {\s+no file } $statline { } statline
@@ -1315,7 +1315,7 @@ proc cvs_status {detail args} {
     }
     view_output::new "CVS Status ($detail)" $cooked_status
   }
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -1324,9 +1324,9 @@ proc cvs_status {detail args} {
 proc cvs_check {} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ()"
-
+  
   busy_start .workdir.main
   set title "CVS Directory Check"
   set flags ""
@@ -1339,7 +1339,7 @@ proc cvs_check {} {
   set commandline "$cvs -n -q update $flags"
   set check_cmd [viewer::new $title]
   $check_cmd\::do $commandline 1 status_colortags
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -1349,9 +1349,9 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
   global cvs
   global cvscfg
   global incvs insvn inrcs ingit
-
+  
   gen_log:log T "ENTER ($cvsroot $prune $kflag $revtag $date $target $mtag1 $mtag2 $module)"
-
+  
   set dir [pwd]
   if {[file pathtype $target] eq "absolute"} {
     set tgt $target
@@ -1362,7 +1362,7 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
      $cvsroot/$module\n\
      to directory\n\
      $tgt\n\
-     Are you sure?"
+      Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     if {$revtag != {}} {
       set revtag "-r \"$revtag\""
@@ -1383,13 +1383,13 @@ proc cvs_checkout { cvsroot prune kflag revtag date target mtag1 mtag2 module } 
     $v\::do "$cvs -d \"$cvsroot\" checkout $prune\
              $revtag $date $target\
              $mtag1 $mtag2\
-             $kflag \"$module\""
+        $kflag \"$module\""
   }
   gen_log:log T "LEAVE"
   return
 }
 
-# This looks at the revision log of a file.  It's called from filebrowse.tcl, 
+# This looks at the revision log of a file.  It's called from filebrowse.tcl,
 # so we can't do operations such as merges.
 proc cvs_filelog {filename parent {graphic {0}} } {
   global cvs
@@ -1409,9 +1409,9 @@ proc cvs_filelog {filename parent {graphic {0}} } {
     gen_log:log T "LEAVE -- cvs checkout failed"
     return
   }
-
+  
   if {$graphic} {
-  # Log canvas viewer
+    # Log canvas viewer
     ::cvs_branchlog::new "CVS,rep" $filename
   } else {
     set commandline "$cvs -d $cvsglb(root) log \"$filename\""
@@ -1427,11 +1427,11 @@ proc cvs_filelog {filename parent {graphic {0}} } {
 # the target directory.
 proc cvs_export { cvsroot kflag revtag date target module } {
   global cvs
-  global cvscfg 
+  global cvscfg
   global incvs insvn inrcs ingit
-
+  
   gen_log:log T "ENTER ($cvsroot $kflag $revtag $date $target $module)"
-
+  
   set dir [pwd]
   if {[file pathtype $target] eq "absolute"} {
     set tgt $target
@@ -1442,7 +1442,7 @@ proc cvs_export { cvsroot kflag revtag date target module } {
      $cvsroot/$module\n\
      to directory\n\
      $tgt\n\
-     Are you sure?"
+      Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     if {$revtag != {}} {
       set revtag "-r \"$revtag\""
@@ -1453,11 +1453,11 @@ proc cvs_export { cvsroot kflag revtag date target module } {
     if {$target != {}} {
       set target "-d \"$target\""
     }
-
+    
     set v [::viewer::new "CVS Export"]
     set cwd [pwd]
     $v\::do "$cvs -d \"$cvsroot\" export\
-             $revtag $date $target $kflag \"$module\""
+        $revtag $date $target $kflag \"$module\""
   }
   gen_log:log T "LEAVE"
   return
@@ -1469,9 +1469,9 @@ proc cvs_export { cvsroot kflag revtag date target module } {
 proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outfile } {
   global cvs
   global cvscfg
- 
+  
   gen_log:log T "ENTER ($cvsroot $module $difffmt \"$revtagA\" \"$dateA\" \"$revtagB\" \"$dateB\" $outmode $outfile)"
-
+  
   lassign {{} {}} rev1 rev2
   if {$revtagA != {}} {
     set rev1 "-r \"$revtagA\""
@@ -1486,9 +1486,9 @@ proc cvs_patch { cvsroot module difffmt revtagA dateA revtagB dateB outmode outf
   if {$rev1 == {} && $rev2 == {}} {
     set rev1 "-t"
   }
-
+  
   set commandline "$cvs -d \"$cvsroot\" patch $difffmt $rev1 $rev2 \"$module\""
-
+  
   if {$outmode == 0} {
     set v [viewer::new "CVS Patch"]
     $v\::do "$commandline" 0 patch_colortags
@@ -1513,10 +1513,10 @@ proc cvs_version {} {
   global cvs
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER"
   set cvsglb(cvs_version) ""
-
+  
   set commandline "$cvs -v"
   gen_log:log C "$commandline"
   set ret [catch {exec {*}$commandline} output]
@@ -1545,15 +1545,15 @@ proc cvs_version {} {
 proc cvs_reconcile_conflict {args} {
   global cvscfg
   global cvs
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
   if {$filelist == ""} {
     cvsfail "Please select some files to merge first!"
     return
   }
-
+  
   foreach file $filelist {
     # Make sure its really a conflict - tkdiff will bomb otherwise
     regsub -all {\$} $file {\$} filename
@@ -1562,7 +1562,7 @@ proc cvs_reconcile_conflict {args} {
     set ret [catch {exec {*}$commandline} status]
     set logmode [expr {$ret ? {E} : {D}}]
     gen_log:log $logmode "$status"
-
+    
     gen_log:log F "OPEN $file"
     set f [open $file]
     set match 0
@@ -1575,7 +1575,7 @@ proc cvs_reconcile_conflict {args} {
     }
     gen_log:log F "CLOSE $file"
     close $f
-   
+    
     if { [string match "C *" $status] } {
       # If its marked "Needs Merge", we have to update before
       # we can resolve the conflict
@@ -1584,7 +1584,7 @@ proc cvs_reconcile_conflict {args} {
       set ret [catch {exec {*}$commandline} status]
       set logmode [expr {$ret ? {E} : {D}}]
       gen_log:log $logmode "$status"
-    } elseif { $match == 1 } { 
+    } elseif { $match == 1 } {
       # There are conflict markers already, dont update
       ;
     } else {
@@ -1604,13 +1604,13 @@ proc cvs_gettaglist {filename parent} {
   global cvs
   global cvscfg
   global cwd
-
+  
   set keepers ""
   set pid [pid]
   gen_log:log T "ENTER ($filename)"
   set filetail [file tail $filename]
   
-  set commandline "$cvs -d $cvscfg(cvsroot) checkout \"$filename\"" 
+  set commandline "$cvs -d $cvscfg(cvsroot) checkout \"$filename\""
   # run a command, possibly creating the sandbox to play in
   set ret [cvs_sandbox_runcmd $commandline cmd_output]
   if {$cwd == $ret} {
@@ -1619,7 +1619,7 @@ proc cvs_gettaglist {filename parent} {
     gen_log:log T "LEAVE ERROR ($cmd_output)"
     return $keepers
   }
-
+  
   set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
   gen_log:log C "$commandline"
   set ret [catch {exec {*}$commandline} view_this]
@@ -1652,7 +1652,7 @@ proc cvs_gettaglist {filename parent} {
   if {$keepers == ""} {
     set keepers "No Tags"
   }
-
+  
   cd $cwd
   gen_log:log T "LEAVE"
   return "$keepers"
@@ -1661,10 +1661,10 @@ proc cvs_gettaglist {filename parent} {
 proc cvs_release {delflag args} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
-
+  
   foreach directory $filelist {
     if {! [file isdirectory $directory]} {
       cvsfail "$directory is not a directory" .workdir
@@ -1674,7 +1674,7 @@ proc cvs_release {delflag args} {
     # know its root
     read_cvs_dir "$directory/CVS"
     gen_log:log D "$directory: CVSROOT=$cvscfg(cvsroot)"
-  
+    
     set commandline "$cvs -d $cvscfg(cvsroot) -n -q update \"$directory\""
     gen_log:log C "$commandline"
     set ret [catch {exec {*}$commandline} view_this]
@@ -1701,15 +1701,15 @@ proc cvs_release {delflag args} {
 }
 
 proc cvs_rtag { cvsroot mcode b_or_t force oldtag newtag } {
-#
-# This tags a module in the repository.
-# Called by the tag commands in the Repository Browser
-#
+  #
+  # This tags a module in the repository.
+  # Called by the tag commands in the Repository Browser
+  #
   global cvs
   global cvscfg
   
   gen_log:log T "ENTER ($cvsroot $mcode $b_or_t $force $oldtag $newtag)"
-
+  
   set command "$cvs -d \"$cvsroot\" rtag"
   if {$force == "remove"} {
     if {$oldtag == ""} {
@@ -1733,10 +1733,10 @@ proc cvs_rtag { cvsroot mcode b_or_t force oldtag newtag } {
     }
     append command " \"$newtag\" \"$mcode\""
   }
-
+  
   set v [::viewer::new "CVS Rtag"]
   $v\::do "$command"
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1745,59 +1745,59 @@ proc cvs_commit_dialog {} {
   global incvs
   global cvsglb
   global cvscfg
-
+  
   gen_log:log T "ENTER"
-
+  
   if {! $incvs} {
     cvs_notincvs
     gen_log:log T "LEAVE"
     return
   }
-
+  
   # If marked files, commit these.  If no marked files, then
   # commit any files selected via listbox selection mechanism.
   # The cvsglb(commit_list) list remembers the list of files
   # to be committed.
   set cvsglb(commit_list) [workdir_list_files]
-
+  
   # If we want to use an external editor, just do it
   if {$cvscfg(use_cvseditor)} {
     cvs_commit "" "" $cvsglb(commit_list)
     return
   }
-
+  
   if {[winfo exists .commit]} {
     destroy .commit
   }
-
+  
   toplevel .commit
   #grab set .commit
-
+  
   frame .commit.top -border 8
   frame .commit.vers
   frame .commit.down -relief groove -border 2
-
+  
   pack .commit.top -side top -fill x
   pack .commit.down -side bottom -fill x
   pack .commit.vers -side top -fill x
-
+  
   label .commit.lvers -text "Specify Revision (-r) (usually ignore)" \
-     -anchor w
+      -anchor w
   entry .commit.tvers -relief sunken -textvariable version
-
+  
   pack .commit.lvers .commit.tvers -in .commit.vers \
-    -side left -fill x -pady 3
-
+      -side left -fill x -pady 3
+  
   frame .commit.comment
   pack .commit.comment -side top -fill both -expand 1
   label .commit.comment.lcomment -text "Your log message" -anchor w
   button .commit.comment.history -text "Log History" \
-    -command history_browser
+      -command history_browser
   text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
-    -bg $cvsglb(textbg) -exportselection 1 \
-    -wrap word -border 2 -setgrid yes
-
-
+      -bg $cvsglb(textbg) -exportselection 1 \
+      -wrap word -border 2 -setgrid yes
+  
+  
   # Explain what it means to "commit" files
   message .commit.message -justify left -aspect 500 -relief groove -bd 2 \
     -text "This will commit changes from your \
@@ -1815,53 +1815,53 @@ proc cvs_commit_dialog {} {
 
 \
           For all other (sub)directories, your changes will be \
-           added to the end of the main trunk."
-
+      added to the end of the main trunk."
+  
   pack .commit.message -in .commit.top -padx 2 -pady 5
-
+  
   button .commit.ok -text "OK" \
-    -command {
-      #grab release .commit
-      wm withdraw .commit
-      set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
-      cvs_commit $version $cvsglb(commit_comment) $cvsglb(commit_list)
-      commit_history $cvsglb(commit_comment)
-    }
+      -command {
+    #grab release .commit
+    wm withdraw .commit
+    set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
+    cvs_commit $version $cvsglb(commit_comment) $cvsglb(commit_list)
+    commit_history $cvsglb(commit_comment)
+  }
   button .commit.apply -text "Apply" \
-    -command {
-      set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
-      cvs_commit $version $cvsglb(commit_comment) $cvsglb(commit_list)
-      commit_history $cvsglb(commit_comment)
-    }
+      -command {
+    set cvsglb(commit_comment) [string trimright [.commit.comment.tcomment get 1.0 end]]
+    cvs_commit $version $cvsglb(commit_comment) $cvsglb(commit_list)
+    commit_history $cvsglb(commit_comment)
+  }
   button .commit.clear -text "ClearAll" \
-    -command {
-      set version ""
-      .commit.comment.tcomment delete 1.0 end
-    }
+      -command {
+    set version ""
+    .commit.comment.tcomment delete 1.0 end
+  }
   button .commit.quit \
-    -command {
-      #grab release .commit
-      wm withdraw .commit
-    }
- 
+      -command {
+    #grab release .commit
+    wm withdraw .commit
+  }
+  
   .commit.ok configure -text "OK"
   .commit.quit configure -text "Close"
-
+  
   grid columnconf .commit.comment 1 -weight 1
   grid rowconf .commit.comment 1 -weight 1
   grid .commit.comment.lcomment -column 0 -row 0
   grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
   grid .commit.comment.history  -column 0 -row 1
-
+  
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
-    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-
+      -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+  
   # Fill in the most recent commit message
   .commit.comment.tcomment insert end [string trimright $cvsglb(commit_comment)]
-
+  
   wm title .commit "Commit Changes"
   wm minsize .commit 1 1
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1871,14 +1871,14 @@ proc cvs_ascii { args } {
   global cvscfg
   global incvs
   global cvsglb
-
+  
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
   set filelist [join $args]
-
+  
   gen_log:log D "Changing sticky flag"
   set command "$cvs admin -kkv"
   foreach f $filelist {
@@ -1886,7 +1886,7 @@ proc cvs_ascii { args } {
   }
   set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1896,14 +1896,14 @@ proc cvs_binary {args} {
   global cvscfg
   global incvs
   global cvsglb
-
+  
   gen_log:log T "ENTER ($args)"
   if {! $incvs} {
     cvs_notincvs
     return 1
   }
   set filelist [join $args]
-
+  
   gen_log:log D "Changing sticky flag"
   set command "$cvs admin -kb"
   foreach f $filelist {
@@ -1911,7 +1911,7 @@ proc cvs_binary {args} {
   }
   set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1922,10 +1922,10 @@ proc cvs_revert {args} {
   global cvscfg
   global cvsglb
   global cvs
-
+  
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     set mess "This will revert (discard) your changes to ** ALL ** files in this directory"
   } else {
@@ -1935,11 +1935,11 @@ proc cvs_revert {args} {
     set mess "This will revert (discard) your changes to:$revert_output"
   }
   append mess "\n\nAre you sure?"
-
+  
   if {[cvsconfirm $mess .workdir] != "ok"} {
     return 1
   }
-
+  
   gen_log:log D "Reverting $filelist"
   # update -C option appeared in 1.11
   set versionsplit [split $cvsglb(cvs_version) {.}]
@@ -1955,10 +1955,10 @@ proc cvs_revert {args} {
     append command " \"$f\""
   }
   set cmd(cvscmd) [exec::new "$command"]
-
+  
   
   auto_setup_dir $cmd(cvscmd)
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1969,7 +1969,7 @@ proc read_cvs_dir {dirname} {
   global cvsglb
   global cvs
   global current_tagname
-
+  
   gen_log:log T "ENTER ($dirname)"
   if {$cvsglb(cvs_version) == ""} {
     cvs_version
@@ -2011,7 +2011,7 @@ proc read_cvs_dir {dirname} {
   }
   set cvsglb(vcs) cvs
   set cvsglb(root) $cvscfg(cvsroot)
-
+  
   gen_log:log T "LEAVE (1)"
   return 1
 }
@@ -2022,13 +2022,13 @@ proc parse_cvsmodules {cvsroot} {
   global modval
   global modtitle
   global cvscfg
-
+  
   gen_log:log T "ENTER ($cvsroot)"
-
+  
   # Clear the arrays
   catch {unset modval}
   catch {unset modtitle}
-
+  
   # We have to use cvs to access the modules file
   set cvscfg(cvsroot) $cvsroot
   set command "$cvs -d \"$cvsroot\" checkout -p CVSROOT/modules"
@@ -2038,11 +2038,11 @@ proc parse_cvsmodules {cvsroot} {
     $cmd(cvs_co)\::destroy
     catch {unset cmd(cvs_co)}
   }
-
+  
   # Unescape newlines, compress repeated whitespace, and remove blank lines
   regsub -all {(\\\n|[ \t])+} $cat_modules_file " " cat_modules_file
   regsub -all {\n\s*\n+} $cat_modules_file "\n" cat_modules_file
-
+  
   foreach line [split $cat_modules_file "\n"] {
     if {[string index $line 0] == {#}} {
       #gen_log:log D "Comment: $line"
@@ -2063,13 +2063,13 @@ proc parse_cvsmodules {cvsroot} {
       # Remove flags except for -a.  Luckily alias modules can't have
       # any other options.
       regsub -- {^((-l\s*)|(-[ioestud]\s+((\\\s)|\S)+\s*))+} \
-        $modstring {} modstring
+          $modstring {} modstring
       if {$modname != ""} {
         set modval($modname) $modstring
       }
     }
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -2080,13 +2080,13 @@ proc cvs_modbrowse_tree { mnames node } {
   global modtitle
   global dcontents
   #global Tree
-
+  
   gen_log:log T "ENTER ($mnames $node)"
-
+  
   if {! [info exists cvscfg(aliasfolder)]} {
     set cvscfg(aliasfolder) false
   }
-
+  
   set tv ".modbrowse.treeframe.pw"
   foreach mname [lsort $mnames] {
     gen_log:log D "{$mname} {$modval($mname)}"
@@ -2148,7 +2148,7 @@ proc cvs_modbrowse_tree { mnames node } {
         $tv insert {} end -id "$pathroot" -image dir -values [list "$pathtop" "$title"]
       }
       set col0_width [expr {($pathdepth + 1) * ($cvscfg(mod_iconwidth) * 2)}]
-# FIXME: we want to trigger this when a folder is opened
+      # FIXME: we want to trigger this when a folder is opened
       #$tv column #0 -width $col0_width
       set pathroot ""
       for {set i 1} {$i < $pathdepth} {incr i} {
@@ -2212,7 +2212,7 @@ proc cvs_lock {do files} {
   global cvs
   global cvscfg
   global cvscfg
-
+  
   if {$files == {}} {
     cvsfail "Please select one or more files!" .workdir
     return
@@ -2240,13 +2240,13 @@ proc cvs_directory_merge {} {
     return 1
   }
   set files [glob -nocomplain -types f -- .??* *]
-
+  
   regsub -all {\$} $files {\$} files
   set commandline "$cvs -d $cvscfg(cvsroot) log $files"
   gen_log:log C "$commandline"
   catch {exec {*}$commandline} raw_log
   set log_lines [split $raw_log "\n"]
-
+  
   foreach logline $log_lines {
     if {[string match "Working file:*" $logline]} {
       set filename [lrange [split $logline] 2 end]
@@ -2279,7 +2279,7 @@ proc cvs_directory_merge {} {
   }
   gen_log:log F "Bushiest file \"$bushiestfile\" has $nbrmax branches"
   gen_log:log F "Most Revised file \"$mostrevisedfile\" has $nrevmax revisions"
-
+  
   # Sometimes we don't find a file with any branches at all, so bushiest
   # is empty.  Fall back to mostrevised.  All files have at least one rev.
   if {[string length $bushiestfile] > 0} {
@@ -2287,9 +2287,9 @@ proc cvs_directory_merge {} {
   } else {
     set filename $mostrevisedfile
   }
-
+  
   ::cvs_branchlog::new "CVS,dir" "$filename"
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -2298,15 +2298,15 @@ proc cvs_directory_merge {} {
 proc cvs_branches {args} {
   global cvs
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
   if {$filelist == ""} {
     cvsfail "Please select one or more args!" .workdir
     return
   }
-
+  
   foreach file $filelist {
     ::cvs_branchlog::new "CVS,loc" "$file"
   }
@@ -2315,12 +2315,12 @@ proc cvs_branches {args} {
 
 namespace eval ::cvs_branchlog {
   variable instance 0
-
+  
   proc new {how filename} {
     variable instance
     set my_idx $instance
     incr instance
-
+    
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
@@ -2343,12 +2343,12 @@ namespace eval ::cvs_branchlog {
       variable sys
       variable loc
       variable cwd
-
+      
       gen_log:log T "ENTER [namespace current]"
       set sys_loc [split $how {,}]
       set sys [lindex $sys_loc 0]
       set loc [lindex $sys_loc 1]
-
+      
       switch -- $sys {
         # loc is "loc" (local, i.e. workdir), "rep" (repository), or "dir" (mergecanvas)
         CVS {
@@ -2366,19 +2366,19 @@ namespace eval ::cvs_branchlog {
       # ln is the namespace, lc is the canvas
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-
+      
       proc abortLog { } {
         global cvscfg
         variable cmd_log
         variable lc
-
+        
         catch {$cmd_log\::abort}
         busy_done $lc
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
       }
-
+      
       proc reloadLog { } {
         global cvs
         global logcfg
@@ -2401,7 +2401,7 @@ namespace eval ::cvs_branchlog {
         variable logstate
         variable sys
         variable loc
-
+        
         gen_log:log T "ENTER"
         catch { $lc.canvas delete all }
         catch { unset revwho }
@@ -2416,7 +2416,7 @@ namespace eval ::cvs_branchlog {
         catch { unset revbranches }
         catch { unset branchrevs }
         set cwd [pwd]
-
+        
         switch -- $sys {
           # loc is "loc" (local, i.e. workdir), "rep" (repository), or "dir" (mergecanvas)
           CVS {
@@ -2441,28 +2441,28 @@ namespace eval ::cvs_branchlog {
             set command "rlog \"$filename\""
           }
         }
-
+        
         pack forget $lc.close
         pack $lc.stop -in $lc.down.closefm -side right
         $lc.stop configure -state normal
         busy_start $lc
-
+        
         set logstate {R}
-
+        
         set cmd_log [::exec::new $command {} 0 [namespace current]::parse_cvslog]
         # wait for it to finish so our arrays are all populated
         $cmd_log\::wait
         $cmd_log\::destroy
-
+        
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
-
+        
         [namespace current]::cvs_sort_it_all_out
         gen_log:log T "LEAVE"
         return
       }
-
+      
       proc parse_cvslog { exec logline } {
         #
         # Splits the rcs file up and parses it using a simple state machine.
@@ -2490,7 +2490,7 @@ namespace eval ::cvs_branchlog {
         variable rnum
         variable rootbranch
         variable revbranch
-
+        
         #gen_log:log T "ENTER ($exec $logline)"
         #gen_log:log D "$logline"
         if {$logline != {}} {
@@ -2508,7 +2508,7 @@ namespace eval ::cvs_branchlog {
                 }
                 set fname [file join $module_dir $fname]
                 if {$inrcs && [file isdir RCS]} {
-                   set fname [file join RCS $fname]
+                  set fname [file join RCS $fname]
                 }
                 $ln\::ConfigureButtons $fname
               } elseif {[string match {Working file: *} $logline]} {
@@ -2517,7 +2517,7 @@ namespace eval ::cvs_branchlog {
                 # different from what we were given if we were invoked
                 # on a directory.
                 #if {$localfile != "no file"} {
-                  set localfile [string range $logline 14 end]
+                set localfile [string range $logline 14 end]
                 #}
               } elseif {$logline == "symbolic names:"} {
                 # FIXME: old RCS can have a tag on this line
@@ -2530,7 +2530,7 @@ namespace eval ::cvs_branchlog {
                 set parts [split $logline {:}]
                 set tagstring [string trim [lindex $parts 0]]
                 set rnum [string trim [lindex $parts 1]]
-  
+                
                 set parts [split $rnum {.}]
                 if {[expr {[llength $parts] & 1}] == 1} {
                   set parts [linsert $parts end-1 {0}]
@@ -2567,9 +2567,9 @@ namespace eval ::cvs_branchlog {
                   # Branches for this revision may have already been created
                   # during tag parsing
                   foreach "revwho($rnum) revdate($rnum) revtime($rnum)
-                    revlines($rnum) revstate($rnum) revcomment($rnum)" \
-                    {{} {} {} {} {dead} {}} \
-                    { break }
+                  revlines($rnum) revstate($rnum) revcomment($rnum)" \
+                      {{} {} {} {} {dead} {}} \
+                      { break }
                 }
               } else {
                 if {$logline == "description:"} {
@@ -2605,9 +2605,9 @@ namespace eval ::cvs_branchlog {
                 # Branches for this revision may have already been created
                 # during tag parsing
                 foreach "revwho($rnum) revdate($rnum) revtime($rnum)
-                  revlines($rnum) revstate($rnum) revcomment($rnum)" \
-                  {{} {} {} {} {} {}} \
-                  { break }
+                revlines($rnum) revstate($rnum) revcomment($rnum)" \
+                    {{} {} {} {} {} {}} \
+                    { break }
                 set logstate {D}
               }
             }
@@ -2652,7 +2652,7 @@ namespace eval ::cvs_branchlog {
               } elseif {$logline == {----------------------------}} {
                 set logstate {V}
               } elseif {$logline ==\
-  {=============================================================================}} {
+                    {=============================================================================}} {
                 set logstate {X}
               } else {
                 append revcomment($rnum) $logline "\n"
@@ -2663,13 +2663,13 @@ namespace eval ::cvs_branchlog {
             }
           }
         }
-  
+        
         if {$logstate == {X}} {
           gen_log:log D "********* Done parsing *********"
         }
         return [list {} $logline]
       }
-
+      
       proc cvs_sort_it_all_out {} {
         global cvscfg
         global module_dir
@@ -2693,34 +2693,34 @@ namespace eval ::cvs_branchlog {
         variable rootbranch
         variable revbranch
         variable revkind
-  
+        
         gen_log:log T "ENTER"
-
+        
         if {[llength [array names revkind]] < 1} {
           cvsfail "Log empty.  Check error status of cvs log command"
           $lc close invoke
           return
         }
-
+        
         set revkind(1) "root"
-
+        
         foreach r [lsort -dictionary [array names revkind]] {
           gen_log:log D "revkind($r) $revkind($r)"
         }
         # Sort the revision and branch lists and remove duplicates
         foreach r [array names branchrevs] {
           set branchrevs($r) \
-            [lsort -unique -decreasing -dictionary $branchrevs($r)]
+              [lsort -unique -decreasing -dictionary $branchrevs($r)]
           #gen_log:log D "branchrevs($r) $branchrevs($r)"
         }
-
+        
         # Create a fake revision to be the trunk branchtag
         set revbtags(1) "trunk"
         set branchrevs(1) $branchrevs(trunk)
-
+        
         foreach r [array names revbranches] {
           set revbranches($r) \
-            [lsort -unique -dictionary $revbranches($r)]
+              [lsort -unique -dictionary $revbranches($r)]
           #gen_log:log D "revbranches($r) $revbranches($r)"
         }
         # Find out where to put the working revision icon (if anywhere)
@@ -2731,10 +2731,10 @@ namespace eval ::cvs_branchlog {
           gen_log:log F "Reading CVS/Entries"
           set basename [file tail $filename]
           if {![catch {open [file join \
-                              [file dirname $filename] {CVS}\
-                        {Entries}] \
-                        {r}} entries]} \
-          {
+                  [file dirname $filename] {CVS}\
+                  {Entries}] \
+              {r}} entries]} \
+              {
             foreach line [split [read $entries] "\n"] {
               # What does the entry for an added/deleted file look like?
               set parts [split $line {/}]
@@ -2748,7 +2748,7 @@ namespace eval ::cvs_branchlog {
                 } else {
                   set revstate(current) {Exp}
                 }
-  
+                
                 set root [join [lrange [split $rnum {.}] 0 end-1] {.}]
                 gen_log:log D "root $root"
                 set tag [string range [lindex $parts 5] 1 end]
@@ -2758,7 +2758,7 @@ namespace eval ::cvs_branchlog {
                   # FIXME: what if this is a resurrection?
                   lappend branchrevs(trunk) {current}
                 } elseif {[info exists rootbranch($tag)] && \
-                    $rootbranch($tag) == $rnum} {
+                      $rootbranch($tag) == $rnum} {
                   # The sticky tag specifies a branch and the branch's
                   # root is the same as the source revision. Place the
                   # you-are-here box at the start of the branch.
@@ -2770,7 +2770,7 @@ namespace eval ::cvs_branchlog {
                       # branch. Place the you-are-here box on the end of the
                       # branch.
                       set branchrevs($root) [linsert $branchrevs($root) 0\
-                        {current}]
+                          {current}]
                     } else {
                       # Otherwise we will place it as a branch off the
                       # revision.
@@ -2778,7 +2778,7 @@ namespace eval ::cvs_branchlog {
                         set revbranches($rnum) {current}
                       } else {
                         set revbranches($rnum) [linsert $revbranches($rnum)\
-                          0 {current}]
+                            0 {current}]
                       }
                     }
                   }
@@ -2786,15 +2786,15 @@ namespace eval ::cvs_branchlog {
                 # We may have added a "current" branch. We have to set all its
                 # stuff or we'll get errors
                 foreach {revwho(current) revdate(current) revtime(current)
-                    revlines(current) revcomment(current)
-                    branchrevs(current) revbtags(current)} \
+                  revlines(current) revcomment(current)
+                branchrevs(current) revbtags(current)} \
                     {{} {} {} {} {} {} {}} \
                     { break }
-                  break
-                }
+                break
               }
-              close $entries
             }
+            close $entries
+          }
         }
         gen_log:log D ""
         foreach a [array names branchrevs] {
@@ -2812,7 +2812,7 @@ namespace eval ::cvs_branchlog {
         foreach a [array names revtags] {
           gen_log:log D "revtags($a) $revtags($a)"
         }
-
+        
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         $ln\::DrawTree now

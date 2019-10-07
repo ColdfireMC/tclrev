@@ -1,6 +1,6 @@
 namespace eval ::annotate {
   variable instance 0
-
+  
   proc new {revision file type {L1 {}} {L2 {}}} {
     #
     # show information on the last modification for each line of a file.
@@ -8,7 +8,7 @@ namespace eval ::annotate {
     variable instance
     set my_idx $instance
     incr instance
-
+    
     gen_log:log T "ENTER ($revision $file $type $L1 $L2)"
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
@@ -19,19 +19,19 @@ namespace eval ::annotate {
       variable L2 [uplevel {concat $L2}]
       variable blamewin .annotate$my_idx
       variable ll
-
+      
       global cvs
       global tcl_platform
       global incvs insvn inrcs ingit
-
+      
       proc redo {w} {
         variable log_lines
         variable revcolors
         variable blameproc
         variable lc
-
+        
         gen_log:log T "ENTER ($w)"
-
+        
         catch {unset revcolors}
         $w.text configure -state normal
         $w.text delete 1.0 end
@@ -48,7 +48,7 @@ namespace eval ::annotate {
         update idletasks
         gen_log:log T "LEAVE"
       }
-
+      
       # Get the line the mouse was clicked on
       proc get_blamerev {win x y} {
         global cvscfg
@@ -59,7 +59,7 @@ namespace eval ::annotate {
         set linetext [$win get $linenum.0 $linenum.end]
         set f1 ""
         set f2 ""
-        regexp {^\s*(\S+)\s+(\S+)} $linetext all f1 f2 orig_line 
+        regexp {^\s*(\S+)\s+(\S+)} $linetext all f1 f2 orig_line
         $parent.top.reventry delete 0 end
         if $cvscfg(blame_linenums) {
           set selected_rev $f2
@@ -68,7 +68,7 @@ namespace eval ::annotate {
         }
         $parent.top.reventry insert end $selected_rev
       }
-
+      
       # We already made a sorted revision list in order to do the heat map, so
       # we can use it for free to find the revision previous to the selected
       # one
@@ -76,7 +76,7 @@ namespace eval ::annotate {
         variable revlist
         variable type
         variable blamewin
-
+        
         set is_svn 0
         if {[string match {svn*} $type]} {
           set is_svn 1
@@ -88,7 +88,7 @@ namespace eval ::annotate {
         set ind [lsearch $revlist $rev]
         # Get the previous one
         set previous_rev [lindex $revlist $ind-1]
-
+        
         if {$previous_rev eq ""} {
           if {$ind == 0} {
             cvsfail "Please select a revision other than the first one!" $blamewin
@@ -99,11 +99,11 @@ namespace eval ::annotate {
         if {$is_svn} {
           set previous_rev "r$previous_rev"
         }
-
+        
         gen_log:log T "LEAVE ($previous_rev)"
         return $previous_rev
       }
-
+      
       proc cvs_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
@@ -115,12 +115,12 @@ namespace eval ::annotate {
         variable revspercolor
         variable maxrevlen
         variable ll
-
+        
         # Separate the line into annotations and content
         regexp {(^.*): (.*$)} $logline all annotations orig_line
         regexp {(^[\d\.]*)\s+(.*$)} $annotations all revnum who_when
         set line "$who_when: $orig_line"
-
+        
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
           # determine the number of revisions then set color accordingly
@@ -130,22 +130,22 @@ namespace eval ::annotate {
           set ncolors [expr {[array size agecolors] - 1}]
           if {$revindex > $ncolors} {set revindex $ncolors}
           if {$revindex < 0} {set revindex 0}
-
+          
           set revcolors($revnum) $agecolors($revindex)
-
+          
           $w tag configure $revnum -background $revcolors($revnum) -foreground black
           if {$tk_version >= 8.6} {
             $w tag configure $revnum -selectbackground $cvsglb(hlbg)
           }
         }
-
+        
         if {$cvscfg(blame_linenums)} {
           $w insert end [format "%${ll}d  " $ln]
         }
         $w insert end [format "%-${maxrevlen}s  " $revnum] $revnum
         $w insert end "$line\n" $revnum
       }
-
+      
       proc git_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
@@ -157,7 +157,7 @@ namespace eval ::annotate {
         variable revspercolor
         variable maxrevlen
         variable ll
-
+        
         # Separate the line into annotations and content
         regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
         set annot [string trim $annot]
@@ -167,7 +167,7 @@ namespace eval ::annotate {
         # Is the name ever in two parts? (Yes. Or three.)
         set who [lrange $annot 0 end-4]
         set line "($who $when): $orig_line"
-
+        
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
           # determine the number of revisions then set color accordingly
@@ -177,22 +177,22 @@ namespace eval ::annotate {
           set ncolors [expr {[array size agecolors] - 1}]
           if {$revindex > $ncolors} {set revindex $ncolors}
           if {$revindex < 0} {set revindex 0}
-
+          
           set revcolors($revnum) $agecolors($revindex)
-
+          
           $w tag configure $revnum -background $revcolors($revnum) -foreground black
           if {$tk_version >= 8.6} {
             $w tag configure $revnum -selectbackground $cvsglb(hlbg)
           }
         }
-
+        
         if {$cvscfg(blame_linenums)} {
           $w insert end [format "%${ll}d  " $linenum]
         }
         $w insert end [format "%-${maxrevlen}s  " $revnum] $revnum
         $w insert end "$line\n" $revnum
       }
-
+      
       proc svn_annotate_color {w logline ln} {
         global cvscfg
         global cvsglb
@@ -204,7 +204,7 @@ namespace eval ::annotate {
         variable revspercolor
         variable maxrevlen
         variable ll
-
+        
         # Separate the line into annotations and content
         regexp {^\s*(\d+)\s+(.*?\) )(.*$)} $logline all revnum annotations orig_line
         regexp {^(\S+) ([-\d]*)} $annotations all who when
@@ -213,7 +213,7 @@ namespace eval ::annotate {
           return
         }
         set line "($who $when): $orig_line"
-
+        
         # Beginning of a revision
         if {! [info exists revcolors($revnum)]} {
           # determine the number of revisions then set color accordingly
@@ -223,15 +223,15 @@ namespace eval ::annotate {
           set ncolors [expr {[array size agecolors] - 1}]
           if {$revindex > $ncolors} {set revindex $ncolors}
           if {$revindex < 0} {set revindex 0}
-
+          
           set revcolors($revnum) $agecolors($revindex)
-
+          
           $w tag configure $revnum -background $revcolors($revnum) -foreground black
           if {$tk_version >= 8.6} {
             $w tag configure $revnum -selectbackground $cvsglb(hlbg)
           }
         }
-
+        
         if {$cvscfg(blame_linenums)} {
           $w insert end [format "%${ll}d  " $ln]
         }
@@ -240,78 +240,78 @@ namespace eval ::annotate {
         $w insert end [format "r%-${lr}s  " $revnum] $revnum
         $w insert end "$line\n" $revnum
       }
-
+      
       regsub -all {\$} $file {\$} file
       switch $type {
-       "svn" -
-       "svn_r" {
-         set blameproc svn_annotate_color
-         set commandline "svn annotate -v $revision \"$file\""
-       }
-       "cvs" {
-         set blameproc cvs_annotate_color
-         set commandline "$cvs annotate $revision \"$file\""
-       }
-       "cvs_r" {
-         # First see if we can do this
-         # rannotate appeared in 1.11.1
-         set versionsplit [split $cvsglb(cvs_version) {.}]
-         set major [lindex $versionsplit 1]
-         set minor [lindex $versionsplit 2]
-         set too_old 0
-         if {$major < 11} {
-           set too_old 1
-         } elseif {($major == 11) && ($minor < 1)} {
-           set too_old 1
-         }
-         if {$too_old} {
-           cvsfail "You need CVS >= 1.11.1 to do this" $w
-           namespace delete [namespace current]
-           return
-         }
-         set blameproc cvs_annotate_color
-         set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
-       }
-       "git" -
-       "git_r" {
-         if {$cvscfg(gitblame_since) != ""} {
-           set sinceflag "--since=\"$cvscfg(gitblame_since)\""
-           regsub  -all {\s+} $sinceflag {\\ } sinceflag
-         } else {
-           set sinceflag ""
-         }
-         set blameproc git_annotate_color
-         set commandline "git annotate --abbrev-commit $sinceflag $revision \"$file\""
-       }
-       "git_range" {
-         if {$cvscfg(gitblame_since) != ""} {
-           set sinceflag "--since=\"$cvscfg(gitblame_since)\""
-           regsub  -all {\s+} $sinceflag {\\ } sinceflag
-         } else {
-           set sinceflag ""
-         }
-         set blameproc git_annotate_color
-         set commandline "git annotate --abbrev-commit $sinceflag -L$L1,$L2 $revision \"$file\""
-       }
-       default {
-         cvsfail "I don't understand flag \"$type\""
-         return
-       }
+        "svn" -
+        "svn_r" {
+          set blameproc svn_annotate_color
+          set commandline "svn annotate -v $revision \"$file\""
+        }
+        "cvs" {
+          set blameproc cvs_annotate_color
+          set commandline "$cvs annotate $revision \"$file\""
+        }
+        "cvs_r" {
+          # First see if we can do this
+          # rannotate appeared in 1.11.1
+          set versionsplit [split $cvsglb(cvs_version) {.}]
+          set major [lindex $versionsplit 1]
+          set minor [lindex $versionsplit 2]
+          set too_old 0
+          if {$major < 11} {
+            set too_old 1
+          } elseif {($major == 11) && ($minor < 1)} {
+            set too_old 1
+          }
+          if {$too_old} {
+            cvsfail "You need CVS >= 1.11.1 to do this" $w
+            namespace delete [namespace current]
+            return
+          }
+          set blameproc cvs_annotate_color
+          set commandline "$cvs -d $cvscfg(cvsroot) rannotate $revision \"$file\""
+        }
+        "git" -
+        "git_r" {
+          if {$cvscfg(gitblame_since) != ""} {
+            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+            regsub  -all {\s+} $sinceflag {\\ } sinceflag
+          } else {
+            set sinceflag ""
+          }
+          set blameproc git_annotate_color
+          set commandline "git annotate --abbrev-commit $sinceflag $revision \"$file\""
+        }
+        "git_range" {
+          if {$cvscfg(gitblame_since) != ""} {
+            set sinceflag "--since=\"$cvscfg(gitblame_since)\""
+            regsub  -all {\s+} $sinceflag {\\ } sinceflag
+          } else {
+            set sinceflag ""
+          }
+          set blameproc git_annotate_color
+          set commandline "git annotate --abbrev-commit $sinceflag -L$L1,$L2 $revision \"$file\""
+        }
+        default {
+          cvsfail "I don't understand flag \"$type\""
+          return
+        }
       }
-
+      
       # Initialize searching
       search_textwidget_init
-
+      
       # Make the window
       toplevel $blamewin
       menubar_menus $blamewin
       help_menu $blamewin
-
+      
       text $blamewin.text -setgrid yes -exportselection 1 \
-        -relief sunken -border 2 -height 40 -width 122 \
-        -yscroll "$blamewin.scroll set"
+          -relief sunken -border 2 -height 40 -width 122 \
+          -yscroll "$blamewin.scroll set"
       scrollbar $blamewin.scroll -relief sunken -command "$blamewin.text yview"
-
+      
       frame $blamewin.top -relief groove -border 2
       entry $blamewin.top.reventry
       button $blamewin.top.viewfile -image Fileview
@@ -320,31 +320,31 @@ namespace eval ::annotate {
       button $blamewin.top.patchdiff -image Patches
       button $blamewin.top.diff -image Diff
       button $blamewin.top.workdir -image Workdir -command {workdir_setup}
-
+      
       frame $blamewin.bottom
       button $blamewin.bottom.close -text "Close" \
-        -command [namespace code {
-                 global cvscfg
-                 variable w
-                 variable my_idx
-                 set cvscfg(blamegeom) [wm geometry $blamewin]
-                 destroy $blamewin
-                 namespace delete [namespace current]
-                 exit_cleanup 0
-               }]
+          -command [namespace code {
+        global cvscfg
+        variable w
+        variable my_idx
+        set cvscfg(blamegeom) [wm geometry $blamewin]
+        destroy $blamewin
+        namespace delete [namespace current]
+        exit_cleanup 0
+      }]
       label $blamewin.bottom.days -text "Revs per Color" -width 20 -anchor e
       checkbutton $blamewin.bottom.linum -text "Show Line Numbers" \
-        -variable cvscfg(blame_linenums) \
-        -onvalue 1 -offvalue 0
+          -variable cvscfg(blame_linenums) \
+          -onvalue 1 -offvalue 0
       entry $blamewin.bottom.dayentry -width 3 \
-        -textvariable [namespace current]::revspercolor
-      button $blamewin.bottom.redo -text "Redo Colors" 
-
+          -textvariable [namespace current]::revspercolor
+      button $blamewin.bottom.redo -text "Redo Colors"
+      
       button $blamewin.bottom.srchbtn -text Search \
-        -command "search_textwidget $blamewin.text"
+          -command "search_textwidget $blamewin.text"
       entry $blamewin.bottom.entry -width 20 -textvariable cvsglb(searchstr)
       bind $blamewin.bottom.entry <Return> "search_textwidget $blamewin.text"
-
+      
       pack $blamewin.bottom -side bottom -fill x
       pack $blamewin.bottom.srchbtn -side left
       pack $blamewin.bottom.entry -side left
@@ -353,24 +353,24 @@ namespace eval ::annotate {
       pack $blamewin.bottom.dayentry -side left
       pack $blamewin.bottom.redo -side left
       pack $blamewin.bottom.close -side right -ipadx 15
-
+      
       pack $blamewin.top -side top -fill x
       pack $blamewin.top.reventry -side left
       pack $blamewin.top.viewfile \
-           $blamewin.top.log \
-           $blamewin.top.diff \
-        -in $blamewin.top -side left -ipadx 4 -ipady 4
+          $blamewin.top.log \
+          $blamewin.top.diff \
+          -in $blamewin.top -side left -ipadx 4 -ipady 4
       if {$insvn || $ingit} {
         pack $blamewin.top.patchdiff \
-             $blamewin.top.ddiff \
-          -in $blamewin.top -side left -ipadx 4 -ipady 4
+            $blamewin.top.ddiff \
+            -in $blamewin.top -side left -ipadx 4 -ipady 4
       }
       
       pack $blamewin.top.workdir -side right
-
+      
       pack $blamewin.scroll -side right -fill y
       pack $blamewin.text -fill both -expand 1
-
+      
       wm title $blamewin "$commandline"
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $blamewin @$cvscfg(bitmapdir)/annotate.xbm
@@ -379,103 +379,103 @@ namespace eval ::annotate {
       if {[info exists cvscfg(blamegeom)]} {
         wm geometry $blamewin $cvscfg(blamegeom)
       }
-
+      
       switch -glob -- $type {
         {cvs*} {
           $blamewin.top.viewfile configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { cvs_fileview_update $rev $file }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { cvs_fileview_update $rev $file }
+          }]
           $blamewin.top.log configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { cvs_log_rev $rev $file }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { cvs_log_rev $rev $file }
+          }]
           $blamewin.top.diff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              set previous [previous_rev $rev]
-              if {$previous ne ""} {
-                comparediff_r $previous $rev $blamewin $file
-              }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            set previous [previous_rev $rev]
+            if {$previous ne ""} {
+              comparediff_r $previous $rev $blamewin $file
+            }
+          }]
         }
         {svn*} {
           $blamewin.top.viewfile configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { svn_fileview $rev $file "file"}
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { svn_fileview $rev $file "file"}
+          }]
           $blamewin.top.log configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { svn_log_rev $rev $file }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { svn_log_rev $rev $file }
+          }]
           $blamewin.top.diff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              set previous [previous_rev $rev]
-              if {$previous ne ""} {
-                comparediff_r $previous $rev $blamewin $file
-              }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            set previous [previous_rev $rev]
+            if {$previous ne ""} {
+              comparediff_r $previous $rev $blamewin $file
+            }
+          }]
           $blamewin.top.ddiff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { svn_show_rev $rev $file }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { svn_show_rev $rev $file }
+          }]
           $blamewin.top.patchdiff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { svn_difflog_rev $rev $file }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { svn_difflog_rev $rev $file }
+          }]
         }
         {git*} {
           $blamewin.top.viewfile configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { git_fileview $rev "." $file}
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { git_fileview $rev "." $file}
+          }]
           $blamewin.top.log configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { git_log_rev $rev $file}
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { git_log_rev $rev $file}
+          }]
           $blamewin.top.diff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} {
-                comparediff_r $rev^ $rev $blamewin $file
-              }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} {
+              comparediff_r $rev^ $rev $blamewin $file
+            }
+          }]
           $blamewin.top.ddiff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { git_show $rev }
-           }]
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { git_show $rev }
+          }]
           $blamewin.top.patchdiff configure -state normal \
-           -command [namespace code {
-              set rev [$blamewin.top.reventry get]
-              if {$rev ne ""} { git_patch $file $rev }
-           }]
-         }
+              -command [namespace code {
+            set rev [$blamewin.top.reventry get]
+            if {$rev ne ""} { git_patch $file $rev }
+          }]
+        }
       }
-
+      
       set_tooltips $blamewin.top.workdir \
-        {"Open the Working Directory Browser"}
+          {"Open the Working Directory Browser"}
       set_tooltips $blamewin.top.viewfile \
-        {"View a version of the file"}
+          {"View a version of the file"}
       set_tooltips $blamewin.top.log \
-        {"Revision log of the file"}
+          {"Revision log of the file"}
       set_tooltips $blamewin.top.diff \
-        {"Side-by-side comparison of a version to its predecessor"}
+          {"Side-by-side comparison of a version to its predecessor"}
       set_tooltips $blamewin.top.ddiff \
-        {"List changed files in a commit"}
+          {"List changed files in a commit"}
       set_tooltips $blamewin.top.patchdiff \
-        {"Show file changes in a commit"}
-
-
+          {"Show file changes in a commit"}
+      
+      
       # Define the colors
       array set agecolors {
         0 #FFFF4B4B4B4B
@@ -503,53 +503,53 @@ namespace eval ::annotate {
         22 #4B4B5757FFFF
         23 #4B4B4B4BFFFF
       }
-
+      
       gen_log:log C "$commandline"
       busy_start $blamewin
       set exec_cmd [exec::new "$commandline"]
       set log [$exec_cmd\::output]
-
+      
       # Read the log lines.  Assign a color to each unique revision.
       catch {unset revcolors}
       set log_lines [split [set log] "\n"]
-
+      
       # We have 24 colors.  How many revs do we have?
       set revlist {}
       set maxrevlen 0
       switch -glob -- $type {
-       {cvs*} -
-       {svn*} {
-         # Sort the revisions
-         foreach logline $log_lines {
-           set line [split [string trimleft $logline]]
-           set revnum [lindex $line 0]
-           if {$revnum == ""} {continue}
-           if {$revnum ni $revlist} {
-             lappend revlist $revnum
-             set l [string length $revnum]
-             if {$l > $maxrevlen} {
-               set maxrevlen $l
-             }
-           }
-         }
-         set revlist [lsort -dictionary $revlist]
-       }
-       {git*} {
-         # Sort by date instead of by commit number
-         foreach logline $log_lines {
-           regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
-           set full_date [lrange $annot end-3 end-2]
-           if {! [info exists commit($full_date]} {
-             set commit($full_date) $revnum
-           }
-           set maxrevlen [string length $revnum]
-         }
-         foreach d [lsort -dictionary [array names commit]] {
-           lappend revlist $commit($d)
-         }
-       }
+        {cvs*} -
+        {svn*} {
+          # Sort the revisions
+          foreach logline $log_lines {
+            set line [split [string trimleft $logline]]
+            set revnum [lindex $line 0]
+            if {$revnum == ""} {continue}
+            if {$revnum ni $revlist} {
+              lappend revlist $revnum
+              set l [string length $revnum]
+              if {$l > $maxrevlen} {
+                set maxrevlen $l
+              }
+            }
+          }
+          set revlist [lsort -dictionary $revlist]
+        }
+        {git*} {
+          # Sort by date instead of by commit number
+          foreach logline $log_lines {
+            regexp {(^\S+)\s+\((.*?)\)(.*$)} $logline all revnum annot orig_line
+            set full_date [lrange $annot end-3 end-2]
+            if {! [info exists commit($full_date]} {
+              set commit($full_date) $revnum
+            }
+            set maxrevlen [string length $revnum]
+          }
+          foreach d [lsort -dictionary [array names commit]] {
+            lappend revlist $commit($d)
+          }
+        }
       }
-
+      
       set nrevs [llength $revlist]
       if {$nrevs == 0} {
         set msg "No output for $commandline"
@@ -572,7 +572,7 @@ namespace eval ::annotate {
         gen_log:log D "revspercolor was \"$revspercolor\": setting to 1"
         set revspercolor 1
       }
-
+      
       # linecount
       set lc 0
       set ll [string length [llength $log_lines]]
@@ -580,18 +580,18 @@ namespace eval ::annotate {
         incr lc
         $blameproc $blamewin.text $logline $lc
       }
-
+      
       $blamewin.text yview moveto 0
       update idletasks
       bind $blamewin.bottom.dayentry <Return> [namespace code {redo $blamewin}]
       $blamewin.bottom.redo configure -command [namespace code {redo $blamewin}]
       $blamewin.bottom.redo configure -command [namespace code {redo $blamewin}]
       $blamewin.bottom.linum configure -command [namespace code {redo $blamewin}]
-
+      
       # Disable key presses and make a popup for mouse Copy
       ro_textbindings $blamewin.text
       bind $blamewin.text <ButtonPress-1> [namespace code {get_blamerev %W %x %y}]
-
+      
       # Focus in the text widget to activate the text bindings
       focus $blamewin.text
       busy_done $blamewin

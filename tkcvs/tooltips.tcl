@@ -22,7 +22,7 @@
 
 proc set_tooltips { widget name } {
   global cvsglb
-
+  
   bind $widget <Enter> "
     catch { after 500 { internal_tooltips_PopUp %W $name } } \
         cvsglb(tooltip_id)
@@ -36,22 +36,22 @@ proc set_tooltips { widget name } {
 
 proc internal_tooltips_PopUp { wid name } {
   global cvscfg cvsglb
-
+  
   # get rid of other existing tooltips
   catch { destroy .tooltips_wind }
-
+  
   toplevel .tooltips_wind -class ToolTip
   set size_changed 0
   set bg [option get .tooltips_wind background background]
   set fg [option get .tooltips_wind foreground foreground]
-
+  
   # get the cursor position
   set X [winfo pointerx $wid]
   set Y [winfo pointery $wid]
-
+  
   # add a slight offset to make tooltips fall below cursor
   set Y [expr { $Y + 20 }]
-
+  
   # Now pop up the new widgetLabel
   wm overrideredirect .tooltips_wind 1
   wm geometry .tooltips_wind +$X+$Y
@@ -63,11 +63,11 @@ proc internal_tooltips_PopUp { wid name } {
       -background $bg \
       -foreground $fg
   pack .tooltips_wind.l
-
+  
   # make invisible
   wm withdraw .tooltips_wind
   update idletasks
-
+  
   # adjust for bottom of screen
   if { ($Y + [winfo reqheight .tooltips_wind]) > [winfo screenheight .] } {
     set Y [expr { $Y - [winfo reqheight .tooltips_wind] - 25 }]
@@ -94,7 +94,8 @@ proc internal_tooltips_PopUp { wid name } {
 
 proc internal_tooltips_PopDown { } {
   global cvsglb
-
+  
   after cancel $cvsglb(tooltip_id)
   catch { destroy .tooltips_wind }
 }
+

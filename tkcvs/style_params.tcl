@@ -15,17 +15,17 @@ proc get_cde_params { } {
   global cvsglb
   global cvscfg
   global tk_version
-
+  
   # Set defaults for all the necessary things
   set bg [option get . background background]
   set fg [option get . foreground foreground]
   set guifont [option get . buttonFontList buttonFontList]
   set txtfont [option get . FontSet FontSet]
   set listfont [option get . textFontList textFontList]
-
+  
   set textbg white
   set textfg black
-
+  
   # If any of these aren't set, I don't think we're in CDE after all
   if {![string length $fg]} {return 0}
   if {![string length $bg]} {return 0}
@@ -35,20 +35,20 @@ proc get_cde_params { } {
   }
   if {![string length $guifont]} {return 0}
   if {![string length $txtfont]} {return 0}
-
+  
   set guifont [string trimright $guifont ":"]
   set txtfont [string trimright $txtfont ":"]
   set listfont [string trimright $txtfont ":"]
   regsub {medium} $txtfont "bold" dlgfont
-
+  
   # They don't tell us the slightly darker color they use for the
   # scrollbar backgrounds and graphics backgrounds, so we'll make
   # one up.
   shades $bg
-
+  
   set cvscfg(guifont) $guifont
   set cvscfg(dialogfont) $dlgfont
-
+  
   # If we can find the user's dt.resources file, we can find out the
   # palette and background/foreground colors
   set fh ""
@@ -112,7 +112,7 @@ proc get_cde_params { } {
           gets $fh wkspc4
           gets $fh iconbg  ;#control panel bg too
           close $fh
-
+          
           option add *Text.highlightColor $wkspc4
           option add *Dialog.Background $menubg
           option add *Menu.Background $menubg
@@ -130,21 +130,21 @@ proc get_cde_params { } {
     puts stderr "   Falling back to plain X"
     return 0
   }
-
+  
   set hlfg $fg
   if {[info exists activetitle]} {
     set hlbg $activetitle
   } else {
     set hlbg "#b24d7a"
   }
-
+  
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
   set cvsglb(textbg) $textbg
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
-
+  
   option add *selectColor $hlbg
   option add *Button.activeBackground $bg
   option add *Button.activeForeground $fg
@@ -164,7 +164,7 @@ proc get_cde_params { } {
   option add *Text.Background $textbg
   option add *Text.Foreground $textfg
   option add *Text.highlightBackground $bg
-
+  
   # checkbuttons and radiobuttons
   # This makes it look like the native CDE checkbox
   option add *Checkbutton.offRelief sunken
@@ -173,14 +173,14 @@ proc get_cde_params { } {
   option add *Menu.selectColor $fg
   option add *Checkbutton.activeBackground $bg
   option add *Checkbutton.activeForeground $fg
-
+  
   return 1
 }
 
 proc get_gtk_params { } {
   global cvsglb
   global tk_version
-
+  
   #puts " GTK: Getting X11 options"
   if {! [llength [auto_execok xrdb]]} {
     return 0
@@ -215,20 +215,20 @@ proc get_gtk_params { } {
     }
   }
   close $pipe
-
+  
   if {! [info exists bg] || ! [info exists fg]} {
     return 0
   }
-
+  
   shades $bg
-
+  
   set cvsglb(bg) $bg
   set cvsglb(fg) $fg
   set cvsglb(textbg) $textbg
   set cvsglb(textfg) $textfg
   set cvsglb(hlbg) $hlbg
   set cvsglb(hlfg) $hlfg
-
+  
   # These are already set, but maybe I like mine better
   option add *Button.activeBackground $cvsglb(light)
   option add *Canvas.Background $cvsglb(shadow)
@@ -245,55 +245,55 @@ proc get_gtk_params { } {
   option add *Text.Foreground $textfg
   option add *Text.selectBackground $hlbg
   option add *Text.selectForeground $hlfg
-
+  
   # checkbuttons and radiobuttons
   option add *Menu.selectColor $fg
   option add *Checkbutton.selectColor ""
   option add *Radiobutton.selectColor ""
-
+  
   return 1
 }
 
 proc shades {bg} {
   global cvsglb
-
+  
   set rgb_bg [winfo rgb . $bg]
   set bg0 [expr [lindex $rgb_bg 0] / 256 ]
   set bg1 [expr [lindex $rgb_bg 1] / 256 ]
   set bg2 [expr [lindex $rgb_bg 2] / 256 ]
-
+  
   set factor .9
   set shadow [format #%02x%02x%02x [expr int($factor * $bg0)] \
-                                   [expr int($factor * $bg1)] \
-                                   [expr int($factor * $bg2)]]
-
+      [expr int($factor * $bg1)] \
+      [expr int($factor * $bg2)]]
+  
   set factor .3
   set darkest [format #%02x%02x%02x [expr int($factor * $bg0)] \
-                                    [expr int($factor * $bg1)] \
-                                    [expr int($factor * $bg2)]]
-
+      [expr int($factor * $bg1)] \
+      [expr int($factor * $bg2)]]
+  
   set inv0 [expr 255 - $bg0]
   set inv1 [expr 255 - $bg1]
   set inv2 [expr 255 - $bg2]
-
+  
   set factor .2
   set add0 [expr int($factor*$inv0)]
   set add1 [expr int($factor*$inv1)]
   set add2 [expr int($factor*$inv2)]
-
+  
   set light [format #%02x%02x%02x [expr {$bg0 + $add0}] \
-                                  [expr {$bg1 + $add1}] \
-                                  [expr {$bg2 + $add2}]]
-
+      [expr {$bg1 + $add1}] \
+      [expr {$bg2 + $add2}]]
+  
   set factor .5
   set add0 [expr int($factor*$inv0)]
   set add1 [expr int($factor*$inv1)]
   set add2 [expr int($factor*$inv2)]
-
+  
   set lighter [format #%02x%02x%02x [expr {$bg0 + $add0}] \
-                                  [expr {$bg1 + $add1}] \
-                                  [expr {$bg2 + $add2}]]
-
+      [expr {$bg1 + $add1}] \
+      [expr {$bg2 + $add2}]]
+  
   set cvsglb(shadow) $shadow
   set cvsglb(canvbg) $shadow
   set cvsglb(darkest) $darkest

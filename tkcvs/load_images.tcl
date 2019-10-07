@@ -1,10 +1,10 @@
 # Keep all the images in one place
 proc load_all_images {} {
   global cvscfg
-
+  
   # App icon
   image create photo Tclfish64 -format gif -file [file join $cvscfg(bitmapdir) ticklefish64.gif]
-
+  
   # Buttons
   image create photo Add -format gif -file [file join $cvscfg(bitmapdir) add.gif]
   image create photo Annotate -format gif -file [file join $cvscfg(bitmapdir) annotate.gif]
@@ -56,14 +56,14 @@ proc load_all_images {} {
   image create photo arr_dn -format gif -file [file join $cvscfg(bitmapdir) arrow_dn.gif]
   image create photo arr_up -format gif -file [file join $cvscfg(bitmapdir) arrow_up.gif]
   image create photo updir -format gif -file [file join $cvscfg(bitmapdir) updir.gif]
-
+  
   # CVS module icons for treeview
   image create photo adir -format gif -file [file join $cvscfg(bitmapdir) adir.gif]
   image create photo amod -format gif -file [file join $cvscfg(bitmapdir) amod.gif]
   image create photo dir -format gif -file [file join $cvscfg(bitmapdir) dir.gif]
   image create photo mdir -format gif -file [file join $cvscfg(bitmapdir) mdir.gif]
   image create photo mod -format gif -file [file join $cvscfg(bitmapdir) mod.gif]
-
+  
   # Files and folders
   image create photo cvsdir -format gif -file [file join $cvscfg(bitmapdir) dir_cvs.gif]
   image create photo dir_minus -format gif -file [file join $cvscfg(bitmapdir) dir_minus.gif]
@@ -103,3 +103,4 @@ proc load_all_images {} {
   image create photo stat_ques -format gif -file [file join $cvscfg(bitmapdir) stat_ques.gif]
   image create photo svndir -format gif -file [file join $cvscfg(bitmapdir) dir_svn.gif]
 }
+

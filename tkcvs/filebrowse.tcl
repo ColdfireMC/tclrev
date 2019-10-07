@@ -12,10 +12,10 @@ proc browse_files {module} {
   global checkout_version
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER ($module)"
   static {browser 0}
-
+  
   if {$module == ""} {
     cvsfail "Please select a module!" .modbrowse
     return
@@ -25,15 +25,15 @@ proc browse_files {module} {
     cvsfail "$module is not a CVS module" .modbrowse
     return
   }
-
+  
   # Find the list of file names.
   find_filenames $module
-
+  
   if {! [info exists filenames($module)]} {
     cvsfail "There are no files in this module!" .modbrowse
     return
   }
-
+  
   #
   # Create the browser window.
   #
@@ -43,73 +43,73 @@ proc browse_files {module} {
   frame $filebrowse.top   ;#-relief raised -border 2
   frame $filebrowse.buttons ;#-relief raised -border 2
   frame $filebrowse.srch ;#-relief raised -border 2
-
+  
   pack $filebrowse.top -side top -fill x
   pack $filebrowse.buttons -side bottom -fill x
   pack $filebrowse.srch -side bottom -fill x
-
+  
   label $filebrowse.top.verlbl -text "Version / Tag " -anchor w
   entry $filebrowse.top.verent -relief sunken -textvariable checkout_version
   button $filebrowse.srch.srchbtn -text Search \
-    -command "search_listbox $filebrowse.list"
+      -command "search_listbox $filebrowse.list"
   entry $filebrowse.srch.srchent -width 20 -textvariable cvsglb(searchstr)
   bind $filebrowse.srch.srchent <Return> "search_listbox $filebrowse.list"
-
+  
   pack $filebrowse.top.verlbl -side left
   pack $filebrowse.top.verent -side right -fill x -expand y
   pack $filebrowse.srch.srchbtn -side left
   pack $filebrowse.srch.srchent -side right -fill x -expand y
-
+  
   #
   # Create buttons
   #
   button $filebrowse.view -image Fileview \
-    -command "module_fileview $filebrowse $module"
+      -command "module_fileview $filebrowse $module"
   button $filebrowse.log -image Log \
-    -command "module_filelog $filebrowse $module 0"
+      -command "module_filelog $filebrowse $module 0"
   button $filebrowse.branches -image Branches \
-    -command "module_filelog $filebrowse $module 1"
+      -command "module_filelog $filebrowse $module 1"
   button $filebrowse.tag -image Tags \
-    -command "module_tagview $filebrowse $module"
+      -command "module_tagview $filebrowse $module"
   button $filebrowse.quit -text "Close" \
-    -padx 0 -pady 0 \
-    -command "destroy $filebrowse; exit_cleanup 0"
-
+      -padx 0 -pady 0 \
+      -command "destroy $filebrowse; exit_cleanup 0"
+  
   pack $filebrowse.view \
-       $filebrowse.log \
-       $filebrowse.branches \
-       $filebrowse.tag \
-    -in $filebrowse.buttons -side left -ipadx 1 -ipady 1 -fill x -expand 1
+      $filebrowse.log \
+      $filebrowse.branches \
+      $filebrowse.tag \
+      -in $filebrowse.buttons -side left -ipadx 1 -ipady 1 -fill x -expand 1
   pack $filebrowse.quit \
-    -in $filebrowse.buttons -side left -ipadx 0 -ipady 0 -fill both -expand 1
-
+      -in $filebrowse.buttons -side left -ipadx 0 -ipady 0 -fill both -expand 1
+  
   set_tooltips $filebrowse.view \
-    {"View the selected file"}
+      {"View the selected file"}
   set_tooltips $filebrowse.log \
-    {"See the revision log of the selected file"}
+      {"See the revision log of the selected file"}
   set_tooltips $filebrowse.branches \
-    {"See the branch diagram of the selected file"}
+      {"See the branch diagram of the selected file"}
   set_tooltips $filebrowse.tag \
-    {"List the tags of the selected file"}
-
+      {"List the tags of the selected file"}
+  
   #
   # Create a scrollbar and a list box.
   #
   scrollbar $filebrowse.scroll -relief sunken \
-    -command "$filebrowse.list yview"
+      -command "$filebrowse.list yview"
   listbox $filebrowse.list \
-    -yscroll "$filebrowse.scroll set" -relief sunken \
-    -font $cvscfg(listboxfont) \
-    -width 40 -height 25 -setgrid yes
+      -yscroll "$filebrowse.scroll set" -relief sunken \
+      -font $cvscfg(listboxfont) \
+      -width 40 -height 25 -setgrid yes
   pack $filebrowse.scroll -side right -fill y
   pack $filebrowse.list -side left -fill both -expand 1
-
+  
   #
   # Window manager stuff.
   #
   wm title $filebrowse "Files in $module"
   wm minsize $filebrowse 5 5
-
+  
   #
   # Fill the list.
   #
@@ -120,7 +120,7 @@ proc browse_files {module} {
     regsub "^$module/" $file "" file
     $filebrowse.list insert end $file
   }
-
+  
   search_listbox_init
   gen_log:log T "LEAVE"
 }
@@ -131,14 +131,14 @@ proc filepath {module filename} {
   global module_dir
   global cvscfg
   global cvs
-
+  
   gen_log:log T "ENTER ($filename $module)"
   regsub -all {\$} $filename {\$} file
- 
+  
   # set global module variable - logcanvas may need it
-
+  
   set commandline \
-     "$cvs -d $cvscfg(cvsroot) rdiff -s -D 01/01/1971 \"$file\""
+      "$cvs -d $cvscfg(cvsroot) rdiff -s -D 01/01/1971 \"$file\""
   gen_log:log C  $commandline
   set ret [catch {exec {*}$commandline} view_this]
   gen_log:log D "\"$view_this\""
@@ -146,7 +146,7 @@ proc filepath {module filename} {
     gen_log:log T "LEAVE (fine the way we are) ($file)"
     return $file
   }
-
+  
   if {[info exists modval($module)]} {
     gen_log:log D "modval $module \"$modval($module)\""
     set module_dir $modval($module)
@@ -195,5 +195,4 @@ proc module_tagview {toplevelname module} {
   }
   gen_log:log T "LEAVE"
 }
-
 

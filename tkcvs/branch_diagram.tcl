@@ -10,7 +10,7 @@
 
 namespace eval ::logcanvas {
   variable instance 0
-
+  
   proc new {filename how scope} {
     #
     # Creates a new log canvas.
@@ -22,7 +22,7 @@ namespace eval ::logcanvas {
     global module_dir
     variable sys
     variable loc
-
+    
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       set how [uplevel {concat $how}]
@@ -59,12 +59,12 @@ namespace eval ::logcanvas {
       variable search_lastcase 0
       variable search_nocase
       variable logcanvas ".logcanvas$my_idx"
-
+      
       gen_log:log T "ENTER [namespace current]"
       set sys_loc [split $how {,}]
       set sys [lindex $sys_loc 0]
       set loc [lindex $sys_loc 1]
-
+      
       proc ClearSelection {AorB} {
         variable logcanvas
         variable sel_tag
@@ -83,7 +83,7 @@ namespace eval ::logcanvas {
         set sel_rev($AorB) {}
         return
       }
-
+      
       proc SetSelection {AorB tag rev} {
         global cvscfg
         variable logcanvas
@@ -93,12 +93,12 @@ namespace eval ::logcanvas {
         variable revcomment
         variable sel_tag
         variable sel_rev
-
+        
         ClearSelection $AorB
         set other [expr {$AorB == "A" ? {B} : {A}}]
         if {$rev == $sel_rev($other)} { ClearSelection $other }
         if {! [info exists revcomment($rev)]} {
-           set revcomment($rev) "*** empty log message ***"
+          set revcomment($rev) "*** empty log message ***"
         }
         if {$tag != {}} {
           $logcanvas.up.rev${AorB}_rvers configure -state normal
@@ -126,39 +126,39 @@ namespace eval ::logcanvas {
         set sel_rev($AorB) $rev
         return
       }
-
+      
       proc RevSelect {AorB} {
         variable logcanvas
         set t [$logcanvas.canvas gettags current]
         SetSelection $AorB \
-          [string range [lindex $t [lsearch -glob $t {T*}]] 1 end] \
-          [string range [lindex $t [lsearch -glob $t {R*}]] 1 end]
+            [string range [lindex $t [lsearch -glob $t {T*}]] 1 end] \
+            [string range [lindex $t [lsearch -glob $t {R*}]] 1 end]
         return
       }
-
+      
       proc Unselect {AorB} {
         variable logcanvas
         set t [$logcanvas.canvas gettags current]
         if {$t != {} } {return}
         ClearSelection $AorB
       }
-
+      
       proc EitherOrHead {} {
         variable logcanvas
         variable sys
-
+        
         set revA [$logcanvas.up.revA_rvers get]
         set revB [$logcanvas.up.revB_rvers get]
-         if {$revA ne ""} {
-           set rev $revA
-         } elseif {$revB ne ""} {
-           set rev $revB
-         } else {
-           if {$sys eq "SVN"} {set rev rHEAD} else {set rev HEAD}
-         }
-         return $rev
-       }
-
+        if {$revA ne ""} {
+          set rev $revA
+        } elseif {$revB ne ""} {
+          set rev $revB
+        } else {
+          if {$sys eq "SVN"} {set rev rHEAD} else {set rev HEAD}
+        }
+        return $rev
+      }
+      
       proc ConfigureButtons {fname} {
         global cvsglb
         global module_dir
@@ -166,7 +166,7 @@ namespace eval ::logcanvas {
         variable sys
         variable loc
         variable current_revnum
-
+        
         switch -- $sys {
           "SVN" {
             # Find out current rev and if it's a directory, if we can
@@ -186,283 +186,283 @@ namespace eval ::logcanvas {
               gen_log:log E "Warning: couldn't find current revision number!"
             }
             $logcanvas.up.bmodbrowse configure -command modbrowse_run \
-              -image Modules_svn -state normal
+                -image Modules_svn -state normal
             $logcanvas.up.lfname configure -text "SVN Path"
             $logcanvas.up.rfname configure -state normal
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$module_dir/$fname"
             $logcanvas.up.rfname configure -state readonly
             $logcanvas.view configure -state normal \
-               -command [namespace code {
-                  set rev [EitherOrHead]
-                  svn_fileview $rev $filename "file"
-               }]
+                -command [namespace code {
+              set rev [EitherOrHead]
+              svn_fileview $rev $filename "file"
+            }]
             $logcanvas.log configure -state normal \
-               -command [namespace code {
-                  svn_log_rev [EitherOrHead] $filename
-               }]
+                -command [namespace code {
+              svn_log_rev [EitherOrHead] $filename
+            }]
             $logcanvas.annotate configure \
-               -command [namespace code {
-                 set rev [EitherOrHead]
-                 if {$rev eq "rHEAD"} {set revpath($rev) "$filename"}
-                 svn_annotate_r $rev "$revpath($rev)" 
-              }]
+                -command [namespace code {
+              set rev [EitherOrHead]
+              if {$rev eq "rHEAD"} {set revpath($rev) "$filename"}
+              svn_annotate_r $rev "$revpath($rev)"
+            }]
             $logcanvas.diff configure \
-              -command [namespace code {
-                 set revA [$logcanvas.up.revA_rvers get]
-                 set revB [$logcanvas.up.revB_rvers get]
-                 if {$revA eq "" || $revB eq ""} {
-                   cvsfail "Please select two revisions!" $logcanvas
-                   return
-                 }
-                 set A [string trimleft $revA {r}]
-                 set B [string trimleft $revB {r}]
-                 comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
-              }]
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA eq "" || $revB eq ""} {
+                cvsfail "Please select two revisions!" $logcanvas
+                return
+              }
+              set A [string trimleft $revA {r}]
+              set B [string trimleft $revB {r}]
+              comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
+            }]
             $logcanvas.patchdiff configure -state normal \
-              -command [namespace code {
-                 set revA [$logcanvas.up.revA_rvers get]
-                 set revB [$logcanvas.up.revB_rvers get]
-                 if {$revA eq "" && $revB eq ""} {
-                   cvsfail "Please select a revision!" $logcanvas
-                   return
-                 }
-                 svn_difflog_rev $rev "$revpath($rev)"
-              }]
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA eq "" && $revB eq ""} {
+                cvsfail "Please select a revision!" $logcanvas
+                return
+              }
+              svn_difflog_rev $rev "$revpath($rev)"
+            }]
             $logcanvas.ddiff configure -state normal \
-              -command [namespace code {
-                 set revA [$logcanvas.up.revA_rvers get]
-                 set revB [$logcanvas.up.revB_rvers get]
-                 if {$revA eq "" && $revB eq ""} {
-                   cvsfail "Please select a revision!" $logcanvas
-                   return
-                 }
-                 svn_show_rev $rev "$revpath($rev)"
-              }]
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA eq "" && $revB eq ""} {
+                cvsfail "Please select a revision!" $logcanvas
+                return
+              }
+              svn_show_rev $rev "$revpath($rev)"
+            }]
             $logcanvas.merge configure \
-              -command [namespace code {
-                 set currentrevpath "$revpath(r$current_revnum)@$current_revnum"
-                 set fromrev [$logcanvas.up.revA_rvers get]
-                 if {$fromrev == ""} {
-                   cvsfail "Please select a revision to merge from!" $logcanvas
-                   return
-                 }
-                 set fromrevpath "$revpath($fromrev)@[string trimleft $fromrev {r}]"
-                 set sincerev [$logcanvas.up.revB_rvers get]
-                 set fromtag ""
-                 if {[info exists revbtags($sincerev)]} {
-                   set fromtag [lindex $revbtags($sincerev) 0]
-                 }
-                 if {$fromtag == ""} {
-                   foreach brev [array names revbtags] {
-                     set b $revbtags($brev)
-                     if {$b == ""} continue
-                     foreach r $branchrevs($b) {
-                       if {$r == $fromrev} {
-                         set fromtag $b
-                       }
-                     }
-                   }
-                 }
-                 if {$sincerev == ""} {
-                   svn_merge $logcanvas $fromrevpath "" $currentrevpath $fromtag $filename
-                 } else {
-                   set sincerevpath "$revpath($sincerev)@[string trimleft $sincerev {r}]"
-                   svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
-                 }
-               }]
+                -command [namespace code {
+              set currentrevpath "$revpath(r$current_revnum)@$current_revnum"
+              set fromrev [$logcanvas.up.revA_rvers get]
+              if {$fromrev == ""} {
+                cvsfail "Please select a revision to merge from!" $logcanvas
+                return
+              }
+              set fromrevpath "$revpath($fromrev)@[string trimleft $fromrev {r}]"
+              set sincerev [$logcanvas.up.revB_rvers get]
+              set fromtag ""
+              if {[info exists revbtags($sincerev)]} {
+                set fromtag [lindex $revbtags($sincerev) 0]
+              }
+              if {$fromtag == ""} {
+                foreach brev [array names revbtags] {
+                  set b $revbtags($brev)
+                  if {$b == ""} continue
+                  foreach r $branchrevs($b) {
+                    if {$r == $fromrev} {
+                      set fromtag $b
+                    }
+                  }
+                }
+              }
+              if {$sincerev == ""} {
+                svn_merge $logcanvas $fromrevpath "" $currentrevpath $fromtag $filename
+              } else {
+                set sincerevpath "$revpath($sincerev)@[string trimleft $sincerev {r}]"
+                svn_merge $logcanvas $fromrevpath $sincerev $sincerevpath $fromtag $filename
+              }
+            }]
             if {$kind == "directory"} {
               $logcanvas.view configure \
-                 -command [namespace code {
-                   set rev [EitherOrHead]
-                   svn_fileview $rev $filename "directory"
-                }]
+                  -command [namespace code {
+                set rev [EitherOrHead]
+                svn_fileview $rev $filename "directory"
+              }]
               $logcanvas.annotate configure -state disabled
               $logcanvas.diff configure -state disabled
               $logcanvas.patchdiff configure -state disabled
               $logcanvas.ddiff configure -state disabled
             }
           }
-         "CVS" {
-           $logcanvas.up.bmodbrowse configure -command modbrowse_run \
-              -image Modules_cvs -state normal
-           $logcanvas.up.lfname configure -text "RCS file"
-           $logcanvas.up.rfname configure -state normal
-           $logcanvas.up.rfname delete 0 end
-           $logcanvas.up.rfname insert end "$fname,v"
-           $logcanvas.up.rfname configure -state readonly
-           if {$loc == "rep"} {
-             # Working on repository files, not checked out
-             $logcanvas.view configure -state normal \
-                -command [namespace code {
-                  set rev [EitherOrHead]
-                  cvs_fileview_checkout $rev $filename
-                }]
-             $logcanvas.log configure -state disabled
-             $logcanvas.annotate configure -state disabled
-             $logcanvas.diff configure -state disabled
-             $logcanvas.merge configure -state disabled
-           } else {
-             # We have a checked-out local file
-             $logcanvas.view configure \
-               -command [namespace code {
-                 set rev [EitherOrHead]
-                 cvs_fileview_update $rev $filename
-               }]
-             $logcanvas.log configure -state normal \
-               -command [namespace code {
-                 set rev [EitherOrHead]
-                 cvs_log_rev $rev $filename
-               }]
-             $logcanvas.annotate configure \
-               -command [namespace code {
-                 set rev [EitherOrHead]
-                 cvs_annotate_r $rev "$module_dir/$filename"
-               }]
-             $logcanvas.diff configure -state normal \
-                -command [namespace code {
-                   set revA [$logcanvas.up.revA_rvers get]
-                   set revB [$logcanvas.up.revB_rvers get]
-                   if {$revA eq "" || $revB eq ""} {
-                     cvsfail "Please select two revisions!" $logcanvas
-                     return
-                   }
-                   comparediff_r $revA $revB $logcanvas $filename
-                }]
-             $logcanvas.merge configure \
-                 -command [namespace code {
-                   set fromrev [$logcanvas.up.revA_rvers get]
-                   set sincerev [$logcanvas.up.revB_rvers get]
-                   if {$fromrev eq ""} {
-                     cvsfail "Please select a revision to merge from!" $logcanvas
-                     return
-                   }
-                   set fromtag ""
-                   set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
-                   if {[info exists revbtags($fromrev_root)]} {
-                     set fromtag [lindex $revbtags($fromrev_root) 0]
-                   } else {
-                     # Just a rev number will do
-                     set fromtag $fromrev_root
-                   }
-                   cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
-               }]
-            }
-         }
-         "GIT" {
+          "CVS" {
             $logcanvas.up.bmodbrowse configure -command modbrowse_run \
-              -image Modules_git -state normal
+                -image Modules_cvs -state normal
+            $logcanvas.up.lfname configure -text "RCS file"
+            $logcanvas.up.rfname configure -state normal
+            $logcanvas.up.rfname delete 0 end
+            $logcanvas.up.rfname insert end "$fname,v"
+            $logcanvas.up.rfname configure -state readonly
+            if {$loc == "rep"} {
+              # Working on repository files, not checked out
+              $logcanvas.view configure -state normal \
+                  -command [namespace code {
+                set rev [EitherOrHead]
+                cvs_fileview_checkout $rev $filename
+              }]
+              $logcanvas.log configure -state disabled
+              $logcanvas.annotate configure -state disabled
+              $logcanvas.diff configure -state disabled
+              $logcanvas.merge configure -state disabled
+            } else {
+              # We have a checked-out local file
+              $logcanvas.view configure \
+                  -command [namespace code {
+                set rev [EitherOrHead]
+                cvs_fileview_update $rev $filename
+              }]
+              $logcanvas.log configure -state normal \
+                  -command [namespace code {
+                set rev [EitherOrHead]
+                cvs_log_rev $rev $filename
+              }]
+              $logcanvas.annotate configure \
+                  -command [namespace code {
+                set rev [EitherOrHead]
+                cvs_annotate_r $rev "$module_dir/$filename"
+              }]
+              $logcanvas.diff configure -state normal \
+                  -command [namespace code {
+                set revA [$logcanvas.up.revA_rvers get]
+                set revB [$logcanvas.up.revB_rvers get]
+                if {$revA eq "" || $revB eq ""} {
+                  cvsfail "Please select two revisions!" $logcanvas
+                  return
+                }
+                comparediff_r $revA $revB $logcanvas $filename
+              }]
+              $logcanvas.merge configure \
+                  -command [namespace code {
+                set fromrev [$logcanvas.up.revA_rvers get]
+                set sincerev [$logcanvas.up.revB_rvers get]
+                if {$fromrev eq ""} {
+                  cvsfail "Please select a revision to merge from!" $logcanvas
+                  return
+                }
+                set fromtag ""
+                set fromrev_root [join [lrange [split $fromrev {.}] 0 end-1] {.}]
+                if {[info exists revbtags($fromrev_root)]} {
+                  set fromtag [lindex $revbtags($fromrev_root) 0]
+                } else {
+                  # Just a rev number will do
+                  set fromtag $fromrev_root
+                }
+                cvs_merge $logcanvas $fromrev $sincerev $fromtag [list $filename]
+              }]
+            }
+          }
+          "GIT" {
+            $logcanvas.up.bmodbrowse configure -command modbrowse_run \
+                -image Modules_git -state normal
             $logcanvas.up.lfname configure -text "GIT Path"
             $logcanvas.up.rfname configure -state normal
             $logcanvas.up.rfname delete 0 end
             $logcanvas.up.rfname insert end "$cvsglb(relpath)/$fname"
             $logcanvas.up.rfname configure -state readonly
-           set info_cmd [exec::new "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$fname\""]
-           set infoline [$info_cmd\::output]
-           gen_log:log D "$infoline"
-           # don't split infoline because comments like this break it:
-           #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
-           regsub { .*$} $infoline {} current_revnum
-           #gen_log:log D "current_revnum $current_revnum"
-           if {! [info exists current_revnum]} {
-             gen_log:log E "Warning: couldn't find current revision number!"
-           }
-           $logcanvas.view configure -state normal \
-             -command [namespace code {
-                  set rev [EitherOrHead]
-                  git_fileview $rev $cvsglb(relpath) "$filename"
-             }]
-           $logcanvas.log configure \
-              -command [namespace code {
-                  set rev [EitherOrHead]
-                 git_log_rev $rev "$filename"
-                }]
-           $logcanvas.annotate configure -state normal \
-             -command [namespace code {
-                 set rev [EitherOrHead]
-                 git_annotate_r $rev "$filename"
-             }]
-            $logcanvas.diff configure \
-              -command [namespace code {
-                 set revA [$logcanvas.up.revA_rvers get]
-                 set revB [$logcanvas.up.revB_rvers get]
-                 if {$revA eq "" || $revB eq ""} {
-                   cvsfail "Please select two revisions!" $logcanvas
-                   return
-                 }
-                 comparediff_r $revA $revB $logcanvas "$filename"
-              }]
-           $logcanvas.patchdiff configure -state normal \
-             -command [namespace code {
-                 set revA [$logcanvas.up.revA_rvers get]
-                 set revB [$logcanvas.up.revB_rvers get]
-                 git_patch "$filename" $revA $revB
-             }]
-           $logcanvas.ddiff configure -state normal \
-               -command [namespace code {
-                 set rev [EitherOrHead]
-                 git_show $rev
-             }]
-           $logcanvas.merge configure -state disabled
-           $logcanvas.viewtags configure -state normal \
-               -command {git_list_tags}
-           if {[file isdirectory $fname]} {
-             $logcanvas.view configure -state disabled
-             $logcanvas.annotate configure -state disabled
-             $logcanvas.diff configure -state disabled
-             $logcanvas.patchdiff configure -state disabled
-             $logcanvas.merge configure -state disabled
-           }
-         }
-         "RCS" {
-           $logcanvas.up.bmodbrowse configure -state disabled -image {}
-           $logcanvas.up.lfname configure -text "RCS file"
-           $logcanvas.up.rfname configure -state normal
-           $logcanvas.up.rfname delete 0 end
-           $logcanvas.up.rfname insert end "$fname"
-           $logcanvas.up.rfname configure -state readonly
-           $logcanvas.view configure \
-             -command [namespace code {
-               set revA [$logcanvas.up.revA_rvers get]
-               set revB [$logcanvas.up.revB_rvers get]
-               if {$revA ne ""} {
-                  set rev $revA
-               } elseif {$revB ne ""} {
-                  set rev $revB
-               } else {
-                  set rev ""
-               }
-               rcs_fileview_checkout $rev $filename
-             }]
-           $logcanvas.log configure -state normal \
-             -command [namespace code {
-               set revA [$logcanvas.up.revA_rvers get]
-               set revB [$logcanvas.up.revB_rvers get]
-               if {$revA ne ""} {
-                  set rev $revA
-               } elseif {$revB ne ""} {
-                  set rev $revB
-               } else {
-                  set rev ""
-               }
-               rcs_log_rev $rev $filename
-             }]
-           $logcanvas.annotate configure -state disabled
-           $logcanvas.diff configure -state normal \
-             -command [namespace code {
-               set revA [$logcanvas.up.revA_rvers get]
-               set revB [$logcanvas.up.revB_rvers get]
-               if {$revA eq "" || $revB eq ""} {
-                 cvsfail "Please select 2 revisions!" $logcanvas
-                 return
-               }
-               comparediff_r $revA $revB $logcanvas $filename
+            set info_cmd [exec::new "git log --abbrev-commit --pretty=oneline --max-count=1 --no-color -- \"$fname\""]
+            set infoline [$info_cmd\::output]
+            gen_log:log D "$infoline"
+            # don't split infoline because comments like this break it:
+            #f6c73a2 Reinstate debug command. Apparently "$1"x != x works differently in bash 4.2
+            regsub { .*$} $infoline {} current_revnum
+            #gen_log:log D "current_revnum $current_revnum"
+            if {! [info exists current_revnum]} {
+              gen_log:log E "Warning: couldn't find current revision number!"
+            }
+            $logcanvas.view configure -state normal \
+                -command [namespace code {
+              set rev [EitherOrHead]
+              git_fileview $rev $cvsglb(relpath) "$filename"
             }]
-           $logcanvas.merge configure -state disabled
+            $logcanvas.log configure \
+                -command [namespace code {
+              set rev [EitherOrHead]
+              git_log_rev $rev "$filename"
+            }]
+            $logcanvas.annotate configure -state normal \
+                -command [namespace code {
+              set rev [EitherOrHead]
+              git_annotate_r $rev "$filename"
+            }]
+            $logcanvas.diff configure \
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA eq "" || $revB eq ""} {
+                cvsfail "Please select two revisions!" $logcanvas
+                return
+              }
+              comparediff_r $revA $revB $logcanvas "$filename"
+            }]
+            $logcanvas.patchdiff configure -state normal \
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              git_patch "$filename" $revA $revB
+            }]
+            $logcanvas.ddiff configure -state normal \
+                -command [namespace code {
+              set rev [EitherOrHead]
+              git_show $rev
+            }]
+            $logcanvas.merge configure -state disabled
+            $logcanvas.viewtags configure -state normal \
+                -command {git_list_tags}
+            if {[file isdirectory $fname]} {
+              $logcanvas.view configure -state disabled
+              $logcanvas.annotate configure -state disabled
+              $logcanvas.diff configure -state disabled
+              $logcanvas.patchdiff configure -state disabled
+              $logcanvas.merge configure -state disabled
+            }
+          }
+          "RCS" {
+            $logcanvas.up.bmodbrowse configure -state disabled -image {}
+            $logcanvas.up.lfname configure -text "RCS file"
+            $logcanvas.up.rfname configure -state normal
+            $logcanvas.up.rfname delete 0 end
+            $logcanvas.up.rfname insert end "$fname"
+            $logcanvas.up.rfname configure -state readonly
+            $logcanvas.view configure \
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA ne ""} {
+                set rev $revA
+              } elseif {$revB ne ""} {
+                set rev $revB
+              } else {
+                set rev ""
+              }
+              rcs_fileview_checkout $rev $filename
+            }]
+            $logcanvas.log configure -state normal \
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA ne ""} {
+                set rev $revA
+              } elseif {$revB ne ""} {
+                set rev $revB
+              } else {
+                set rev ""
+              }
+              rcs_log_rev $rev $filename
+            }]
+            $logcanvas.annotate configure -state disabled
+            $logcanvas.diff configure -state normal \
+                -command [namespace code {
+              set revA [$logcanvas.up.revA_rvers get]
+              set revB [$logcanvas.up.revB_rvers get]
+              if {$revA eq "" || $revB eq ""} {
+                cvsfail "Please select 2 revisions!" $logcanvas
+                return
+              }
+              comparediff_r $revA $revB $logcanvas $filename
+            }]
+            $logcanvas.merge configure -state disabled
           }
         }
       }
-
+      
       # Pop up a transient window with a listbox of the tags for a specific
       # revision
       proc PopupTags { x y } {
@@ -470,9 +470,9 @@ namespace eval ::logcanvas {
         global cvsglb
         variable logcanvas
         variable revtags
-
+        
         gen_log:log T "ENTER ($x $y)"
-
+        
         # We tagged the "more..." text with R$revision
         foreach tag [$logcanvas.canvas gettags current] {
           if {[string index $tag 0] == {R}} {
@@ -505,8 +505,8 @@ namespace eval ::logcanvas {
           gen_log:log D "width from $maxtag: $w"
           frame $mname -relief raised -bd 2 -bg $cvsglb(hlbg)
           listbox $mname.lbx -font $cvscfg(listboxfont) \
-            -yscroll "$mname.yscr set" \
-            -listvar [namespace current]::revtags($rev)
+              -yscroll "$mname.yscr set" \
+              -listvar [namespace current]::revtags($rev)
           scrollbar $mname.yscr -orient vertical -command "$mname.lbx yview"
           frame $mname.bot -bg  $cvsglb(hlbg)
           button $mname.but -text "Close" -command "$logcanvas.canvas delete lbx"
@@ -514,7 +514,7 @@ namespace eval ::logcanvas {
           incr w [winfo reqwidth $mname.yscr]
           incr h [winfo reqheight $mname.but]
           $logcanvas.canvas create window $rev_x $rev_y -anchor w \
-            -height $h -width $w -window $mname -tags lbx
+              -height $h -width $w -window $mname -tags lbx
           pack $mname.bot -in $mname -side bottom -expand 0 -fill x
           pack $mname.arr -in $mname.bot -side left -anchor w
           pack $mname.but -in $mname.bot -side right -anchor e -ipady 0
@@ -525,31 +525,31 @@ namespace eval ::logcanvas {
                 set i \[$mname.lbx nearest %y\]
                 SetSelection A \[lindex \$revtags($rev) \$i\] $rev
                 $mname.lbx selection clear 0 end
-                $mname.lbx selection set \$i"]
+          $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-2> [namespace code "
                 variable revtags
                 set i \[$mname.lbx nearest %y\]
                 SetSelection A \[lindex \$revtags($rev) \$i\] $rev
                 $mname.lbx selection clear 0 end
-                $mname.lbx selection set \$i"]
+          $mname.lbx selection set \$i"]
           bind $mname.lbx <Button-3> [namespace code "
                 variable revtags
                 set i \[$mname.lbx nearest %y\]
                 SetSelection B \[lindex \$revtags($rev) \$i\] $rev
                 $mname.lbx selection clear 0 end
-                $mname.lbx selection set \$i"]
+          $mname.lbx selection set \$i"]
         } else {
           gen_log:log D "$mname already exists"
           $logcanvas.canvas create window $rev_x $rev_y -anchor w \
-            -height $h -width $w -window $mname -tags lbx
+              -height $h -width $w -window $mname -tags lbx
         }
         gen_log:log T "LEAVE"
         return
       }
-
+      
       # Sort the tags popup listbox
       proc sort_tag_lbx {mname} {
-
+        
         set arr [$mname.arr cget -image]
         set tagvar [$mname.lbx cget -listvar]
         set taglist [set [$mname.lbx cget -listvar]]
@@ -561,27 +561,27 @@ namespace eval ::logcanvas {
           $mname.arr configure -image "arr_up"
         }
         set new_taglist [lsort -dictionary $direction $taglist]
-
+        
         $mname.lbx delete 0 end
         foreach t $new_taglist {
           $mname.lbx insert end $t
         }
       }
-
+      
       # Calculate size of the You are Here box
       proc CalcCurrent { revision } {
         variable curr
         variable font_bold
         variable font_bold_h
         variable logcanvas
-
+        
         #gen_log:log T "ENTER ($revision)"
         set redbox_width \
-          [expr {[image width Man] \
-                 + $curr(padx) \
-                 + [font measure $font_bold \
-                     -displayof $logcanvas.canvas {You are}] \
-                 + $curr(padx,2)}]
+            [expr {[image width Man] \
+              + $curr(padx) \
+              + [font measure $font_bold \
+              -displayof $logcanvas.canvas {You are}] \
+            + $curr(padx,2)}]
         set redbox_height [image height Man]
         set h [expr {2 * $font_bold_h}]
         if {$h > $redbox_height} {
@@ -591,7 +591,7 @@ namespace eval ::logcanvas {
         #gen_log:log T "LEAVE box sixe ($redbox_width x $redbox_height)"
         return [list $redbox_width $redbox_height]
       }
-
+      
       # Draw You are Here box
       proc DrawCurrent { x y width height revision } {
         global cvsglb
@@ -601,7 +601,7 @@ namespace eval ::logcanvas {
         variable logcanvas
         variable curr_x
         variable curr_y
-
+        
         #gen_log:log T "ENTER ($x $y $width $height $revision)"
         set curr_x $x
         set curr_y $y
@@ -609,34 +609,34 @@ namespace eval ::logcanvas {
         set tx [expr {$x + $width}]
         set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
-          $x $y $tx $ty \
-          -width $curr(width) -fill $cvsglb(textbg) -outline red3
+            $x $y $tx $ty \
+            -width $curr(width) -fill $cvsglb(textbg) -outline red3
         if {[info exists revstate(current)]} {
           if {$revstate(current) == {dead}} {
             $logcanvas.canvas create line \
-              $x $y $tx $ty -fill red -width $curr(width)
+                $x $y $tx $ty -fill red -width $curr(width)
             $logcanvas.canvas create line \
-              $tx $y $x $ty -fill red -width $curr(width)
+                $tx $y $x $ty -fill red -width $curr(width)
           }
         }
         set pad \
-          [expr {($width - [image width Man] - \
-            [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
+            [expr {($width - [image width Man] - \
+              [font measure $font_bold -displayof $logcanvas.canvas {You are}]) \
             / 3}]
         set ty [expr {$y - [expr {$height/2}]}]
         # add the contents
         $logcanvas.canvas create image \
-          [expr {$x + $pad}] $ty \
-          -image Man -anchor w
+            [expr {$x + $pad}] $ty \
+            -image Man -anchor w
         $logcanvas.canvas create text \
-          [expr {$x + $width - $pad}] $ty \
-          -text "You are\nhere" -anchor e \
-          -fill red3 \
-          -font $font_bold
+            [expr {$x + $width - $pad}] $ty \
+            -text "You are\nhere" -anchor e \
+            -fill red3 \
+            -font $font_bold
         #gen_log:log T "LEAVE ()"
         return
       }
-
+      
       # Finds the dimensions including tags, but not the location, for the blue root box.
       # That (tags on the root) can only happen in CVS, I think
       proc CalcRoot { root_rev } {
@@ -652,12 +652,12 @@ namespace eval ::logcanvas {
         variable revtags
         variable revbtags
         variable tlist
-
+        
         #gen_log:log T "ENTER ($root_rev)"
         set height $box_height
         set root_width 0
         set tag_width 0
-
+        
         set tlist($root_rev) {}
         if {[info exists revtags($root_rev)]} {
           # We want to show all the coloured tags plus others to take
@@ -672,7 +672,7 @@ namespace eval ::logcanvas {
             }
           }
           set tlist($root_rev) [concat $tag_colour $tag_black]
-
+          
           if {$logcfg(show_tags)} {
             if {[info exists cvscfg(tagdepth)] && $cvscfg(tagdepth) != 0} {
               set n [expr {$cvscfg(tagdepth) - [llength $tag_colour]}]
@@ -703,11 +703,11 @@ namespace eval ::logcanvas {
         }
         incr width $curr(padx,2)
         set height [expr {$curr(pady,2) + \
-          [llength [subst $root_info]] * $font_norm_h}]
+            [llength [subst $root_info]] * $font_norm_h}]
         gen_log:log T "LEAVE (tag_width $tag_width root_width $root_width height $height)"
         return [list $tag_width $root_width $height]
       }
-
+      
       proc DrawRoot { x y rbox_width rbox_height cur_rev root_rev } {
         global cvscfg
         global cvsglb
@@ -720,7 +720,7 @@ namespace eval ::logcanvas {
         variable revbtags
         variable revbranches
         variable tlist
-
+        
         #gen_log:log T "ENTER ($x $y $rbox_width $rbox_height $cur_rev $root_rev)"
         if {[info exists revbtags($root_rev)]} {
           #gen_log:log D "revbtags($root_rev) $revbtags($root_rev)"
@@ -729,31 +729,31 @@ namespace eval ::logcanvas {
           gen_log:log D "Drawing nameless root for $root_rev"
           set revbtags() {}
         }
-
+        
         # draw the box
         $logcanvas.canvas create rectangle \
-          $x $y \
-          [expr {$x + $rbox_width}] [expr {$y - $rbox_height}] \
-          -width $curr(width) \
-          -tags box \
-          -fill $cvsglb(textbg) -outline blue
-
+            $x $y \
+            [expr {$x + $rbox_width}] [expr {$y - $rbox_height}] \
+            -width $curr(width) \
+            -tags box \
+            -fill $cvsglb(textbg) -outline blue
+        
         set tx [expr {$x + $rbox_width/2}]
         set ty [expr {$y - $curr(pady)}]
         #gen_log:log D "[subst $root_info]"
         foreach s [subst $root_info] {
           $logcanvas.canvas create text \
-            $tx $ty \
-            -text $s \
-            -anchor s \
-            -font $font_norm -fill navy \
-            -tags "R$root_rev"
+              $tx $ty \
+              -text $s \
+              -anchor s \
+              -font $font_norm -fill navy \
+              -tags "R$root_rev"
           incr ty -$font_norm_h
         }
         #gen_log:log T "LEAVE ()"
         return
       }
-
+      
       # Finds the dimensions including tags, but not the location, of each revision box
       proc CalcRevision { revision } {
         global cvscfg
@@ -774,12 +774,12 @@ namespace eval ::logcanvas {
         variable revbtags
         variable tlist
         variable btlist
-
+        
         #gen_log:log T "ENTER ($revision)"
         set height $box_height
         set width 0
         set tag_width 0
-
+        
         set tlist($revision) {}
         if {[info exists revtags($revision)]} {
           # We want to show all the coloured tags plus others to take
@@ -850,7 +850,7 @@ namespace eval ::logcanvas {
             }
           }
         }
-
+        
         if {![info exists revtime($revision)]} {set revtime($revision) {}}
         if {![info exists revdate($revision)]} {set revdate($revision) {}}
         if {![info exists revinfo($revision)]} {set revinfo($revision) {}}
@@ -865,7 +865,7 @@ namespace eval ::logcanvas {
         #gen_log:log T "LEAVE (tag_width $tag_width  width $width  height $height)"
         return [list $tag_width $width $height]
       }
-
+      
       proc DrawRevision { x y width height revision} {
         global cvscfg
         global cvsglb
@@ -896,7 +896,7 @@ namespace eval ::logcanvas {
         variable mrev
         variable drawn_revs
         upvar branch branch
-
+        
         #gen_log:log T "ENTER ($x $y $width $height $revision)"
         if {! [info exists drawn_revs]} {
           set drawn_revs ""
@@ -923,11 +923,11 @@ namespace eval ::logcanvas {
               set tagcolour $cvscfg(tagcolour,$btag)
             }
             $logcanvas.canvas create text \
-               $tx $ty \
-               -text $btag \
-               -anchor se -fill $btagcolour \
-               -font $my_font \
-               -tags $btaglist
+                $tx $ty \
+                -text $btag \
+                -anchor se -fill $btagcolour \
+                -font $my_font \
+                -tags $btaglist
             incr ty -$font_norm_h
           }
         }
@@ -956,11 +956,11 @@ namespace eval ::logcanvas {
               set tagcolour $cvscfg(tagcolour,$tag)
             }
             $logcanvas.canvas create text \
-              $tx $ty \
-              -text $tag \
-              -anchor se -fill $tagcolour \
-              -font $my_font \
-              -tags $taglist
+                $tx $ty \
+                -text $tag \
+                -anchor se -fill $tagcolour \
+                -font $my_font \
+                -tags $taglist
             incr ty -$font_norm_h
           }
         }
@@ -968,43 +968,43 @@ namespace eval ::logcanvas {
         set tx [expr {$x + $width}]
         set ty [expr {$y - $height}]
         $logcanvas.canvas create rectangle \
-          $x $y $tx $ty \
-          -width $curr(width) -fill $cvsglb(textbg) -outline black \
-          -tags [list box selectable R$revision rect$revision active]
+            $x $y $tx $ty \
+            -width $curr(width) -fill $cvsglb(textbg) -outline black \
+            -tags [list box selectable R$revision rect$revision active]
         # ...and add the contents
         if {[info exists revstate($revision)]} {
           if {$revstate($revision) == {dead}} {
             # in CVS, a "dead" revision, which is often present if a file was
             # added on a branch
             $logcanvas.canvas create line \
-              $x $y $tx $ty -fill red -width $curr(width)
+                $x $y $tx $ty -fill red -width $curr(width)
             $logcanvas.canvas create line \
-              $tx $y $x $ty -fill red -width $curr(width)
+                $tx $y $x $ty -fill red -width $curr(width)
           } elseif {$revstate($revision) == {ghost}} {
             # In GIT, a similar thing happens if a file was added on a branch.
             # It's not dead, it's just not reachable from the current branch.
             $logcanvas.canvas create line \
-              $x $y $tx $ty -fill gray -width $curr(width)
+                $x $y $tx $ty -fill gray -width $curr(width)
             $logcanvas.canvas create line \
-              $tx $y $x $ty -fill gray -width $curr(width)
+                $tx $y $x $ty -fill gray -width $curr(width)
           }
         }
         set tx [expr {$x + $width/2}]
         set ty [expr {$y - $curr(pady)}]
         foreach s [subst $rev_info] {
           $logcanvas.canvas create text \
-            $tx $ty \
-            -text $s \
-            -anchor s \
-            -font $font_norm \
-            -tags [list selectable R$revision active]
+              $tx $ty \
+              -text $s \
+              -anchor s \
+              -font $font_norm \
+              -tags [list selectable R$revision active]
           incr ty -$font_norm_h
         }
         lappend drawn_revs $branch,$revision
         #gen_log:log T "LEAVE ()"
         return
       }
-
+      
       proc DrawBranch { x y root_rev branch } {
         global logcfg
         global ingit
@@ -1021,7 +1021,7 @@ namespace eval ::logcanvas {
         variable revbranches
         variable revbtags
         variable drawn_revs
-
+        
         gen_log:log T "ENTER ($x $y $root_rev $branch)"
         gen_log:log T "level [info level]"
         if {! [info exists drawn_revs]} {
@@ -1048,7 +1048,7 @@ namespace eval ::logcanvas {
           foreach r [lrange $branchrevs($branch) 1 end-1] {
             if {![info exists revbranches($r)]} {set revbranches($r) {}}
             if {$logcfg(show_inter_revs) || $logcfg(show_empty_branches) \
-                && $revbranches($r) != {}} {
+                  && $revbranches($r) != {}} {
               lappend revlist $r
             } else {
               # Only if there are non-empty branches off this revision
@@ -1066,7 +1066,7 @@ namespace eval ::logcanvas {
             lappend revlist [lindex $branchrevs($branch) end]
           }
         }
-
+        
         # Work out width and height of this limb, saving sizes of revisions
         set tag_width 0
         set rdata {}
@@ -1095,7 +1095,7 @@ namespace eval ::logcanvas {
         # calculate the size of each revision in the branch, and keep
         # track of the largest x and y dimensions, which we will use
         # for all when drawing
-        set rev_height 0      
+        set rev_height 0
         foreach revision $revlist {
           if {$revision == {current}} {
             set rtw 0
@@ -1121,13 +1121,13 @@ namespace eval ::logcanvas {
           incr height $rh
         }
         # At the end, we've saved the height and width of the whole column
-
+        
         # Position branch. Query the canvas to look for overlaps, using the
         # lower-left x and y that were passed in, and the measured width and
         # accumulated height. Use tk's canvas overlap command to find and tag
         # any overlapping objects within the rectangle. We haven't drawn
         # anything yet, this is still just in memory
-
+        
         # Look for overlap horizontally
         while {1} {
           set overlap_llx [expr {$x - $curr(spcx)}]
@@ -1147,20 +1147,20 @@ namespace eval ::logcanvas {
           set x [expr {[lindex $bbox 2] + $curr(spcx) + 1}]
         }
         # Look for overlap vertically
-          set overlap_llx $x
-          set overlap_lly [expr {$y - $height}]
-          set overlap_urx [expr {$x + $tag_width + $box_width}]
-          set overlap_ury [expr {$y - $height + $curr(yfudge)}]
-          $logcanvas.canvas addtag ol_y overlapping \
+        set overlap_llx $x
+        set overlap_lly [expr {$y - $height}]
+        set overlap_urx [expr {$x + $tag_width + $box_width}]
+        set overlap_ury [expr {$y - $height + $curr(yfudge)}]
+        $logcanvas.canvas addtag ol_y overlapping \
             $overlap_llx $overlap_lly $overlap_urx $overlap_ury
-          set bbox [$logcanvas.canvas bbox ol_y]
-          $logcanvas.canvas dtag ol_y
-          if {$bbox != {}} {
-            # Move down to make space
-            gen_log:log D "vertical overlap with $bbox"
-            incr y [expr {[lindex $bbox 3] - ($y - $height) + $curr(spcy) + $tip_height}]
-          }
-
+        set bbox [$logcanvas.canvas bbox ol_y]
+        $logcanvas.canvas dtag ol_y
+        if {$bbox != {}} {
+          # Move down to make space
+          gen_log:log D "vertical overlap with $bbox"
+          incr y [expr {[lindex $bbox 3] - ($y - $height) + $curr(spcy) + $tip_height}]
+        }
+        
         # Now we're ready to start drawing
         # Position to top of branch
         incr x $tag_width
@@ -1186,7 +1186,7 @@ namespace eval ::logcanvas {
               # logcfg(show_empty_branches) is set.  Except for You are Here,
               # which is a special case
               if {$branchrevs($r2) == {} && $r2 != {current} && !\
-                  $logcfg(show_empty_branches)} {
+                    $logcfg(show_empty_branches)} {
                 continue
               }
               lappend brevs $r2
@@ -1197,14 +1197,14 @@ namespace eval ::logcanvas {
               set x2 [expr {$lx + $lbw + $curr(spcx)}]
             }
           }
-
+          
           # y2 may have changed to accomodate a long branch. If so we need
           # to figure out what our y should be
           set y [expr {$y2 + $box_height/2 + $curr(boff)}]
           set rx [expr {$x + $box_width}]
           set ry [expr {$y - $box_height/2}]
           set by [expr {$ry - $curr(boff)}]
-
+          
           # If it has brevs, it's the root of a branch
           # Draw the arrows before the boxes, leaving box-high spaces between them
           foreach b $brevs {bx bw rh ly} $bxys {
@@ -1212,14 +1212,14 @@ namespace eval ::logcanvas {
             if {$ly != {} && ! $ingit} {
               # The up-pointing arrow below the bottom revision, if that has been raised
               $logcanvas.canvas create line \
-                $mx $ly $mx [expr {$by - $rh}] \
-                -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
+                  $mx $ly $mx [expr {$by - $rh}] \
+                  -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
             }
             if {$ingit && $ly != {}} {
               set ny [expr {$ly + $curr(boff)}]
               if {$ny != $by} {
                 # The up-pointing arrow below the bottom revision, if that has been raised
-                  $logcanvas.canvas create line \
+                $logcanvas.canvas create line \
                     $mx $ly $mx [expr {$by - $curr(boff)}] \
                     -arrow first -arrowshape $curr(arrowshape) -width 1
               }
@@ -1228,7 +1228,7 @@ namespace eval ::logcanvas {
               # treat this "current" as a branch. The arrow points sideways to it
               DrawCurrent $bx $by $bw $cur_height $revision
               $logcanvas.canvas lower [ \
-                $logcanvas.canvas create line \
+                  $logcanvas.canvas create line \
                   $rx $ry $mx $ry $mx $by \
                   -arrow last -arrowshape $curr(arrowshape) -width $curr(width)
               ]
@@ -1246,9 +1246,9 @@ namespace eval ::logcanvas {
               DrawRoot $bx $by $bw $lbl_height($b) $revision $b
               #if {$ly == {} } {
               #$logcanvas.canvas create line \
-                #$mx [expr {$by - $rh}] $mx [expr {$by - $rh - $curr(boff)}] \
-                #-arrow last -arrowshape $curr(arrowshape) \
-                #-width $curr(width) -fill brown
+                  #$mx [expr {$by - $rh}] $mx [expr {$by - $rh - $curr(boff)}] \
+                  #-arrow last -arrowshape $curr(arrowshape) \
+                  #-width $curr(width) -fill brown
               #}
             }
             # Arrow connecting the branch root box to its parent
@@ -1257,14 +1257,14 @@ namespace eval ::logcanvas {
               #set ay [expr {$by - $tip_height - $curr(boff)}]
               set ay [expr {$by - $curr(boff)}]
               $logcanvas.canvas lower [ \
-                $logcanvas.canvas create line \
+                  $logcanvas.canvas create line \
                   $rx $ry $mx $ry $mx $ay \
                   -arrow last -arrowshape $curr(arrowshape) -smooth 1
               ]
             } else {
               # Blue elbow
               $logcanvas.canvas lower [ \
-                $logcanvas.canvas create line \
+                  $logcanvas.canvas create line \
                   $rx $ry $mx $ry $mx $by \
                   -arrow last -arrowshape $curr(arrowshape) -width $curr(width) \
                   -fill blue
@@ -1275,14 +1275,14 @@ namespace eval ::logcanvas {
             }
           }
           # finised drawing special items for sub-branches
-
+          
           if {$last_y != {}} {
             # This is a regular between-revisions arrow
             $logcanvas.canvas create line \
-              $midx $last_y $midx [expr {$y - $box_height}] \
-              -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
+                $midx $last_y $midx [expr {$y - $box_height}] \
+                -arrow first -arrowshape $curr(arrowshape) -width $curr(width)
           }
-
+          
           # Start drawing the boxes.
           # First, the top one may well be "current" which is
           # a special case.
@@ -1299,7 +1299,7 @@ namespace eval ::logcanvas {
           set last_rev $revision
         }
         # Finished individual revisions and their branches
-
+        
         if {$ingit && ! $cvsglb(lightning)} {
           # For Git, now we draw the root box at the top
           lassign [CalcRoot $branch] rtw ignore bot_height
@@ -1307,9 +1307,9 @@ namespace eval ::logcanvas {
             set gy [expr {$top_y - $height}]
             DrawRoot [expr {$midx - ($box_width/2)}] $gy $box_width $bot_height [lindex $branchrevs($branch) end] $branch
             $logcanvas.canvas lower [ \
-              $logcanvas.canvas create line \
-               $midx $gy $midx [expr {$gy + $curr(spcy)}] \
-               -arrow first -arrowshape $curr(arrowshape) -width $curr(width) -fill blue
+                $logcanvas.canvas create line \
+                $midx $gy $midx [expr {$gy + $curr(spcy)}] \
+                -arrow first -arrowshape $curr(arrowshape) -width $curr(width) -fill blue
             ]
           }
         }
@@ -1320,7 +1320,7 @@ namespace eval ::logcanvas {
         gen_log:log T "LEAVE ($x $new_y $box_width $lbl_height($branch) $last_y)"
         return [list $x $new_y $box_width $lbl_height($branch) $last_y]
       }
-
+      
       proc DrawSideTree { x y root_rev } {
         global ingit
         variable logcanvas
@@ -1329,7 +1329,7 @@ namespace eval ::logcanvas {
         variable branchrevs
         variable revmergefrom
         variable xyw
-
+        
         gen_log:log T "ENTER: ($x $y $root_rev)"
         gen_log:log D "Drawing SideTree branch at $root_rev"
         foreach {lx y2 lbw rh lly} [DrawBranch $x $y $root_rev $root_rev] {
@@ -1343,13 +1343,13 @@ namespace eval ::logcanvas {
         set ry [expr {$y2 - $rh/4 - $curr(spcy)}]
         set by [expr {$y2 - $curr(boff)}]
         lassign [CalcRoot $root_rev] rtw box_width ignore
-
+        
         if {! $ingit} {
           # This is the blue box at the bottom of the side branch
           DrawRoot $lx $y2 $lbw $lbl_height($root_rev) $root_rev $root_rev
           # This is the arrow at the base of the side branch
           $logcanvas.canvas lower [\
-            $logcanvas.canvas create line \
+              $logcanvas.canvas create line \
               $mx $ry $mx [expr {$by - $rh}] \
               -arrow last -arrowshape $curr(arrowshape) \
               -width $curr(width)
@@ -1361,7 +1361,7 @@ namespace eval ::logcanvas {
           #gen_log:log D "revmergefrom($to) $revmergefrom($to)"
           set from $revmergefrom($to)
           if [info exists xyw($from)] {
-                #gen_log:log D " xyw($from) $xyw($from)"
+            #gen_log:log D " xyw($from) $xyw($from)"
           } else {
             #gen_log:log D " xyw($from) doesn't exist"
             continue
@@ -1370,7 +1370,7 @@ namespace eval ::logcanvas {
             gen_log:log D " xyw($to) $xyw($to)"
           } else {
             #gen_log:log D " xyw($to) doesn't exist"
-                continue
+            continue
           }
           set xto [lindex $xyw($from) 0]
           set yto [lindex $xyw($from) 1]
@@ -1398,13 +1398,13 @@ namespace eval ::logcanvas {
               $xfrom $yfrom $xmid $ymid $xto $yto \
               -arrow first -smooth 1
         }
-
+        
         UpdateBndBox
-
+        
         gen_log:log T "LEAVE"
         return $x2
       }
-
+      
       proc UpdateBndBox {} {
         global ingit
         variable logcanvas
@@ -1413,7 +1413,7 @@ namespace eval ::logcanvas {
         variable view_yoff
         variable curr_x
         variable curr_y
-
+        
         #gen_log:log T "ENTER ()"
         lassign [$logcanvas.canvas bbox all] x1 y1 x2 y2
         if {$x1 == ""} {
@@ -1422,20 +1422,20 @@ namespace eval ::logcanvas {
         }
         if {! $ingit} {
           $logcanvas.canvas configure \
-            -scrollregion [list \
+              -scrollregion [list \
               [expr {$x1 - 5}] [expr {$y1 - 5}] \
               [expr {$x2 + 5}] [expr {$y2 + 5}]
-            ]
+          ]
         } else {
           # In git, we may have merge arrows to the left of the first column.
           # tk doesn't include these in the bounding box, for some reason
           $logcanvas.canvas configure \
-            -scrollregion [list \
+              -scrollregion [list \
               [expr {$x1 - 25}] [expr {$y1 - 5}] \
               [expr {$x2 + 5}] [expr {$y2 + 5}]
-            ]
+          ]
         }
-
+        
         if {[info exists curr_x]} {
           set canv_width [$logcanvas.canvas cget -width]
           set canv_height [$logcanvas.canvas cget -height]
@@ -1457,7 +1457,7 @@ namespace eval ::logcanvas {
           if {$curr_x > $canv_width} {
             set dist_x [expr {$curr_x - $canv_width/2}]
             set dist_x [expr {$dist_x - 3 * [font measure $font_bold \
-                     -displayof $logcanvas.canvas {You are}]}]
+                -displayof $logcanvas.canvas {You are}]}]
             #gen_log:log D "positioning x:  new x $dist_x"
           } else {
             #gen_log:log D "not re-positioning x"
@@ -1486,7 +1486,7 @@ namespace eval ::logcanvas {
         #gen_log:log T "LEAVE ()"
         return
       }
-
+      
       proc DrawTree { {now {}} } {
         global cvscfg
         global logcfg
@@ -1516,7 +1516,7 @@ namespace eval ::logcanvas {
         variable font_bold
         variable font_bold_h
         variable sys
-
+        
         variable revwho
         variable revdate
         variable revtime
@@ -1532,13 +1532,13 @@ namespace eval ::logcanvas {
         variable mrev
         variable match
         variable drawn_revs
-
+        
         gen_log:log D "=================================="
         gen_log:log T "ENTER ($now)"
-
+        
         catch {unset drawn_revs}
         catch {unset xyw}
-
+        
         catch { unset revwho }
         foreach a [array names $scope\::revwho] {
           set revwho($a) [set $scope\::revwho($a)]
@@ -1587,17 +1587,17 @@ namespace eval ::logcanvas {
         foreach a [array names $scope\::branchrevs] {
           set branchrevs($a) [set $scope\::branchrevs($a)]
         }
-
+        
         set totagbegin [string first "_BRANCH_" $cvscfg(mergetoformat) ]
         set fromtagbegin [string first "_BRANCH_" $cvscfg(mergefromformat) ]
         set fromprefix [string range $cvscfg(mergefromformat) 0 [expr {$fromtagbegin -1}]]
         set toprefix [string range $cvscfg(mergetoformat) 0 [expr {$totagbegin - 1}]]
-
+        
         catch {after cancel $after_id_draw}
         busy_start $logcanvas
         if {$now != {now} && [info exists logcfg(draw_delay)]} {
           set after_id_draw \
-            [after $logcfg(draw_delay) [namespace code {DrawTree now}]]
+              [after $logcfg(draw_delay) [namespace code {DrawTree now}]]
         } else {
           set view_xoff [lindex [$logcanvas.canvas xview] 0]
           set view_yoff [lindex [$logcanvas.canvas yview] 0]
@@ -1628,18 +1628,18 @@ namespace eval ::logcanvas {
           if {$logcfg(show_box_rev)} {
             append rev_info {$revision}
           }
-
+          
           # Note: the boxes and tag lists are sized according to the font
           # so do not need to be scaled.
           set my_size [expr {round($logcfg(font_size) * $logcfg(scale))}]
           set font_norm [font create \
-            -family Helvetica -size $my_size]
+              -family Helvetica -size $my_size]
           set font_norm_h [font metrics \
-            $font_norm -displayof $logcanvas -linespace]
+              $font_norm -displayof $logcanvas -linespace]
           set font_bold [font create \
-            -family Helvetica -size $my_size -weight bold]
+              -family Helvetica -size $my_size -weight bold]
           set font_bold_h [font metrics \
-            $font_bold -displayof $logcanvas -linespace]
+              $font_bold -displayof $logcanvas -linespace]
           # Scale the layout constants
           foreach x {spcx spcy yfudge boff} {
             set curr($x) [expr {round($logcfg($x) * $font_norm_h * $logcfg(scale))}]
@@ -1656,7 +1656,7 @@ namespace eval ::logcanvas {
             lappend curr(arrowshape) [expr {$x * $logcfg(scale)}]
           }
           set box_height [expr {$curr(pady,2) + [llength $rev_info]*$font_norm_h}]
-
+          
           # Find the root. (needed for SVN and GIT). If there's a trunk, use that
           foreach a [array names revkind] {
             if {$revkind($a) == "root"} {
@@ -1682,7 +1682,7 @@ namespace eval ::logcanvas {
               gen_log:log D "No trunk, starting with basebranch $basebranch"
             }
           }
-
+          
           # Start drawing, beginning with the trunk or the lowest branch
           if {[info exists trunkrev] && $trunkrev != ""} {
             gen_log:log D "Drawing trunkrev $trunkrev"
@@ -1695,13 +1695,13 @@ namespace eval ::logcanvas {
             set ry [expr {$y2 - $rh/4 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
             lassign [CalcRoot $trunkrev] rtw box_width ignore
-
+            
             if {! $ingit} {
               # This is the blue box at the bottom of the trunk
               DrawRoot $lx $y2 $lbw $lbl_height($trunkrev) $trunkrev $trunkrev
               # This is the arrow at the base of the trunk
               $logcanvas.canvas lower [ \
-                $logcanvas.canvas create line \
+                  $logcanvas.canvas create line \
                   $mx $ry $mx [expr {$by - $rh}] \
                   -arrow last -arrowshape $curr(arrowshape) \
                   -width $curr(width)
@@ -1719,17 +1719,17 @@ namespace eval ::logcanvas {
             set ry [expr {$y2 - $rh/2 - $curr(spcy)}]
             set by [expr {$y2 - $curr(boff)}]
             lassign [CalcRoot $basebranch] rtw box_width bot_height
-
+            
             if {! $ingit} {
               $logcanvas.canvas create line \
-                $mx $by $mx [expr {$by - $rh}] \
-                -arrow last -arrowshape $curr(arrowshape) \
-                -width $curr(width)
+                  $mx $by $mx [expr {$by - $rh}] \
+                  -arrow last -arrowshape $curr(arrowshape) \
+                  -width $curr(width)
               DrawRoot $lx $y2 $lbw $lbl_height($basebranch) $basebranch $basebranch
             }
             UpdateBndBox
           }
-
+          
           gen_log:log D "fromtags: $fromtags"
           gen_log:log D "totags: $totags"
           if {$logcfg(show_merges)} {
@@ -1741,15 +1741,15 @@ namespace eval ::logcanvas {
                 continue
               }
               foreach to $totags {
-                 if {[string equal $to $match($from)]} {
-                    gen_log:log D "  $to on $mrev($to)"
-                    if {! [info exists revmergefrom($mrev($from))]} {
-                      set revmergefrom($mrev($from)) $mrev($to)
-                      gen_log:log D "Set revmergefrom($mrev($from)) = $mrev($to)"
-                    } else {
-                      gen_log:log D "revmergefrom($mrev($from)) exists. Not changing"
-                    }
-                 }
+                if {[string equal $to $match($from)]} {
+                  gen_log:log D "  $to on $mrev($to)"
+                  if {! [info exists revmergefrom($mrev($from))]} {
+                    set revmergefrom($mrev($from)) $mrev($to)
+                    gen_log:log D "Set revmergefrom($mrev($from)) = $mrev($to)"
+                  } else {
+                    gen_log:log D "revmergefrom($mrev($from)) exists. Not changing"
+                  }
+                }
               }
             }
             # Draw merge arrows derived from cvsnt mergepoint, svn mergeinfo, or git
@@ -1798,7 +1798,7 @@ namespace eval ::logcanvas {
           # Reselect the previously selected revisions
           variable sel_tag
           variable sel_rev
-	  foreach AorB {A B} {
+          foreach AorB {A B} {
             SetSelection $AorB $sel_tag($AorB) $sel_rev($AorB)
           }
           busy_done $logcanvas
@@ -1810,11 +1810,11 @@ namespace eval ::logcanvas {
           return 0
         }
       }
-
+      
       proc SaveOptions {} {
         global logcfg
         variable loc
-
+        
         # Save the options to the global set
         set logcfg(update_drawing) $logcfg(update_drawing)
         foreach {key value} [array get opt] {
@@ -1823,7 +1823,7 @@ namespace eval ::logcanvas {
         }
         save_options
       }
-
+      
       # Search functionality for log viewer that searches for strings in the
       # log windows. It will create a new button and an entry box below the logs. You
       # can enter a glob-style search pattern in the entry field and click the search
@@ -1862,15 +1862,15 @@ namespace eval ::logcanvas {
         variable revcomment
         variable revtags
         variable revbtags
-
+        
         gen_log:log T "ENTER search_index $search_index, search_elements $search_elements"
-
+        
         # Read search pattern from entry box
         set pattern [string trim [$logcanvas.down.search.e get]]
         # Check if search pattern or nocase flag have been changed since the
         # last call
         if {([string equal $pattern $search_lastpattern] == 0) \
-          ||($search_lastcase != $search_nocase)} {
+              ||($search_lastcase != $search_nocase)} {
           # Restore box colors
           foreach item [$logcanvas.canvas find withtag box] {
             $logcanvas.canvas itemconfigure $item -fill $cvsglb(textbg)
@@ -1892,7 +1892,7 @@ namespace eval ::logcanvas {
               catch {append data "$revcomment($r) "}
               catch {append data "$revtags($r) "}
               catch {append data "$revbtags($r) "}
-
+              
               # Check if text element matches search pattern
               if {$search_nocase} {
                 if {[string match -nocase "*$pattern*" $data]} {
@@ -1966,9 +1966,9 @@ namespace eval ::logcanvas {
             set y [expr {(double($iy1 - $sy1) / double($sy2 - $sy1)) -(($vy2 - $vy1) / 2)}]
             $logcanvas.canvas xview moveto $x
             $logcanvas.canvas yview moveto $y
-
+            
             if {! [info exists revcomment($rev)]} {
-               set revcomment($rev) "*** empty log message ***"
+              set revcomment($rev) "*** empty log message ***"
             }
           }
           $logcanvas.up.revA_rvers configure -state normal
@@ -1980,7 +1980,7 @@ namespace eval ::logcanvas {
             $logcanvas.up.revA_rdate configure -text "$revdate($rev) $revtime($rev)"
             $logcanvas.up.logA_rlogfm.rcomment configure -state normal
             $logcanvas.up.logA_rlogfm.rcomment delete 1.0 end
-          if {$item == {}} {
+            if {$item == {}} {
               $logcanvas.up.logA_rlogfm.rcomment insert end "*** not drawn ***\n"
             }
             $logcanvas.up.logA_rlogfm.rcomment insert end $revcomment($rev)
@@ -1990,181 +1990,181 @@ namespace eval ::logcanvas {
           $logcanvas.down.search.l configure -text "Not found"
         }
       } ;# End of Search proc
-
-
+      
+      
       toplevel $logcanvas
       wm title $logcanvas "TkCVS $cvscfg(version) -- $sys Log $filename"
-
+      
       menubar_menus $logcanvas
       set filemenu_idx [$logcanvas.menubar index "File"]
       $logcanvas.menubar insert [expr {$filemenu_idx + 1}] cascade -label "Diagram"\
-         -menu [menu $logcanvas.menubar.view] -underline 0
-
+          -menu [menu $logcanvas.menubar.view] -underline 0
+      
       help_menu $logcanvas
-
+      
       # Diagram
       menu $logcanvas.menubar.view.update
       $logcanvas.menubar.view.update add radiobutton -label "Every Revision" \
-        -variable logcfg(update_drawing) -value 0
+          -variable logcfg(update_drawing) -value 0
       $logcanvas.menubar.view.update add radiobutton -label "Every Branch" \
-        -variable logcfg(update_drawing) -value 1
+          -variable logcfg(update_drawing) -value 1
       $logcanvas.menubar.view.update add radiobutton -label "When Finished" \
-        -variable logcfg(update_drawing) -value 2
+          -variable logcfg(update_drawing) -value 2
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add cascade -label "Tree Layout" \
-        -menu $logcanvas.menubar.view.tree
+          -menu $logcanvas.menubar.view.tree
       menu $logcanvas.menubar.view.tree
       $logcanvas.menubar.view.tree add checkbutton -label \
-        "Show tags" \
-        -variable logcfg(show_tags) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          "Show tags" \
+          -variable logcfg(show_tags) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
-        "Show branches" \
-        -variable logcfg(show_branches) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          "Show branches" \
+          -variable logcfg(show_branches) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
-        "Show empty branches" \
-        -variable logcfg(show_empty_branches) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          "Show empty branches" \
+          -variable logcfg(show_empty_branches) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
-        "Show intermediate revisions" \
-        -variable logcfg(show_inter_revs) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          "Show intermediate revisions" \
+          -variable logcfg(show_inter_revs) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.tree add checkbutton -label \
-        "Show merges" \
-        -variable logcfg(show_merges) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          "Show merges" \
+          -variable logcfg(show_merges) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add cascade -label "Branch Layout" \
-        -menu $logcanvas.menubar.view.branch
+          -menu $logcanvas.menubar.view.branch
       menu $logcanvas.menubar.view.branch
       $logcanvas.menubar.view.branch add command -label "Turn all options on" \
-        -command [namespace code {
-          set logcfg(show_root_tags) 1
-          DrawTree
-        }]
+          -command [namespace code {
+        set logcfg(show_root_tags) 1
+        DrawTree
+      }]
       $logcanvas.menubar.view.branch add command -label "Turn all options off" \
-        -command [namespace code {
-          set logcfg(show_root_tags) 0
-          DrawTree
-        }]
+          -command [namespace code {
+        set logcfg(show_root_tags) 0
+        DrawTree
+      }]
       $logcanvas.menubar.view.branch add separator
       $logcanvas.menubar.view.branch add checkbutton -label "Show label" \
-        -variable logcfg(show_root_tags) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          -variable logcfg(show_root_tags) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add cascade -label "Revision Layout" \
-        -menu $logcanvas.menubar.view.rev
+          -menu $logcanvas.menubar.view.rev
       menu $logcanvas.menubar.view.rev
       $logcanvas.menubar.view.rev add command -label "Turn all options on" \
-        -command [namespace code {
-          set logcfg(show_tags) 1
-          set logcfg(show_branches) 1
-          set logcfg(show_box_rev) 1
-          set logcfg(show_box_revwho) 1
-          set logcfg(show_box_revdate) 1
-          set logcfg(show_box_revtime) 1
-          DrawTree
-        }]
+          -command [namespace code {
+        set logcfg(show_tags) 1
+        set logcfg(show_branches) 1
+        set logcfg(show_box_rev) 1
+        set logcfg(show_box_revwho) 1
+        set logcfg(show_box_revdate) 1
+        set logcfg(show_box_revtime) 1
+        DrawTree
+      }]
       $logcanvas.menubar.view.rev add command -label "Turn all options off" \
-        -command [namespace code {
-          set logcfg(show_tags) 0
-          set logcfg(show_branches) 0
-          set logcfg(show_box_rev) 0
-          set logcfg(show_box_revwho) 0
-          set logcfg(show_box_revdate) 0
-          set logcfg(show_box_revtime) 0
-          DrawTree
-        }]
+          -command [namespace code {
+        set logcfg(show_tags) 0
+        set logcfg(show_branches) 0
+        set logcfg(show_box_rev) 0
+        set logcfg(show_box_revwho) 0
+        set logcfg(show_box_revdate) 0
+        set logcfg(show_box_revtime) 0
+        DrawTree
+      }]
       $logcanvas.menubar.view.rev add separator
       $logcanvas.menubar.view.rev add checkbutton -label "Show revision" \
-        -variable logcfg(show_box_rev) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          -variable logcfg(show_box_rev) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show author" \
-        -variable logcfg(show_box_revwho) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          -variable logcfg(show_box_revwho) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show date" \
-        -variable logcfg(show_box_revdate) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          -variable logcfg(show_box_revdate) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view.rev add checkbutton -label "Show time" \
-        -variable logcfg(show_box_revtime) \
-        -onvalue 1 -offvalue 0 \
-        -command [namespace code { DrawTree }]
+          -variable logcfg(show_box_revtime) \
+          -onvalue 1 -offvalue 0 \
+          -command [namespace code { DrawTree }]
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add cascade -label "Size" \
-        -menu $logcanvas.menubar.view.size
+          -menu $logcanvas.menubar.view.size
       menu $logcanvas.menubar.view.size
       foreach {label factor} $logcfg(scaling_options) {
         $logcanvas.menubar.view.size add radiobutton -label $label \
-          -variable logcfg(scale) -value $factor \
-          -command [namespace code { DrawTree }]
+            -variable logcfg(scale) -value $factor \
+            -command [namespace code { DrawTree }]
       }
       $logcanvas.menubar.view add separator
       $logcanvas.menubar.view add command -label "Save options" \
-        -command [namespace code {
-          SaveOptions
-        }]
-
+          -command [namespace code {
+        SaveOptions
+      }]
+      
       if {$ingit} {
         # The git options menu
         git_branch_menu $logcanvas $filename
       }
-
+      
       if {$tcl_platform(platform) != "windows"} {
         wm iconbitmap $logcanvas @$cvscfg(bitmapdir)/branch.xbm
         wm iconphoto $logcanvas -default Tclfish64
       }
       wm protocol $logcanvas WM_DELETE_WINDOW \
-        [namespace code {$logcanvas.close invoke}]
+          [namespace code {$logcanvas.close invoke}]
       frame $logcanvas.up -relief groove -border 2
       set textfont $cvscfg(listboxfont)
       set disbg [lindex [$logcanvas.up configure -background] 4]
       label $logcanvas.up.lfname -width 12 -anchor w
       entry $logcanvas.up.rfname -font $textfont -relief groove \
-        -bd 1 -relief sunk -state readonly
-
+          -bd 1 -relief sunk -state readonly
+      
       button $logcanvas.up.bmodbrowse -image Modules \
-        -command modbrowse_run
+          -command modbrowse_run
       button $logcanvas.up.bworkdir -image Workdir \
-        -command { workdir_setup }
+          -command { workdir_setup }
       pack $logcanvas.up -side top -fill x
       foreach fm {A B} {
         label $logcanvas.up.rev${fm}_lvers -text "Revision $fm"
         entry $logcanvas.up.rev${fm}_rvers -text {} \
-        -width 8 -bd 1 -relief sunk -state readonly
-
+            -width 8 -bd 1 -relief sunk -state readonly
+        
         label $logcanvas.up.rev${fm}_ldate -text "Committed"
         label $logcanvas.up.rev${fm}_rdate -text {} \
-           -anchor w -font $textfont
+            -anchor w -font $textfont
         label $logcanvas.up.rev${fm}_lwho -text " by "
         label $logcanvas.up.rev${fm}_rwho -text {} \
-           -anchor w -font $textfont
+            -anchor w -font $textfont
         label $logcanvas.up.log${fm}_lcomment -text "Log $fm"
-
+        
         frame $logcanvas.up.log${fm}_rlogfm -bd 3 -bg $cvscfg(colour$fm)
         text  $logcanvas.up.log${fm}_rlogfm.rcomment -height 5 \
-           -fg $cvsglb(textfg) -bg $cvsglb(textbg) -state disabled \
-           -yscrollcommand [namespace code\
-           "$logcanvas.up.log${fm}_rlogfm.yscroll set"]
-           scrollbar $logcanvas.up.log${fm}_rlogfm.yscroll \
-           -command [namespace code\
-           "$logcanvas.up.log${fm}_rlogfm.rcomment yview"]
+            -fg $cvsglb(textfg) -bg $cvsglb(textbg) -state disabled \
+            -yscrollcommand [namespace code\
+            "$logcanvas.up.log${fm}_rlogfm.yscroll set"]
+        scrollbar $logcanvas.up.log${fm}_rlogfm.yscroll \
+            -command [namespace code\
+            "$logcanvas.up.log${fm}_rlogfm.rcomment yview"]
       }
-
+      
       grid columnconf $logcanvas.up 5 -weight 1
       grid $logcanvas.up.lfname -column 0 -row 0 -sticky nw
       grid $logcanvas.up.rfname -column 1 -row 0 -columnspan 5 -sticky ew
       grid $logcanvas.up.bworkdir -column 6 -row 0 -rowspan 2 -sticky e\
-        -padx 2 -pady 1
+          -padx 2 -pady 1
       grid $logcanvas.up.bmodbrowse -column 7 -row 0 -rowspan 2 -sticky e\
-        -padx 2 -pady 1
+          -padx 2 -pady 1
       grid $logcanvas.up.revA_lvers -column 0 -row 1 -sticky w
       grid $logcanvas.up.revA_rvers -column 1 -row 1 -sticky w
       grid $logcanvas.up.revA_ldate -column 2 -row 1 -sticky w
@@ -2189,38 +2189,38 @@ namespace eval ::logcanvas {
       # the window is resized smaller
       frame $logcanvas.down -relief groove -border 2
       pack $logcanvas.down -side bottom -fill x
-
+      
       frame $logcanvas.down.search -relief sunk -bd 2
       button $logcanvas.down.search.b -text "Search" -command [namespace code {Search}]
       entry $logcanvas.down.search.e
       bind $logcanvas.down.search.e <Return> [namespace code {Search}]
       label $logcanvas.down.search.l -anchor e -width 10 -text ""
       checkbutton $logcanvas.down.search.c -anchor e -text "Ignore case" \
-        -variable [namespace current]::search_nocase
+          -variable [namespace current]::search_nocase
       pack $logcanvas.down.search -side top -fill x
       pack $logcanvas.down.search.b -side left
       pack $logcanvas.down.search.e -side left
       pack $logcanvas.down.search.c -side left
       pack $logcanvas.down.search.l -side left
-
+      
       # The canvas for the big picture
       canvas $logcanvas.canvas -relief sunken -border 2 \
-        -height 300 -bg $cvsglb(canvbg) \
-        -yscrollcommand [namespace code "$logcanvas.yscroll set"] \
-        -xscrollcommand [namespace code "$logcanvas.xscroll set"]
+          -height 300 -bg $cvsglb(canvbg) \
+          -yscrollcommand [namespace code "$logcanvas.yscroll set"] \
+          -xscrollcommand [namespace code "$logcanvas.xscroll set"]
       scrollbar $logcanvas.xscroll -relief sunken -orient horizontal \
-        -command [namespace code "$logcanvas.canvas xview"]
+          -command [namespace code "$logcanvas.canvas xview"]
       scrollbar $logcanvas.yscroll -relief sunken \
-        -command [namespace code "$logcanvas.canvas yview"]
+          -command [namespace code "$logcanvas.canvas yview"]
       #
       # Create buttons
       #
       frame $logcanvas.down.btnfm
       frame $logcanvas.down.closefm
       button $logcanvas.refresh -image Refresh \
-        -command [namespace code {
-                 $scope\::reloadLog
-               }]
+          -command [namespace code {
+        $scope\::reloadLog
+      }]
       button $logcanvas.view -image Fileview
       button $logcanvas.log -image Log
       button $logcanvas.annotate -image Annotate
@@ -2229,84 +2229,84 @@ namespace eval ::logcanvas {
       button $logcanvas.ddiff -image Difflines
       button $logcanvas.merge -image Mergediff
       button $logcanvas.viewtags -image Tags \
-        -command [namespace code {
-                   variable revtags
-                   variable revbtags
-                   set taglist {}
-                   foreach r [lsort -dictionary \
-                       [concat [array names revtags] [array names revbtags]]] {
-                     if [info exists revtags($r)] {
-                       append taglist "$r: $revtags($r)\n"
-                     } elseif [info exists revbtags($r)] {
-                       append taglist "$r: $revbtags($r)\n"
-                     }
-                   }
-                   view_output::new Tags $taglist
-                 }]
+          -command [namespace code {
+        variable revtags
+        variable revbtags
+        set taglist {}
+        foreach r [lsort -dictionary \
+            [concat [array names revtags] [array names revbtags]]] {
+          if [info exists revtags($r)] {
+            append taglist "$r: $revtags($r)\n"
+          } elseif [info exists revbtags($r)] {
+            append taglist "$r: $revbtags($r)\n"
+          }
+        }
+        view_output::new Tags $taglist
+      }]
       button $logcanvas.close -text "Close" \
-        -command [namespace code {
-                 global cvscfg
-                 variable logcanvas
-                 variable my_idx
-                 set cvscfg(loggeom) [wm geometry $logcanvas]
-                 destroy $logcanvas
-                 catch {namespace delete ::cvs_branchlog::$my_idx}
-                 catch {namespace delete ::svn_branchlog::$my_idx}
-                 namespace delete [namespace current]
-                 exit_cleanup 0
-               }]
+          -command [namespace code {
+        global cvscfg
+        variable logcanvas
+        variable my_idx
+        set cvscfg(loggeom) [wm geometry $logcanvas]
+        destroy $logcanvas
+        catch {namespace delete ::cvs_branchlog::$my_idx}
+        catch {namespace delete ::svn_branchlog::$my_idx}
+        namespace delete [namespace current]
+        exit_cleanup 0
+      }]
       button $logcanvas.stop -text "Stop" -bg red4 -fg white \
-        -activebackground red4 -activeforeground white \
-        -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
-        -command "$scope\::abortLog"
-
+          -activebackground red4 -activeforeground white \
+          -state [expr {$cvscfg(allow_abort) ? {normal} : {disabled}}] \
+          -command "$scope\::abortLog"
+      
       pack $logcanvas.refresh \
-        -in $logcanvas.down -side left \
-        -ipadx 4 -ipady 4
+          -in $logcanvas.down -side left \
+          -ipadx 4 -ipady 4
       pack $logcanvas.down.btnfm -side left -fill y -expand 1
       pack $logcanvas.view \
-           $logcanvas.log \
-           $logcanvas.annotate \
-           $logcanvas.diff \
-        -in $logcanvas.down.btnfm -side left \
-        -ipadx 4 -ipady 4
+          $logcanvas.log \
+          $logcanvas.annotate \
+          $logcanvas.diff \
+          -in $logcanvas.down.btnfm -side left \
+          -ipadx 4 -ipady 4
       if {$insvn || $ingit} {
-         pack  $logcanvas.patchdiff \
-               $logcanvas.ddiff \
-                 -in $logcanvas.down.btnfm -side left \
-                 -ipadx 4 -ipady 4
+        pack  $logcanvas.patchdiff \
+            $logcanvas.ddiff \
+            -in $logcanvas.down.btnfm -side left \
+            -ipadx 4 -ipady 4
       }
       pack $logcanvas.merge \
-           $logcanvas.viewtags \
-        -in $logcanvas.down.btnfm -side left \
-        -ipadx 4 -ipady 4
+          $logcanvas.viewtags \
+          -in $logcanvas.down.btnfm -side left \
+          -ipadx 4 -ipady 4
       pack $logcanvas.down.closefm -side right -expand yes -fill x
       pack $logcanvas.close \
-        -in $logcanvas.down.closefm -side right -padx 15
-
+          -in $logcanvas.down.closefm -side right -padx 15
+      
       set_tooltips $logcanvas.refresh \
-        {"Re-read the log information"}
+          {"Re-read the log information"}
       set_tooltips $logcanvas.up.bworkdir \
-        {"Open the Working Directory Browser"}
+          {"Open the Working Directory Browser"}
       set_tooltips $logcanvas.up.bmodbrowse \
-        {"Open the Repository Browser"}
+          {"Open the Repository Browser"}
       set_tooltips $logcanvas.view \
-        {"View a version of the file"}
+          {"View a version of the file"}
       set_tooltips $logcanvas.log \
-        {"Revision log of the file"}
+          {"Revision log of the file"}
       set_tooltips $logcanvas.annotate \
-        {"View revision where each line was modified"}
+          {"View revision where each line was modified"}
       set_tooltips $logcanvas.diff \
-        {"Side-by-side comparison of two versions of the file"}
+          {"Side-by-side comparison of two versions of the file"}
       set_tooltips $logcanvas.merge \
-        {"Merge to current"}
+          {"Merge to current"}
       set_tooltips $logcanvas.viewtags \
-        {"List all the file\'s tags"}
+          {"List all the file\'s tags"}
       set_tooltips $logcanvas.patchdiff \
-        {"Show file changes in a commit"}
+          {"Show file changes in a commit"}
       set_tooltips $logcanvas.ddiff \
-        {"List changed files in a commit"}
-
+          {"List changed files in a commit"}
+      
       #
       # Put the canvas on to the display.
       #
@@ -2314,7 +2314,7 @@ namespace eval ::logcanvas {
       pack $logcanvas.yscroll -side right -fill y -padx 1 -pady 1
       pack $logcanvas.canvas -fill both -expand 1
       scrollbindings $logcanvas.canvas
-
+      
       #
       # Window manager stuff.
       #
@@ -2322,37 +2322,37 @@ namespace eval ::logcanvas {
       if {[info exists cvscfg(loggeom)]} {
         wm geometry $logcanvas $cvscfg(loggeom)
       }
-
+      
       $logcanvas.canvas bind active <Enter> \
-        "$logcanvas.canvas config -cursor hand2"
+          "$logcanvas.canvas config -cursor hand2"
       $logcanvas.canvas bind active <Leave> \
-        "$logcanvas.canvas config -cursor {}"
-
+          "$logcanvas.canvas config -cursor {}"
+      
       $logcanvas.canvas bind tag <Button-1> \
-        [namespace code "PopupTags %x %y"]
-
+          [namespace code "PopupTags %x %y"]
+      
       $logcanvas.canvas bind selectable <ButtonPress-1> \
-        [namespace code "RevSelect A"]
+          [namespace code "RevSelect A"]
       # Tcl/TK for Windows doesn't do Button 3, so we duplicate it on Button 2
       $logcanvas.canvas bind selectable <ButtonPress-2> \
-        [namespace code "RevSelect B"]
+          [namespace code "RevSelect B"]
       $logcanvas.canvas bind selectable <ButtonPress-3> \
-        [namespace code "RevSelect B"]
-
+          [namespace code "RevSelect B"]
+      
       # Clicking in a blank part of the canvas unselects boxes
       bind $logcanvas.canvas <ButtonPress-1> \
-        [namespace code "Unselect A"]
+          [namespace code "Unselect A"]
       bind $logcanvas.canvas <ButtonPress-2> \
-        [namespace code "Unselect B"]
+          [namespace code "Unselect B"]
       bind $logcanvas.canvas <ButtonPress-3> \
-        [namespace code "Unselect B"]
-
+          [namespace code "Unselect B"]
+      
       focus $logcanvas.canvas
       # FIXME: Why isn't there a bbox when we get here?
       # Then the yview moveto doesn't work, although it does in tkinter
       $logcanvas.canvas xview moveto 0
       $logcanvas.canvas yview moveto 0
-
+      
       return [list [namespace current] $logcanvas]
     }
   }

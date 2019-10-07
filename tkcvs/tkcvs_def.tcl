@@ -69,8 +69,8 @@ set cvscfg(mod_iconwidth) 24
 # Colours.  "Colors" that is if you are a yanqui who can't spell.
 # Added support for monochrome machines. -sj
 if { [winfo depth .] == 1 } {
-    option add *ToolTip.background  "white"
-    option add *ToolTip.foreground  "black"
+  option add *ToolTip.background  "white"
+  option add *ToolTip.foreground  "black"
 }
 
 #
@@ -197,71 +197,71 @@ set logcfg(show_box_revtime) 0
 # Please note that you may have to setup a bit more.
 #
 if {$tcl_platform(platform) == "windows"} {
-    # file mask for all files
-    set cvscfg(aster) "*.*"
-    # null-device
-    set cvscfg(null) "nul"
-    # Terminal program
-    set cvscfg(terminal) "command /c"
-    # Please don't ask me why you have to set -T on DOS,
-    # experiments say you have! - CJ
-    #set cvs "cvs -T $cvscfg(tmpdir)"
-    set cvs "cvs"
-    set cvscfg(editor) "notepad"
-    # set temp directory
-    set cvscfg(tmpdir) "c:/temp"
-    #set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
-    set cvscfg(tkdiff) "[file join \"[file dirname "$ScriptBin"] tkdiff\"]"
-    set cvscfg(print_cmd)    "pr"
-    set cvscfg(shell)  ""
-    set cvscfg(allow_abort)  "no"
+  # file mask for all files
+  set cvscfg(aster) "*.*"
+  # null-device
+  set cvscfg(null) "nul"
+  # Terminal program
+  set cvscfg(terminal) "command /c"
+  # Please don't ask me why you have to set -T on DOS,
+  # experiments say you have! - CJ
+  #set cvs "cvs -T $cvscfg(tmpdir)"
+  set cvs "cvs"
+  set cvscfg(editor) "notepad"
+  # set temp directory
+  set cvscfg(tmpdir) "c:/temp"
+  #set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
+  set cvscfg(tkdiff) "[file join \"[file dirname "$ScriptBin"] tkdiff\"]"
+  set cvscfg(print_cmd)    "pr"
+  set cvscfg(shell)  ""
+  set cvscfg(allow_abort)  "no"
 } else {
-    if {[tk windowingsystem] eq "aqua"} {
-      set cvscfg(terminal) "open -a Terminal -n"
-      set cvscfg(editor) "open -e"
-      #set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
-      # If you invoke vim this way, -psn_ tells it to run in its own window
-      #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
-      set cvscfg(shell) "open -a Terminal -n"
-      #set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
-    } else {
-      # Execution 
-      set cvscfg(terminal) "xterm -e"
-      # Command shell
-      set cvscfg(shell) {xterm -name tkcvsxterm -n {TkCVS xterm}}
-      # To override the default editor (setup when tkcvs is configured and
-      # installed) a user can set the cvscfg(editor) variable to the editor
-      # of choice in their .tkcvs file
-      set cvscfg(editor) {xterm -e vi}
-      #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
-      set cvscfg(print_cmd)          "lpr"
-    }
-    set cvscfg(tmpdir) "/tmp"
-    set cvscfg(aster) "*"
-    set cvscfg(null) "/dev/null"
-    #
-    # Other defaults
-    #
-    # Full path to the CVS program if you want to give it,
-    # otherwise the PATH environment variable will be searched.
-    set cvs "cvs"
-    set cvscfg(tkdiff) "tkdiff"
-    # The file editor to be used may also be identified by pattern-matching the
-    # filename by setting the cvscfg(editors) variable.  This contains a series
-    # of string pairs giving the editor-command and string-match-pattern.  The
-    # first pattern (see rules for [string match]) which matches the filename
-    # going down the list determines which editor is run.  If no patterns match
-    # or the option is not set, the cvscfg(editor) value will be used instead.
-    # - anj@aps.anl.gov
-    #set cvscfg(editors) {
-    #    nedit *.html
-    #    nedit *.c
-    #    bitmap *.xbm
-    #    gimp *.xpm
-    #    gimp *.gif
-    #    {calibredrv -m} *.gds
-    #}
-    set cvscfg(allow_abort)  "yes"
+  if {[tk windowingsystem] eq "aqua"} {
+    set cvscfg(terminal) "open -a Terminal -n"
+    set cvscfg(editor) "open -e"
+    #set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
+    # If you invoke vim this way, -psn_ tells it to run in its own window
+    #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
+    set cvscfg(shell) "open -a Terminal -n"
+    #set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
+  } else {
+    # Execution
+    set cvscfg(terminal) "xterm -e"
+    # Command shell
+    set cvscfg(shell) {xterm -name tkcvsxterm -n {TkCVS xterm}}
+    # To override the default editor (setup when tkcvs is configured and
+    # installed) a user can set the cvscfg(editor) variable to the editor
+    # of choice in their .tkcvs file
+    set cvscfg(editor) {xterm -e vi}
+    #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
+    set cvscfg(print_cmd)          "lpr"
+  }
+  set cvscfg(tmpdir) "/tmp"
+  set cvscfg(aster) "*"
+  set cvscfg(null) "/dev/null"
+  #
+  # Other defaults
+  #
+  # Full path to the CVS program if you want to give it,
+  # otherwise the PATH environment variable will be searched.
+  set cvs "cvs"
+  set cvscfg(tkdiff) "tkdiff"
+  # The file editor to be used may also be identified by pattern-matching the
+  # filename by setting the cvscfg(editors) variable.  This contains a series
+  # of string pairs giving the editor-command and string-match-pattern.  The
+  # first pattern (see rules for [string match]) which matches the filename
+  # going down the list determines which editor is run.  If no patterns match
+  # or the option is not set, the cvscfg(editor) value will be used instead.
+  # - anj@aps.anl.gov
+  #set cvscfg(editors) {
+  #    nedit *.html
+  #    nedit *.c
+  #    bitmap *.xbm
+  #    gimp *.xpm
+  #    gimp *.gif
+  #    {calibredrv -m} *.gds
+  #}
+  set cvscfg(allow_abort)  "yes"
 }
 
 #
