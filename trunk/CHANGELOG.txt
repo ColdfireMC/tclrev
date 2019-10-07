@@ -1,4 +1,4 @@
-Release 9.2.4 September, 2019
+Release 9.3 October, 2019
 
 - Put some buttons on top of the annotation browser so that when you click on a
   line of text, it puts the revision number in an entry and you can view or
