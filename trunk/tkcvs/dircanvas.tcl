@@ -6,30 +6,30 @@ proc DirCanvas:create {w} {
   global cvscfg
   global cvsglb
   global incvs insvn inrcs ingit
-
+  
   gen_log:log T "ENTER ($w)"
-
+  
   update
   set winwid [winfo width $w]
   set beginwid [expr {$winwid / 5}]
-
+  
   if {! [winfo exists $w.tree] } {
     frame $w.pw -width $winwid
     pack $w.pw -fill both -expand 1
-
+    
     ttk::treeview $w.tree -columns {filecol statcol datecol wrevcol editcol} \
-      -yscroll "$w.yscroll set"
+        -yscroll "$w.yscroll set"
     scrollbar $w.yscroll -orient vertical \
-      -relief sunken -command "$w.tree yview"
+        -relief sunken -command "$w.tree yview"
     pack $w.yscroll -in $w.pw -side right -fill y
     pack $w.tree -in $w.pw -side left -expand yes -fill both
-  
+    
     $w.tree heading filecol -text "File"
     $w.tree heading statcol -text "Status"
     $w.tree heading datecol -text "Date"
     $w.tree heading wrevcol -text "Revision"
     $w.tree heading editcol -text "Author"
-  
+    
     $w.tree column #0 -width [expr {$cvscfg(mod_iconwidth) + 4}]
     $w.tree column #0 -stretch no
   }
@@ -39,9 +39,9 @@ proc DirCanvas:create {w} {
   }
   $w.tree heading #0 -image "" -command "DirCanvas:sort_by_col $w.tree statcol -increasing"
   update
-
+  
   gen_log:log D "incvs=$incvs insvn=$insvn inrcs=$inrcs ingit=$ingit"
-
+  
   # We've set preliminary defaults, now use the column and sorting preferences
   gen_log:log D "sort_pref:  $cvscfg(sort_pref)"
   set col [lindex $cvscfg(sort_pref) 0]
@@ -53,7 +53,7 @@ proc DirCanvas:create {w} {
     set sense "-increasing"
   }
   DirCanvas:displaycolumns $w.tree
-
+  
   # Put an arrow on the column we're sorting by
   gen_log:log D "will sort by column $col $sense"
   if {[string match "-inc*" $sense]} {
@@ -67,7 +67,7 @@ proc DirCanvas:create {w} {
       $w.tree heading #0 -image arr_up
     }
   }
-
+  
   focus $w.tree
   if {! [winfo exists $w.paper_pop]} {
     DirCanvas:makepopup $w
@@ -83,7 +83,7 @@ proc DirCanvas:newitem {w f} {
   global Filelist
   global cvsglb
   global incvs insvn inrcs ingit
-
+  
   #gen_log:log T "ENTER ($w $f)"
   set rtype ""
   if {$inrcs} {
@@ -95,7 +95,7 @@ proc DirCanvas:newitem {w f} {
   } elseif {$ingit} {
     set rtype "GIT"
   }
-
+  
   set DirList($w:$f:name) $f
   gen_log:log D "Newitem $f status $Filelist($f:status)"
   set DirList($w:$f:status) $Filelist($f:status)
@@ -121,13 +121,13 @@ proc DirCanvas:newitem {w f} {
   }
   DirCanvas:choose_icon $w $f $rtype
   $w.tree insert {} end -image $DirList($w:$f:icon) -values $values -tag fileobj
-
+  
   #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:deltree {w} {
   global DirList
-
+  
   foreach t [array names DirList $w:*] {
     unset DirList($t)
   }
@@ -141,13 +141,13 @@ proc DirCanvas:deltree {w} {
 proc DirCanvas:unselectall {w} {
   global DirList
   global cvsglb
-
+  
   #gen_log:log T "ENTER ($w)"
   
   $w.tree selection set {}
   set DirList($w:selection) {}
   set cvsglb(current_selection) {}
-
+  
   #gen_log:log T "LEAVE"
 }
 
@@ -157,9 +157,9 @@ proc DirCanvas:unselectall {w} {
 proc DirCanvas:displaycolumns {wt} {
   global cvscfg
   global incvs insvn inrcs ingit
-
+  
   #gen_log:log T "ENTER ($wt)"
-
+  
   set col [lindex $cvscfg(sort_pref) 0]
   set sense [lindex $cvscfg(sort_pref) 1]
   gen_log:log D "[$wt configure -displaycolumns]"
@@ -171,7 +171,7 @@ proc DirCanvas:displaycolumns {wt} {
       lappend displayed_columns $column
     }
   }
-
+  
   # Deciding whether to show the editcol is complicated.
   # We don't do it if we're not in a VCS, obviously.
   # But we also don't do it if we're in Git but not showing gitdetail,
@@ -201,28 +201,28 @@ proc DirCanvas:displaycolumns {wt} {
   }
   $wt configure -displaycolumns $displayed_columns
   gen_log:log D "$displayed_columns"
-
+  
   DirCanvas:adjust_columnwidths $wt
-
+  
   #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:sort_by_col {wt col sense} {
   global DirList
   global cvscfg
-
+  
   #gen_log:log T "ENTER ($wt $col $sense)"
-
+  
   gen_log:log D "old sort prefs $cvscfg(sort_pref)"
   set old_columnpref [lindex $cvscfg(sort_pref) 0]
   set old_sensepref [lindex $cvscfg(sort_pref) 1]
-
+  
   set all_columns [lindex [$wt configure -columns] end]
   set displayed_columns [lindex [$wt configure -displaycolumns] end]
   if {$displayed_columns eq "#all"} {
     set displayed_columns $all_columns
   }
-
+  
   # Always start with a list sorted by filename.  Collects the values from the
   # filename column, together with the row index
   set list_by_name {}
@@ -230,7 +230,7 @@ proc DirCanvas:sort_by_col {wt col sense} {
     lappend list_by_name [list [$wt set $item filecol] $item]
   }
   set list_by_name [lsort -dictionary -index 0 $list_by_name]
-
+  
   # Collect the values from the column we want to sort by, together
   # with the row index
   set ID_by_name {}
@@ -241,19 +241,19 @@ proc DirCanvas:sort_by_col {wt col sense} {
   foreach item $ID_by_name {
     lappend column_items [list [$wt set $item $col] $item]
   }
-
+  
   # Re-order the rows in the order obtained above
   set r -1
   foreach info [lsort -dictionary $sense -index 0 $column_items] {
     $wt move [lindex $info 1] {} [incr r]
   }
-
+  
   # Fix up the arrows
   foreach a $displayed_columns {
     $wt heading $a -image ""
   }
   $wt heading #0 -image ""
-
+  
   # Reset the columns other than the current one. We're heavily favoring defaulting
   # to increasing sorting order here. This is the way I like it to work, although
   # others might argue. -dar
@@ -276,15 +276,15 @@ proc DirCanvas:sort_by_col {wt col sense} {
   set cvscfg(sort_pref) [list $col $sense]
   gen_log:log D "new sort prefs $cvscfg(sort_pref)"
   DirCanvas:adjust_columnwidths $wt
-
+  
   #gen_log:log T "LEAVE"
 }
 
 proc DirCanvas:adjust_columnwidths {wt} {
   global cvscfg
-
+  
   #gen_log:log T "ENTER ($wt)"
-
+  
   set displayed_columns [lindex [$wt configure -displaycolumns] end]
   # Try to adjust the width of the columns suitably
   # First, find the longest string in each column
@@ -319,7 +319,7 @@ proc DirCanvas:adjust_columnwidths {wt} {
     $wt column $c -width $col_wid($c)
     gen_log:log D "$c: \"$maxstr($c)\" $maxlen($c) chars, width $col_wid($c)"
   }
-
+  
   #gen_log:log T "LEAVE"
 }
 
@@ -327,7 +327,7 @@ proc DirCanvas:adjust_columnwidths {wt} {
 # set the selection.
 proc DirCanvas:popup {w x y X Y} {
   global DirList
-
+  
   #gen_log:log T "ENTER ($w $x $y $X $Y)"
   set item [$w.tree identify item $x $y]
   $w.tree selection set $item
@@ -350,281 +350,281 @@ proc DirCanvas:bindings {w} {
 # then bind canvas items to them as appropriate
 proc DirCanvas:makepopup {w} {
   #gen_log:log T "ENTER ($w)"
-
+  
   # For plain files in an un-versioned directory
   menu $w.paper_pop
   $w.paper_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.paper_pop add command -label "Delete" \
-    -command { workdir_delete_file [workdir_list_files] }
-
+      -command { workdir_delete_file [workdir_list_files] }
+  
   # For plain directories in an un-versioned directory
   menu $w.folder_pop
   $w.folder_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.folder_pop add command -label "Delete" \
-    -command { workdir_delete_file [workdir_list_files] }
-
+      -command { workdir_delete_file [workdir_list_files] }
+  
   # For plain, unmanaged files in a versioned directory
   menu $w.stat_local_pop
   $w.stat_local_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_local_pop add command -label "Delete" \
-    -command { workdir_delete_file [workdir_list_files] }
+      -command { workdir_delete_file [workdir_list_files] }
   $w.stat_local_pop add command -label "Add" \
-    -command { add_dialog [workdir_list_files] }
-
+      -command { add_dialog [workdir_list_files] }
+  
   # For CVS directories when cwd isn't in CVS
   menu $w.cvsrelease_pop
   $w.cvsrelease_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.cvsrelease_pop add command -label "CVS Release" \
-    -command { release_dialog [workdir_list_files] }
-
+      -command { release_dialog [workdir_list_files] }
+  
   # For plain directories in CVS
   menu $w.incvs_folder_pop
   $w.incvs_folder_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.incvs_folder_pop add command -label "CVS Add Recursively" \
-    -command { addir_dialog [workdir_list_files] }
+      -command { addir_dialog [workdir_list_files] }
   $w.incvs_folder_pop add command -label "Delete" \
-    -command { workdir_delete_file [workdir_list_files] }
-
+      -command { workdir_delete_file [workdir_list_files] }
+  
   # For CVS subdirectories
   menu $w.cvsdir_pop
   $w.cvsdir_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.cvsdir_pop add command -label "CVS Remove Recursively" \
-    -command { subtractdir_dialog [workdir_list_files] }
-
+      -command { subtractdir_dialog [workdir_list_files] }
+  
   # For SVN subdirectories
   menu $w.svndir_pop
   $w.svndir_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Log" \
-    -command { svn_log verbose [workdir_list_files] }
+      -command { svn_log verbose [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Info" \
-    -command { svn_info [workdir_list_files] }
+      -command { svn_info [workdir_list_files] }
   $w.svndir_pop add command -label "Browse the Log Diagram" \
-    -command { svn_branches [workdir_list_files] }
+      -command { svn_branches [workdir_list_files] }
   $w.svndir_pop add command -label "SVN Remove" \
-    -command { subtract_dialog [workdir_list_files] }
-
+      -command { subtract_dialog [workdir_list_files] }
+  
   # For Git subdirectories
   menu $w.gitdir_pop
   $w.gitdir_pop add command -label "Descend" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.gitdir_pop add command -label "Git Remove Recursively" \
-    -command { subtractdir_dialog [workdir_list_files] }
-
+      -command { subtractdir_dialog [workdir_list_files] }
+  
   # For RCS files
   menu $w.rcs_pop
   $w.rcs_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.rcs_pop add command -label "Browse the Log Diagram" \
-    -command { rcs_branches [workdir_list_files] }
+      -command { rcs_branches [workdir_list_files] }
   $w.rcs_pop add command -label "RCS Lock" \
-    -command { rcs_lock lock [workdir_list_files] }
+      -command { rcs_lock lock [workdir_list_files] }
   $w.rcs_pop add command -label "RCS Unlock" \
-    -command { rcs_lock unlock [workdir_list_files] }
+      -command { rcs_lock unlock [workdir_list_files] }
   $w.rcs_pop add command -label "RCS Revert" \
-    -command { rcs_revert [workdir_list_files] }
+      -command { rcs_revert [workdir_list_files] }
   $w.rcs_pop add command -label "Delete Locally" \
-    -command { workdir_delete_file [workdir_list_files] }
-
+      -command { workdir_delete_file [workdir_list_files] }
+  
   # For CVS files
   menu $w.stat_cvsok_pop
   $w.stat_cvsok_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Log" \
-    -command { cvs_log verbose [workdir_list_files] }
+      -command { cvs_log verbose [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Browse the Log Diagram" \
-    -command { cvs_branches [workdir_list_files] }
+      -command { cvs_branches [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Annotate/Blame" \
-    -command { cvs_annotate $current_tagname [workdir_list_files] }
+      -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "CVS Remove" \
-    -command { subtract_dialog [workdir_list_files] }
+      -command { subtract_dialog [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Set Edit Flag" \
-     -command { cvs_edit [workdir_list_files] }
+      -command { cvs_edit [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Unset Edit Flag" \
-     -command { cvs_unedit [workdir_list_files] }
+      -command { cvs_unedit [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Set Binary Flag" \
-     -command { cvs_binary [workdir_list_files] }
+      -command { cvs_binary [workdir_list_files] }
   $w.stat_cvsok_pop add command -label "Unset Binary Flag" \
-     -command { cvs_ascii [workdir_list_files] }
-
+      -command { cvs_ascii [workdir_list_files] }
+  
   # For SVN files
   menu $w.stat_svnok_pop
   $w.stat_svnok_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Log" \
-    -command { svn_log verbose [workdir_list_files] }
+      -command { svn_log verbose [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Info" \
-    -command { svn_info [workdir_list_files] }
+      -command { svn_info [workdir_list_files] }
   $w.stat_svnok_pop add command -label "Browse the Log Diagram" \
-    -command { svn_branches [workdir_list_files] }
+      -command { svn_branches [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Annotate/Blame" \
-    -command { svn_annotate "" [workdir_list_files] }
+      -command { svn_annotate "" [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Rename" \
-    -command { svn_rename_ask [workdir_list_files] }
+      -command { svn_rename_ask [workdir_list_files] }
   $w.stat_svnok_pop add command -label "SVN Remove" \
-    -command { subtract_dialog [workdir_list_files] }
-
+      -command { subtract_dialog [workdir_list_files] }
+  
   # For Git files
   menu $w.stat_gitok_pop
   $w.stat_gitok_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Log" \
-    -command { git_log verbose [workdir_list_files] }
+      -command { git_log verbose [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Browse the Log Diagram" \
-    -command { git_branches [workdir_list_files] }
+      -command { git_branches [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Annotate/Blame" \
-    -command { git_annotate "" [workdir_list_files] }
+      -command { git_annotate "" [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Rename" \
-    -command { git_rename_ask [workdir_list_files] }
+      -command { git_rename_ask [workdir_list_files] }
   $w.stat_gitok_pop add command -label "Git Remove" \
-    -command { subtract_dialog [workdir_list_files] }
-
+      -command { subtract_dialog [workdir_list_files] }
+  
   # For CVS files that are out of date
   menu $w.stat_cvsood_pop
   $w.stat_cvsood_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsood_pop add command -label "Update" \
-    -command { \
-        cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
+      -command { \
+      cvs_update {BASE} {Normal} {Remove} {recurse} {prune} {No} { } [workdir_list_files] }
   $w.stat_cvsood_pop add command -label "Update with Options" \
-    -command cvs_update_options
-
+      -command cvs_update_options
+  
   # For SVN files that are out of date
   menu $w.stat_svnood_pop
   $w.stat_svnood_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnood_pop add command -label "Update" \
-    -command { svn_update [workdir_list_files] }
-
+      -command { svn_update [workdir_list_files] }
+  
   # For Git files that are out of date
   menu $w.stat_gitood_pop
   $w.stat_gitood_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_gitood_pop add command -label "Update" \
-    -command { git_checkout [workdir_list_files] }
-
+      -command { git_checkout [workdir_list_files] }
+  
   # For CVS files that need merging
   menu $w.stat_merge_pop
   $w.stat_merge_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_merge_pop add command -label "Diff" \
-    -command { comparediff [workdir_list_files] }
+      -command { comparediff [workdir_list_files] }
   $w.stat_merge_pop add command -label "CVS Annotate/Blame" \
-    -command { cvs_annotate $current_tagname [workdir_list_files] }
+      -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.stat_merge_pop add command -label "Browse the Log Diagram" \
-    -command { cvs_branches [workdir_list_files] }
-
+      -command { cvs_branches [workdir_list_files] }
+  
   # For CVS files that are modified
   menu $w.stat_cvsmod_pop
   $w.stat_cvsmod_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsmod_pop add command -label "Diff" \
-    -command { comparediff [workdir_list_files] }
+      -command { comparediff [workdir_list_files] }
   $w.stat_cvsmod_pop add command -label "CVS Commit" \
-    -command { cvs_commit_dialog }
+      -command { cvs_commit_dialog }
   $w.stat_cvsmod_pop add command -label "CVS Revert" \
-    -command { cvs_revert [workdir_list_files] }
-
+      -command { cvs_revert [workdir_list_files] }
+  
   # For SVN files that are modified
   menu $w.stat_svnmod_pop
   $w.stat_svnmod_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnmod_pop add command -label "Diff" \
-    -command { comparediff [workdir_list_files] }
+      -command { comparediff [workdir_list_files] }
   $w.stat_svnmod_pop add command -label "SVN Commit" \
-    -command { svn_commit_dialog }
+      -command { svn_commit_dialog }
   $w.stat_svnmod_pop add command -label "SVN Revert" \
-    -command { svn_revert [workdir_list_files] }
-
+      -command { svn_revert [workdir_list_files] }
+  
   # For Git files that are modified
   menu $w.stat_gitmod_pop
   $w.stat_gitmod_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_gitmod_pop add command -label "Diff" \
-    -command { comparediff [workdir_list_files] }
+      -command { comparediff [workdir_list_files] }
   $w.stat_gitmod_pop add command -label "Git Commit" \
-    -command { git_commit_dialog }
+      -command { git_commit_dialog }
   #$w.stat_gitmod_pop add command -label "Git Reset (Revert)" \
-    -command { git_reset [workdir_list_files] }
-
+      -command { git_reset [workdir_list_files] }
+  
   # For CVS files that have been added but not commited
   menu $w.stat_cvsplus_pop
   $w.stat_cvsplus_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvsplus_pop add command -label "CVS Commit" \
-    -command { cvs_commit_dialog }
-
+      -command { cvs_commit_dialog }
+  
   # For SVN files that have been added but not commited
   menu $w.stat_svnplus_pop
   $w.stat_svnplus_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_svnplus_pop add command -label "SVN Commit" \
-    -command { svn_commit_dialog }
-
+      -command { svn_commit_dialog }
+  
   # For Git files that have been added but not commited
   menu $w.stat_gitplus_pop
   $w.stat_gitplus_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_gitplus_pop add command -label "Git Commit" \
-    -command { git_commit_dialog }
-
+      -command { git_commit_dialog }
+  
   # For CVS files that have been removed but not commited
   menu $w.stat_cvsminus_pop
   $w.stat_cvsminus_pop add command -label "CVS Commit" \
-    -command { cvs_commit_dialog }
-
+      -command { cvs_commit_dialog }
+  
   # For SVN files that have been removed but not commited
   menu $w.stat_svnminus_pop
   $w.stat_svnminus_pop add command -label "SVN Commit" \
-    -command { svn_commit_dialog }
-
+      -command { svn_commit_dialog }
+  
   # For Git files that have been removed but not commited
   menu $w.stat_gitminus_pop
   $w.stat_gitminus_pop add command -label "Git Commit" \
-    -command { git_commit_dialog }
-
+      -command { git_commit_dialog }
+  
   # For CVS unmanaged files
   menu $w.stat_cvslocal_pop
   $w.stat_cvslocal_pop add command -label "Edit" \
-    -command { workdir_edit_file [workdir_list_files] }
+      -command { workdir_edit_file [workdir_list_files] }
   $w.stat_cvslocal_pop add command -label "Delete" \
-    -command { workdir_delete_file [workdir_list_files] }
+      -command { workdir_delete_file [workdir_list_files] }
   $w.stat_cvslocal_pop add command -label "CVS Add" \
-    -command { cvs_add [workdir_list_files] }
-
+      -command { cvs_add [workdir_list_files] }
+  
   # For CVS files with conflicts
   menu $w.cvs_conf_pop
   $w.cvs_conf_pop add command -label "Merge using TkDiff" \
-    -command { cvs_reconcile_conflict [workdir_list_files] }
+      -command { cvs_reconcile_conflict [workdir_list_files] }
   $w.cvs_conf_pop add command -label "CVS Annotate/Blame" \
-    -command { cvs_annotate $current_tagname [workdir_list_files] }
+      -command { cvs_annotate $current_tagname [workdir_list_files] }
   $w.cvs_conf_pop add command -label "Browse the Log Diagram" \
-    -command { cvs_branches [workdir_list_files] }
-
+      -command { cvs_branches [workdir_list_files] }
+  
   # For SVN files with conflicts
   menu $w.svn_conf_pop
   $w.svn_conf_pop add command -label "Merge using TkDiff" \
-    -command { svn_reconcile_conflict [workdir_list_files] }
+      -command { svn_reconcile_conflict [workdir_list_files] }
   $w.svn_conf_pop add command -label "Mark resolved" \
-    -command { svn_resolve [workdir_list_files] }
+      -command { svn_resolve [workdir_list_files] }
   $w.svn_conf_pop add command -label "CVS Annotate/Blame" \
-    -command { svn_annotate $current_tagname [workdir_list_files] }
+      -command { svn_annotate $current_tagname [workdir_list_files] }
   $w.svn_conf_pop add command -label "Browse the Log Diagram" \
-    -command { svn_branches [workdir_list_files] }
-
+      -command { svn_branches [workdir_list_files] }
+  
   # For Git files with conflicts
   menu $w.git_conf_pop
   $w.git_conf_pop add command -label "Merge using TkDiff" \
-    -command { git_reconcile_conflict [workdir_list_files] }
+      -command { git_reconcile_conflict [workdir_list_files] }
   $w.git_conf_pop add command -label "Stage resolved conflict" \
-    -command { git_add [workdir_list_files] }
-
+      -command { git_add [workdir_list_files] }
+  
   #gen_log:log T "LEAVE"
 }
 
@@ -632,7 +632,7 @@ proc DirCanvas:makepopup {w} {
 proc DirCanvas:choose_icon {w f rtype} {
   global DirList
   global incvs insvn inrcs ingit
-
+  
   # Up-to-date
   #  The file is identical with the latest revision in the repository for the
   #    branch in use
@@ -660,76 +660,76 @@ proc DirCanvas:choose_icon {w f rtype} {
   # Unknown
   #  CVS doesn't know anything about this file. For example, you have created
   #     a new file and have not run add.
-
+  
   switch -glob -- $DirList($w:$f:status) {
-   "<file>" {
-     set DirList($w:$f:icon) paper
-     set DirList($w:$f:popup) paper_pop
+    "<file>" {
+      set DirList($w:$f:icon) paper
+      set DirList($w:$f:popup) paper_pop
     }
-   "<dir> " {
-     set DirList($w:$f:icon) dir
-     set DirList($w:$f:popup) svndir_pop
-   }
-   "<dir> Up-to-date" {
-     set DirList($w:$f:icon) dir_ok
-     set DirList($w:$f:popup) svndir_pop
-   }
-   "<dir> Property Modified" {
-     set DirList($w:$f:icon) dir_mod
-     set DirList($w:$f:popup) svndir_pop
-   }
-   "<dir> Not managed*" {
-     set DirList($w:$f:icon) dir
-     set DirList($w:$f:popup) svndir_pop
-   }
-   "<dir> Locally Added" {
-     set DirList($w:$f:icon) dir_plus
-     set DirList($w:$f:popup) svndir_pop
-   }
-   "<dir> Locally Removed" {
-     set DirList($w:$f:icon) dir_minus
-     set DirList($w:$f:popup) svndir_pop
-   }
-   "<link> " {
-     set DirList($w:$f:icon) link
-     set DirList($w:$f:popup) paper_pop
-   }
-   "<link> Not managed by SVN" {
-     set DirList($w:$f:icon) link
-     set DirList($w:$f:popup) paper_pop
-   }
-   "<link> Up-to-date" {
-     set DirList($w:$f:icon) link_ok
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<link> Up-to-date/Locked" {
-     set DirList($w:$f:icon) link_okol
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<link> Up-to-date/HaveLock" {
-     set DirList($w:$f:icon) link_okml
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<link> Locally Modified" {
-     set DirList($w:$f:icon) link_mod
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<link> Locally Modified/Locked" {
-     set DirList($w:$f:icon) link_modol
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<link> Locally Modified/HaveLock" {
-     set DirList($w:$f:icon) link_modml
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<link> Locally Added" {
-     set DirList($w:$f:icon) link_plus
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "<directory>" {
-     set DirList($w:$f:icon) dir
-     switch -- $rtype {
-       "CVS" {
+    "<dir> " {
+      set DirList($w:$f:icon) dir
+      set DirList($w:$f:popup) svndir_pop
+    }
+    "<dir> Up-to-date" {
+      set DirList($w:$f:icon) dir_ok
+      set DirList($w:$f:popup) svndir_pop
+    }
+    "<dir> Property Modified" {
+      set DirList($w:$f:icon) dir_mod
+      set DirList($w:$f:popup) svndir_pop
+    }
+    "<dir> Not managed*" {
+      set DirList($w:$f:icon) dir
+      set DirList($w:$f:popup) svndir_pop
+    }
+    "<dir> Locally Added" {
+      set DirList($w:$f:icon) dir_plus
+      set DirList($w:$f:popup) svndir_pop
+    }
+    "<dir> Locally Removed" {
+      set DirList($w:$f:icon) dir_minus
+      set DirList($w:$f:popup) svndir_pop
+    }
+    "<link> " {
+      set DirList($w:$f:icon) link
+      set DirList($w:$f:popup) paper_pop
+    }
+    "<link> Not managed by SVN" {
+      set DirList($w:$f:icon) link
+      set DirList($w:$f:popup) paper_pop
+    }
+    "<link> Up-to-date" {
+      set DirList($w:$f:icon) link_ok
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<link> Up-to-date/Locked" {
+      set DirList($w:$f:icon) link_okol
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<link> Up-to-date/HaveLock" {
+      set DirList($w:$f:icon) link_okml
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<link> Locally Modified" {
+      set DirList($w:$f:icon) link_mod
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<link> Locally Modified/Locked" {
+      set DirList($w:$f:icon) link_modol
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<link> Locally Modified/HaveLock" {
+      set DirList($w:$f:icon) link_modml
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<link> Locally Added" {
+      set DirList($w:$f:icon) link_plus
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "<directory>" {
+      set DirList($w:$f:icon) dir
+      switch -- $rtype {
+        "CVS" {
           set DirList($w:$f:popup) incvs_folder_pop
         }
         default {
@@ -737,45 +737,45 @@ proc DirCanvas:choose_icon {w f rtype} {
         }
       }
     }
-   "<directory:???>" {
-     regexp {<directory:(...)>} $DirList($w:$f:status) null vcs
-     set DirList($w:$f:icon) dir
-     set DirList($w:$f:popup) folder_pop
-     # What VCS controls the folder? Determines the icon
-     switch -- $vcs {
-       "CVS" {
+    "<directory:???>" {
+      regexp {<directory:(...)>} $DirList($w:$f:status) null vcs
+      set DirList($w:$f:icon) dir
+      set DirList($w:$f:popup) folder_pop
+      # What VCS controls the folder? Determines the icon
+      switch -- $vcs {
+        "CVS" {
           set DirList($w:$f:icon) cvsdir
           set DirList($w:$f:popup) cvsrelease_pop
         }
-       "SVN" {
+        "SVN" {
           set DirList($w:$f:icon) svndir
         }
-       "GIT" {
+        "GIT" {
           set DirList($w:$f:icon) gitdir
         }
-       "RCS" {
+        "RCS" {
           set DirList($w:$f:icon) rcsdir
         }
-     }
-     # Are we in that VCS now? Determines the popop menu
-     switch -- $rtype {
-       "CVS" {
+      }
+      # Are we in that VCS now? Determines the popop menu
+      switch -- $rtype {
+        "CVS" {
           set DirList($w:$f:popup) cvsdir_pop
         }
-       "SVN" {
+        "SVN" {
           set DirList($w:$f:popup) svndir_pop
         }
-       "GIT" {
+        "GIT" {
           set DirList($w:$f:popup) gitdir_pop
         }
-       "RCS" {
+        "RCS" {
           set DirList($w:$f:popup) folder_pop
         }
       }
     }
-   "Up-to-date" {
-     set DirList($w:$f:icon) stat_ok
-     switch -- $rtype {
+    "Up-to-date" {
+      set DirList($w:$f:icon) stat_ok
+      switch -- $rtype {
         "CVS" {
           set DirList($w:$f:popup) stat_cvsok_pop
           if {[string match "*-kb*" $DirList($w:$f:option)]} {
@@ -793,17 +793,17 @@ proc DirCanvas:choose_icon {w f rtype} {
         }
       }
     }
-   "Up-to-date/HaveLock" {
-     set DirList($w:$f:icon) stat_okml
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "Up-to-date/Locked" {
-     set DirList($w:$f:icon) stat_okol
-     set DirList($w:$f:popup) stat_svnok_pop
-   }
-   "Missing*" {
+    "Up-to-date/HaveLock" {
+      set DirList($w:$f:icon) stat_okml
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "Up-to-date/Locked" {
+      set DirList($w:$f:icon) stat_okol
+      set DirList($w:$f:popup) stat_svnok_pop
+    }
+    "Missing*" {
       set DirList($w:$f:icon) stat_ex
-     switch -- $rtype {
+      switch -- $rtype {
         "CVS" {
           set DirList($w:$f:popup) stat_cvsood_pop
         }
@@ -812,23 +812,23 @@ proc DirCanvas:choose_icon {w f rtype} {
         }
       }
     }
-   "Needs Checkout" {
-     # Prepending ./ to the filename prevents tilde expansion
-     if {[file exists ./$f]} {
-       set DirList($w:$f:icon) stat_ood
+    "Needs Checkout" {
+      # Prepending ./ to the filename prevents tilde expansion
+      if {[file exists ./$f]} {
+        set DirList($w:$f:icon) stat_ood
       } else {
-       set DirList($w:$f:icon) stat_ex
+        set DirList($w:$f:icon) stat_ex
       }
       set DirList($w:$f:popup) stat_cvsood_pop
     }
     "Needs Patch" {
-     set DirList($w:$f:icon) stat_ood
-     set DirList($w:$f:popup) stat_cvsood_pop
+      set DirList($w:$f:icon) stat_ood
+      set DirList($w:$f:popup) stat_cvsood_pop
     }
     "<dir> Out-of-date" {
-     set DirList($w:$f:icon) dir_ood
-     switch -- $rtype {
-      "CVS" {
+      set DirList($w:$f:icon) dir_ood
+      switch -- $rtype {
+        "CVS" {
           set DirList($w:$f:popup) stat_cvsood_pop
         }
         "SVN" {
@@ -840,8 +840,8 @@ proc DirCanvas:choose_icon {w f rtype} {
       }
     }
     "Out-of-date" {
-     set DirList($w:$f:icon) stat_ood
-     switch -- $rtype {
+      set DirList($w:$f:icon) stat_ood
+      switch -- $rtype {
         "CVS" {
           set DirList($w:$f:popup) stat_cvsood_pop
         }
@@ -854,79 +854,79 @@ proc DirCanvas:choose_icon {w f rtype} {
       }
     }
     "Needs Merge" {
-     set DirList($w:$f:icon) stat_merge
-     set DirList($w:$f:popup) stat_merge_pop
+      set DirList($w:$f:icon) stat_merge
+      set DirList($w:$f:popup) stat_merge_pop
     }
     "Locally Modified" {
-     set DirList($w:$f:icon) stat_mod
-     switch -- $rtype {
+      set DirList($w:$f:icon) stat_mod
+      switch -- $rtype {
         "CVS" {
-           set DirList($w:$f:popup) stat_cvsmod_pop
+          set DirList($w:$f:popup) stat_cvsmod_pop
         }
         "SVN" {
-           set DirList($w:$f:popup) stat_svnmod_pop
+          set DirList($w:$f:popup) stat_svnmod_pop
         }
       }
     }
     "Locally Modified/HaveLock" {
-     set DirList($w:$f:icon) stat_modml
-     set DirList($w:$f:popup) stat_cvsmod_pop
+      set DirList($w:$f:icon) stat_modml
+      set DirList($w:$f:popup) stat_cvsmod_pop
     }
     "Locally Modified/Locked" {
-     set DirList($w:$f:icon) stat_modol
-     set DirList($w:$f:popup) stat_cvsmod_pop
+      set DirList($w:$f:icon) stat_modol
+      set DirList($w:$f:popup) stat_cvsmod_pop
     }
-     "Locally Added" {
-     set DirList($w:$f:icon) stat_plus
-     switch -- $rtype {
+    "Locally Added" {
+      set DirList($w:$f:icon) stat_plus
+      switch -- $rtype {
         "CVS" {
-           if {[string match "*-kb*" $DirList($w:$f:option)]} {
-             set DirList($w:$f:icon) stat_cvsplus_kb
-           }
-           set DirList($w:$f:popup) stat_cvsplus_pop
+          if {[string match "*-kb*" $DirList($w:$f:option)]} {
+            set DirList($w:$f:icon) stat_cvsplus_kb
+          }
+          set DirList($w:$f:popup) stat_cvsplus_pop
         }
         "SVN" {
-           set DirList($w:$f:popup) stat_svnplus_pop
+          set DirList($w:$f:popup) stat_svnplus_pop
         }
       }
     }
     "Added" {
-     set DirList($w:$f:icon) stat_plus
-     set DirList($w:$f:popup) stat_gitplus_pop
+      set DirList($w:$f:icon) stat_plus
+      set DirList($w:$f:popup) stat_gitplus_pop
     }
     "Added, missing" {
-     set DirList($w:$f:icon) stat_ex
-     set DirList($w:$f:popup) stat_gitplus_pop
+      set DirList($w:$f:icon) stat_ex
+      set DirList($w:$f:popup) stat_gitplus_pop
     }
     "Modified, unstaged" {
-     set DirList($w:$f:icon) stat_mod_red
-     set DirList($w:$f:popup) stat_gitmod_pop
+      set DirList($w:$f:icon) stat_mod_red
+      set DirList($w:$f:popup) stat_gitmod_pop
     }
     "Modified, staged" {
-     set DirList($w:$f:icon) stat_mod_green
-     set DirList($w:$f:popup) stat_gitmod_pop
+      set DirList($w:$f:icon) stat_mod_green
+      set DirList($w:$f:popup) stat_gitmod_pop
     }
     "Removed" {
-     set DirList($w:$f:icon) stat_minus
-     set DirList($w:$f:popup) stat_gitminus_pop
+      set DirList($w:$f:icon) stat_minus
+      set DirList($w:$f:popup) stat_gitminus_pop
     }
     "Locally Removed" {
-     set DirList($w:$f:icon) stat_minus
-     switch -- $rtype {
+      set DirList($w:$f:icon) stat_minus
+      switch -- $rtype {
         "CVS" {
-           set DirList($w:$f:popup) stat_cvsminus_pop
+          set DirList($w:$f:popup) stat_cvsminus_pop
         }
         "SVN" {
-           set DirList($w:$f:popup) stat_svnminus_pop
+          set DirList($w:$f:popup) stat_svnminus_pop
         }
         "GIT" {
-           set DirList($w:$f:popup) stat_gitminus_pop
+          set DirList($w:$f:popup) stat_gitminus_pop
         }
       }
     }
     "*onflict*" {
-     set DirList($w:$f:icon) stat_conf
-     switch -- $rtype {
+      set DirList($w:$f:icon) stat_conf
+      switch -- $rtype {
         "CVS" {
           set DirList($w:$f:popup) cvs_conf_pop
         }
@@ -939,44 +939,44 @@ proc DirCanvas:choose_icon {w f rtype} {
       }
     }
     "Not managed*" {
-     set DirList($w:$f:icon) stat_ques
-     set DirList($w:$f:popup) stat_local_pop
+      set DirList($w:$f:icon) stat_ques
+      set DirList($w:$f:popup) stat_local_pop
     }
     "RCS Up-to-date" {
-     set DirList($w:$f:icon) stat_ok
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_ok
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Up-to-date/HaveLock" {
-     set DirList($w:$f:icon) stat_okml
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_okml
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Up-to-date/Locked" {
-     set DirList($w:$f:icon) stat_okol
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_okol
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Modified" {
-     set DirList($w:$f:icon) stat_mod
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_mod
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Modified/HaveLock" {
-     set DirList($w:$f:icon) stat_modml
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_modml
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Modified/Locked" {
-     set DirList($w:$f:icon) stat_modol
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_modol
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Needs Checkout" {
-     set DirList($w:$f:icon) stat_ex
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_ex
+      set DirList($w:$f:popup) rcs_pop
     }
     "RCS Needs Checkout/HaveLock" {
-     set DirList($w:$f:icon) stat_oodml
-     set DirList($w:$f:popup) rcs_pop
+      set DirList($w:$f:icon) stat_oodml
+      set DirList($w:$f:popup) rcs_pop
     }
     default {
-     set DirList($w:$f:icon) paper
-     set DirList($w:$f:popup) paper_pop
+      set DirList($w:$f:icon) paper
+      set DirList($w:$f:popup) paper_pop
     }
   }
 }

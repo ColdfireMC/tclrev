@@ -6,7 +6,7 @@ proc read_svn_dir {dirname} {
   global current_tagname
   global module_dir
   global cmd
-
+  
   gen_log:log T "ENTER ($dirname)"
   set cvsglb(vcs) svn
   # svn info gets the URL
@@ -24,7 +24,7 @@ proc read_svn_dir {dirname} {
       gen_log:log D "$cvscfg(url)"
     }
   }
-
+  
   if {! [info exists cvscfg(url)]} {
     set cvscfg(url) ""
   }
@@ -32,7 +32,7 @@ proc read_svn_dir {dirname} {
     cvsfail "Can't get the SVN URL"
     return 0
   }
-
+  
   set root ""
   foreach s [list $cvscfg(svn_trunkdir) $cvscfg(svn_branchdir) $cvscfg(svn_tagdir)] {
     if {[regexp "/$s/" $cvscfg(url)] || [regexp "/$s" $cvscfg(url)]} {
@@ -46,21 +46,21 @@ proc read_svn_dir {dirname} {
         switch -- $state {
           P {
             if {$word eq $cvscfg(svn_trunkdir)} {
-                gen_log:log D "Matched $word for trunk"
-                set type "trunk"
-                set current_tagname $word
-                set state E
+              gen_log:log D "Matched $word for trunk"
+              set type "trunk"
+              set current_tagname $word
+              set state E
             } elseif { $word eq $cvscfg(svn_branchdir)} {
-                gen_log:log D "Matched $word for branches"
-                set type "branches"
-                set state W
+              gen_log:log D "Matched $word for branches"
+              set type "branches"
+              set state W
             } elseif { $word eq $cvscfg(svn_tagdir)} {
-                gen_log:log D "Matched $word for tags"
-                set type "tags"
-                set state W
+              gen_log:log D "Matched $word for tags"
+              set type "tags"
+              set state W
             } else {
-                append root "$word/"
-                #gen_log:log D "No match for $word"
+              append root "$word/"
+              #gen_log:log D "No match for $word"
             }
           }
           W {
@@ -68,7 +68,7 @@ proc read_svn_dir {dirname} {
             set state E
           }
           E {
-              lappend relp "$word"
+            lappend relp "$word"
           }
           default {}
         }
@@ -103,9 +103,9 @@ proc read_svn_dir {dirname} {
 
 proc svn_lock {do args} {
   global cvscfg
-
+  
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     cvsfail "Please select one or more files!" .workdir
     return
@@ -118,7 +118,7 @@ proc svn_lock {do args} {
     append commandline " \"$f\""
   }
   set cmd [exec::new "$commandline"]
-
+  
   if {$cvscfg(auto_status)} {
     $cmd\::wait
     setup_dir
@@ -131,19 +131,19 @@ proc svn_workdir_status {} {
   global cvsglb
   global cmd
   global Filelist
-
+  
   gen_log:log T "ENTER"
-
+  
   # One command gets all the status information
   set cmd(svn_status) [exec::new "svn status -uvN --xml"]
   set xmloutput [$cmd(svn_status)\::output]
   set entrylist [regexp -all -inline {<entry.*?</entry>} $xmloutput]
-
+  
   if [info exists cmd(svn_status)] {
     $cmd(svn_status)\::destroy
     catch {unset cmd(svn_status)}
   }
-
+  
   # do very simple xml parsing
   foreach entry $entrylist {
     set filename ""
@@ -151,7 +151,7 @@ proc svn_workdir_status {} {
     set lockstatus ""
     set wrev ""
     set crev ""
-
+    
     regexp  {<entry\s+path=\"([^\"]*?)\"\s*>} $entry tmp filename
     regexp  {<wc\-status.*</wc\-status>} $entry wcstatusent
     if { [ regexp  {<repos\-status.*</repos\-status>} $entry repstatusent ] } {
@@ -184,19 +184,19 @@ proc svn_workdir_status {} {
     if { [ regexp  {<lock>.*</lock>} $wcstatusent wclock ] } {
       set lockstatus "havelock"
     }
-
+    
     # wcstatus="added|normal|deleted|missing|unversioned|modified|none
     # repstatus="modified|none"
     set status ""
-
+    
     set displaymod ""
     if { [file exists $filename] && [file type $filename] == "link" } {
-        set displaymod "<link> "
+      set displaymod "<link> "
     }
     if [file isdirectory $filename] {
       set displaymod "<dir> "
     }
-
+    
     set mayhavelock false
     switch -exact -- $wcstatus {
       "normal" {
@@ -217,7 +217,7 @@ proc svn_workdir_status {} {
           append displaymod "Needs Merge"
         } else {
           append displaymod "Locally Modified"
-           set mayhavelock true
+          set mayhavelock true
         }
       }
       "added" { append displaymod "Locally Added" }
@@ -231,11 +231,11 @@ proc svn_workdir_status {} {
     }
     #in some cases there might be locks: check now
     if { $mayhavelock } {
-        switch -exact -- $lockstatus {
-            "" { }
-            "havelock" { append displaymod "/HaveLock" }
-            "locked" { append displaymod "/Locked" }
-        }
+      switch -exact -- $lockstatus {
+        "" { }
+        "havelock" { append displaymod "/HaveLock" }
+        "locked" { append displaymod "/Locked" }
+      }
     }
     if {$wcstatus ne "unversioned"} {
       set Filelist($filename:wrev) $wrev
@@ -246,12 +246,15 @@ proc svn_workdir_status {} {
       }
       # The date is in a weird format, like "2019-09-28T05:49:03.648859Z"
       #gen_log:log D "DATE: \"$cdate\""
+      if {! [info exists cdate]} {
+        set cdate ""
+      }
       regsub {.[\d]*Z$} $cdate {} chopdate
       #gen_log:log D " $chopdate"
       if {! [catch {set newdate [clock scan "$chopdate" -format "%Y-%m-%dT%H:%M:%S"]}] } {
         set Filelist($filename:date) [clock format $newdate -format $cvscfg(dateformat)]
       }
-
+      
       set Filelist($filename:option) ""
       set Filelist($filename:editors) "$cauthor"
       if {[info exists file_locker($filename)]} {
@@ -266,11 +269,11 @@ proc svn_workdir_status {} {
 # does svn add from workdir browser
 proc svn_add {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
@@ -279,35 +282,35 @@ proc svn_add {args} {
       append mess "   $file\n"
     }
   }
-
+  
   if {$filelist == ""} {
     set filelist [glob -nocomplain $cvscfg(aster) .??*]
   }
-
+  
   set command "svn add"
   foreach f $filelist {
     append command " \"$f\""
   }
   set addcmd [exec::new "$command"]
   auto_setup_dir $addcmd
-
+  
   gen_log:log T "LEAVE"
 }
 
 # does svn remove from workdir browser
-proc svn_remove {args} {
-
+proc svn_remove_file {args} {
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
-  set command "svn remove"
+  
+  set command "svn remove --force --keep-local"
   foreach f $filelist {
     append command " \"$f\""
   }
   set command [exec::new "$command"]
   auto_setup_dir $command
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -315,16 +318,16 @@ proc svn_remove {args} {
 # "Status" in the Reports menu. Uses the recurse and status_filter settings.
 proc svn_status {detail args} {
   global cvscfg
- 
+  
   gen_log:log T "ENTER ($args)"
-
+  
   busy_start .workdir.main
-
+  
   set filelist [join $args]
-
+  
   set flags ""
   set title "SVN Status ($detail)"
-
+  
   set command "svn status"
   if {$cvscfg(status_filter)} {
     append flags " -q"
@@ -346,7 +349,7 @@ proc svn_status {detail args} {
   }
   set check_cmd [viewer::new "$title"]
   $check_cmd\::do "$command" 0 status_colortags
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -354,9 +357,9 @@ proc svn_status {detail args} {
 # called from the "Check Directory" button in the workdir and the Reports menu
 proc svn_check {} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ()"
-
+  
   busy_start .workdir.main
   set title "SVN Directory Check"
   set flags ""
@@ -369,18 +372,18 @@ proc svn_check {} {
   set command "svn status $flags"
   set check_cmd [viewer::new "$title"]
   $check_cmd\::do "$command" 0 status_colortags
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
 
 # svn update - called from workdir browser
 proc svn_update {args} {
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     append mess "\nThis will download from"
     append mess " the repository to your local"
@@ -396,9 +399,9 @@ proc svn_update {args} {
     append mess "\n\t$file"
   }
   append mess "\n\nAre you sure?"
-
+  
   set command "svn update"
-
+  
   if {[cvsconfirm $mess .workdir] == "ok"} {
     foreach file $filelist {
       append command " \"$file\""
@@ -406,11 +409,11 @@ proc svn_update {args} {
   } else {
     return;
   }
-
+  
   set co_cmd [viewer::new "SVN Update"]
   $co_cmd\::do "$command" 0 status_colortags
   auto_setup_dir $co_cmd
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -419,30 +422,30 @@ proc svn_opt_update {} {
   global cvscfg
   global cvsglb
   global module_dir
-
+  
   switch -exact -- $cvsglb(tagmode_selection) {
     "Keep" {
-       set command "svn update"
-     }
+      set command "svn update"
+    }
     "Trunk" {
-       set command "svn switch --ignore-ancestry ^/$cvscfg(svn_trunkdir)/$module_dir"
-     }
+      set command "svn switch --ignore-ancestry ^/$cvscfg(svn_trunkdir)/$module_dir"
+    }
     "Branch" {
-       set command "svn switch --ignore-ancestry ^/$cvscfg(svn_branchdir)/$cvsglb(branchname)/$module_dir"
-     }
+      set command "svn switch --ignore-ancestry ^/$cvscfg(svn_branchdir)/$cvsglb(branchname)/$module_dir"
+    }
     "Tag" {
-       set command "svn switch --ignore-ancestry ^/$cvscfg(svn_tagdir)/$cvsglb(tagname)/$module_dir"
-     }
+      set command "svn switch --ignore-ancestry ^/$cvscfg(svn_tagdir)/$cvsglb(tagname)/$module_dir"
+    }
     "Revision" {
-       # Let them get away with saying r3 instead of 3
-       set rev [string trimleft $cvsglb(revnumber) {r}]
-       # FIXME: This doesn't work if you're not on the trunk
-       set command "svn switch --ignore-ancestry ^/trunk/$module_dir -r $rev"
-     }
+      # Let them get away with saying r3 instead of 3
+      set rev [string trimleft $cvsglb(revnumber) {r}]
+      # FIXME: This doesn't work if you're not on the trunk
+      set command "svn switch --ignore-ancestry ^/trunk/$module_dir -r $rev"
+    }
   }
   set upd_cmd [viewer::new "SVN Update/Switch"]
   $upd_cmd\::do "$command" 0 status_colortags
-
+  
   auto_setup_dir $upd_cmd
 }
 
@@ -450,7 +453,7 @@ proc svn_opt_update {} {
 proc svn_commit_dialog {} {
   global cvsglb
   global cvscfg
-
+  
   # If marked files, commit these.  If no marked files, then
   # commit any files selected via listbox selection mechanism.
   # The cvsglb(commit_list) list remembers the list of files
@@ -461,90 +464,90 @@ proc svn_commit_dialog {} {
     svn_commit "" "" $cvsglb(commit_list)
     return
   }
-
+  
   if {[winfo exists .commit]} {
     destroy .commit
   }
-
+  
   toplevel .commit
   #grab set .commit
-
+  
   frame .commit.top -border 8
   frame .commit.down -relief groove -border 2
-
+  
   pack .commit.top -side top -fill x
   pack .commit.down -side bottom -fill x
   frame .commit.comment
   pack .commit.comment -side top -fill both -expand 1
   label .commit.comment.lcomment -text "Your log message" -anchor w
   button .commit.comment.history -text "Log History" \
-    -command history_browser
+      -command history_browser
   text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
-    -bg $cvsglb(textbg) -exportselection 1 \
-    -wrap word -border 2 -setgrid yes
-
-
+      -bg $cvsglb(textbg) -exportselection 1 \
+      -wrap word -border 2 -setgrid yes
+  
+  
   # Explain what it means to "commit" files
   message .commit.message -justify left -aspect 800 \
     -text "This will commit changes from your \
-           local, working directory into the repository, recursively."
-
+      local, working directory into the repository, recursively."
+  
   pack .commit.message -in .commit.top -padx 2 -pady 5
-
+  
   button .commit.ok -text "OK" \
-    -command {
-      #grab release .commit
-      wm withdraw .commit
-      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
-      svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
-      commit_history $cvsglb(commit_comment)
-    }
+      -command {
+    #grab release .commit
+    wm withdraw .commit
+    set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
+    svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+    commit_history $cvsglb(commit_comment)
+  }
   button .commit.apply -text "Apply" \
-    -command {
-      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
-      svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
-      commit_history $cvsglb(commit_comment)
-    }
+      -command {
+    set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
+    svn_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+    commit_history $cvsglb(commit_comment)
+  }
   button .commit.clear -text "ClearAll" \
-    -command {
-      set version ""
-      .commit.comment.tcomment delete 1.0 end
-    }
+      -command {
+    set version ""
+    .commit.comment.tcomment delete 1.0 end
+  }
   button .commit.quit \
-    -command {
-      #grab release .commit
-      wm withdraw .commit
-    }
-
+      -command {
+    #grab release .commit
+    wm withdraw .commit
+  }
+  
   .commit.ok configure -text "OK"
   .commit.quit configure -text "Close"
-
+  
   grid columnconf .commit.comment 1 -weight 1
   grid rowconf .commit.comment 1 -weight 1
   grid .commit.comment.lcomment -column 0 -row 0
   grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
   grid .commit.comment.history  -column 0 -row 1
-
+  
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
-    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-
+      -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+  
   # Fill in the most recent commit message
   .commit.comment.tcomment insert end $cvsglb(commit_comment)
-
+  
   wm title .commit "Commit Changes"
   wm minsize .commit 1 1
-
+  
   gen_log:log T "LEAVE"
 }
 
 # svn commit - called from commit dialog
 proc svn_commit {comment args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($comment $args)"
-
+  
   set filelist [join $args]
-
+  
   set commit_output ""
   if {$filelist == ""} {
     set mess "This will commit your changes to ** ALL ** files in"
@@ -557,11 +560,11 @@ proc svn_commit {comment args} {
   }
   append mess "\n\nAre you sure?"
   set commit_output ""
-
+  
   if {[cvsconfirm $mess .workdir] != "ok"} {
     return 1
   }
-
+  
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks
@@ -590,7 +593,7 @@ proc svn_commit {comment args} {
     $v\::do "$command" 1
     $v\::wait
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -599,34 +602,34 @@ proc svn_commit {comment args} {
 
 # Called from workdir browser popup
 proc svn_rename_ask {file} {
-
+  
   gen_log:log T "ENTER ($file)"
-
+  
   if {$file eq ""} {
     cvsfail "Rename:\nPlease select a file !" .workdir
     return
   }
-
+  
   # Send it to the dialog to ask for the filename
   file_input_and_do "SVN Rename" "svn_rename \"$file\""
-
+  
   gen_log:log T "LEAVE"
 }
 
 # The callback for svn_rename_ask and file_input_and_do
 proc svn_rename {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
   set oldname [lindex $args 0]
   set newname [lindex $args 1]
-
+  
   set v [viewer::new "SVN rename"]
   set command "svn rename \"$oldname\" \"$newname\""
   $v\::do "$command"
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -635,17 +638,17 @@ proc svn_rename {args} {
 
 # Called from workdir browser annotate button
 proc svn_annotate {revision args} {
-
+  
   gen_log:log T "ENTER ($revision $args)"
-
+  
   set filelist [join $args]
-
+  
   if {$revision != ""} {
     set revflag "-$revision"
   } else {
     set revflag ""
   }
-
+  
   if {$filelist == ""} {
     cvsfail "Annotate:\nPlease select one or more files !" .workdir
     gen_log:log T "LEAVE (Unselected files)"
@@ -659,7 +662,7 @@ proc svn_annotate {revision args} {
 
 # Called from branch browser annotate button
 proc svn_annotate_r {revision filepath} {
-
+  
   gen_log:log T "ENTER ($revision $filepath)"
   if {$revision != ""} {
     # We were given a revision
@@ -667,7 +670,7 @@ proc svn_annotate_r {revision filepath} {
   } else {
     set revflag ""
   }
-
+  
   annotate::new $revflag "$filepath" "svn_r"
   gen_log:log T "LEAVE"
 }
@@ -675,7 +678,7 @@ proc svn_annotate_r {revision filepath} {
 # Shows which files changed in a commit
 # called from the branch browser
 proc svn_ddiff { {rev1 {}} {rev2 {}} } {
-
+  
   gen_log:log T "ENTER (\"$rev1\" \"$rev2\")"
   set command "svn diff --summarize"
   set args ""
@@ -691,7 +694,7 @@ proc svn_ddiff { {rev1 {}} {rev2 {}} } {
   $v_show\::width 120
   $v_show\::do "$command $args" 1
   $v_show\::wait
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -699,9 +702,9 @@ proc svn_ddiff { {rev1 {}} {rev2 {}} } {
 # second revision is null, it creates a patch to the head revision.
 # If both are null the top two revisions of the file are diffed.
 proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
-
+  
   gen_log:log T "ENTER ($pathA $pathB \"$revA\" \"$dateA\" \"$revB\" \"$dateB\" $outmode $outfile)"
-
+  
   lassign {{} {}} rev1 rev2
   if {$revA != {}} {
     set rev1 $revA
@@ -729,7 +732,7 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
   } elseif {$rev2 != {}} {
     set args "$pathA -c -r$rev2"
   }
-
+  
   if {$outmode == 0} {
     set v [viewer::new "SVN Diff $args"]
     $v\::do "$command $args" 0 patch_colortags
@@ -752,9 +755,9 @@ proc svn_patch { pathA pathB revA dateA revB dateB outmode outfile } {
 
 # Called from the module browser
 proc svn_delete {root path} {
-
+  
   gen_log:log T "ENTER ($root $path)"
-
+  
   set mess "Really delete $path from the SVN repository?"
   if {[cvsconfirm $mess .modbrowse] != "ok"} {
     return
@@ -771,12 +774,12 @@ proc svn_delete {root path} {
 proc svn_jit_listdir {} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER"
   gen_log:log D "svnroot: $cvscfg(svnroot)"
   set tv .modbrowse.treeframe.pw
   busy_start $tv
-
+  
   set opendir [$tv selection]
   # It might be a string like {/trunk/Dir 2}
   set opendir [join $opendir]
@@ -791,7 +794,7 @@ proc svn_jit_listdir {} {
   }
   set dirs {}
   set fils {}
-
+  
   foreach logline $contents {
     if {$logline == "" } continue
     gen_log:log D "$logline"
@@ -808,7 +811,7 @@ proc svn_jit_listdir {} {
       set info($item) [lrange $logline 3 5]
     }
   }
-
+  
   # Remove the placeholder
   if {[$tv exists "/$dir/placeholder"]} {
     gen_log:log D "$tv delete /$dir/placeholder"
@@ -821,7 +824,7 @@ proc svn_jit_listdir {} {
   foreach d $dirs {
     svn_jit_dircmd "$dir" $d "$info($d)"
   }
-
+  
   busy_done $tv
   gen_log:log T "LEAVE"
 }
@@ -829,16 +832,16 @@ proc svn_jit_listdir {} {
 proc svn_jit_dircmd { parent dir info} {
   global cvscfg
   global Tree
-
+  
   gen_log:log T "ENTER (\"$parent\" \"$dir\" \"$info\")"
-
+  
   set tv .modbrowse.treeframe.pw
   set lbl "[file tail $dir]/"
-
+  
   if {$parent ne {}} {
     set parent "/$parent"
   }
-
+  
   # To avoid having to look ahead and build the whole tree at once, we put
   # a "marker" item in non-empty directories so it will look non-empty
   # and be openable
@@ -850,16 +853,16 @@ proc svn_jit_dircmd { parent dir info} {
   set depth [llength [file split "$parent/$dir"]]
   set col0_width [expr {$depth * $cvscfg(mod_iconwidth)}]
   $tv column #0 -width $col0_width
-
+  
   #gen_log:log T "LEAVE"
 }
 
 # called from module browser - list branches & tags
 proc parse_svnmodules {svnroot} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($svnroot)"
-
+  
   set tv .modbrowse.treeframe.pw
   set command "svn list -v $svnroot"
   set cmd(svnlist) [exec::new "$command"]
@@ -870,7 +873,7 @@ proc parse_svnmodules {svnroot} {
   }
   set dirs {}
   set fils {}
-
+  
   foreach logline [split $contents "\n"] {
     if {$logline == "" } continue
     gen_log:log D "$logline"
@@ -887,7 +890,7 @@ proc parse_svnmodules {svnroot} {
       set info($item) [lrange $logline 3 5]
     }
   }
-
+  
   foreach f $fils {
     gen_log:log D "$tv insert {} end -id $f -image Fileview -values [list $f $info($f)]"
     $tv insert {} end -id $f -image paper -values [list "$f" "$info($f)"]
@@ -917,14 +920,14 @@ proc svn_closedir {} {
 # called from workdir Reports menu. Uses recurse setting
 proc svn_log {detail args} {
   global cvsglb
-
+  
   gen_log:log T "ENTER ($detail $args)"
-
+  
   busy_start .workdir.main
-
+  
   set filelist [join $args]
   # svn log is always recursive
-
+  
   if {[llength $filelist] == 0} {
     set filelist {.}
   }
@@ -935,18 +938,18 @@ proc svn_log {detail args} {
   }
   
   switch -- $detail {
-     latest {
-       set flags "-r COMMITTED -g -v"
-     }
-     summary {
-       set flags "-q"
-     }
-     verbose {
-       # this is the default with no options. Lists the revisions.
-       set flags "-g"
-     }
+    latest {
+      set flags "-r COMMITTED -g -v"
+    }
+    summary {
+      set flags "-q"
+    }
+    verbose {
+      # this is the default with no options. Lists the revisions.
+      set flags "-g"
+    }
   }
-
+  
   set command "svn log $flags"
   set v [viewer::new "$title"]
   foreach file $filelist {
@@ -954,7 +957,7 @@ proc svn_log {detail args} {
     $v\::do "$command \"$file\"" 0 rcslog_colortags
     $v\::wait
   }
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -963,15 +966,15 @@ proc svn_log {detail args} {
 # Shows the file log up to a commit
 proc svn_log_rev {revision filename} {
   global cvsglb
-
+  
   gen_log:log T "ENTER ($revision $filename)"
-
+  
   set title "SVN Log ($revision) $filename"
   
   set v [viewer::new "$title"]
   set command "svn log -$revision:1 \"$filename\""
   $v\::do "$command" 0 rcslog_colortags
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -979,15 +982,15 @@ proc svn_log_rev {revision filename} {
 # Shows the diffs of a revision against the previous one
 proc svn_difflog_rev {revision filename} {
   global cvsglb
-
+  
   gen_log:log T "ENTER ($revision $filename)"
-
+  
   set title "SVN Log -diff ($revision) $filename"
   
   set v [viewer::new "$title"]
   set command "svn log --diff -$revision \"$filename\""
   $v\::do "$command" 0 patch_colortags
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -996,9 +999,9 @@ proc svn_difflog_rev {revision filename} {
 proc svn_show_rev {revision filename} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER ($revision $filename)"
-
+  
   set command "svn log -g -v "
   if {$revision == {}} {
     set command "$command \"$filename\""
@@ -1008,26 +1011,26 @@ proc svn_show_rev {revision filename} {
     set v [viewer::new "SVN Log ($revision) $filename"]
   }
   $v\::do "$command" 0 rcslog_colortags
-
+  
   gen_log:log T "LEAVE"
 }
 
 # Called from popup in workdir browser
 proc svn_info {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   set urllist ""
   foreach file $filelist {
-      append urllist $cvscfg(url)/$file
-      append urllist " "
+    append urllist $cvscfg(url)/$file
+    append urllist " "
   }
   set command "svn info "
   append command $urllist
-
+  
   set logcmd [viewer::new "SVN Info"]
   $logcmd\::do "$command"
   gen_log:log T "LEAVE"
@@ -1036,15 +1039,15 @@ proc svn_info {args} {
 # From workdir browser
 proc svn_reconcile_conflict {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   if {[llength $args] != 1} {
     cvsfail "Please select one file."
     return
   }
   set filelist [join $args]
-
+  
   # See if it's really a conflict file
   foreach file $filelist {
     gen_log:log F "OPEN $file"
@@ -1059,7 +1062,7 @@ proc svn_reconcile_conflict {args} {
     }
     gen_log:log F "CLOSE $file"
     close $f
-
+    
     if { $match != 1 } {
       cvsfail "$file does not appear to have a conflict." .workdir
       continue
@@ -1073,16 +1076,16 @@ proc svn_reconcile_conflict {args} {
     gen_log:log C "$tkdiff_command"
     set ret [catch {exec {*}$tkdiff_command &} view_this]
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 proc svn_resolve {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
   set filelist [join $args]
-
+  
   # See if it still has a conflict
   foreach file $filelist {
     gen_log:log F "OPEN $file"
@@ -1097,7 +1100,7 @@ proc svn_resolve {args} {
     }
     gen_log:log F "CLOSE $file"
     close $f
-
+    
     if {$match} {
       set mess "$file still contains \"<<<<<<< \" - \nUnmark anyway?"
       if {[cvsalwaysconfirm $mess .workdir] != "ok"} {
@@ -1110,20 +1113,20 @@ proc svn_resolve {args} {
   if {$cvscfg(auto_status)} {
     setup_dir
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 proc svn_revert {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   set command "svn revert"
   foreach f $filelist {
-     append command " \"$f\""
+    append command " \"$f\""
   }
   if {$filelist == ""} {
     append command "-R ."
@@ -1131,7 +1134,7 @@ proc svn_revert {args} {
   gen_log:log D "Reverting $filelist"
   set command [exec::new "$command"]
   auto_setup_dir $command
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1139,16 +1142,16 @@ proc svn_revert {args} {
 proc svn_tag {tagname b_or_t updflag comment args} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER ($tagname $b_or_t $updflag comment $args)"
-
+  
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
   set filelist [join $args]
   gen_log:log D "relpath: $cvsglb(relpath)  filelist \"$filelist\""
-
+  
   if {$b_or_t == "tag"} {
     set pathelem "$cvscfg(svn_tagdir)"
     set typearg "tags"
@@ -1157,10 +1160,10 @@ proc svn_tag {tagname b_or_t updflag comment args} {
     set pathelem "$cvscfg(svn_branchdir)"
     set typearg "branches"
   }
-
+  
   set v [viewer::new "SVN Copy $tagname"]
   set to_url "$cvscfg(svnroot)/$pathelem/$tagname/$cvsglb(relpath)"
-
+  
   # When delivered scriptically, there can't be any spaces in the comments. This is a
   # known thing with Subversion. So we escape them.
   regsub -all { } $comment {\\ } comment
@@ -1181,7 +1184,7 @@ proc svn_tag {tagname b_or_t updflag comment args} {
       $v\::do "$command"
     }
   }
-
+  
   if {$updflag == "yes"} {
     # update so we're on the branch
     set to_path [svn_pathforcopy $tagname $typearg]
@@ -1190,7 +1193,7 @@ proc svn_tag {tagname b_or_t updflag comment args} {
     $v\::do "$command" 0 status_colortags
     $v\::wait
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -1202,19 +1205,19 @@ proc svn_tag {tagname b_or_t updflag comment args} {
 proc svn_rcopy {from_path b_or_t newtag {from {}}} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER ($from_path $b_or_t $newtag)"
-
+  
   if {[string match {bran*} $b_or_t]} {
     set comment "branch\\ rcopy\\ by\\ TkCVS"
   } else {
     set comment "tag\\ rcopy\\ by\\ TkCVS"
   }
-
+  
   set v [viewer::new "SVN Copy $newtag"]
   set to_path [svn_pathforcopy $newtag $b_or_t]
   set from_path [string trimright $from_path "/"]
-
+  
   # Copy the selected path
   if { $from != {} } {
     set command "svn copy -$from -m\"$comment\" [safe_url $from_path] $to_path"
@@ -1232,11 +1235,11 @@ proc svn_rcopy {from_path b_or_t newtag {from {}}} {
 proc svn_pathforcopy {tagname b_or_t} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER (\"$tagname\" \"$b_or_t\")"
   # Can't use file join or it will mess up the URL
   set to_path [safe_url "$cvscfg(svnroot)/$b_or_t/$tagname"]
-
+  
   # We may need to construct a path to copy the file to
   set cum_path ""
   set pathelements [file split $cvsglb(relpath)]
@@ -1248,7 +1251,7 @@ proc svn_pathforcopy {tagname b_or_t} {
   if {$cum_path != ""} {
     set to_path "$to_path/$cum_path"
   }
-
+  
   gen_log:log T "LEAVE (\"$to_path\")"
   return $to_path
 }
@@ -1257,14 +1260,14 @@ proc svn_pathforcopy {tagname b_or_t} {
 proc svn_merge {parent frompath since currentpath frombranch args} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER( \"$frompath\" \"$since\" \"$currentpath\" \"$frombranch\" $args)"
-
+  
   set mergetags [assemble_mergetags $frombranch]
   set curr_tag [lindex $mergetags 0]
   set fromtag [lindex $mergetags 1]
   set totag [lindex $mergetags 2]
-
+  
   regsub {^.*@} $frompath {r} from
   if {$since == {}} {
     set mess "Merge revision $from\n"
@@ -1276,14 +1279,14 @@ proc svn_merge {parent frompath since currentpath frombranch args} {
   if {[cvsalwaysconfirm $mess $parent] != "ok"} {
     return
   }
-
+  
   # Do the update here, and defer the tagging until later
   #set commandline "svn merge --accept postpone \"$currentpath\" \"$frompath\""
   set commandline "svn merge \"$currentpath\" \"$frompath\""
   set v [viewer::new "SVN Merge"]
   $v\::do "$commandline" 1 status_colortags
   $v\::wait
-
+  
   if [winfo exists .workdir] {
     if {$cvscfg(auto_status)} {
       setup_dir
@@ -1291,20 +1294,20 @@ proc svn_merge {parent frompath since currentpath frombranch args} {
   } else {
     workdir_setup
   }
-
+  
   dialog_merge_notice svn $from $frombranch $fromtag $totag $args
-
+  
   gen_log:log T "LEAVE"
 }
 
 proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER (\"$from\" \"$totag\" \"$fromtag\" $args)"
-
+  
   set filelist [join $args]
-
+  
   # It's muy importante to make sure everything is OK at this point
   set commandline "svn status -uq $filelist"
   gen_log:log C "$commandline"
@@ -1314,12 +1317,12 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   gen_log:log $logmode $view_this
   if {$ret} {
     set mess "SVN Check shows errors which would prevent a successful\
-    commit. Please resolve them before continuing."
+        commit. Please resolve them before continuing."
     if {[cvsalwaysconfirm $mess .workdir] != "ok"} {
       return
     }
   }
-
+  
   set command "svn commit -m -m \"Merge from $from\" "
   foreach f $filelist {
     append command " \"$f\""
@@ -1329,7 +1332,7 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
   $v\::log "$command\n"
   $v\::do "$command" 1
   $v\::wait
-
+  
   # Tag if desired (no means not a branch)
   if {$cvscfg(auto_tag) && $fromtag != ""} {
     if {$frombranch == "trunk"} {
@@ -1349,7 +1352,7 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
       }
     }
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -1359,16 +1362,16 @@ proc svn_merge_tag_seq {from frombranch totag fromtag args} {
 # SVN Checkout or Export.  Called from Repository Browser
 proc svn_checkout {url path rev target cmd} {
   global incvs insvn inrcs ingit
-
+  
   gen_log:log T "ENTER ($url $path $rev $target $cmd)"
-
+  
   set command "svn $cmd"
   if {$rev != {} } {
     # Let them get away with saying r3 instead of 3
     set rev [string trimleft $rev {r}]
     append command " -r$rev"
   }
-
+  
   set dir [pwd]
   if {[file pathtype $target] eq "absolute"} {
     set tgt $target
@@ -1379,14 +1382,14 @@ proc svn_checkout {url path rev target cmd} {
      $url/$path\n\
      to directory\n\
      $tgt\n\
-     Are you sure?"
+      Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     set path [safe_url $path]
     append command " $url/$path"
     if {$target != {} } {
       append command " $target"
     }
-  
+    
     set v [viewer::new "SVN $cmd"]
     $v\::do "$command"
     $v\::wait
@@ -1397,7 +1400,7 @@ proc svn_checkout {url path rev target cmd} {
 # SVN cat or ls.  Called from module browser
 proc svn_filecat {root path title} {
   gen_log:log T "ENTER ($root $path $title)"
-
+  
   set url [safe_url $root/$path]
   # Should do cat if it's a file and ls if it's a path
   if {[string match {*/} $title]} {
@@ -1407,7 +1410,7 @@ proc svn_filecat {root path title} {
     set command "svn cat \"$url\""
     set wintitle "SVN cat"
   }
-
+  
   set v [viewer::new "$wintitle $url"]
   $v\::do "$command"
 }
@@ -1415,15 +1418,15 @@ proc svn_filecat {root path title} {
 # SVN log.  Called from module browser
 proc svn_filelog {root path title} {
   global cvsglb
-
+  
   gen_log:log T "ENTER ($root $path $title)"
-
+  
   set command "svn log -g -v "
-
+  
   set url [safe_url $root/$path]
   append command "\"$url\""
   set wintitle "SVN Log"
-
+  
   set v [viewer::new "$wintitle $url"]
   $v\::do "$command"
 }
@@ -1431,11 +1434,11 @@ proc svn_filelog {root path title} {
 # This views a specific revision of a file in the repository.
 # For files checked out in the current sandbox.
 proc svn_fileview {revision filename kind} {
-
+  
   gen_log:log T "ENTER ($revision $filename $kind)"
   set command "cat"
   if {$kind == "directory"} {
-     set command "ls"
+    set command "ls"
   }
   if {$revision == {}} {
     set command "svn $command \"$filename\""
@@ -1445,7 +1448,7 @@ proc svn_fileview {revision filename kind} {
     set v [viewer::new "$filename Revision $revision"]
   }
   $v\::do "$command"
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1453,12 +1456,12 @@ proc svn_fileview {revision filename kind} {
 proc svn_directory_merge {} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER"
-
+  
   gen_log:log D "Relative Path: $cvsglb(relpath)"
   ::svn_branchlog::new $cvsglb(relpath) . 1
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1466,12 +1469,12 @@ proc svn_directory_merge {} {
 proc svn_branches {files} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER ($files)"
   set filelist [join $files]
-
+  
   gen_log:log D "Relative Path: $cvsglb(relpath)"
-
+  
   if {$files == {}} {
     ::svn_branchlog::new $cvsglb(relpath) .
   } else {
@@ -1479,7 +1482,7 @@ proc svn_branches {files} {
       ::svn_branchlog::new $cvsglb(relpath) $file
     }
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
@@ -1500,12 +1503,12 @@ proc safe_url { url } {
 
 namespace eval ::svn_branchlog {
   variable instance 0
-
+  
   proc new {relpath filename {directory_merge {0}} } {
     variable instance
     set my_idx $instance
     incr instance
-
+    
     namespace eval $my_idx {
       set my_idx [uplevel {concat $my_idx}]
       set filename [uplevel {concat $filename}]
@@ -1524,7 +1527,7 @@ namespace eval ::svn_branchlog {
       variable revbranches
       variable branchrevs
       variable logstate
-
+      
       gen_log:log T "ENTER [namespace current]"
       if {$directory_merge} {
         set newlc [logcanvas::new . "SVN,loc" [namespace current]]
@@ -1533,7 +1536,7 @@ namespace eval ::svn_branchlog {
       }
       set ln [lindex $newlc 0]
       set lc [lindex $newlc 1]
-
+      
       # Implementation of Perl-like "grep {/re/} in_list"
       proc grep_filter { re in_list } {
         set res ""
@@ -1544,19 +1547,19 @@ namespace eval ::svn_branchlog {
         }
         return $res
       }
-
+      
       proc abortLog { } {
         global cvscfg
         variable cmd_log
         variable lc
-
+        
         catch {$cmd_log\::abort}
         busy_done $lc
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
       }
-
+      
       proc reloadLog { } {
         global cvscfg
         global cvsglb
@@ -1580,7 +1583,7 @@ namespace eval ::svn_branchlog {
         variable logstate
         variable relpath
         variable filename
-
+        
         gen_log:log T "ENTER"
         catch { $lc.canvas delete all }
         catch { unset revwho }
@@ -1595,22 +1598,22 @@ namespace eval ::svn_branchlog {
         catch { unset revkind }
         catch { unset revpath }
         set branchlist ""
-
+        
         pack forget $lc.close
         pack $lc.stop -in $lc.down.closefm -side right
         $lc.stop configure -state normal
         busy_start $lc
-
+        
         # Can't use file join or it will mess up the URL
         set safe_filename [safe_url $filename]
         set path "$cvscfg(url)/$safe_filename"
         $ln\::ConfigureButtons $filename
-
-
+        
+        
         # Find out where to put the working revision icon (if anywhere)
         set current_revnum [set $ln\::current_revnum]
         set current_revnum r$current_revnum
-
+        
         if { $relpath == {} } {
           set path "$cvscfg(svnroot)/$cvscfg(svn_trunkdir)/$safe_filename"
         } else {
@@ -1635,7 +1638,7 @@ namespace eval ::svn_branchlog {
             set highest_revision [lrange $infoline 1 end]
             gen_log:log D "$highest_revision"
           }
-        } 
+        }
         # The trunk
         set branchrevs(trunk) {}
         # There's nothing especially privileged about the trunk except that one
@@ -1652,7 +1655,7 @@ namespace eval ::svn_branchlog {
         set trunk_lines [split $log_output "\n"]
         set rootrev [parse_svnlog $trunk_lines trunk]
         gen_log:log D "BASE/ROOT: $rootrev"
-
+        
         # We do a stop-on-copy too, to see where the trunk started, since the
         # file may have been merged in from a branch
         set command "svn log -g -q"
@@ -1679,7 +1682,7 @@ namespace eval ::svn_branchlog {
         set revbtags($drawing_root) "trunk"
         set revpath($drawing_root) $path
         set revkind($drawing_root) "root"
-
+        
         # See if the current revision is on the trunk
         set curr 0
         set brevs $branchrevs($drawing_root)
@@ -1705,12 +1708,12 @@ namespace eval ::svn_branchlog {
         # We may have added a "current" branch. We have to set all its
         # stuff or we'll get errors
         foreach {revwho(current) revdate(current) revtime(current)
-           revlines(current) revcomment(current)
-           branchrevs(current) revbtags(current)}\
-           {{} {} {} {} {} {} {}} \
-           { break }
-
-
+          revlines(current) revcomment(current)
+        branchrevs(current) revbtags(current)}\
+            {{} {} {} {} {} {} {}} \
+            { break }
+        
+        
         # if root is not empty added it to the branchlist
         if { $rootrev ne "" } {
           lappend branchlist $rootrev
@@ -1732,7 +1735,7 @@ namespace eval ::svn_branchlog {
           # Draw something on the canvas so the user knows we're working
           $lc.canvas create text $cnv_x $cnv_y -text "Getting BRANCHES" -tags {temporary}
           incr cnv_y $yspc
-
+          
           set command "svn list $cvscfg(svnroot)/$cvscfg(svn_branchdir)"
           set cmd_log [exec::new $command {} 0 {} 1]
           set branches [$cmd_log\::output]
@@ -1740,7 +1743,7 @@ namespace eval ::svn_branchlog {
           # There can be files such as "README" here that aren't branches
           # so we look for a trailing slash
           set branches [grep_filter {/$} $branches]
-
+          
           foreach branch $branches {
             set branch [string trimright $branch "/"]
             gen_log:log D "========= $branch =========="
@@ -1813,7 +1816,7 @@ namespace eval ::svn_branchlog {
             lappend branchlist $rb
             lappend revbtags($rb) $branch
             set revpath($rb) $path
-
+            
             set command "svn log -q -g $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
@@ -1824,7 +1827,7 @@ namespace eval ::svn_branchlog {
             }
             set loglines [split $log_output "\n"]
             parse_q $loglines $branch
-
+            
             # Deduce the parent of the branch by finding the last member of the
             # long list that's not in the stop-on-copy list
             set search_list [lreverse $allrevs($branch)]
@@ -1861,7 +1864,7 @@ namespace eval ::svn_branchlog {
             gen_log:log D "===== finished $branch ======"
           } ;# Finished branches
         }
-
+        
         # In Subversion, it takes a long toime to gather the tags, so we draw the
         # branches and keep going
         # sort the list in rev number order
@@ -1883,9 +1886,9 @@ namespace eval ::svn_branchlog {
           catch {unset branchrevs($drawing_root)}
           catch {unset revbtags($drawing_root)}
           set btag $revbtags($rootrev)
-          set drawing_root $rootrev 
+          set drawing_root $rootrev
         }
-
+        
         # This is mostly just a checkup
         set branchlist {}
         foreach br $brlist {
@@ -1906,11 +1909,11 @@ namespace eval ::svn_branchlog {
         }
         set branchlist $brlist
         gen_log:log D "branches $branchlist"
-
+        
         pack forget $lc.stop
         pack $lc.close -in $lc.down.closefm -side right
         $lc.close configure -state normal
-
+        
         set branchrevs(current) {}
         # In SVN, sort_it_all_out is mostly a report
         [namespace current]::svn_sort_it_all_out
@@ -1922,7 +1925,7 @@ namespace eval ::svn_branchlog {
           gen_log:log D "Adding UNROOTED branch: $rootrev"
           set new_x [$ln\::DrawSideTree $sidetree_x 0 $rootrev]
         }
-
+        
         # Tags
         # Get a list of the tags from the repository
         if {$logcfg(show_tags)} {
@@ -1932,7 +1935,7 @@ namespace eval ::svn_branchlog {
           set tags [$cmd_log\::output]
           $cmd_log\::destroy
           set n_tags [llength $tags]
-            gen_log:log D "Getting max $cvscfg(toomany_tags) of $n_tags tags"
+          gen_log:log D "Getting max $cvscfg(toomany_tags) of $n_tags tags"
           if {$n_tags > $cvscfg(toomany_tags)} {
             set tags [lrange $tags [expr {$n_tags - $cvscfg(toomany_tags)}] end]
           }
@@ -1967,7 +1970,7 @@ namespace eval ::svn_branchlog {
             }
             set revkind($rb) "tag"
             set revpath($rb) $path
-
+            
             # The branch parent
             set bp [lindex $branchrevs($tag) end]
             lappend revtags($bp) $tag
@@ -1985,12 +1988,12 @@ namespace eval ::svn_branchlog {
             $ln\::DrawSideTree 40 0 $rootrev
           }
         }
-
+        
         busy_done $lc
         gen_log:log T "LEAVE"
         return
       }
-
+      
       # Parses a --stop-on-copy log, getting information for each revision
       proc parse_svnlog {lines r} {
         variable revwho
@@ -1999,16 +2002,16 @@ namespace eval ::svn_branchlog {
         variable revcomment
         variable branchrevs
         variable revmergefrom
-
+        
         gen_log:log T "ENTER (<...> $r)"
         set revnum ""
         set i 0
         set l [llength $lines]
         # in svn_log output, line zero is a separator and can be ignored
         while {$i < $l} {
-	  if { $i > 0 } { incr i -1 }
-	  set last [lindex $lines $i]
-	  incr i 1
+          if { $i > 0 } { incr i -1 }
+          set last [lindex $lines $i]
+          incr i 1
           set line [lindex $lines $i]
           #gen_log:log D "$i of $l:  $line"
           if { [ regexp {^[-]+$} $last ] && [ regexp {^r[0-9]+ \| .*line[s]?$} $line] } {
@@ -2025,7 +2028,7 @@ namespace eval ::svn_branchlog {
             set revdate($revnum) [lindex $date_and_time 0]
             set revtime($revnum) [lindex $date_and_time 1]
             set notelen [lindex [string trim [lindex $splitline 3]] 0]
-
+            
             # See if there's merge info
             incr i 1
             set line [lindex $lines $i]
@@ -2049,7 +2052,7 @@ namespace eval ::svn_branchlog {
           }
           incr i
         }
-        # Correct the revision list, svn may miss some merged via lines, resulting in 
+        # Correct the revision list, svn may miss some merged via lines, resulting in
         # non consecutive revions
         set revs {}
         set last 0
@@ -2067,11 +2070,11 @@ namespace eval ::svn_branchlog {
         # Return the base revnum of the branch
         return $revnum
       }
-
+      
       # Parses a summary (-q) log to find what revisions are on it
       proc parse_q {lines r} {
         variable allrevs
-
+        
         set allrevs($r) ""
         foreach line $lines {
           if [regexp {^r} $line] {
@@ -2082,7 +2085,7 @@ namespace eval ::svn_branchlog {
           }
         }
       }
-
+      
       proc svn_sort_it_all_out {} {
         global cvscfg
         global current_tagname
@@ -2104,47 +2107,48 @@ namespace eval ::svn_branchlog {
         variable revnum
         variable rootbranch
         variable revbranch
-
+        
         gen_log:log T "ENTER"
-
+        
         # Sort the revision and branch lists and remove duplicates
         foreach r [lsort -dictionary [array names revkind]] {
-           gen_log:log D "revkind($r) $revkind($r)"
+          gen_log:log D "revkind($r) $revkind($r)"
         }
         #foreach r [lsort -dictionary [array names revpath]] {
-           #gen_log:log D "revpath($r) $revpath($r)"
+        #gen_log:log D "revpath($r) $revpath($r)"
         #}
         gen_log:log D ""
         foreach a [lsort -dictionary [array names branchrevs]] {
-           gen_log:log D "branchrevs($a) $branchrevs($a)"
+          gen_log:log D "branchrevs($a) $branchrevs($a)"
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revbranches]] {
-           # sort the rev branches so they will be displayed in increasing order
-           set revbranches($a) [lsort -dictionary $revbranches($a)]
-           gen_log:log D "revbranches($a) $revbranches($a)"
+          # sort the rev branches so they will be displayed in increasing order
+          set revbranches($a) [lsort -dictionary $revbranches($a)]
+          gen_log:log D "revbranches($a) $revbranches($a)"
         }
         gen_log:log D ""
-           foreach a [lsort -dictionary [array names revbtags]] {
-           gen_log:log D "revbtags($a) $revbtags($a)"
+        foreach a [lsort -dictionary [array names revbtags]] {
+          gen_log:log D "revbtags($a) $revbtags($a)"
         }
         gen_log:log D ""
-           foreach a [lsort -dictionary [array names revtags]] {
-           gen_log:log D "revtags($a) $revtags($a)"
+        foreach a [lsort -dictionary [array names revtags]] {
+          gen_log:log D "revtags($a) $revtags($a)"
         }
         gen_log:log D ""
-           foreach a [lsort -dictionary [array names revmergefrom]] {
-           # Only take the highest rev of the messsy list that you might have here
-           set revmergefrom($a) [lindex [lsort -dictionary $revmergefrom($a)] end]
-           gen_log:log D "revmergefrom($a) $revmergefrom($a)"
+        foreach a [lsort -dictionary [array names revmergefrom]] {
+          # Only take the highest rev of the messsy list that you might have here
+          set revmergefrom($a) [lindex [lsort -dictionary $revmergefrom($a)] end]
+          gen_log:log D "revmergefrom($a) $revmergefrom($a)"
         }
         # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         gen_log:log T "LEAVE"
       }
-
+      
       [namespace current]::reloadLog
       return [namespace current]
     }
   }
 }
+

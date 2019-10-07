@@ -2,13 +2,13 @@
 # can't take it to mean failure
 
 proc comparediff {args} {
-#
-# This diffs a file with the repository (tkdiff <file>)
-#
+  #
+  # This diffs a file with the repository (tkdiff <file>)
+  #
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
   if {$filelist == ""} {
     cvsfail "Please select one or more files to compare!" .workdir
@@ -26,7 +26,7 @@ proc comparediff {args} {
 # Two files
 proc comparediff_files {parent file1 file2} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($file1 $file2)"
   gen_log:log C "$cvscfg(tkdiff) \"$file1\" \"$file2\""
   set ret [catch {exec {*}$cvscfg(tkdiff) "$file1" "$file2" &} view_this]
@@ -35,19 +35,19 @@ proc comparediff_files {parent file1 file2} {
 }
 
 proc comparediff_r {rev1 rev2 parent filename} {
-#
-# This diffs versions of a file, using one or two revisions (tkdiff -r1 [-r2] file)
-#
+  #
+  # This diffs versions of a file, using one or two revisions (tkdiff -r1 [-r2] file)
+  #
   global cvscfg
   global insvn
- 
+  
   gen_log:log T "ENTER (\"$rev1\" \"$rev2\" $filename)"
-
+  
   if {$rev1 == {} && $rev2 == {}} {
     cvsfail "Must have at least one revision number or tag for this function!" $parent
     return 1
   }
-
+  
   if {$rev1 != {}} {
     if {$insvn} {
       set rev1 [string trimleft $rev1 {r}]
@@ -60,7 +60,7 @@ proc comparediff_r {rev1 rev2 parent filename} {
     }
     set rev2 "-r $rev2"
   }
- 
+  
   set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$filename\""
   gen_log:log C "$commandline"
   set ret [catch {exec {*}$commandline &} view_this]
@@ -69,18 +69,18 @@ proc comparediff_r {rev1 rev2 parent filename} {
 }
 
 proc comparediff_sandbox {rev1 rev2 parent filename} {
-#
-# This diffs two revisions of a file that's not checked out
-#
+  #
+  # This diffs two revisions of a file that's not checked out
+  #
   global cvscfg
- 
+  
   gen_log:log T "ENTER (\"$rev1\" \"$rev2\" $filename)"
-
+  
   if {$rev1 == {} && $rev2 == {}} {
     cvsfail "Must have at least one revision number or tag for this function!" $parent
     return 1
   }
-
+  
   if {$rev1 != {}} {
     set rev1 [string trimleft $rev1 {r}]
     set rev1 "-r \"$rev1\""
@@ -89,10 +89,11 @@ proc comparediff_sandbox {rev1 rev2 parent filename} {
     set rev2 [string trimleft $rev2 {r}]
     set rev2 "-r \"$rev2\""
   }
- 
+  
   set commandline "$cvscfg(tkdiff) $rev1 $rev2 \"$filename\""
   gen_log:log C "$commandline"
   cvs_sandbox_runcmd $commandline view_this
-
+  
   gen_log:log T "LEAVE"
 }
+

@@ -20,16 +20,16 @@
 #   For each module, the list of files that it contains.
 
 proc gather_mod_index {} {
-#
-# Creates a new global list called modlist for the report printouts
-#
+  #
+  # Creates a new global list called modlist for the report printouts
+  #
   global cvscfg
   global modtitle
   global dcontents
   global dparent
   global modlist
   global modlist_sorted
-
+  
   #gen_log:log T "ENTER ()"
   set modlist {}
   set dlist {}
@@ -62,7 +62,7 @@ proc gather_mod_index {} {
       lappend modlist "$mcode\t$modtitle($mcode)"
     }
   }
-
+  
   set modlist_sorted [lsort $modlist]
   if {$cvscfg(logging) && [regexp -nocase {d} $cvscfg(log_classes)]} {
     foreach idx $modlist_sorted {
@@ -84,10 +84,10 @@ proc gather_mod_index {} {
 }
 
 proc find_filenames {mcode} {
-#
-# This does the work of setting up the filenames array for a module,
-# containing the list of file names within it.
-#
+  #
+  # This does the work of setting up the filenames array for a module,
+  # containing the list of file names within it.
+  #
   global filenames
   global cwd
   global cvs
@@ -95,13 +95,13 @@ proc find_filenames {mcode} {
   global cvscfg
   global checkout_version
   global feedback
-
+  
   gen_log:log T "ENTER ($mcode)"
-
+  
   if {[info exists filenames($mcode)]} {
     set filenames($mcode) ""
   }
-
+  
   # Trick of using rdiff to list files without checking them out
   # derived from "cvsls" by Eugene Kramer
   # cvs 1.9:
@@ -112,10 +112,10 @@ proc find_filenames {mcode} {
   #  Both pserver and local act like 1.9 local, that is, -f makes
   #  it skip new files.
   set commandline \
-     "$cvs -d $cvscfg(cvsroot) rdiff -s -D 01/01/1971 $mcode"
+      "$cvs -d $cvscfg(cvsroot) rdiff -s -D 01/01/1971 $mcode"
   gen_log:log C  $commandline
   catch {exec {*}$commandline} view_this
-   
+  
   set view_lines [split $view_this "\n"]
   foreach line $view_lines {
     gen_log:log D "$line"
@@ -133,7 +133,7 @@ proc find_filenames {mcode} {
 proc find_subdirs {mname level} {
   global dcontents
   global subdirs
-
+  
   #gen_log:log T "ENTER ($mname $level)"
   if {$level == 0} {
     set subdirs {}
@@ -151,3 +151,4 @@ proc find_subdirs {mname level} {
   #gen_log:log T "LEAVE ($subdirs)"
   return $subdirs
 }
+

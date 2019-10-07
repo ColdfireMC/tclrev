@@ -20,13 +20,13 @@ proc scrollbindings {cnvs} {
 # Generic Copy popup for read-only text widgets
 proc copy_paste_popup {win X Y} {
   #gen_log:log T "ENTER ($win $X $Y)"
-
+  
   if {! [winfo exists $win.copy_paste_pop] } {
     menu $win.copy_paste_pop
     $win.copy_paste_pop add command -label "Copy selection" \
-      -command [list event generate $win <<Copy>>]
+        -command [list event generate $win <<Copy>>]
     $win.copy_paste_pop add command -label "Select all" \
-      -command [list $win tag add sel 0.0 end]
+        -command [list $win tag add sel 0.0 end]
   }
   tk_popup $win.copy_paste_pop $X $Y
 }
@@ -34,10 +34,10 @@ proc copy_paste_popup {win X Y} {
 # Disable all key sequences for text widget except for navigation
 # and copy-to-clipboard
 proc ro_textbindings {txtw} {
-
+  
   #gen_log:log T "ENTER ($txtw)"
   bind $txtw <KeyPress>   {break}
-
+  
   bind $txtw <Key-Home>   {catch {%W yview moveto 0};break}
   bind $txtw <Key-Up>     {catch {%W yview scroll -1 units};break}
   bind $txtw <Key-Prior>  {catch {%W yview scroll -1 pages};break}
@@ -46,12 +46,12 @@ proc ro_textbindings {txtw} {
   bind $txtw <Key-End>    {catch {%W yview moveto 1};break}
   bind $txtw <Key-Left>   {catch {%W xview scroll -1 units};break}
   bind $txtw <Key-Right>  {catch {%W xview scroll  1 units};break}
-
+  
   bind $txtw <Control-Key-c> {tk_textCopy %W;break}
   bind $txtw <Meta-Key-c>    {tk_textCopy %W;break}
   bind $txtw <Control-Key-a> {%W tag add sel 0.0 end;break}
   bind $txtw <Meta-Key-a>    {%W tag add sel 0.0 end;break}
-
+  
   # Disable the cut and paste events.
   bind $txtw <<Paste>> "break"
   bind $txtw <<Cut>> "break"
@@ -63,14 +63,14 @@ proc ro_textbindings {txtw} {
 proc save_viewcontents {w} {
   set types  { {"Text Files" {*.txt *.log}} {"All Files" *} }
   set savfile [ \
-    tk_getSaveFile -title "Save Results Summary" \
-       -initialdir "." \
-       -filetypes $types \
-       -parent $w \
-  ]  
+      tk_getSaveFile -title "Save Results Summary" \
+      -initialdir "." \
+      -filetypes $types \
+      -parent $w \
+      ]
   if {$savfile == ""} {
     return
-  } 
+  }
   if {[catch {set fo [open $savfile w]}]} {
     puts "Cannot open $savfile for writing"
     return
@@ -85,7 +85,7 @@ proc get_textlines {w} {
   lassign [$w.text tag ranges sel] firstsel lastsel
   set firstline [lindex [split $firstsel "."] 0]
   set lastline [lindex [split $lastsel "."] 0]
-
+  
   return [list $firstline $lastline]
 }
 
@@ -93,9 +93,9 @@ proc get_textlines {w} {
 # Search functionality for text widgets
 #
 proc search_textwidget_init {} {
-# Initialize the globals for general text searches
+  # Initialize the globals for general text searches
   global cvsglb
-
+  
   if {! [info exists cvsglb(searchstr)] } {
     set cvsglb(searchstr) ""
     set cvsglb(last_searchstr) ""
@@ -104,24 +104,24 @@ proc search_textwidget_init {} {
 }
 
 proc search_textwidget { wtx } {
-# Search the text widget
+  # Search the text widget
   global cvsglb
   global cvscfg
-
+  
   #gen_log:log T "ENTER ($wtx)"
-
+  
   if {$cvsglb(searchstr) != $cvsglb(last_searchstr)} {
     $wtx tag delete match
     set cvsglb(searchidx) "1.0"
   }
-
+  
   $wtx tag configure sel -background gray -foreground black
   $wtx tag raise sel
   $wtx tag configure match -background gray -foreground black \
-     -relief groove -borderwidth 2
+      -relief groove -borderwidth 2
   $wtx tag raise match
   set searchstr $cvsglb(searchstr)
-
+  
   set match [$wtx search -- $searchstr $cvsglb(searchidx)]
   if {[string length $match] > 0} {
     set length [string length $searchstr]
@@ -134,9 +134,9 @@ proc search_textwidget { wtx } {
 }
 
 proc search_listbox_init {} {
-# Initialize the globals for searches
+  # Initialize the globals for searches
   global cvsglb
-
+  
   if {! [info exists cvsglb(searchstr)] } {
     set cvsglb(searchstr) ""
     set cvsglb(last_searchstr) ""
@@ -145,14 +145,14 @@ proc search_listbox_init {} {
 }
 
 proc search_listbox { lbx } {
-# Search a listbox
+  # Search a listbox
   global cvsglb
-
+  
   gen_log:log T "ENTER ($lbx)"
-
+  
   #gen_log:log D "search string = \"$cvsglb(searchstr)\""
   #gen_log:log D "search index = \"$cvsglb(lsearchidx)\""
-
+  
   set ndx [$lbx index end]
   if {$cvsglb(searchstr) != $cvsglb(last_searchstr)} {
     set cvsglb(lsearchidx) 0
@@ -185,7 +185,7 @@ proc dragbind {W x y} {
   if {$y < 0} {set y 0}
   if {$y > $height} {set y $height}
   set yfrac [expr {double($y) / $height}]
-
+  
   set width [$W cget -width]
   if {$x < 0} {set x 0}
   if {$x > $height} {set x $height}
@@ -227,7 +227,7 @@ proc dialog_position {dialog parent} {
 proc picklist_load {} {
   global cvscfg
   global cvsglb
-
+  
   if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] r]}]} {
     while {[gets $file var_name] > 0} {
       lappend vars $var_name
@@ -243,7 +243,7 @@ proc picklist_load {} {
 # If so, promote it to the beginning (last used)
 proc picklist_used {var_name value} {
   global cvsglb
-
+  
   gen_log:log T "ENTER ($var_name $value)"
   if {$value == {} } {
     return
@@ -267,7 +267,7 @@ proc picklist_used {var_name value} {
 proc picklist_save {} {
   global cvscfg
   global cvsglb
-
+  
   if {! [catch {set file [open [file join $cvscfg(home) {.tkcvs-picklists}] w]}]} {
     foreach var_name {cvsroot directory} {
       puts $file $var_name
@@ -289,8 +289,8 @@ proc picklist_save {} {
 proc rgb_shadow {color} {
   set rgb_color [winfo rgb . $color]
   set shadow [format #%02x%02x%02x [expr (9*[lindex $rgb_color 0])/2560] \
-                                   [expr (9*[lindex $rgb_color 1])/2560] \
-                                   [expr (9*[lindex $rgb_color 2])/2560]]
+      [expr (9*[lindex $rgb_color 1])/2560] \
+      [expr (9*[lindex $rgb_color 2])/2560]]
   return $shadow
 }
 

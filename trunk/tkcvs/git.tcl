@@ -2,7 +2,7 @@
 proc read_git_dir {dirname} {
   global cvsglb
   global current_tagname
-
+  
   # See what branch we're on
   set cmd(git_branch) [exec::new "git branch --no-color"]
   set branch_lines [split [$cmd(git_branch)\::output] "\n"]
@@ -28,12 +28,12 @@ proc git_workdir_status {showfiles} {
   global Filelist
   global current_tagname
   global module_dir
-
+  
   gen_log:log T "ENTER"
-
+  
   read_git_dir [pwd]
   set module_dir $cvsglb(relpath)
-
+  
   # git status ignores unchanged files, so we use ls-files to list the
   # files git is tracking. It will recurse the directories, and there may
   # be duplicates.
@@ -42,7 +42,7 @@ proc git_workdir_status {showfiles} {
   catch {unset filename_array}
   foreach l $list_lines {
     if {$l eq ""} {continue}
-    regsub {/.*$} $l {} fname 
+    regsub {/.*$} $l {} fname
     if {$fname ni $showfiles} {continue}
     set filename_array($fname) ""
   }
@@ -52,12 +52,12 @@ proc git_workdir_status {showfiles} {
     # Not really, but the ones that aren't will be overwritten
     set Filelist($g:status) "Up-to-date"
   }
-
+  
   # Get the status of the files that git reports (current level only)
   # If they're up-to-date, git status is mute about them
   set cmd(git_status) [exec::new "git status -u --porcelain ."]
   set status_lines  [split [$cmd(git_status)\::output] "\n"]
-
+  
   if [info exists cmd(git_list)] {
     $cmd(git_list)\::destroy
     catch {unset cmd(git_list)}
@@ -66,7 +66,7 @@ proc git_workdir_status {showfiles} {
     $cmd(git_status)\::destroy
     catch {unset cmd(git_status)}
   }
-
+  
   foreach statline $status_lines {
     if {[string length $statline] < 1} {
       continue
@@ -92,32 +92,32 @@ proc git_workdir_status {showfiles} {
       }
       { M} -
       {MM} {
-         set Filelist($f:status) "Modified, unstaged"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Modified, unstaged"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {A } {
-         set Filelist($f:status) "Added"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Added"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {AD} {
-         set Filelist($f:status) "Added, missing"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Added, missing"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {D } {
-         set Filelist($f:status) "Removed"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Removed"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       { D} {
-         set Filelist($f:status) "Missing"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Missing"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {R*} {
-         set Filelist($f:status) "Renamed"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Renamed"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {C*} {
-         set Filelist($f:status) "Copied"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Copied"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {AA} -
       {AU} -
@@ -126,21 +126,21 @@ proc git_workdir_status {showfiles} {
       {UA} -
       {UD} -
       {UU} {
-         set Filelist($f:status) "Conflict"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        set Filelist($f:status) "Conflict"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
       {??} {
-         if {[string match {.*} $f] && ! $cvscfg(allfiles)} {continue}
-         if {$f ni $showfiles} {continue}
-         set Filelist($f:status) "Not managed by Git"
-         gen_log:log D "$statline -> $Filelist($f:status)"
+        if {[string match {.*} $f] && ! $cvscfg(allfiles)} {continue}
+        if {$f ni $showfiles} {continue}
+        set Filelist($f:status) "Not managed by Git"
+        gen_log:log D "$statline -> $Filelist($f:status)"
       }
     }
   }
   # So they're not undefined
   catch {set Filelist($f:date) \
       [clock format [file mtime ./$i] -format $cvscfg(dateformat)]}
-
+  
   if {$cvscfg(gitdetail)} {
     # This log-each-file op is time consuming, so it's enabled or disabled in ~/.tkcvs
     # by the gitdetail variable
@@ -185,16 +185,16 @@ proc git_workdir_status {showfiles} {
       }
     }
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 proc find_git_remote {dirname} {
   global cvscfg
   global cvsglb
-
+  
   gen_log:log T "ENTER ($dirname)"
-
+  
   if {! [info exists cvscfg(url)] } {
     set cvscfg(url) ""
     set cvscfg(origin) ""
@@ -235,27 +235,27 @@ proc find_git_remote {dirname} {
 # For module browser.
 proc parse_gitlist {gitroot} {
   global cvsglb
-  global modval 
+  global modval
   global modtitle
-
+  
   gen_log:log T "ENTER ($gitroot)"
-
+  
   # Clear the arrays
   catch {unset modval}
   catch {unset modtitle}
   set tv .modbrowse.treeframe.pw
-
+  
   set command "git ls-remote \"$cvsglb(root)\""
   gen_log:log C "$command"
   set rem_cmd [exec::new $command]
   set remote_output [$rem_cmd\::output]
-
+  
   foreach line [split $remote_output "\n"] {
     if  {$line eq ""} {continue}
-    set dname [lindex $line 1] 
+    set dname [lindex $line 1]
     gen_log:log D "dname=$dname"
     # This is the hash
-    set modval($dname) [lindex $line 0] 
+    set modval($dname) [lindex $line 0]
     gen_log:log D "modval($dname)=$modval($dname)"
     gen_log:log D "$tv insert {} end -id $dname -values [list $dname $modval($dname)]"
     $tv insert {} end -id "$dname" -values [list "$dname" $modval($dname)]
@@ -268,29 +268,29 @@ proc parse_gitlist {gitroot} {
 
 proc git_push {} {
   global cvsglb
-
+  
   gen_log:log T "ENTER"
-
+  
   set command "git push --dry-run"
   set ret [catch {exec {*}$command} dryrun_output]
   gen_log:log C "$dryrun_output"
-
+  
   # push will return "Everything up-to-date" if it is
   if {! [string match "Everyt*" $dryrun_output]} {
     set mess "This will push your committed changes to\
-            $cvsglb(push_origin) $cvsglb(push_url).\n"
-
+        $cvsglb(push_origin) $cvsglb(push_url).\n"
+    
     append mess "\n$dryrun_output"
     append mess "\n\n Are you sure?"
-
+    
     set title {Confirm!}
     set answer [tk_messageBox \
-          -icon question \
-          -title $title \
-          -message $mess \
-          -parent .workdir \
-          -type okcancel]
-
+        -icon question \
+        -title $title \
+        -message $mess \
+        -parent .workdir \
+        -type okcancel]
+    
     if {$answer == {ok}} {
       set commandline "git push"
       set v [viewer::new "Push"]
@@ -301,35 +301,35 @@ proc git_push {} {
   } else {
     cvsok "$dryrun_output" .workdir
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 proc git_fetch {} {
   global cvsglb
-
+  
   gen_log:log T "ENTER"
-
+  
   set command "git fetch --dry-run"
   set ret [catch {exec {*}$command} dryrun_output]
   gen_log:log C "$dryrun_output"
-
+  
   # Fetch is just quiet if it's up to date
   if {[llength $dryrun_output] > 1} {
     set mess "This will fetch changes from\
-            $cvsglb(fetch_origin) $cvsglb(fetch_url).\n"
-
+        $cvsglb(fetch_origin) $cvsglb(fetch_url).\n"
+    
     append mess "\n$dryrun_output"
     append mess "\n\n Are you sure?"
-
+    
     set title {Confirm!}
     set answer [tk_messageBox \
-          -icon question \
-          -title $title \
-          -message $mess \
-          -parent .workdir \
-          -type okcancel]
-
+        -icon question \
+        -title $title \
+        -message $mess \
+        -parent .workdir \
+        -type okcancel]
+    
     if {$answer == {ok}} {
       set commandline "git fetch"
       set v [viewer::new "Fetch"]
@@ -340,37 +340,37 @@ proc git_fetch {} {
   } else {
     cvsok "Everything up to date" .workdir
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 proc git_list_tags {} {
   gen_log:log T "ENTER"
-
+  
   set commandline "git tag --list"
   set v [viewer::new "Tags"]
   $v\::do "$commandline"
   $v\::wait
   $v\::clean_exec
-
+  
   gen_log:log T "LEAVE"
 }
 
 # Called from "Log" in Reports menu
 proc git_log {detail args} {
-
+  
   gen_log:log T "ENTER ($detail $args)"
   busy_start .workdir.main
   set flags ""
   set filter ""
-
+  
   set filelist [join $args]
-
+  
   if {$filelist eq ""} {
     set filelist {.}
   }
   set title "Git Log $filelist ($detail)"
-
+  
   set commandline "git log"
   switch -- $detail {
     latest {
@@ -387,7 +387,7 @@ proc git_log {detail args} {
       set filter patch_colortags
     }
   }
-
+  
   set v [viewer::new "$title"]
   foreach file $filelist {
     if {[llength $filelist] > 1} {
@@ -398,7 +398,7 @@ proc git_log {detail args} {
     $v\::wait
     # If we're doing the graph, make the window wider
   }
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -406,44 +406,44 @@ proc git_log {detail args} {
 # does git rm from workdir browser
 proc git_rm {args} {
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   set command "git rm"
   foreach f $filelist {
     append command " \"$f\""
   }
   set exec_cmd [exec::new "$command"]
   auto_setup_dir $exec_cmd
-
+  
   gen_log:log T "LEAVE"
 }
 
 # does git rm -r from workdir browser popup menu
 proc git_remove_dir {args} {
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   set command "git rm -r"
   foreach f $filelist {
     append command " \"$f\""
   }
   set exec_cmd [exec::new "$command"]
   auto_setup_dir $exec_cmd
-
+  
   gen_log:log T "LEAVE"
 }
 
 # does git add from workdir browser
 proc git_add {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   if {$filelist == ""} {
     set mess "This will add all new files"
   } else {
@@ -452,9 +452,9 @@ proc git_add {args} {
       append mess "   $file\n"
     }
   }
-
+  
   set command "git add"
-
+  
   if {$filelist == ""} {
     append command [glob -nocomplain $cvscfg(aster) .??*]
   } else {
@@ -464,36 +464,36 @@ proc git_add {args} {
   }
   set addcmd [exec::new "$command"]
   auto_setup_dir $addcmd
-
+  
   gen_log:log T "LEAVE"
 }
 
 # Called from workdir browser popup
 proc git_rename_ask {args} {
-
+  
   gen_log:log T "ENTER ($args)"
   set file [lindex $args 0]
   if {$file eq ""} {
     cvsfail "Rename:\nPlease select a file !" .workdir
     return
   }
-
+  
   # Send it to the dialog to ask for the filename
   file_input_and_do "Git Rename" "git_rename \"$file\""
-
+  
   gen_log:log T "LEAVE"
 }
 
 # The callback for git_rename_ask and file_input_and_do
 proc git_rename {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set v [viewer::new "SVN rename"]
   set command "git mv [lindex $args 0] [lindex $args 1]"
   $v\::do "$command"
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -503,11 +503,11 @@ proc git_rename {args} {
 # Revert. Called from workdir browser
 proc git_reset {args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($args)"
-
+  
   set filelist [join $args]
-
+  
   set commandline "git reset"
   foreach f $filelist {
     append commandline " \"$f\""
@@ -517,7 +517,7 @@ proc git_reset {args} {
   $v\::do "$commandline"
   $v\::wait
   $v\::clean_exec
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -527,13 +527,13 @@ proc git_reset {args} {
 # called by "Status" in the Reports menu. Uses status_filter.
 proc git_status {detail args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($detail $args)"
-
+  
   busy_start .workdir.main
-
+  
   set filelist [join $args]
-
+  
   set flags ""
   set title "Git Status ($detail)"
   # Hide unknown files if desired
@@ -559,7 +559,7 @@ proc git_status {detail args} {
   }
   set stat_cmd [viewer::new $title]
   $stat_cmd\::do "$commandline" 0
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -567,9 +567,9 @@ proc git_status {detail args} {
 # called from the branch browser
 proc git_log_rev {rev filename} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($rev $filename)"
-
+  
   set title "Git log"
   set commandline "git log"
   if {$rev ne ""} {
@@ -581,33 +581,33 @@ proc git_log_rev {rev filename} {
   }
   append commandline " \"$filename\""
   append title " $filename"
-
+  
   set v_log [viewer::new "$title"]
   #$v_log\::width 120
   $v_log\::do $commandline 1 patch_colortags
-
+  
   gen_log:log T "LEAVE"
 }
 
 # Shows which files changed in a commit
 # called from the branch browser
 proc git_show {rev} {
-
+  
   gen_log:log T "ENTER ($rev)"
-
+  
   set show_command "git show --stat --no-color $rev"
   set title "Git show $rev"
   set v_show [viewer::new "$title"]
   $v_show\::do $show_command 1
   $v_show\::wait
-
+  
   gen_log:log T "LEAVE"
 }
 
 # Shows changes between commits
 # called from the workdir browser
 proc git_patch { filename {rev1 {}} {rev2 {}} } {
-
+  
   gen_log:log T "ENTER (\"$rev1\" \"$rev2\")"
   set command "git diff --no-color"
   set args ""
@@ -622,21 +622,21 @@ proc git_patch { filename {rev1 {}} {rev2 {}} } {
     append args " \"$filename\""
   }
   set title "SVN diff $args"
-
+  
   set title "Git diff $args"
   set v_show [viewer::new "$title"]
   #$v_show\::width 120
   $v_show\::do "$command $args" 1 patch_colortags
   $v_show\::wait
-
+  
   gen_log:log T "LEAVE"
 }
 # called from the "Check Directory" button in the workdir and Reports menu
 proc git_check {} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ()"
-
+  
   busy_start .workdir.main
   set title "Git Directory Check"
   # I know we use a short report for other VCSs, but for Git you really
@@ -649,7 +649,7 @@ proc git_check {} {
   set command "git status $flags"
   set check_cmd [viewer::new $title]
   $check_cmd\::do "$command" 0
-
+  
   busy_done .workdir.main
   gen_log:log T "LEAVE"
 }
@@ -658,7 +658,7 @@ proc git_check {} {
 proc git_commit_dialog {} {
   global cvsglb
   global cvscfg
-
+  
   # If marked files, commit these.  If no marked files, then
   # commit any files selected via listbox selection mechanism.
   # The cvsglb(commit_list) list remembers the list of files
@@ -669,90 +669,90 @@ proc git_commit_dialog {} {
     git_commit "" "" $cvsglb(commit_list)
     return
   }
-
+  
   if {[winfo exists .commit]} {
     destroy .commit
   }
-
+  
   toplevel .commit
   #grab set .commit
-
+  
   frame .commit.top -border 8
   frame .commit.down -relief groove -border 2
-
+  
   pack .commit.top -side top -fill x
   pack .commit.down -side bottom -fill x
   frame .commit.comment
   pack .commit.comment -side top -fill both -expand 1
   label .commit.comment.lcomment -text "Your log message" -anchor w
   button .commit.comment.history -text "Log History" \
-    -command history_browser
+      -command history_browser
   text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
-    -bg $cvsglb(textbg) -exportselection 1 \
-    -wrap word -border 2 -setgrid yes
-
-
+      -bg $cvsglb(textbg) -exportselection 1 \
+      -wrap word -border 2 -setgrid yes
+  
+  
   # Explain what it means to "commit" files
   message .commit.message -justify left -aspect 800 \
     -text "This will commit changes from your local, working directory
-           into the local repository, recursively."
-
+  into the local repository, recursively."
+  
   pack .commit.message -in .commit.top -padx 2 -pady 5
-
+  
   button .commit.ok -text "OK" \
-    -command {
-      #grab release .commit
-      wm withdraw .commit
-      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
-      git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
-      commit_history $cvsglb(commit_comment)
-    }
+      -command {
+    #grab release .commit
+    wm withdraw .commit
+    set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
+    git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+    commit_history $cvsglb(commit_comment)
+  }
   button .commit.apply -text "Apply" \
-    -command {
-      set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
-      git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
-      commit_history $cvsglb(commit_comment)
-    }
+      -command {
+    set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
+    git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
+    commit_history $cvsglb(commit_comment)
+  }
   button .commit.clear -text "ClearAll" \
-    -command {
-      set version ""
-      .commit.comment.tcomment delete 1.0 end
-    }
+      -command {
+    set version ""
+    .commit.comment.tcomment delete 1.0 end
+  }
   button .commit.quit \
-    -command {
-      #grab release .commit
-      wm withdraw .commit
-    }
-
+      -command {
+    #grab release .commit
+    wm withdraw .commit
+  }
+  
   .commit.ok configure -text "OK"
   .commit.quit configure -text "Close"
-
+  
   grid columnconf .commit.comment 1 -weight 1
   grid rowconf .commit.comment 1 -weight 1
   grid .commit.comment.lcomment -column 0 -row 0
   grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
   grid .commit.comment.history  -column 0 -row 1
-
+  
   pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
-    -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-
+      -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
+  
   # Fill in the most recent commit message
   .commit.comment.tcomment insert end $cvsglb(commit_comment)
-
+  
   wm title .commit "Commit Changes"
   wm minsize .commit 1 1
-
+  
   gen_log:log T "LEAVE"
 }
 
 # git commit - called from commit dialog
 proc git_commit {comment args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($comment $args)"
-
+  
   set filelist [join $args]
-
+  
   set commit_output ""
   if {$filelist == ""} {
     set mess "This will commit your changes to ** ALL ** files in"
@@ -765,11 +765,11 @@ proc git_commit {comment args} {
   }
   append mess "\n\nAre you sure?"
   set commit_output ""
-
+  
   if {[cvsconfirm $mess .workdir] != "ok"} {
     return 1
   }
-
+  
   if {$cvscfg(use_cvseditor)} {
     # Starts text editor of your choice to enter the log message.
     update idletasks
@@ -798,7 +798,7 @@ proc git_commit {comment args} {
     $v\::do "$commandline" 1
     $v\::wait
   }
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
@@ -808,15 +808,15 @@ proc git_commit {comment args} {
 # git tag - called from tag dialog
 proc git_tag {tagname annotate comment args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($tagname $annotate $comment $args)"
-
+  
   if {$tagname == ""} {
     cvsfail "You must enter a tag name!" .workdir
     return 1
   }
   set filelist [join $args]
-
+  
   set command "git tag "
   if {$annotate == "yes"} {
     append command "-a -m \"$comment\""
@@ -828,26 +828,26 @@ proc git_tag {tagname annotate comment args} {
   set v [viewer::new "Git Tag"]
   $v\::do "$command" 1
   $v\::wait
-
+  
   if {$cvscfg(auto_status)} {
     setup_dir
   }
-
+  
   gen_log:log T "LEAVE"
 }
 
 # git branch - called from branch dialog
 proc git_branch {branchname updflag args} {
   global cvscfg
-
+  
   gen_log:log T "ENTER ($branchname $args)"
-
+  
   if {$branchname == ""} {
     cvsfail "You must enter a branch name!" .workdir
     return 1
   }
   set filelist [join $args]
-
+  
   set command "git branch $branchname"
   foreach f $filelist {
     append command " \"$f\""
@@ -955,9 +955,9 @@ proc git_clone {root tag target} {
     set tgt "$dir/$target"
   }
   set mess "This will clone\n\
-     $root $tag\n\
-     to directory\n\
-     $tgt\n\
+      $root $tag\n\
+      to directory\n\
+      $tgt\n\
      Are you sure?"
   if {[cvsconfirm $mess .modbrowse] == "ok"} {
     set command "git clone"
@@ -1043,7 +1043,7 @@ proc git_annotate_r {revision filepath} {
 
   gen_log:log T "ENTER ($revision $filepath)"
   if {$revision != ""} {
-    # We were given a revision
+  # We were given a revision
     set revflag "$revision"
   } else {
     set revflag ""
@@ -1058,7 +1058,7 @@ proc git_annotate_range {v_w revision filename} {
 
   gen_log:log T "ENTER ($v_w $revision $filename)"
   if {$revision != ""} {
-    # We were given a revision
+  # We were given a revision
     set revflag "$revision"
   } else {
     set revflag ""
@@ -1090,7 +1090,7 @@ proc git_fileview {revision path filename} {
     set v [viewer::new "$filepath Revision $revision"]
     $v\::do "$command"
 
-    # Get the viewer window
+  # Get the viewer window
     set v_w [namespace inscope $v {set w}]
     frame $v_w.blamefm
     button $v_w.blamefm.blame -text "Annotate selection" \
@@ -1269,10 +1269,10 @@ namespace eval ::git_branchlog {
         $lc.stop configure -state normal
         busy_start $lc
 
-        # Start collecting information and initializing the
-        # browser
+  # Start collecting information and initializing the
+  # browser
         $ln\::ConfigureButtons $filename
-        # in case we got here straight from the command line
+  # in case we got here straight from the command line
         if {! [info exists current_tagname]} {
           set command "git rev-parse --abbrev-ref HEAD"
           set cmd_curbranch [exec::new $command {} 0 {} 1]
@@ -1284,19 +1284,19 @@ namespace eval ::git_branchlog {
         set current_revnum [set $ln\::current_revnum]
         gen_log:log D "current_revnum $current_revnum"
 
-        # Start collecting the branches
+  # Start collecting the branches
         catch {unset branches}
         catch {unset logged_branches}
         catch {unset local_branches}
         catch {unset remote_branches}
 
-        # Prepare to draw something on the canvas so user knows we're working
+  # Prepare to draw something on the canvas so user knows we're working
         set cnv_y 20
         set yspc  15
         set cnv_h [winfo height $lc.canvas]
         set cnv_w [winfo width $lc.canvas]
         set cnv_x [expr {$cnv_w / 2- 8}]
-        # subtract scrollbars etc
+  # subtract scrollbars etc
         incr cnv_h -20
         incr cnv_w -20
         $lc.canvas create text $cnv_x $cnv_y -text "Collecting the LOG" -tags {temporary}
@@ -1309,12 +1309,12 @@ namespace eval ::git_branchlog {
           set cvsglb(lightning) 1
         }
 
-        # Gets all the commit information at once, including the branch, tag,
-        # merge, and parent information. Doesn't necessarily pick up all of the
-        # locally reachable branches
+  # Gets all the commit information at once, including the branch, tag,
+  # merge, and parent information. Doesn't necessarily pick up all of the
+  # locally reachable branches
         set command "git log --all"
         if {$cvsglb(lightning)} {
-          # For the fast no-branches mode, it's best with no options but in date order
+  # For the fast no-branches mode, it's best with no options but in date order
           append command " --date-order"
         } else {
           append command " $cvscfg(gitlog_opts)"
@@ -1350,26 +1350,26 @@ namespace eval ::git_branchlog {
           return;
         }
         gen_log:log D "[llength $allrevs] REVISIONS picked up by git log --all"
-        # If we've found parentless revisions, rootrev is set to the first parentless
-        # one we found
+  # If we've found parentless revisions, rootrev is set to the first parentless
+  # one we found
         gen_log:log D "Parentless revs $rootrevs"
         gen_log:log D "Last rootrev $rootrev"
         set oldest_rev [lindex $allrevs end]
         gen_log:log D "Oldest rev $oldest_rev $revdate($oldest_rev)"
         set raw_all [lreverse $allrevs]
 
-        # Branches that were in the log decorations
+  # Branches that were in the log decorations
         if {$logged_branches != {}} {
           set logged_branches [prune_branchlist $logged_branches]
         }
 
         if {! $cvsglb(lightning)} {
-          # This gets all the locally reachable branches. We only use all of them if asked,
-          # but their order is important. Also if "master" is in there, we want it.
+  # This gets all the locally reachable branches. We only use all of them if asked,
+  # but their order is important. Also if "master" is in there, we want it.
           set cmd(git_branch) [exec::new "git branch --no-color"]
           set branch_lines [split [$cmd(git_branch)\::output] "\n"]
-          # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
-          # but we can just filter it out
+  # If we're in a detached head state, one of these can be like (HEAD detached at 9d24194)
+  # but we can just filter it out
           foreach line $branch_lines {
             if {[string length $line] < 1} continue
             if {[regexp {detached} $line]} continue
@@ -1378,7 +1378,7 @@ namespace eval ::git_branchlog {
           }
           catch {unset branch_lines}
 
-          # We always want the current branch, though
+  # We always want the current branch, though
           if {($current_tagname != "") && ($current_tagname ni $logged_branches)} {
             lappend logged_branches $current_tagname
           }
@@ -1386,7 +1386,7 @@ namespace eval ::git_branchlog {
             lappend logged_branches {master}
           }
 
-          # Don't get the remote branches unless asked to
+  # Don't get the remote branches unless asked to
           if { ! $cvsglb(lightning) && [regexp {R} $cvscfg(gitbranchgroups)] } {
             set cmd(git_rbranch) [exec::new "git branch -r"]
             set branch_lines [split [$cmd(git_rbranch)\::output] "\n"]
@@ -1404,12 +1404,12 @@ namespace eval ::git_branchlog {
           gen_log:log D "Local branches ([llength $local_branches]):    $local_branches"
           gen_log:log D "Remote branches ([llength $remote_branches]):   $remote_branches"
 
-          # Collect and de-duplicate the branch list
-          # First, add the logged branches. We always need those, you can't opt out
+  # Collect and de-duplicate the branch list
+  # First, add the logged branches. We always need those, you can't opt out
           set branches $logged_branches
-          # The local branch list usually preserves the order the best. So 
-          # we try to preserve that order when we blend them, even if we don't add ones
-          # that aren't already in the logged branches
+  # The local branch list usually preserves the order the best. So
+  # we try to preserve that order when we blend them, even if we don't add ones
+  # that aren't already in the logged branches
           set ovlp_list ""
           set fb_only ""
           set lb_only ""
@@ -1427,13 +1427,13 @@ namespace eval ::git_branchlog {
               }
             }
           }
-          # Then add the local branches that weren't in the logged branches, if desired
+  # Then add the local branches that weren't in the logged branches, if desired
           if { [regexp {L|R} $cvscfg(gitbranchgroups)] } {
             set branches [concat $ovlp_list $fb_only $lb_only ]
           } else {
             set branches [concat $ovlp_list $fb_only ]
           }
-          # Then add the remote branches, if desired
+  # Then add the remote branches, if desired
           if { [regexp {R} $cvscfg(gitbranchgroups)] } {
             foreach remb $remote_branches {
               if {$remb ni $branches} {
@@ -1443,7 +1443,7 @@ namespace eval ::git_branchlog {
           }
           set branches [lrange $branches 0 $cvscfg(gitmaxbranch)]
           set branches [prune_branchlist $branches]
-          # Move master to the front
+  # Move master to the front
           set idx [lsearch -regexp $branches {master|.*/master}]
           set mstr [lindex $branches $idx]
           set branches [lreplace $branches $idx $idx]
@@ -1456,20 +1456,20 @@ namespace eval ::git_branchlog {
           gen_log:log D "Local only: $lb_only"
           gen_log:log D "Combined branches ([llength $branches]): $branches"
 
-          # De-duplicate the tags, while we're thinking of it.
+  # De-duplicate the tags, while we're thinking of it.
           foreach a [array names revtags] {
             if {[llength $revtags($a)] > 1} {
               set revtags($a) [prune_branchlist $revtags($a)]
             }
           }
 
-          # Filter the branches
-          # We got the master above
+  # Filter the branches
+  # We got the master above
           set filtered_branches $mstr
           if {$cvscfg(gitbranchregex) ne ""} {
             gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
             foreach b $branches {
-              #gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
+  #gen_log:log D "regexp $cvscfg(gitbranchregex) $b"
               if {[catch { regexp "$cvscfg(gitbranchregex)" $b} reg_out]} {
                 gen_log:log E "$reg_out"
                 cvsfail "$reg_out"
@@ -1482,7 +1482,7 @@ namespace eval ::git_branchlog {
             }
             if {[llength $filtered_branches] < 1} {
               gen_log:log E "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
-              #cvsfail "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
+  #cvsfail "filter \{$cvscfg(gitbranchregex)\} didn't match any branches!"
             } else {
               gen_log:log D "Filtered branches: $filtered_branches"
               set branches $filtered_branches
@@ -1500,9 +1500,9 @@ namespace eval ::git_branchlog {
           set branchrevs($branchroot($trunk)) $branchrevs($trunk)
         }
 
-        # We need to query each branch to know if it's empty, so we collect the
-        # revision list while we're at it. We collect the branches into
-        # families having the same root, and detect identical ones.
+  # We need to query each branch to know if it's empty, so we collect the
+  # revision list while we're at it. We collect the branches into
+  # families having the same root, and detect identical ones.
         set empty_branches ""
         set root_branches ""
         set branchtips ""
@@ -1510,7 +1510,7 @@ namespace eval ::git_branchlog {
         list family
         
         if {! $cvsglb(lightning)} {
-          # This is necessary to reset the view after clearing the canvas
+  # This is necessary to reset the view after clearing the canvas
           $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_h]
           set cnv_y [expr {$cnv_y + $yspc}]
           set cnv_x [expr {$cnv_w / 2- 8}]
@@ -1521,7 +1521,7 @@ namespace eval ::git_branchlog {
           update idletasks
 
           foreach br $branches {
-            # Draw something on the canvas so the user knows we're working
+  # Draw something on the canvas so the user knows we're working
             $lc.canvas create text $cnv_x $cnv_y -text $br -tags {temporary} -fill $cvscfg(colourB)
             incr cnv_y $yspc
             $lc.canvas configure -scrollregion [list 0 0 $cnv_w $cnv_y]
@@ -1532,7 +1532,7 @@ namespace eval ::git_branchlog {
             if {$cvscfg(gitmaxhist) != ""} {
               append command " -$cvscfg(gitmaxhist)"
             }
-            # If since time is set, use that. Otherwise, use the time of the oldest rev we found in log --all
+  # If since time is set, use that. Otherwise, use the time of the oldest rev we found in log --all
             if {$cvscfg(gitlog_since) != ""} {
               set sinceflag "--since=\"$cvscfg(gitlog_since)\""
               regsub  -all {\s+} $sinceflag {\\ } sinceflag
@@ -1548,7 +1548,7 @@ namespace eval ::git_branchlog {
             set revlist_lines [split $revlist_output "\n"]
             if {[llength $revlist_lines] < 1} {
               gen_log:log D "branch $br is EMPTY. Removing from consideration"
-              # If it's empty, remove this branch from the list
+  # If it's empty, remove this branch from the list
               set idx [lsearch $branches $br]
               set branches [lreplace $branches $idx $idx]
               lappend empty_branches $br
@@ -1574,12 +1574,12 @@ namespace eval ::git_branchlog {
               }
             
               lassign [list_within_list $raw_all $raw_revs($br)] start n_overlap
-              # If there is orphaned stuff in here, some branches are disjunct with
-              # with our root. Don't process these further now.
+  # If there is orphaned stuff in here, some branches are disjunct with
+  # with our root. Don't process these further now.
               if {$n_overlap == 0} {
                 gen_log:log D "branch $br is DISJUNCT with our root"
-                #set idx [lsearch $branches $br]
-                #set branches [lreplace $branches $idx $idx]
+  #set idx [lsearch $branches $br]
+  #set branches [lreplace $branches $idx $idx]
               }
               set overlap_len($br) $n_overlap
               set overlap_start($br) $start
@@ -1602,10 +1602,10 @@ namespace eval ::git_branchlog {
               }
             }
           }
-          # Finished collecting the branches from the repository
+  # Finished collecting the branches from the repository
 
-          # It's easier to compare the branches if we put identical ones aside.
-          # Here we are saving lists of two or more identical branches.
+  # It's easier to compare the branches if we put identical ones aside.
+  # Here we are saving lists of two or more identical branches.
           foreach i [array names ident_matches] {
             if {[llength $ident_matches($i)] < 2} {
               catch {unset ident_matches($i)}
@@ -1613,7 +1613,7 @@ namespace eval ::git_branchlog {
           }
         }
 
-        # Get the branches in each family back in order
+  # Get the branches in each family back in order
         foreach f [array names family] {
           set ofam [list]
           foreach ob $branches {
@@ -1633,21 +1633,21 @@ namespace eval ::git_branchlog {
           return
         }
 
-        # Decide what to use for the trunk. Consider only non-empty,
-        # non-disjunct branches.
+  # Decide what to use for the trunk. Consider only non-empty,
+  # non-disjunct branches.
         foreach f [array names family] {
           set fam_branches $family($f)
           set fam_trunk($f) ""
           set trunk_found 0
           gen_log:log D "Deciding on a trunk for the ($f) $family($f) family"
           if {[llength $fam_branches] == 1} {
-            # If there's only one choice, don't waste time looking
+  # If there's only one choice, don't waste time looking
             set fam_trunk($f) [lindex $fam_branches 0]
             set trunk_found 1
             gen_log:log D " Only one branch to begin with! That was easy! trunk=$fam_trunk($f)"
           }
           if {! $trunk_found} {
-            # If only one branch begins at the beginning, that's a good one
+  # If only one branch begins at the beginning, that's a good one
             set os_z ""
             foreach b $fam_branches {
               if {$overlap_start($b) == 0} {
@@ -1660,7 +1660,7 @@ namespace eval ::git_branchlog {
             }
           }
           if {! $trunk_found} {
-            # Do we have revisions on master?
+  # Do we have revisions on master?
             set m [lsearch -exact $fam_branches {master}]
             if {$m > -1} {
               gen_log:log D "master is in our branches"
@@ -1669,7 +1669,7 @@ namespace eval ::git_branchlog {
             }
           }
           if {! $trunk_found} {
-            # how about origin/master
+  # how about origin/master
             set m [lsearch -glob $fam_branches {*/master}]
             if {$m > -1} {
               set match [lindex $fam_branches $m]
@@ -1678,15 +1678,15 @@ namespace eval ::git_branchlog {
               set trunk_found 1
             }
           }
-          #if {! $trunk_found} {
-            #foreach t $fam_branches {
-              #if {$t in $current_branches} {
-                #gen_log:log D "Found $t in Current branches"
-                #set fam_trunk($f) $t
-                #set trunk_found 1
-              #}
-            #}
-          #}
+  #if {! $trunk_found} {
+  #foreach t $fam_branches {
+  #if {$t in $current_branches} {
+  #gen_log:log D "Found $t in Current branches"
+  #set fam_trunk($f) $t
+  #set trunk_found 1
+  #}
+  #}
+  #}
           if {! $trunk_found} {
             if {[llength $fam_branches] > 0} {
               set fam_trunk($f) [lindex $fam_branches 0]
@@ -1701,15 +1701,15 @@ namespace eval ::git_branchlog {
           }
           gen_log:log D "TRUNK for FAMILY $f: $fam_trunk($f)"
 
-          # Make sure the trunk is the first in the branchlist
+  # Make sure the trunk is the first in the branchlist
           set idx [lsearch $fam_branches $fam_trunk($f)]
           set fam_branches [lreplace $fam_branches $idx $idx]
           set fam_branches [linsert $fam_branches 0 $fam_trunk($f)]
           set family($f) $fam_branches
 
-          # Get rev lists for the branches
+  # Get rev lists for the branches
           catch {unset branch_matches}
-          # Draw something on the canvas so the user knows we're working
+  # Draw something on the canvas so the user knows we're working
 
           set empty_branches ""
           gen_log:log D "========================"
@@ -1724,8 +1724,8 @@ namespace eval ::git_branchlog {
 
             gen_log:log D "========= $branch =========="
             if {$branch eq $fam_trunk($f)} {
-              # sometimes we don't have raw_revs($fam_trunk($f)) if the file is added on branch,
-              # but we should have guessed at a rootrev by now
+  # sometimes we don't have raw_revs($fam_trunk($f)) if the file is added on branch,
+  # but we should have guessed at a rootrev by now
               if {! [info exists raw_revs($fam_trunk($f))]} {
                 set raw_revs($fam_trunk($f)) $rootrev
               }
@@ -1737,8 +1737,8 @@ namespace eval ::git_branchlog {
                 set rootrev $branchroot($fam_trunk($f))
                 gen_log:log D "USING ROOT $rootrev"
               }
-              # Move the trunk's tags from the tip to the base
-              # But if there's only one rev, those are the same, so don't do it
+  # Move the trunk's tags from the tip to the base
+  # But if there's only one rev, those are the same, so don't do it
               if {[info exists revbtags($branchroot($branch)] && $branch in $revbtags($branchroot($branch))} {
                 gen_log:log D "$branch is already in $branchroot($branch)"
               } else {
@@ -1756,11 +1756,11 @@ namespace eval ::git_branchlog {
               continue
             }
 
-            # The root for a branch is the first one we get back that's only in the branch
-            # and not in master
+  # The root for a branch is the first one we get back that's only in the branch
+  # and not in master
             if {[info exists raw_revs($branch)]} {
               set raw_revs($branch) [lreverse $raw_revs($branch)]
-              # Here, we are establishing the first-level branches off the trunk
+  # Here, we are establishing the first-level branches off the trunk
               compare_branches $branch $fam_trunk($f)
  
               set parent_ok 0
@@ -1771,14 +1771,14 @@ namespace eval ::git_branchlog {
                 set parent_ok 1
               }
               if {! $parent_ok} {
-                # Was it merged from our root?
-                # Just testing this, don't set parent_ok
+  # Was it merged from our root?
+  # Just testing this, don't set parent_ok
                 if {[info exists revmergefrom($base)]} {
                   set revparent($base) $revmergefrom($base)
                   gen_log:log D "$base was MERGED FROM $revparent($base)"
                 }
               }
-              # NOPE NOPE NOPE prevent recursion
+  # NOPE NOPE NOPE prevent recursion
               if {[info exists revparent($base)] && ($revparent($base) in $branchrevs($branch))} {
                 gen_log:log D "PARENT $revparent($base) is in the revision list of $branch!"
                 set parent_ok 0
@@ -1786,24 +1786,24 @@ namespace eval ::git_branchlog {
               if {! $parent_ok} {
                 gen_log:log D "Ignoring branch $branch"
                 catch {unset revparent($base)}
-                # Withdraw this branch from the proceedings
+  # Withdraw this branch from the proceedings
                 set idx [lsearch $family($f) $branch]
                 set branches [lreplace $family($f) $idx $idx]
                 continue
               }
 
               gen_log:log D " $branch: BASE $base PARENT $revparent($base)"
-              # Sometimes we get back a parent that our log --all didn't pick
-              # up. This may happen if the directory had checkins that didn't
-              # affect the file or the file is newly added
+  # Sometimes we get back a parent that our log --all didn't pick
+  # up. This may happen if the directory had checkins that didn't
+  # affect the file or the file is newly added
               if {! [info exists revdate($revparent($base))] } {
-                # Draw it differently because it may not be reachable
+  # Draw it differently because it may not be reachable
                 set revpath($revparent($base)) $relpath
                 set revstate($revparent($base)) "ghost"
               }
 
-              # We got the parent settled one way or another
-              # Add it to revbranches(parent)
+  # We got the parent settled one way or another
+  # Add it to revbranches(parent)
               if {! [info exists revbranches($revparent($base))] || $branchroot($branch) ni $revbranches($revparent($base))} {
                 lappend revbranches($revparent($base)) $branchroot($branch)
               }
@@ -1819,16 +1819,16 @@ namespace eval ::git_branchlog {
           }
 
           gen_log:log D "========================"
-          # If two branches have the same root, one is likely
-          # a sub-branch of the other. Let's see if we can disambiguate
+  # If two branches have the same root, one is likely
+  # a sub-branch of the other. Let's see if we can disambiguate
           foreach t [array names branchroot] {
             if {$t eq $branch} continue
             if {! [info exists branchroot($branch)]} continue
-            # Maybe we took it out in the first comparison
+  # Maybe we took it out in the first comparison
             if {$branch ni $family($f)} continue
             if {$branchroot($branch) eq $branchroot($t)} {
-              #gen_log:log D "$branch and $t have the same root $branchroot($branch)"
-              # Save the duplicates in a list to deal with next
+  #gen_log:log D "$branch and $t have the same root $branchroot($branch)"
+  # Save the duplicates in a list to deal with next
               lappend branch_matches($branch) $t
             }
           }
@@ -1838,7 +1838,7 @@ namespace eval ::git_branchlog {
             gen_log:log D "NO SUB-BRANCHES FOUND for FAMILY $f"
           }
 
-          # Now that we've got sets of matches, process each set
+  # Now that we've got sets of matches, process each set
           foreach m [array names branch_matches] {
             set family_base($m) $branchroot($m)
             set peers [concat $m $branch_matches($m)]
@@ -1849,16 +1849,16 @@ namespace eval ::git_branchlog {
               if {$j == $limit} {set j 0}
               set peer1 [lindex $peers $i]
               set peer2 [lindex $peers $j]
-              # If the next one has been taken out for identity or something, skip it
+  # If the next one has been taken out for identity or something, skip it
               if {$peer2 ni $family($f)} continue
               compare_branches $peer1 $peer2
             }
           }
         }
-        # Finished finding major branches
+  # Finished finding major branches
         gen_log:log D "========================"
 
-        # Put back the identical branches
+  # Put back the identical branches
         foreach i [array names ident_matches] {
           gen_log:log D "$i IDENTICAL $ident_matches($i)"
           set first [lindex $ident_matches($i) 0]
@@ -1925,27 +1925,27 @@ namespace eval ::git_branchlog {
         }
         set revkind($rootrev) "root"
         gen_log:log D "USING TRUNK $trunk (rootrev $rootrev)"
-        # Little flourish here if we can do it. If the master arises from a merged
-        # branch, and we might draw the branch, try to show the merge
+  # Little flourish here if we can do it. If the master arises from a merged
+  # branch, and we might draw the branch, try to show the merge
         if {[info exists revparent($rootrev)] && $revparent($rootrev) ne ""} {
           set revmergefrom($rootrev) $revparent($rootrev)
         }
 
-        # Make sure we know where we're rooted. Sometimes the initial parent detection went
-        # one too far, which would put us on a different branch that's not visible from here.
+  # Make sure we know where we're rooted. Sometimes the initial parent detection went
+  # one too far, which would put us on a different branch that's not visible from here.
         gen_log:log D "branchrevs($trunk) $branchrevs($trunk)"
 
-        # Position the the You are Here icon and top up final variables
+  # Position the the You are Here icon and top up final variables
         gen_log:log D "Looking for current_revnum $current_revnum in branches"
         foreach branch $current_branches {
           if {$branchtip($branch) eq $current_revnum} {
             gen_log:log D "Currently at top of $branch"
             set branchrevs($branch) [linsert $branchrevs($branch) 0 {current}]
           } else {
-            # But maybe we're not at the tip
+  # But maybe we're not at the tip
             foreach r $branchrevs($branch) {
               if {$r == $current_revnum} {
-                # We need to make a new artificial branch off of $r
+  # We need to make a new artificial branch off of $r
                 gen_log:log D "appending current to revbranches($r)"
                 lappend revbranches($r) {current}
                 set revbtags(current) {current}
@@ -1963,9 +1963,9 @@ namespace eval ::git_branchlog {
           }
         }
 
-        # This causes recursion
+  # This causes recursion
         foreach rb [array names revbranches] {
-          #gen_log:log D "revbranches($rb)  $revbranches($rb)"
+  #gen_log:log D "revbranches($rb)  $revbranches($rb)"
           foreach r $revbranches($rb) {
             foreach rb2 [array names revbranches] {
               if {$rb eq $rb2} continue
@@ -1973,7 +1973,7 @@ namespace eval ::git_branchlog {
                 gen_log:log D "$r is in both $rb and $rb2"
                 gen_log:log D " revbranches($rb) $revbranches($rb)"
                 gen_log:log D " revbranches($rb2) $revbranches($rb2)"
-                # Take it out of the longer one?
+  # Take it out of the longer one?
                 if {[llength $revbranches($rb)] > [llength $revbranches($rb2)]} {
                   set idx [lsearch $revbranches($rb) $r]
                   set revbranches($rb) [lreplace $revbranches($rb) $idx $idx]
@@ -1986,8 +1986,8 @@ namespace eval ::git_branchlog {
           }
         }
 
-        # We may have added a "current" branch. We have to set all its
-        # stuff or we'll get errors
+  # We may have added a "current" branch. We have to set all its
+  # stuff or we'll get errors
         foreach {revwho(current) revdate(current) revtime(current)
            revlines(current) revcomment(current)
            branchrevs(current) revbtags(current)}\
@@ -1999,11 +1999,11 @@ namespace eval ::git_branchlog {
         $lc.close configure -state normal
 
         [namespace current]::git_sort_it_all_out
-        # Little pause before erasing the list of branches we temporarily drew
+  # Little pause before erasing the list of branches we temporarily drew
         after 500
         set new_x [$ln\::DrawTree now]
 
-        # Draw unrooted branches
+  # Draw unrooted branches
         gen_log:log D "ROOTREV $rootrev"
         gen_log:log D "ROOTREVS $rootrevs"
         set idx [lsearch $rootrevs $rootrev]
@@ -2058,15 +2058,15 @@ namespace eval ::git_branchlog {
 
         while {$i < $l} {
           set line [lindex $lines $i]
-          #gen_log:log D "$line"
+  #gen_log:log D "$line"
           if { [ regexp {^\s*$} $last ] && [ string match {commit *} $line] } {
-            # ^ the last line was empty and this one starts with commit
+  # ^ the last line was empty and this one starts with commit
 
-            # The commit line is complex. It can contain parents, tags, and branch tags.
-            # It can look like this:
-            # commit aad218525 3590769e6 (tag: tclpro-1-5-0, origin/tclpro-1-5-0-synthetic) 
+  # The commit line is complex. It can contain parents, tags, and branch tags.
+  # It can look like this:
+  # commit aad218525 3590769e6 (tag: tclpro-1-5-0, origin/tclpro-1-5-0-synthetic)
             if {[expr {$l - $i}] < 0} {break}
-            # ^ we came to the last line!
+  # ^ we came to the last line!
 
             set line [lindex $lines $i]
             set commits ""
@@ -2075,8 +2075,8 @@ namespace eval ::git_branchlog {
             regexp {^commit .*(\(.*\))} $line nil parenthetical
             set revnum [lindex $commits 0]
             lappend allrevs $revnum
-            # If it's a merge, there's more than one parent. But for this, we only want
-            # the first one
+  # If it's a merge, there's more than one parent. But for this, we only want
+  # the first one
             set parentlist [lindex $commits 1]
             set parent [lindex $parentlist 0]
               set revparent($revnum) $parent
@@ -2085,18 +2085,18 @@ namespace eval ::git_branchlog {
               gen_log:log D "FOUND PARENTLESS ROOT $rootrev"
               lappend rootrevs $rootrev
             }
-            #strip off the parentheses
+  #strip off the parentheses
             set in_parens [string range $parenthetical 1 end-1]
             set items [split $in_parens " "]
             set p 0
             while {$p < [llength $items]} {
-              # First, see if there are tags and peel them off
+  # First, see if there are tags and peel them off
               if {[lindex $items $p] eq "tag:"} {
                 incr p
                 lappend revtags($revnum) [string trimright [lindex $items $p] ","]
                 incr p
               } else {
-                # what's left are branches. This is the tip, not the root, usually
+  # what's left are branches. This is the tip, not the root, usually
                 set raw_btag [string trimright [lindex $items $p] ","]
                 if {(! [regexp {HEAD} $raw_btag]) && ($raw_btag ne "->")} {
                   if {$cvsglb(lightning)} {
@@ -2111,20 +2111,20 @@ namespace eval ::git_branchlog {
             incr i
 
             set line [lindex $lines $i]
-            # a line like "Merge: 7ee40c3 d6b18a7" could be next
+  # a line like "Merge: 7ee40c3 d6b18a7" could be next
             if { [string match {Merge:*} $line] } {
               set revmergefrom($revnum) [lindex $line end]
               incr i
             }
             set line [lindex $lines $i]
-            # Author: dorothy rob <dorothyr@tadg>
+  # Author: dorothy rob <dorothyr@tadg>
             if { [string match {Author:*} $line] } {
               set remainder [join [lrange $line 1 end]]
               regsub { <.*>} $remainder {} revwho($revnum)
             }
             incr i 3
             set line [lindex $lines $i]
-            # Date:   2018-08-17 20:10:15 -0700
+  # Date:   2018-08-17 20:10:15 -0700
             if { [string match {CommitDate:*} $line] } {
               set revdate($revnum) [lindex $line 1]
               set revtime($revnum) [lindex $line 2]
@@ -2133,7 +2133,7 @@ namespace eval ::git_branchlog {
 
             incr i
             set line [lindex $lines $i]
-            # Blank line precedes comment
+  # Blank line precedes comment
             set revcomment($revnum) ""
             if { [ regexp {^\s*$} $line ] } {
               set last $line
@@ -2145,7 +2145,7 @@ namespace eval ::git_branchlog {
                 set line [lindex $lines $c]
                 if {$c > $l} {break}
               }
-              # The comment lines have leading whitespace (4 spaces)
+  # The comment lines have leading whitespace (4 spaces)
               foreach commentline [lrange $lines [expr {$j + 1}] [expr {$c - 2}]] {
                 set commentline [string range $commentline 4 end]
                 append revcomment($revnum) "$commentline\n"
@@ -2172,15 +2172,15 @@ namespace eval ::git_branchlog {
         variable family
 
         gen_log:log D " COMPARING $A VS $B"
-        # For the main comparisons, we don't have branchrevs yet
+  # For the main comparisons, we don't have branchrevs yet
         if {! [info exists branchrevs($A)]} {
           set branchrevs($A) $raw_revs($A)
         }
-        #gen_log:log D " branchrevs($A) $branchrevs($A)"
+  #gen_log:log D " branchrevs($A) $branchrevs($A)"
         if {! [info exists branchrevs($B)]} {
           set branchrevs($B) $raw_revs($B)
         }
-        #gen_log:log D " branchrevs($B) $branchrevs($B)"
+  #gen_log:log D " branchrevs($B) $branchrevs($B)"
 
         lassign [list_comm $branchrevs($B) $branchrevs($A)] inAonly inBonly inBoth
         gen_log:log D " == ONLY IN $A: $inBonly"
@@ -2190,7 +2190,7 @@ namespace eval ::git_branchlog {
           set branchrevs($A) $branchrevs($B)
           set branchroot($A) $branchroot($B)
           set branchtip($branch) $branchtip($B)
-          # Add its tag to the branchroot for the other
+  # Add its tag to the branchroot for the other
           foreach z [list $A $B] {
             if {$z ni $revbtags($branchroot($z))} {
               gen_log:log D "Adding $z to revbtags for ($branchroot($z))"
@@ -2219,7 +2219,7 @@ namespace eval ::git_branchlog {
           set branchparent($A) $fork
           set old_base [lindex $inBoth end]
           set revkind($new_base) "branch"
-          # Move revbtags
+  # Move revbtags
           if {! [info exists revbtags($new_base)] || ($A ni $revbtags($new_base))} {
             gen_log:log D "Adding $A to revbtags($new_base)"
             lappend revbtags($new_base) $A
@@ -2229,7 +2229,7 @@ namespace eval ::git_branchlog {
             set idx [lsearch $revbtags($old_base) $A]
             set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
           }
-          # Move revbranches
+  # Move revbranches
           if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
             lappend revbranches($fork) $new_base
           }
@@ -2248,7 +2248,7 @@ namespace eval ::git_branchlog {
           set branchparent($B) $fork
           set old_base [lindex $inBoth end]
           set revkind($new_base) "branch"
-          # Move revbtags
+  # Move revbtags
           if {! [info exists revbtags($new_base)] || ($A ni $revbtags($new_base))} {
             gen_log:log D "Adding $B to revbtags($new_base)"
             lappend revbtags($new_base) $B
@@ -2258,7 +2258,7 @@ namespace eval ::git_branchlog {
             set idx [lsearch $revbtags($old_base) $B]
             set revbtags($old_base) [lreplace $revbtags($old_base) $idx $idx]
           }
-          # Move revbranches
+  # Move revbranches
           if {! [info exists revbranches($fork)] || ($new_base ni $revbranches($fork))} {
             lappend revbranches($fork) $new_base
           }
@@ -2301,15 +2301,15 @@ namespace eval ::git_branchlog {
 
         gen_log:log T "ENTER"
 
-        # Sort the revision and branch lists and remove duplicates
+  # Sort the revision and branch lists and remove duplicates
         foreach r [lsort -dictionary [array names revkind]] {
           if {$revkind($r) eq "root"} {
             gen_log:log D "revkind($r) $revkind($r)"
           }
         }
-        #foreach r [lsort -dictionary [array names revpath]] {
-           #gen_log:log D "revpath($r) $revpath($r)"
-        #}
+  #foreach r [lsort -dictionary [array names revpath]] {
+  #gen_log:log D "revpath($r) $revpath($r)"
+  #}
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revtags]] {
           gen_log:log D "revtags($a) $revtags($a)"
@@ -2328,15 +2328,15 @@ namespace eval ::git_branchlog {
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revmergefrom]] {
-          ## Only take one from the list that you might have here
-          #set revmergefrom($a) [lindex $revmergefrom($a) end]
+  ## Only take one from the list that you might have here
+  #set revmergefrom($a) [lindex $revmergefrom($a) end]
           gen_log:log D "revmergefrom($a) $revmergefrom($a)"
         }
         gen_log:log D ""
         foreach a [lsort -dictionary [array names revstate]] {
           gen_log:log D "revstate($a) $revstate($a)"
         }
-        # We only needed these to place the you-are-here box.
+  # We only needed these to place the you-are-here box.
         catch {unset rootbranch revbranch}
         gen_log:log T "LEAVE"
       }
@@ -2391,7 +2391,7 @@ proc list_comm {listA listB} {
     set inA {}
     set inB {}
     set inBoth $listA
-    #gen_log:log D "lists are IDENTICAL"
+  #gen_log:log D "lists are IDENTICAL"
     return [list {IDENTICAL} $listA]
   } else {
     foreach B $listB {
@@ -2437,3 +2437,4 @@ proc prune_branchlist {branchlist} {
   gen_log:log T "LEAVE ($filtered_branchlist)"
   return $filtered_branchlist
 }
+
