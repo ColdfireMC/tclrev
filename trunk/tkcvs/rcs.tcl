@@ -361,7 +361,8 @@ proc rcs_check {} {
 # for Log in Reports Menu
 proc rcs_log {detail args} {
   global cvscfg
-  gen_log:log T "ENTER"
+
+  gen_log:log T "ENTER ($detail $args)"
 
   set filelist [join $args]
   if {$filelist == ""} {
@@ -384,6 +385,21 @@ proc rcs_log {detail args} {
   set v [viewer::new "RCS log ($detail)"]
   $v\::do "$commandline" 0 rcslog_colortags
   busy_done .workdir.main
+
+  gen_log:log T "LEAVE"
+}
+
+proc rcs_log_rev {revision filename} {
+
+  gen_log:log T "ENTER ($revision $filename)"
+
+  set commandline "rlog"
+  if {$revision ne ""} {
+    append commandline " -r$revision"
+  }
+  append commandline " \"$filename\""
+  set v [viewer::new "RCS log -r$revision $filename "]
+  $v\::do "$commandline" 0 rcslog_colortags
 
   gen_log:log T "LEAVE"
 }

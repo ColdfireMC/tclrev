@@ -156,7 +156,7 @@ proc workdir_setup {} {
      -command { setup_dir }
   button .workdir.bottom.buttons.dirfuncs.bcheckdir -image Check \
      -command { cvs_check }
-  button .workdir.bottom.buttons.dirfuncs.rdiff -image Patches
+  button .workdir.bottom.buttons.dirfuncs.patchdiff -image Patches
   button .workdir.bottom.buttons.cvsfuncs.blogfile -image Branches \
      -command { cvs_branches [workdir_list_files] }
   button .workdir.bottom.buttons.cvsfuncs.bannotate -image Annotate \
@@ -213,7 +213,7 @@ proc workdir_setup {} {
   grid rowconf .workdir.bottom.buttons.dirfuncs 0 -weight 1
   grid .workdir.bottom.buttons.dirfuncs.brefresh      -column 0 -row 0 -ipadx 4 -ipady 4
   grid .workdir.bottom.buttons.dirfuncs.bcheckdir     -column 1 -row 0 -ipadx 4 -ipady 4
-  grid .workdir.bottom.buttons.dirfuncs.rdiff         -column 2 -row 0 -ipadx 4 -ipady 4
+  grid .workdir.bottom.buttons.dirfuncs.patchdiff         -column 2 -row 0 -ipadx 4 -ipady 4
 
   # Revcontrol functions
   grid .workdir.bottom.buttons.cvsfuncs.blogfile      -column 0 -row 0 -ipadx 4
@@ -255,7 +255,7 @@ proc workdir_setup {} {
      {"Directory Branch Diagram and Merge Tool"}
   set_tooltips .workdir.bottom.buttons.dirfuncs.bcheckdir \
      {"Check the status of the directory"}
-  set_tooltips .workdir.bottom.buttons.dirfuncs.rdiff \
+  set_tooltips .workdir.bottom.buttons.dirfuncs.patchdiff \
      {"Show diffs in the changed files"}
 
   set_tooltips .workdir.bottom.buttons.cvsfuncs.blogfile \
@@ -607,7 +607,7 @@ proc setup_dir { } {
   # Start with the revision-control buttons disabled
   .workdir.bottom.filters.vcshidelbl configure -text "hidden by vcs"
   .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state disabled
-  .workdir.bottom.buttons.dirfuncs.rdiff configure -state disabled
+  .workdir.bottom.buttons.dirfuncs.patchdiff configure -state disabled
   foreach widget [grid slaves .workdir.bottom.buttons.cvsfuncs ] {
     $widget configure -state disabled
   }
@@ -704,7 +704,7 @@ proc setup_dir { } {
       -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { svn_check }
-    .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
+    .workdir.bottom.buttons.dirfuncs.patchdiff configure -state normal \
       -command { svn_patch $cvscfg(url) {} {} {} {} {} 0 {} }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -image DirBranches -command { svn_branches . }
@@ -778,7 +778,7 @@ proc setup_dir { } {
       -command { workdir_view_file [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { cvs_check }
-    .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
+    .workdir.bottom.buttons.dirfuncs.patchdiff configure -state normal \
       -command { cvs_patch $cvscfg(cvsroot) $module_dir -u {} {} {} {} 0 {} }
     .workdir.bottom.buttons.cvsfuncs.bjoin configure -state normal \
       -image DirBranches -command cvs_joincanvas
@@ -867,7 +867,7 @@ proc setup_dir { } {
       -command { git_fileview HEAD {.} [workdir_list_files] }
     .workdir.bottom.buttons.dirfuncs.bcheckdir configure -state normal \
       -command { git_check }
-    .workdir.bottom.buttons.dirfuncs.rdiff configure -state normal \
+    .workdir.bottom.buttons.dirfuncs.patchdiff configure -state normal \
       -command { git_patch "" }
     .workdir.bottom.buttons.cvsfuncs.bdiff configure -state normal
     .workdir.bottom.buttons.cvsfuncs.bconflict configure -state normal \
