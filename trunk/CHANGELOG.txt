@@ -1,13 +1,12 @@
 Release 9.3 October, 2019
 
-- Put some buttons on top of the annotation browser so that when you click on a
-  line of text, it puts the revision number in an entry and you can view or
-  show the log of that revision of the file.  In git and svn, you can also show
-  the changed files and show the difference of that revision from the previous
-  one.
+- Enhanced the annotation browser so that when you click on a line of text, it
+  puts the revision number in an entry and you can view or show the log of that
+  revision of the file.  In git and svn, you can also show the changed files
+  and show the difference of that revision from the previous one.
 
-- Taught the revision browser to do a diff with the revision previous to
-  the selected one.
+- Added a toolbar menu for the annotation browser. It now has the same
+  toplevel status as the workdir and repository browsers.
 
 - Re-worked Hide and Show a little. They weren't working for SVN at all,
   and not quite working as advertized for CVS. For Git, it works
@@ -24,12 +23,10 @@ Release 9.3 October, 2019
 
 - In the working directory browser, got CVS and SVN to show the log
   date. In CVS, it takes a little longer because it has to do one "cvs log"
-  command. It won't do it if the date column isn't mapped, though.
+  command. It will only do it if the date column is mapped.
 
 - If there are locked files in CVS or SVN, or editors in CVS, put that
   in the Authors column, appended to the author's name
-
-- Added a toolbar menu for the annotation browser.
 
 - The "Go" bookmarks menu didn't really work with the module browser. Fixed.
 

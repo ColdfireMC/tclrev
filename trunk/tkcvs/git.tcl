@@ -271,9 +271,10 @@ proc git_push {} {
   
   gen_log:log T "ENTER"
   
-  set command "git push --dry-run"
+  set command "git push --dry-run . HEAD"
+  gen_log:log C "$command"
   set ret [catch {exec {*}$command} dryrun_output]
-  gen_log:log C "$dryrun_output"
+  gen_log:log F "$dryrun_output"
   
   # push will return "Everything up-to-date" if it is
   if {! [string match "Everyt*" $dryrun_output]} {
@@ -292,7 +293,7 @@ proc git_push {} {
         -type okcancel]
     
     if {$answer == {ok}} {
-      set commandline "git push"
+      set commandline "git push . HEAD"
       set v [viewer::new "Push"]
       $v\::do "$commandline"
       $v\::wait
@@ -311,8 +312,9 @@ proc git_fetch {} {
   gen_log:log T "ENTER"
   
   set command "git fetch --dry-run"
+  gen_log:log C "$command"
   set ret [catch {exec {*}$command} dryrun_output]
-  gen_log:log C "$dryrun_output"
+  gen_log:log F "$dryrun_output"
   
   # Fetch is just quiet if it's up to date
   if {[llength $dryrun_output] > 1} {
