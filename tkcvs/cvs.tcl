@@ -97,7 +97,7 @@ proc cvs_workdir_status {} {
   # command. If the server isn't local, we need the log to get the author, too.
   set cmd(cvs_status) [exec::new "$cvs -n -q status -l"]
   set status_lines [split [$cmd(cvs_status)\::output] "\n"]
-  if {$cvscfg(cvslock) && $cvscfg(showeditcol)} {
+  if {$cvscfg(showeditcol)} {
     set cmd(cvs_get_log) [exec::new "$cvs log -N -l"]
     set cvslog_lines [split [$cmd(cvs_get_log)\::output] "\n"]
   }
