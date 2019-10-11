@@ -188,9 +188,7 @@ proc DirCanvas:displaycolumns {wt} {
   }
   if {$incvs} {
     set can_show(wrevcol) 1
-    if {$cvscfg(econtrol) || $cvscfg(cvslock)} {
-      set can_show(editcol) 1
-    }
+    set can_show(editcol) 1
   }
   foreach column {wrevcol editcol} {
     if {$can_show($column)} {
