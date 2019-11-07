@@ -421,15 +421,49 @@ proc git_tools_menu {topwin} {
     return
   }
   $topwin.menubar add cascade -label "Git Tools" -menu [menu $topwin.menubar.gittools]
-  $topwin.menubar.gittools add command -label "gitk" \
-      -command { cvs_execcmd gitk --all [workdir_list_files] }
+  $topwin.menubar.gittools add command -label "gitk" -state disabled
+  $topwin.menubar.gittools add command -label "git-gui" -state disabled
+  set ok_gitk 1
+  set ok_gitgui 1
   if {[auto_execok gitk] eq ""} {
-    $topwin.menubar.gittools entryconfigure "gitk" -state disabled
+    set ok_gitk 0
   }
-  $topwin.menubar.gittools add command -label "git-gui" \
-      -command { cvs_execcmd git-gui --all [workdir_list_files] }
   if {[auto_execok git-gui] eq ""} {
-    $topwin.menubar.gittools entryconfigure "git-gui" -state disabled
+    set ok_gitgui 0
+  }
+  switch -glob $topwin {
+    ".workdir" {
+       if {$ok_gitk} {
+         $topwin.menubar.gittools entryconfigure "gitk" -state normal \
+            -command { cvs_execcmd gitk --all [workdir_list_files] }
+       }
+       if {$ok_gitgui} {
+         $topwin.menubar.gittools entryconfigure "git-gui" -state normal \
+            -command { cvs_execcmd git-gui --all [workdir_list_files] }
+       }
+    }
+    ".logcanvas*" {
+       regexp {(\d*)$} $topwin all my_idx
+       if {$ok_gitk} {
+         $topwin.menubar.gittools entryconfigure "gitk" -state normal \
+            -command "cvs_execcmd gitk --all [set ::logcanvas::$my_idx\::filename]"
+       }
+       if {$ok_gitgui} {
+         $topwin.menubar.gittools entryconfigure "git-gui" -state normal \
+            -command "cvs_execcmd git-gui --all [set ::logcanvas::$my_idx\::filename]"
+       }
+    }
+    ".annotate*" {
+       regexp {(\d*)$} $topwin all my_idx
+       if {$ok_gitk} {
+         $topwin.menubar.gittools entryconfigure "gitk" -state normal \
+            -command "cvs_execcmd gitk --all [set ::annotate::$my_idx\::file]"
+       }
+       if {$ok_gitgui} {
+         $topwin.menubar.gittools entryconfigure "git-gui" -state normal \
+            -command "cvs_execcmd git-gui --all [set ::annotate::$my_idx\::file]"
+       }
+    }
   }
 }
 
