@@ -1,3 +1,9 @@
+Release 9.3.1 November, 2019
+
+- Git Tools menus for gitk and git-gui now work in the log and annotation
+  browsers as well as in the workdir browser
+
+
 Release 9.3 October, 2019
 
 - Enhanced the annotation browser so that when you click on a line of text, it
