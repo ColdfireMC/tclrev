@@ -241,7 +241,7 @@ proc prefs_git {w} {
       -variable cvscfg(gitbranchgroups) -value "FLR"
   label $w.git.branchbr.lbrglob -text "Git Branch Filter (regex)"
   entry $w.git.branchbr.ebrglob -textvariable cvscfg(gitbranchregex)
-  label $w.git.branchbr.hbrglob -text "master is always included"
+  label $w.git.branchbr.hbrglob -text "master and current always included"
   
   pack $w.git.branchbr -side top -fill x
   grid columnconf $w.git.branchbr 1 -weight 1

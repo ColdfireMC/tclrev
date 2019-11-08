@@ -1468,6 +1468,9 @@ namespace eval ::git_branchlog {
   # Filter the branches
   # We got the master above
           set filtered_branches $mstr
+          if {$current_tagname ne $mstr} {
+            lappend filtered_branches $current_tagname
+          }
           if {$cvscfg(gitbranchregex) ne ""} {
             gen_log:log D "regexp \{$cvscfg(gitbranchregex)\}"
             foreach b $branches {
