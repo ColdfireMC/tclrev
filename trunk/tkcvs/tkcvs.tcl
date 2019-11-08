@@ -470,7 +470,7 @@ if {[string match {mod*} $cvscfg(startwindow)]} {
   if {$incvs} {
     cvs_annotate $current_tagname [list $lcfile]
   } elseif {$insvn} {
-    svn_annotate BASE [list $lcfile]
+    svn_annotate rBASE [list $lcfile]
   } elseif {$ingit} {
     read_git_dir .
     git_annotate $current_tagname [list $lcfile]
