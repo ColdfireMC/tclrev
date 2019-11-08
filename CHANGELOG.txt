@@ -3,6 +3,8 @@ Release 9.3.1 November, 2019
 - Git Tools menus for gitk and git-gui now work in the log and annotation
   browsers as well as in the workdir browser
 
+- Fix bug #150, "cvs update only works when a single file is selected"
+
 
 Release 9.3 October, 2019
 

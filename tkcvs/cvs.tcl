@@ -997,7 +997,9 @@ proc cvs_update {tagname k no_tag recurse prune d dir args} {
   gen_log:log T "ENTER (tagname=$tagname k=$k no_tag=$no_tag recurse=$recurse prune=$prune d=$d dir=$dir args=$args)"
   
   # Because this is called from an eval, the args aren't a list
-  set filelist $args
+  foreach a $args {
+    append filelist $a
+  }
   #
   # cvs update [-APCdflRp] [-k kopt] [-r rev] [-D date] [-j rev]
   #
