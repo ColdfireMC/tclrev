@@ -7,6 +7,9 @@ Release 9.3.1 November, 2019
 
 - Fix bug #151, "cvs add does not work"
 
+- In Git branch diagram, the current branch as well as the master are
+  now always shown
+
 
 Release 9.3 October, 2019
 
