@@ -479,7 +479,7 @@ proc cvs_add {binflag args} {
     append filelist [glob -nocomplain $cvscfg(aster) .??*]
   } else {
     foreach f $filelist {
-      append command " \$f\""
+      append command " \"$f\""
     }
   }
   set cmd(cvscmd) [exec::new "$command"]

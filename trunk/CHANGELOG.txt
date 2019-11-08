@@ -5,6 +5,8 @@ Release 9.3.1 November, 2019
 
 - Fix bug #150, "cvs update only works when a single file is selected"
 
+- Fix bug #151, "cvs add does not work"
+
 
 Release 9.3 October, 2019
 
