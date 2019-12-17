@@ -98,6 +98,8 @@ proc search_textwidget_init {} {
   
   if {! [info exists cvsglb(searchstr)] } {
     set cvsglb(searchstr) ""
+  }
+  if {! [info exists cvsglb(last_searchstr)] } {
     set cvsglb(last_searchstr) ""
   }
   set cvsglb(searchidx) "1.0"
@@ -139,6 +141,8 @@ proc search_listbox_init {} {
   
   if {! [info exists cvsglb(searchstr)] } {
     set cvsglb(searchstr) ""
+  }
+  if {! [info exists cvsglb(last_searchstr)] } {
     set cvsglb(last_searchstr) ""
   }
   set cvsglb(lsearchidx) 0
