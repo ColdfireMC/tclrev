@@ -79,7 +79,7 @@ proc rcs_checkin {revision comment args} {
   foreach file $filelist {
     append commit_output "\n$file"
   }
-  set mess "Thi/ will commit your changes to:$commit_output"
+  set mess "This will commit your changes to:$commit_output"
   append mess "\n\nAre you sure?"
   set commit_output ""
   if {[cvsconfirm $mess .workdir] != "ok"} {
