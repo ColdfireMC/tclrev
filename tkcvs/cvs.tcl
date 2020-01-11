@@ -62,7 +62,7 @@ proc cvs_sandbox_filetags {mcode args} {
   set command "$cvs log"
   cd [file join $cvscfg(tmpdir) cvstmpdir.$pid $mcode]
   foreach f $filenames {
-    append command " \$f\""
+    append command " \"$f\""
   }
   gen_log:log C "$command"
   set ret [catch {exec {*}$command} view_this]
@@ -304,7 +304,7 @@ proc cvs_remove_file {args} {
   # cvs-remove them
   set command "$cvs remove"
   foreach f $filelist {
-    append command " \$f\""
+    append command " \"$f\""
   }
   set cmd(cvscmd) [exec::new "$command"]
   auto_setup_dir $cmd(cvscmd)
