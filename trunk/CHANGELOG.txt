@@ -1,5 +1,7 @@
 Release 9.3.2 January, 2020
 
+- Fix Bug #152 typo in cvs remove and cvs add
+
 - SVN diagram fixes from Knute Beneke
   Tags could corrupt the revkind info, resulting in a bad branch diagram.
   If an actual branch bases on a deleted branch it would not be shown.
