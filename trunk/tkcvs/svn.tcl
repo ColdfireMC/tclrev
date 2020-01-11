@@ -1744,7 +1744,9 @@ namespace eval ::svn_branchlog {
           # so we look for a trailing slash
           set branches [grep_filter {/$} $branches]
           
-          foreach branch $branches {
+          catch {unset branchstart}
+          for {set branchindex 0} {$branchindex < [llength $branches]} {incr branchindex} {
+            set branch [lindex $branches $branchindex]
             set branch [string trimright $branch "/"]
             gen_log:log D "========= $branch =========="
             # Draw something on the canvas so the user knows we're working
@@ -1758,6 +1760,11 @@ namespace eval ::svn_branchlog {
               set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$safe_filename"
             } else {
               set path "$cvscfg(svnroot)/$cvscfg(svn_branchdir)/$branch/$relpath/$safe_filename"
+            }
+            # append branch start if available (used for deleted branches)
+            if {[info exists branchstart($branch)]} {
+              append path "@" $branchstart($branch)
+              gen_log:log D "path += @$branchstart($branch)"
             }
             # Do stop-on-copy to find the base of the branch
             set command "svn log -g"
@@ -1834,6 +1841,7 @@ namespace eval ::svn_branchlog {
             set idx [lsearch $search_list $rb]
             set bp [lindex $search_list $idx-1]
             # Skip tag revisions because they are not supported further down
+            # Add deleted branches if we base on them
             set i 0
             while {$i < 100 && $bp >= 0} {
               set command "svn info -r $bp $path"
@@ -1844,8 +1852,17 @@ namespace eval ::svn_branchlog {
                 gen_log:log D "$command returned no output"
                 break
               }
-              set found [grep_filter {^URL:.*/tags/} [split $info_output "\n"]]
-              if {$found == ""} {
+              set url [lrange [lindex [grep_filter {^URL:} [split $info_output "\n"]] 0] 1 end]
+              # Do we base on an unknown branch?
+              if {[regexp {/branches/} $url]} {
+                regexp {/branches/([^/]*)} $url dummy b
+                if {[lsearch -exact $branches $b/] < 0} {
+                  gen_log:log D "could not find parent branch $b, will add with start $bp"
+                  lappend branches $b/
+                  set branchstart($b) $bp
+                }
+              }
+              if {![regexp {/tags/} $url]} {
                 break
               }
               # This is a tag, use previous revision
@@ -1952,9 +1969,8 @@ namespace eval ::svn_branchlog {
             } else {
               set path "$cvscfg(svnroot)/$cvscfg(svn_tagdir)/$tag/$relpath/$safe_filename"
             }
-            # Do log with stop-on-copy to find the actual revision that was tagged.
-            # The tag itself created a rev which may be much higher.
-            set command "svn log -g --limit 2 $path"
+            # Do log with limit and find the first revision which is not also a tag
+            set command "svn log -g --limit 10 $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
             $cmd_log\::destroy
@@ -1965,16 +1981,26 @@ namespace eval ::svn_branchlog {
             set rb [parse_svnlog $loglines $tag]
             foreach r $branchrevs($tag) {
               gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+              if {! [info exists revkind($r)]} {
               set revkind($r) "revision"
               set revpath($r) $path
             }
-            set revkind($rb) "tag"
-            set revpath($rb) $path
-            
-            # The branch parent
-            set bp [lindex $branchrevs($tag) end]
-            lappend revtags($bp) $tag
-            gen_log:log D "   revtags($bp) $revtags($bp)"
+              set command "svn info -r $r $path"
+              set cmd_info [exec::new $command {} 0 {} 1]
+              set info_output [$cmd_info\::output]
+              $cmd_info\::destroy
+              if {$info_output == ""} {
+                gen_log:log D "$command returned no output"
+                break
+              }
+              set found [grep_filter {^URL:.*/tags/} [split $info_output "\n"]]
+              if {$found == ""} {
+                # set tag parent
+                lappend revtags($r) $tag
+                gen_log:log D "  $r is no tag: revtags($r) $revtags($r)"
+                break
+              }
+            }
             update idletasks
           }
           # In SVN, sort_it_all_out is mostly a report
