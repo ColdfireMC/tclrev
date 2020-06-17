@@ -1,3 +1,10 @@
+Release 9.3.3
+
+- tkdiff version 5.0
+
+- fix crash when starting up with a file whose CVS log can't be read
+
+
 Release 9.3.2 January, 2020
 
 - Fix Bug #152 typo in cvs remove and cvs add

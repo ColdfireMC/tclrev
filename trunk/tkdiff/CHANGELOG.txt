@@ -1,3 +1,38 @@
+5.0             (06/08/2020):
+     * NewDiff Dialog can now request a Conflict file comparison
+     - It also permits adjustment of SCM choice or search-mode
+     - and is now ALWAYS defaulted when no args are given, except
+     - in one specific preference-controlled situation (autoSrch).
+     * Merging when using an Ancestor file now identifies inconsistent
+     - "deletions" similar to additions, among the two versions merging
+     - and factors into the automatic merge choice determinations
+     * CVS is now able to produce a list of candidate comparisons
+     * ALL SCMs doing candidate detection now handle CONFLICTed files
+     * URLs (Svn style) accepted as FileSpec by Dialog and Cmdline
+     - including usage with/without @Rev suffix and for Ancestor
+     * Multiple SCMs and/or cross-branch comparison is now possible
+     * Repaired 'conflict' parsing to accept diff3-style files
+     * Eliminated a TK-updating race condition involving the DiffMap
+     * Interactive diff-region suppression is now possible
+     * Setting a line-comparison Font preference now affects entire Window
+     * Small features: window manager graphic for TkDiff now provided
+     -    displayed filenames are relativized when possible (shorter)
+     -    failed Diffs no longer considered Fatal
+     -    inappropriate (identical) Ancestor cancels 3way w/notification
+     * Minor repairs to: Split/Combine scrolling and single line "push"
+     -    line numbering past final hunk correct
+     -    tooltip rendering on a Mac
+     -    dblClick "find Nearest hunk" binding when within meta-info window
+     -    scrollwheel now works when within Merge meta-info window
+     -    Lnum/CBar highlighting no longer fails during hunk-suppresssion
+     -    Diffmap draws properly when Diffed text lacked newlines
+     -    setting an -I "regex" on the cmdline also activates them,
+     -    filenames with "sensitive" characters ($ []) wont crash
+     -    Missing/wrong text highlighting on random count of last hunk(s)
+     -    Default Filebrowser preferred-view-content filters mis-specified
+     - Online help updated/expanded to cover aspects of ALL changes
+
+
 4.3.5           (08/08/2018):
      * NewDiff Dialog now allows browsing for files OR directories
      - with the Ancestor file also permitted to extract from an SCM
