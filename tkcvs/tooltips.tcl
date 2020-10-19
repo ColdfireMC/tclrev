@@ -48,7 +48,6 @@ proc internal_tooltips_PopUp { wid name } {
   # get the cursor position
   set X [winfo pointerx $wid]
   set Y [winfo pointery $wid]
-  
   # add a slight offset to make tooltips fall below cursor
   set Y [expr { $Y + 20 }]
   
@@ -68,14 +67,22 @@ proc internal_tooltips_PopUp { wid name } {
   wm withdraw .tooltips_wind
   update idletasks
   
+  set screenH [winfo screenheight .]
+  set screenW [winfo screenwidth .]
+  set reqW [winfo reqwidth .tooltips_wind]
+  set reqH [winfo reqheight .tooltips_wind]
   # adjust for bottom of screen
-  if { ($Y + [winfo reqheight .tooltips_wind]) > [winfo screenheight .] } {
-    set Y [expr { $Y - [winfo reqheight .tooltips_wind] - 25 }]
+  if { ($Y + $reqH) > $screenH } {
+    set Y [expr { $Y - $reqH - 25 }]
     set size_changed 1
   }
   # adjust for right border of screen
-  if { ($X + [winfo reqwidth .tooltips_wind]) > [winfo screenwidth .] } {
-    set X [expr { [winfo screenwidth .] - [winfo reqwidth .tooltips_wind] }]
+  # The following correction tests whether X + reqwidth goes off the right side. But if it's a
+  # second screen, X is already > screenwidth even before adding the reqwidth, so it will get
+  # backed up onto the wrong screen. I don't know of a way to detect X relative to the actual
+  # multiple-screen layout, so I'm skipping the correction until a better way is found.
+  if { ($X < $screenW) && (($X + $reqW) > $screenW) } {
+    set X [expr { $screenW - $reqW }]
     set size_changed 1
   }
   # reset position
