@@ -1,11 +1,11 @@
-Release 9.3.3
+Release 9.3.3 November, 2020
 
-- tkdiff version 5.0
+- tkdiff version 5.1
 
 - fix crash when starting up with a file whose CVS log can't be read
 
 - On dual-monitor setups on MacOS, tooltips on the rightmost of two side-by-side
-  screens were moved to the left screen
+  screens were moved to the left screen. Fixed.
 
 
 Release 9.3.2 January, 2020
