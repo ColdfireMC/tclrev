@@ -1,3 +1,33 @@
+5.1             (11/11/2020):
+     * Now supports user cutomization of keyboard function bindings
+     - new 4th preferences Tab allows review, editting and saving of such bindings
+     * Failure-modes for user involved input is now more forgiving (w/feedback)
+     - applies to preference modifications and/or inconsistent run-modes.
+     * Scrollable bookmarks: allows access when more exist than can fit on screen.
+     - bookmark menu w/report 'participation' checkbutton (and annotation access item)
+     - bookmark annotation: user specified identities - beyond the default hunk index
+     * New report fmt - based on individualized bookmark establishment for content
+     * Increased report STATISTICS info, plus a means to view it without needing a report
+     * More robust (internal) 'Read-Only' text display re-implementation
+     - restores damaged Keyboard scrolling and hotkey usage in addition to GUI traversals
+     * Redesigned internal implementation to restore MacOS network-latency reporting support
+     * Dropped Monochrome support (revivable, but rather pointless)
+     * Incorrect mainwindow MANUAL-resizing logic repaired (improper "gridding")
+     * Tkt#73 - repaired typo causing crash of "conflict" file processing
+     * Tkt#74 - scrolling w/autoselect ON crashed when scrolled prior to the 1st hunk min-bound
+     *        + autoselect now operates passively (autocenter NOT triggered)
+     * Tkt#75 - syntactic repair resolves crash of COMBINED merge choice (L+R or R+L) usage
+     * Addressed bug displaying a combobox w/multiple monitors, and a NON-virtual window-manager
+     * Fixed (yet again) un-raised Tooltip windows on Mac (will NOT happen again)
+     * Repaired crash caused by situational ancestral-data corner condition in 3-way Diff
+     * Relaxed popup-position management on 2nd+ usage - now re-appears at most recent location
+     * Minor fix prevents wrong subwins from squeezing shut during a manual resizing to smaller
+     * Repair unintended session-long ASYNc behavior due to incomplete removal of the trigger
+     * Ensure Text window focus-highlighting remains visible when Text FG/BG is altered
+     * Removal of several (5+) internal excess-work situations improving responsiveness
+     * Online help updated to cover aspects of ALL changes (incl. removed restrictions)
+
+
 5.0             (06/08/2020):
      * NewDiff Dialog can now request a Conflict file comparison
      - It also permits adjustment of SCM choice or search-mode
