@@ -1,3 +1,3 @@
 SET TCLROOT=%cd%
-@doskey tkcvs=C:\Tcl\bin\wish85 %TCLROOT%\tkcvs\tkcvs.tcl
+@doskey tkrev=C:\Tcl\bin\wish85 %TCLROOT%\tkrev\tkrev.tcl
 

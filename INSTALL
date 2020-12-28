@@ -1,14 +1,15 @@
-TkCVS requires Tcl/Tk 8.5.  Tkcvs and tkdiff expect to find a
-program called "wish" in the path.  This can be a symbolic link to wish8.x
-or whatever is appropriate.  You also need a unix-like diff program, and whatever
-revision control systems you want to use. TkCVS supports CVS, RCS, Subversion,
-and Git.
+TkRev requires Tcl/Tk 8.5.  Tkrev and tkdiff expect to find a program
+called "wish" in the path.  This can be a symbolic link to wish8.x or whatever
+is appropriate.  You also need a unix-like diff program, and whatever revision
+control systems you want to use. TkRev supports CVS, RCS, Subversion, and
+Git.
 
-To install TkCVS, run "wish doinstall.tcl".  The installer provides an entry
-containing the default path for installation, and it shows where it will put
-the various files, On Unix/Linux, the default location is /usr/local, and on
-Windows it's C:. If you want to put TkCVS somewhere else, type a new directory
-in the entry and hit return.  On MacOS, /opt/local may be a good choice.
+To install TkRev, run "wish doinstall.tcl".  The installer provides an
+entry containing the default path for installation, and it shows where it will
+put the various files, On Unix/Linux, the default location is /usr/local, and
+on Windows it's C:. If you want to put TkRev somewhere else, type a new
+directory in the entry and hit return.  On MacOS, /opt/local may be a good
+choice.
 
 doinstall.tcl can be run without the gui, with an optional argument
 specifying the destination. 
@@ -19,23 +20,23 @@ Usage: [sudo] wish doinstall.tcl
 
 --- IMPORTANT: Configuration Files ---
 
-Look at <install_dir>/lib/tkcvs/tkcvs_def.tcl and see if there's anything you
+Look at <install_dir>/lib/tkrev/tkrev_def.tcl and see if there's anything you
 want to change.  You may need to change the variables which specify how to
 invoke various programs and the location of the the temporary directory.  You
 can also choose a default editor, specify colors for important tags, and set
 many other preferences.
 
-tkcvs_def.tcl will look for a file called site_def in the same directory
+tkrev_def.tcl will look for a file called site_def in the same directory
 it is in.  That's a good place to put site-specific preferences such as tag
-colours, without having them overwritten the next time you update tkcvs.
+colours, without having them overwritten the next time you update tkrev.
 
-Also, you can put personal preferences in the .tkcvs file in your home
+Also, you can put personal preferences in the .tkrev file in your home
 directory.  User interface preferences should usually go there.
 
 This is the order of precedence:
- ~/.tkcvs
- <installdir>/lib/tkcvs/site_def
- <installdir>/lib/tkcvs/tkcvs_def.tcl
+ ~/.tkrev
+ <installdir>/lib/tkrev/site_def
+ <installdir>/lib/tkrev/tkrev_def.tcl
 
 Some important preferences:
   cvscfg(editor) - Set this to your preferred text editor

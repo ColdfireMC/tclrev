@@ -5,7 +5,7 @@
 # from this directory (the one containing Local.txt)
 TCLROOT=`pwd`
 export TCLROOT
-alias tkcvs=$TCLROOT/tkcvs/tkcvs.tcl
+alias tkrev=$TCLROOT/tkrev/tkrev.tcl
 # Windows
-#alias tkcvs="wish85 $TCLROOT/tkcvs/tkcvs.tcl"
+#alias tkrev="wish85 $TCLROOT/tkrev/tkrev.tcl"
 

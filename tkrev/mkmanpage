@@ -1,0 +1,39 @@
+#!/bin/sh
+#-*-tcl-*-
+# the next line restarts using tclsh \
+    exec tclsh "$0" -- ${1+"$@"}
+
+# This prints the help text in manpage format
+
+# First, source in the help procs
+source help.tcl
+
+# Get the manual sections as defined there
+define_sections
+
+# Nop the gen_log calls
+proc gen_log:log {args} {}
+
+set manpage "tkrev.1"
+if {[catch {set fo [open $manpage w]}]} {
+  puts stderr "Can't open file $manpage"
+  exit
+}
+
+puts $fo ".TH tkrev 1"
+puts $fo ".SH NAME"
+puts $fo "\\fBtkrev\\fP - a Tk/Tcl Graphical Interface to CVS, Subversion and Git"
+
+# Now do the sections in the online help
+dict for {section title} $toc_dict {
+  # Call the proc in help.tcl
+  puts stderr $title
+  $section null "$title" $fo
+}
+
+puts $fo ".SH SEE ALSO"
+puts $fo "\t\\fBtkdiff\\fP online help, \\fBcvs\\fP, \\fBsvn\\fP, \\fBgit<\\fP"
+
+close $fo
+
+puts "Wrote $manpage"

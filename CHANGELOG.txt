@@ -1,3 +1,14 @@
+Release 9.4 December, 2020
+
+- Change name from TkCVS to TkRev. Your ~/.tkcvs file will be copied to ~/.tkrev
+  if you don't have the latter yet, so your settings will be transferred.
+
+- Re-worked the help so that it re-uses one window during a help session. It opens
+  with a table of contents, and has a button to go back to that.
+
+= Added a search function for the help window.
+
+
 Release 9.3.3 November, 2020
 
 - tkdiff version 5.1

@@ -1,5 +1,4 @@
 #!/bin/sh
-#-*-tcl-*-
 # the next line restarts using wish \
 if [ -z "$DISPLAY"  -o "X$1" = "X-nox" ]; then exec tclsh "$0" -- ${1+"$@"}; else exec wish "$0" -- ${1+"$@"}; fi
 
@@ -27,17 +26,17 @@ proc set_paths {INSTALLROOT} {
 
 proc show_paths {INSTALLROOT} {
   global tcl_platform
-  global TKCVS TKDIFF
+  global TKREV TKDIFF
   global LIBDIR BINDIR MANDIR
 
   set_paths $INSTALLROOT
 
-  set msg(1) [file join $BINDIR $TKCVS]
+  set msg(1) [file join $BINDIR $TKREV]
   set msg(2) [file join $BINDIR $TKDIFF]
-  set msg(3) [file join $LIBDIR tkcvs *.tcl]
-  set msg(4) [file join $LIBDIR tkcvs bitmaps *.gif,xbm]
+  set msg(3) [file join $LIBDIR tkrev *.tcl]
+  set msg(4) [file join $LIBDIR tkrev bitmaps *.gif,xbm]
   if {$tcl_platform(platform) == "unix"} {
-     set msg(5) [file join $MANDIR tkcvs.1]
+     set msg(5) [file join $MANDIR tkrev.1]
   }
   foreach m [lsort [array names msg]] {
     if {[winfo exists .messages.$m]} {
@@ -52,23 +51,23 @@ proc show_paths {INSTALLROOT} {
 
 proc doinstall { INSTALLROOT } {
   global tcl_platform
-  global TKCVS TKDIFF
+  global TKREV TKDIFF
   global LIBDIR BINDIR MANDIR
   global X
 
   set_paths $INSTALLROOT
 
   # Some directories we have to create.
-  set TCDIR [file join $LIBDIR tkcvs]
-  set GFDIR [file join $LIBDIR tkcvs bitmaps]
+  set TCDIR [file join $LIBDIR tkrev]
+  set GFDIR [file join $LIBDIR tkrev bitmaps]
   file mkdir $INSTALLROOT
   foreach dir [concat \"$BINDIR\" \"$GFDIR\" \"$TCDIR\"] {
     file mkdir $dir
   }
 
-  set destfile [file join $BINDIR $TKCVS]
-  puts "Installing $TKCVS in $BINDIR"
-  file copy -force [file join tkcvs tkcvs.tcl] [file join $BINDIR $TKCVS]
+  set destfile [file join $BINDIR $TKREV]
+  puts "Installing $TKREV in $BINDIR"
+  file copy -force [file join tkrev tkrev.tcl] [file join $BINDIR $TKREV]
   puts "Installing $TKDIFF in $BINDIR"
   file copy -force [file join tkdiff tkdiff] [file join $BINDIR $TKDIFF]
 
@@ -76,14 +75,14 @@ proc doinstall { INSTALLROOT } {
     file attributes $destfile -permissions 0755
     file attributes [file join $BINDIR $TKDIFF] -permissions 0755
     file mkdir $MANDIR
-    puts "Installing manpage tkcvs.1 in $MANDIR"
-    file copy -force [file join tkcvs tkcvs.1] $MANDIR
+    puts "Installing manpage tkrev.1 in $MANDIR"
+    file copy -force [file join tkrev tkrev.1] $MANDIR
   }
 
   puts "Installing tcl files in $TCDIR"
-  cd tkcvs
+  cd tkrev
   foreach tclfile [glob *.tcl tclIndex] {
-    if {$tclfile != "tkcvs.tcl"} {
+    if {$tclfile != "tkrev.tcl"} {
       puts "  $tclfile"
       file copy -force $tclfile $TCDIR
     }
@@ -114,7 +113,7 @@ set X 1
 # Check Tcl/TK version
 if {$tcl_version < 8.5} {
    tk_dialog .wrongversion "Tcl/Tk too old" \
-   "TkCVS requires Tcl/Tk 8.5 or better!" \
+   "TkRev requires Tcl/Tk 8.5 or better!" \
    error 0 {Bye Bye}
    exit 1
 }
@@ -130,7 +129,7 @@ for {set i 0} {$i < [llength $argv]} {incr i} {
     -h { puts "$usage"; exit }
     -finaldir {
        puts "The -finaldir option is obsolete."
-       puts "TkCVS now figures out where it is at run-time,"
+       puts "TkRev now figures out where it is at run-time,"
        puts "so substituting paths is unnecessary."
        exit 1
     }
@@ -158,11 +157,11 @@ if {[string match "*tclsh" [info nameofexecutable]]} {
 # Some rational and reasonable defaults.
 if {$tcl_platform(platform) == "windows"} {
   set INSTALLROOT "C:\\"
-  set TKCVS "tkcvs.tcl"
+  set TKREV "tkrev.tcl"
   set TKDIFF "tkdiff.tcl"
 } else {
   set INSTALLROOT [file join /usr local]
-  set TKCVS "tkcvs"
+  set TKREV "tkrev"
   set TKDIFF "tkdiff"
 }
 if {$ArgInstallRoot != ""} {
@@ -171,7 +170,7 @@ if {$ArgInstallRoot != ""} {
 
 if {$X} {
   # GUI installation
-  label .title.lbl -text "TkCVS Installer" -font {Helvetica -14 bold}
+  label .title.lbl -text "TkRev Installer" -font {Helvetica -14 bold}
   pack .title -side top
   pack .title.lbl -side top
   frame .entry
