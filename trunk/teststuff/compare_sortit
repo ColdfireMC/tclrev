@@ -3,7 +3,7 @@
 # This is for comparing the "sort_it_all_out" lines in two debug
 # trace logs.
 
-echo "comparing tkcvs trace log files $1 and $2"
+echo "comparing tkrev trace log files $1 and $2"
 
 awk -F':' '/sort_it/ {print $7}' $1 > T1
 awk -F':' '/sort_it/ {print $7}' $2 > T2
