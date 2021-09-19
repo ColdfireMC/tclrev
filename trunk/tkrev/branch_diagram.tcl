@@ -231,6 +231,7 @@ namespace eval ::logcanvas {
                 cvsfail "Please select a revision!" $logcanvas
                 return
               }
+              set rev [EitherOrHead]
               svn_show_rev $rev "$revpath($rev)"
             }]
             $logcanvas.merge configure \
@@ -2116,6 +2117,8 @@ namespace eval ::logcanvas {
       
       if { [tk windowingsystem] eq "x11" } {    
         wm iconphoto $logcanvas Branch
+      } else {
+        wm iconphoto $logcanvas -default AppIcon64
       }
       wm protocol $logcanvas WM_DELETE_WINDOW \
           [namespace code {$logcanvas.close invoke}]
