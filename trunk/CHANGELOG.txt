@@ -3,6 +3,8 @@ Release 9.4.1 September, 2021
 - Restore branch browser's diff functionality so it works if one, or no, files
   are selected.
 
+- Fix "show file changes in a commit" in Subversion branch browser
+
 
 Release 9.4 December, 2020
 
