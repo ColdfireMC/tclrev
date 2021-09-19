@@ -220,12 +220,7 @@ namespace eval ::logcanvas {
             }]
             $logcanvas.patchdiff configure -state normal \
                 -command [namespace code {
-              set revA [$logcanvas.up.revA_rvers get]
-              set revB [$logcanvas.up.revB_rvers get]
-              if {$revA eq "" && $revB eq ""} {
-                cvsfail "Please select a revision!" $logcanvas
-                return
-              }
+              set rev [EitherOrHead]
               svn_difflog_rev $rev "$revpath($rev)"
             }]
             $logcanvas.ddiff configure -state normal \
