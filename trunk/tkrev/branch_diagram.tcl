@@ -212,12 +212,11 @@ namespace eval ::logcanvas {
               set revA [$logcanvas.up.revA_rvers get]
               set revB [$logcanvas.up.revB_rvers get]
               if {$revA eq "" || $revB eq ""} {
-                cvsfail "Please select two revisions!" $logcanvas
-                return
+                set rev [EitherOrHead]
+                comparediff_r $rev "" $logcanvas $filename
+              } else {
+                comparediff_r $revA $revB $logcanvas $filename
               }
-              set A [string trimleft $revA {r}]
-              set B [string trimleft $revB {r}]
-              comparediff_files $logcanvas "$revpath($revA)@$A" "$revpath($revB)@$B"
             }]
             $logcanvas.patchdiff configure -state normal \
                 -command [namespace code {
@@ -324,10 +323,11 @@ namespace eval ::logcanvas {
                 set revA [$logcanvas.up.revA_rvers get]
                 set revB [$logcanvas.up.revB_rvers get]
                 if {$revA eq "" || $revB eq ""} {
-                  cvsfail "Please select two revisions!" $logcanvas
-                  return
+                  set rev [EitherOrHead]
+                  comparediff_r $rev "" $logcanvas $filename
+                } else {
+                  comparediff_r $revA $revB $logcanvas $filename
                 }
-                comparediff_r $revA $revB $logcanvas $filename
               }]
               $logcanvas.merge configure \
                   -command [namespace code {
@@ -387,10 +387,11 @@ namespace eval ::logcanvas {
               set revA [$logcanvas.up.revA_rvers get]
               set revB [$logcanvas.up.revB_rvers get]
               if {$revA eq "" || $revB eq ""} {
-                cvsfail "Please select two revisions!" $logcanvas
-                return
+                set rev [EitherOrHead]
+                comparediff_r $rev "" $logcanvas $filename
+              } else {
+                comparediff_r $revA $revB $logcanvas $filename
               }
-              comparediff_r $revA $revB $logcanvas "$filename"
             }]
             $logcanvas.patchdiff configure -state normal \
                 -command [namespace code {
@@ -453,10 +454,11 @@ namespace eval ::logcanvas {
               set revA [$logcanvas.up.revA_rvers get]
               set revB [$logcanvas.up.revB_rvers get]
               if {$revA eq "" || $revB eq ""} {
-                cvsfail "Please select 2 revisions!" $logcanvas
-                return
+                set rev [EitherOrHead]
+                comparediff_r $rev "" $logcanvas $filename
+              } else {
+                comparediff_r $revA $revB $logcanvas $filename
               }
-              comparediff_r $revA $revB $logcanvas $filename
             }]
             $logcanvas.merge configure -state disabled
           }

@@ -1,3 +1,9 @@
+Release 9.4.1 September, 2021
+
+- Restore branch browser's diff functionality so it works if one, or no, files
+  are selected.
+
+
 Release 9.4 December, 2020
 
 - Change name from TkCVS to TkRev. Your ~/.tkcvs file will be copied to ~/.tkrev
@@ -6,7 +12,7 @@ Release 9.4 December, 2020
 - Re-worked the help so that it re-uses one window during a help session. It opens
   with a table of contents, and has a button to go back to that.
 
-= Added a search function for the help window.
+- Added a search function for the help window.
 
 
 Release 9.3.3 November, 2020
