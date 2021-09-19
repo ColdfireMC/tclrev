@@ -5,6 +5,8 @@ Release 9.4.1 September, 2021
 
 - Fix "show file changes in a commit" in Subversion branch browser
 
+- Update tkdiff to version 5.2.1
+
 
 Release 9.4 December, 2020
 

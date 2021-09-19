@@ -1,3 +1,24 @@
+5.2.1		(03/27/2021):
+     * New user preference affects how multiple-files are presented to the user.
+       Choice of menu display has been capped at a variable maximum of 1-25. Now
+       uses a separate dialog window when file count exceeds current max setting.
+     * Sidestepped Tcl bug affecting "recursive diff" results when default user
+       pref "-q" option is removed. Will now correctly suppress "binary" files.
+     * Repaired toolbar confusion at startup about using Icon or Text buttons
+
+5.2		(03/04/2021):
+     * Permits entire directory TREEs to be scanned for candidate files recursively
+     * Now stipples the BOUNDARY LINE during "Split"-push manipulations: clearer feedback
+     * Reduce 'interactive startup' reliance on a message console and promote a "retry" paradigm
+     * Fixed broken "Find Nearest Diff" (via the popup menu) to use initial popup LOCATION
+     * Repaired Windows derivation of the INITIAL temp-dir path preference for NEW users.
+     * Resolved minor clipping issue in toolbar combobox (re: proportional fonts)
+     * Avoid Diff crash caused by specifying MULTIPLE "ignore blanks" preference options
+     * Avoid crash from malformed filename using tilde-expansion to a non-existant user
+     * Repaired missing accelerator+Tip for File->Recompute menu item
+     * Toolbar buttons now reset fully when a valid Diff execution yeilds ZERO results
+     * Visible Focus-tabbing restored to dir/file browser buttons in NewDiff dialog
+
 5.1             (11/11/2020):
      * Now supports user cutomization of keyboard function bindings
      - new 4th preferences Tab allows review, editting and saving of such bindings
