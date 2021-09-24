@@ -1240,7 +1240,8 @@ namespace eval ::logcanvas {
                 set last_rev [lindex $branchrevs($b) 1]
               }
             }
-            if {! $ingit} {
+            if {!$ingit } {
+              # The blue box at the base of each branch
               DrawRoot $bx $by $bw $lbl_height($b) $revision $b
               #if {$ly == {} } {
               #$logcanvas.canvas create line \
@@ -1342,8 +1343,8 @@ namespace eval ::logcanvas {
         set by [expr {$y2 - $curr(boff)}]
         lassign [CalcRoot $root_rev] rtw box_width ignore
         
-        if {! $ingit} {
-          # This is the blue box at the bottom of the side branch
+        if {! $ingit } {
+          # This is the blue box at the bottom of the side branch for a rootless tree
           DrawRoot $lx $y2 $lbw $lbl_height($root_rev) $root_rev $root_rev
           # This is the arrow at the base of the side branch
           $logcanvas.canvas lower [\
@@ -1718,7 +1719,7 @@ namespace eval ::logcanvas {
             set by [expr {$y2 - $curr(boff)}]
             lassign [CalcRoot $basebranch] rtw box_width bot_height
             
-            if {! $ingit} {
+        if {! $ingit } {
               $logcanvas.canvas create line \
                   $mx $by $mx [expr {$by - $rh}] \
                   -arrow last -arrowshape $curr(arrowshape) \
