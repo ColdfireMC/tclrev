@@ -1766,7 +1766,7 @@ namespace eval ::svn_branchlog {
               append path "@" $branchstart($branch)
               gen_log:log D "path += @$branchstart($branch)"
             }
-            # Do stop-on-copy to find the base of the branch
+            # Collect the branch revisions with stop-on-copy
             set command "svn log -g"
             append command " --stop-on-copy $path"
             set cmd_log [exec::new $command {} 0 {} 1]
@@ -1776,6 +1776,7 @@ namespace eval ::svn_branchlog {
               continue
             }
             set loglines [split $log_output "\n"]
+            # find base of branch
             set rb [parse_svnlog $loglines $branch]
             # If the branch was not created by copy we have to correct the base
             if {$rb == $rootrev} {
@@ -1842,6 +1843,8 @@ namespace eval ::svn_branchlog {
             set bp [lindex $search_list $idx-1]
             # Skip tag revisions because they are not supported further down
             # Add deleted branches if we base on them
+            # Do svn info on the parent to see which branch it belongs to. That branch
+            # may have been deleted!
             set i 0
             while {$i < 100 && $bp >= 0} {
               set command "svn info -r $bp $path"
@@ -1969,6 +1972,7 @@ namespace eval ::svn_branchlog {
             } else {
               set path "$cvscfg(svnroot)/$cvscfg(svn_tagdir)/$tag/$relpath/$safe_filename"
             }
+            # The tag is a revision, and the revision it tags is below it somewhere
             # Do log with limit and find the first revision which is not also a tag
             set command "svn log -g --limit 10 $path"
             set cmd_log [exec::new $command {} 0 {} 1]
@@ -1979,26 +1983,26 @@ namespace eval ::svn_branchlog {
             }
             set loglines [split $log_output "\n"]
             set rb [parse_svnlog $loglines $tag]
-            foreach r $branchrevs($tag) {
+
+            foreach r [lrange $branchrevs($tag) 1 end] {
               gen_log:log D "  $r $revdate($r) ($revcomment($r))"
               if {! [info exists revkind($r)]} {
-              set revkind($r) "revision"
-              set revpath($r) $path
-            }
+                set revkind($r) "revision"
+                set revpath($r) $path
+              }
               set command "svn info -r $r $path"
               set cmd_info [exec::new $command {} 0 {} 1]
               set info_output [$cmd_info\::output]
               $cmd_info\::destroy
               if {$info_output == ""} {
                 gen_log:log D "$command returned no output"
-                break
+                continue
               }
               set found [grep_filter {^URL:.*/tags/} [split $info_output "\n"]]
               if {$found == ""} {
-                # set tag parent
                 lappend revtags($r) $tag
-                gen_log:log D "  $r is no tag: revtags($r) $revtags($r)"
-                break
+                gen_log:log D "  $r is not a tag: revtags($r) $revtags($r)"
+                continue
               }
             }
             update idletasks
@@ -2079,7 +2083,7 @@ namespace eval ::svn_branchlog {
           incr i
         }
         # Correct the revision list, svn may miss some merged via lines, resulting in
-        # non consecutive revions
+        # non consecutive revisions
         set revs {}
         set last 0
         foreach rev [lreverse $branchrevs($r)] {
