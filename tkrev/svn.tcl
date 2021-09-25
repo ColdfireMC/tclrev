@@ -1950,10 +1950,27 @@ namespace eval ::svn_branchlog {
         # Get a list of the tags from the repository
         if {$logcfg(show_tags)} {
           busy_start $lc
-          set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
+          #set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
+          set command "svn list --depth=infinity --search $safe_filename $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
           set cmd_log [exec::new $command {} 0 {} 1]
-          set tags [$cmd_log\::output]
-          $cmd_log\::destroy
+          set listlines [$cmd_log\::output]
+          if [info exists cmd_log)] {
+            $cmd_log\::destroy
+          }
+
+          set tags {}
+          # svn list --search doesn't allow paths, only filenames, so we have to refine its output
+          if { $relpath == {} } {
+            set srchstr "$safe_filename"
+          } else {
+            set srchstr "$relpath/$safe_filename"
+          }
+          gen_log:log D "searching list output for $srchstr"
+          foreach tagline [split $listlines "\n"] {
+            if { [regsub "/*/$srchstr" $tagline {} t ] } {
+              lappend tags $t
+            }
+          }
           set n_tags [llength $tags]
           gen_log:log D "Getting max $cvscfg(toomany_tags) of $n_tags tags"
           if {$n_tags > $cvscfg(toomany_tags)} {
@@ -1962,9 +1979,9 @@ namespace eval ::svn_branchlog {
           foreach tag $tags {
             gen_log:log D "$tag"
             # There can be files such as "README" here that aren't tags
-            if {![string match {*/} $tag]} {continue}
+            #if {![string match {*/} $tag]} {continue}
             # Draw something on the canvas so the user knows we're working
-            set tag [string trimright $tag "/"]
+            #set tag [string trimright $tag "/"]
             # Can't use file join or it will mess up the URL
             gen_log:log D "TAGS: RELPATH \"$relpath\""
             if { $relpath == {} } {
@@ -1996,7 +2013,7 @@ namespace eval ::svn_branchlog {
               $cmd_info\::destroy
               if {$info_output == ""} {
                 gen_log:log D "$command returned no output"
-                continue
+                break
               }
               set found [grep_filter {^URL:.*/tags/} [split $info_output "\n"]]
               if {$found == ""} {
