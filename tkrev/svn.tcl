@@ -33,6 +33,7 @@ proc read_svn_dir {dirname} {
     return 0
   }
   
+  # find the repository root
   set root ""
   foreach s [list $cvscfg(svn_trunkdir) $cvscfg(svn_branchdir) $cvscfg(svn_tagdir)] {
     if {[regexp "/$s/" $cvscfg(url)] || [regexp "/$s" $cvscfg(url)]} {
@@ -60,7 +61,7 @@ proc read_svn_dir {dirname} {
               set state W
             } else {
               append root "$word/"
-              #gen_log:log D "No match for $word"
+              gen_log:log D "No match for $word"
             }
           }
           W {
@@ -1564,6 +1565,7 @@ namespace eval ::svn_branchlog {
         global cvscfg
         global cvsglb
         global logcfg
+        global module_dir
         variable filename
         variable cmd_log
         variable lc
@@ -1656,6 +1658,9 @@ namespace eval ::svn_branchlog {
         set rootrev [parse_svnlog $trunk_lines trunk]
         gen_log:log D "BASE/ROOT: $rootrev"
         
+# FiXME: if the file was merged onto the trunk, the oldest rev doesn't belong.
+# It's listed in stop-on-copy though
+
         # We do a stop-on-copy too, to see where the trunk started, since the
         # file may have been merged in from a branch
         set command "svn log -g -q"
@@ -1682,6 +1687,8 @@ namespace eval ::svn_branchlog {
         set revbtags($drawing_root) "trunk"
         set revpath($drawing_root) $path
         set revkind($drawing_root) "root"
+
+        gen_log:log D "chose DRAWING ROOT $revpath($drawing_root)"
         
         # See if the current revision is on the trunk
         set curr 0
@@ -1817,14 +1824,23 @@ namespace eval ::svn_branchlog {
               set revkind($r) "revision"
               set revpath($r) $path
             }
-            set branchrevs($rb) $branchrevs($branch)
-            set revkind($rb) "branch"
+            # Don't overwrite revkind if it's been set, ie. if it's trunk
+            if {! [info exists branchrevs($rb)]} {
+              set branchrevs($rb) $branchrevs($branch)
+            }
+            if {! [info exists revkind($rb)]} {
+              set revkind($rb) "branch"
+            }
             # build a list of all branches so we can make sure each branch is on
             # a revbranch list so there will be a full set of branches on diagram
             lappend branchlist $rb
             lappend revbtags($rb) $branch
-            set revpath($rb) $path
-            
+            if {! [info exists revkind($rb)]} {
+              set revkind($rb) "branch"
+            }
+            if {! [info exists revpath($rb)]} {
+              set revpath($rb) $path
+            }
             set command "svn log -q -g $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
@@ -1950,8 +1966,18 @@ namespace eval ::svn_branchlog {
         # Get a list of the tags from the repository
         if {$logcfg(show_tags)} {
           busy_start $lc
-          #set command "svn list $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
-          set command "svn list --depth=infinity --search $safe_filename $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
+          gen_log:log D "RELPATH $relpath"
+          gen_log:log D "MODULE DIR $module_dir"
+          gen_log:log D "FILENAME $filename"
+          gen_log:log D "SAFE FILENAME $safe_filename"
+          # Search doesn't work if filename is "."
+          if { $relpath == {} } {
+            set command "svn list --depth=immediates $relpath $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
+          } elseif {$safe_filename eq "."} {
+            set command "svn list --depth=infinity --search \"$module_dir\" $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
+          } else {
+            set command "svn list --depth=infinity --search \"$filename\" $cvscfg(svnroot)/$cvscfg(svn_tagdir)"
+          }
           set cmd_log [exec::new $command {} 0 {} 1]
           set listlines [$cmd_log\::output]
           if [info exists cmd_log)] {
@@ -1959,18 +1985,25 @@ namespace eval ::svn_branchlog {
           }
 
           set tags {}
-          # svn list --search doesn't allow paths, only filenames, so we have to refine its output
-          if { $relpath == {} } {
-            set srchstr "$safe_filename"
-          } else {
-            set srchstr "$relpath/$safe_filename"
-          }
-          gen_log:log D "searching list output for $srchstr"
-          foreach tagline [split $listlines "\n"] {
-            if { [regsub "/*/$srchstr" $tagline {} t ] } {
+          # We don't have to search the tag list, just trim tem
+          if { $relpath == {} || $filename eq "."} {
+            gen_log:log D "Trimming tag list"
+            foreach tagline [split $listlines "\n"] {
+              set t [lindex [file split $tagline]  0]
               lappend tags $t
             }
+          } else {
+            # svn list --search doesn't allow paths, so we have to filter its output
+            set srchstr "$module_dir/$filename"
+            gen_log:log D "searching list output for $srchstr"
+            foreach tagline [split $listlines "\n"] {
+              if { [regsub "/*/$srchstr" $tagline {} t ] } {
+                lappend tags $t
+              }
+            }
           }
+          gen_log:log D "TAGS: $tags"
+
           set n_tags [llength $tags]
           gen_log:log D "Getting max $cvscfg(toomany_tags) of $n_tags tags"
           if {$n_tags > $cvscfg(toomany_tags)} {
@@ -1978,10 +2011,7 @@ namespace eval ::svn_branchlog {
           }
           foreach tag $tags {
             gen_log:log D "$tag"
-            # There can be files such as "README" here that aren't tags
-            #if {![string match {*/} $tag]} {continue}
-            # Draw something on the canvas so the user knows we're working
-            #set tag [string trimright $tag "/"]
+            # Let user know we're workingl so the user knows we're working
             # Can't use file join or it will mess up the URL
             gen_log:log D "TAGS: RELPATH \"$relpath\""
             if { $relpath == {} } {
@@ -1991,18 +2021,25 @@ namespace eval ::svn_branchlog {
             }
             # The tag is a revision, and the revision it tags is below it somewhere
             # Do log with limit and find the first revision which is not also a tag
-            set command "svn log -g --limit 10 $path"
+            set command "svn log -q -g --limit 10 $path"
             set cmd_log [exec::new $command {} 0 {} 1]
             set log_output [$cmd_log\::output]
-            $cmd_log\::destroy
+            if [info exists cmd_log)] {
+              $cmd_log\::destroy
+            }
             if {$log_output == ""} {
               continue
             }
             set loglines [split $log_output "\n"]
-            set rb [parse_svnlog $loglines $tag]
+            parse_q $loglines $tag
+            set rb [lindex $allrevs($tag) 0]
+            set revkind($rb) "tag"
 
-            foreach r [lrange $branchrevs($tag) 1 end] {
-              gen_log:log D "  $r $revdate($r) ($revcomment($r))"
+            # Do svn info on each revision listed under the tag until we
+            # find one that ISN"T a tag. That's because the same revision can
+            # have more than one tag, and we don't want to assign this tag to
+            # another one on the same revision
+            foreach r [lrange $allrevs($tag) 1 end] {
               if {! [info exists revkind($r)]} {
                 set revkind($r) "revision"
                 set revpath($r) $path
@@ -2019,9 +2056,10 @@ namespace eval ::svn_branchlog {
               if {$found == ""} {
                 lappend revtags($r) $tag
                 gen_log:log D "  $r is not a tag: revtags($r) $revtags($r)"
-                continue
+                break
               }
             }
+            catch {unset allrevs($tag)}
             update idletasks
           }
           # In SVN, sort_it_all_out is mostly a report
