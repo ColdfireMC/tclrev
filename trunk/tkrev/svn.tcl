@@ -11,6 +11,10 @@ proc read_svn_dir {dirname} {
   set cvsglb(vcs) svn
   # svn info gets the URL
   # Have to do eval exec because we need the error output
+  set cvscfg(url) ""
+  set cvscfg(svnroot) ""
+  set cvsglb(relpath) ""
+  set module_dir ""
   set command "svn info"
   gen_log:log C "$command"
   set ret [catch {exec {*}$command} output]
@@ -18,81 +22,61 @@ proc read_svn_dir {dirname} {
     cvsfail $output
     return 0
   }
+  gen_log:log F $output
   foreach infoline [split $output "\n"] {
     if {[string match "URL*" $infoline]} {
       set cvscfg(url) [lrange $infoline 1 end]
-      gen_log:log D "$cvscfg(url)"
+      gen_log:log D "URL: $cvscfg(url)"
+    } elseif {[string match "Relative URL*" $infoline]} {
+      set relpath [string range $infoline 16 end]
+      gen_log:log D "Relative Path: $relpath"
+    } elseif {[string match "Repository Root*" $infoline]} {
+      set cvscfg(svnroot) [lrange $infoline 2 end]
+      gen_log:log D "Repository Root: $cvscfg(svnroot)"
     }
-  }
-  
-  if {! [info exists cvscfg(url)]} {
-    set cvscfg(url) ""
   }
   if {$cvscfg(url) == ""} {
     cvsfail "Can't get the SVN URL"
     return 0
   }
-  
-  # find the repository root
-  set root ""
-  foreach s [list $cvscfg(svn_trunkdir) $cvscfg(svn_branchdir) $cvscfg(svn_tagdir)] {
-    if {[regexp "/$s/" $cvscfg(url)] || [regexp "/$s" $cvscfg(url)]} {
-      set spl [split $cvscfg(url) "/"]
-      set root ""
-      set relp ""
-      set current_tagname ""
-      set state P
-      for {set j 0} {$j < [llength $spl]} {incr j} {
-        set word [lindex $spl $j]
-        switch -- $state {
-          P {
-            if {$word eq $cvscfg(svn_trunkdir)} {
-              gen_log:log D "Matched $word for trunk"
-              set type "trunk"
-              set current_tagname $word
-              set state E
-            } elseif { $word eq $cvscfg(svn_branchdir)} {
-              gen_log:log D "Matched $word for branches"
-              set type "branches"
-              set state W
-            } elseif { $word eq $cvscfg(svn_tagdir)} {
-              gen_log:log D "Matched $word for tags"
-              set type "tags"
-              set state W
-            } else {
-              append root "$word/"
-              gen_log:log D "No match for $word"
-            }
-          }
-          W {
-            set current_tagname $word
-            set state E
-          }
-          E {
-            lappend relp "$word"
-          }
-          default {}
-        }
-      }
-      set cvscfg(svnroot) [string trimright $root "/"]
-      #set cvsglb(root) $cvscfg(svnroot)
-      gen_log:log D "SVN URL: $cvscfg(url)"
-      gen_log:log D "svnroot: $cvscfg(svnroot)"
-      set cvsglb(relpath) [join $relp {/}]
-      gen_log:log D "relpath: $cvsglb(relpath)"
-      regsub -all {%20} $cvsglb(relpath) { } module_dir
-      gen_log:log D "tagname: $current_tagname"
-    }
+  if {$cvscfg(svnroot) == ""} {
+    cvsfail "Can't get the Repository Root"
+    return 0
   }
-  if {$root == ""} {
+  if {$relpath == ""} {
+    cvsfail "Can't get the Relative path"
+    return 0
+  }
+  
+  set type ""
+  set current_tagname ""
+  set module_dir ""
+  set spl [file split $relpath]
+  set head [lindex $spl 0]
+  if {[string match "$cvscfg(svn_trunkdir)" $head]} {
+    gen_log:log D "Matched \"$cvscfg(svn_trunkdir)\" for trunk"
+    set type "trunk"
+    set current_tagname $cvscfg(svn_trunkdir)
+    set cvsglb(relpath) [file join [lrange $spl 1 end]]
+  } elseif {[string match "$cvscfg(svn_branchdir)" $head]} {
+    gen_log:log D "Matched \"$cvscfg(svn_branchdir)\" for branches"
+              set type "branches"
+    set current_tagname [lindex $spl 1]
+    set cvsglb(relpath) [file join [lrange $spl 2 end]]
+  } elseif {[string match "$cvscfg(svn_tagdir)" $head]} {
+    gen_log:log D "Matched \"$cvscfg(svn_tagdir)\" for tags"
+              set type "tags"
+    set current_tagname [lindex $spl 1]
+    set cvsglb(relpath) [file join [lrange $spl 2 end]]
+  }
+  regsub -all {%20} $cvsglb(relpath) { } module_dir
+  gen_log:log D "Module Dir: $module_dir"
+  gen_log:log D "Local Relative path: $cvsglb(relpath)"
+  gen_log:log D "Current Tagname: $current_tagname"
+  if {$type == ""} {
     gen_log:log F "Nonconforming repository"
     puts "No conforming $cvscfg(svn_trunkdir)/$cvscfg(svn_branchdir)/$cvscfg(svn_tagdir) structure detected in the repository"
     puts " I won't be able to detect any branches or tags."
-    gen_log:log D "SVN URL: $cvscfg(url)"
-    set cvscfg(svnroot) $cvscfg(url)
-    set cvsglb(root) $cvscfg(svnroot)
-    gen_log:log D "svnroot: $cvscfg(svnroot)"
-    set cvsglb(relpath) ""
     set cvsglb(svnconform) 0
     gen_log:log T "LEAVE (-1)"
     return -1
@@ -1016,7 +1000,8 @@ proc svn_show_rev {revision filename} {
   gen_log:log T "LEAVE"
 }
 
-# Called from popup in workdir browser
+# Called from popup in workdir browser. Only ever gets one file,
+# but the svn info command can take multiple
 proc svn_info {args} {
   global cvscfg
   
@@ -1025,12 +1010,10 @@ proc svn_info {args} {
   set filelist [join $args]
   
   set urllist ""
-  foreach file $filelist {
-    append urllist $cvscfg(url)/$file
-    append urllist " "
-  }
   set command "svn info "
-  append command $urllist
+  foreach file $filelist {
+    append command "\"$file\""
+  }
   
   set logcmd [viewer::new "SVN Info"]
   $logcmd\::do "$command"
