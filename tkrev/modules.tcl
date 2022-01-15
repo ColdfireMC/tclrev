@@ -114,7 +114,7 @@ proc find_filenames {mcode} {
   set commandline \
       "$cvs -d $cvscfg(cvsroot) rdiff -s -D 01/01/1971 $mcode"
   gen_log:log C  $commandline
-  catch {exec {*}$commandline} view_this
+  catch {exec {*} $commandline} view_this
   
   set view_lines [split $view_this "\n"]
   foreach line $view_lines {
