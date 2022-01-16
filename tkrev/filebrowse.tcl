@@ -140,7 +140,7 @@ proc filepath {module filename} {
   set commandline \
       "$cvs -d $cvscfg(cvsroot) rdiff -s -D 01/01/1971 \"$file\""
   gen_log:log C  $commandline
-  set ret [catch {exec {*}$commandline} view_this]
+  set ret [catch {exec {*} $commandline} view_this]
   gen_log:log D "\"$view_this\""
   if {! $ret} {
     gen_log:log T "LEAVE (fine the way we are) ($file)"

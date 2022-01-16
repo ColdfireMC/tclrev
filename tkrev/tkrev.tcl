@@ -13,20 +13,20 @@
 
 # If we can't get this far (maybe because X display connection refused)
 # quit now.  If we get further, the error message is very misleading.
-if {[info exists starkit::topdir]} {
-  package require Tk
-}
-
-if {! [info exists tk_version] } {
-  puts "Initialization failed"
-  exit 1
-}
-
-if {$tk_version < 8.5} {
-  puts "TkRev requires Tcl/Tk 8.5 or better!"
-  exit 1
-}
-
+#if {[info exists starkit::topdir]} {
+#  package require Tk
+#}
+#
+#if {! [info exists tk_version] } {
+#  puts "Initialization failed"
+#  exit 1
+#}
+#
+#if {$tk_version < 8.5} {
+#  puts "TkRev requires Tcl/Tk 8.5 or better!"
+#  exit 1
+#}
+#
 if {[info exists starkit::topdir]} {
   set TclRoot [file join $starkit::topdir lib]
   set ScriptBin $starkit::topdir
@@ -139,174 +139,174 @@ if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
 }
 
 # Hilight colors.  Get the colorful ones.
-entry .testent
-wm withdraw .
-set cvsglb(textbg) white
-set cvsglb(textfg) black
-set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
-set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
-if {$cvsglb(hlfg) eq {} } {
-  # This happens on the Mac
-  set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
-}
-set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
+#entry .testent
+#wm withdraw .
+#set cvsglb(textbg) white
+#set cvsglb(textfg) black
+#set cvsglb(hlbg) [lindex [.testent configure -selectbackground] 4]
+#set cvsglb(hlfg) [lindex [.testent configure -selectforeground] 4]
+#if {$cvsglb(hlfg) eq {} } {
+#  # This happens on the Mac
+#  set cvsglb(hlfg) [lindex [.testent configure -foreground] 4]
+#}
+#set cvscfg(listboxfont) [lindex [.testent configure -font] 4]
 #puts [font actual $cvscfg(listboxfont) -displayof .testent]
 #puts [font metrics $cvscfg(listboxfont) -displayof .testent]
-destroy .testent
+#destroy .testent
 
 
-set WSYS [tk windowingsystem]
-#puts "Windowing sytem is $WSYS"
-set theme_system "unknown"
-
-if {$WSYS eq "x11"} {
-  # If X11, see if we can sense our environment somehow
-  label .testlbl -text "LABEL"
-  if [get_cde_params] {
-    set theme_system "CDE"
-    # Find out what the default gui font is
-    if { ! [info exists cvscfg(guifont)] } {
-      # Find out what the tk default is
-      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-    }
-    # Put the Help menu back on the right
-    tk::classic::restore menu
-    # canvbg is for the treeviews, not the branch browser canvas
-    set cvsglb(canvbg) $cvsglb(shadow)
-  } elseif [get_gtk_params] {
-    set theme_system "GTK"
-    if { ! [info exists cvscfg(guifont)] } {
-      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      font configure TkDefaultFont -size 9
-      set cvscfg(guifont) TkDefaultFont
-      option add *Menu.font $cvscfg(guifont)
-      option add *Label.font $cvscfg(guifont)
-      option add *Button.font $cvscfg(guifont)
-    }
-    # in KDE or Gnome or some such.  It rather rudely sets all the Tk
-    # backgrounds the same which I don't like, so I'm going to use the same
-    # trick I use for CDE to give the canvases a little shading.
-    set cvsglb(bg) [lindex [.testlbl cget -background] 0]
-    set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
-    # canvbg is for the treeviews, not the branch browser canvas
-    set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
-  } else {
-    set bg  [lindex [.testlbl cget -background] 0]
-    set fg  [lindex [.testlbl cget -foreground] 0]
-    set hlbg "#4a6984"
-    set hlfg "#ffffff"
-    set textbg "#ffffff"
-    set textfg "#000000"
-    
-    shades $bg
-    
-    set cvsglb(bg) $bg
-    set cvsglb(fg) $fg
-    set cvsglb(textbg) $textbg
-    set cvsglb(textfg) $textfg
-    set cvsglb(hlbg) $hlbg
-    set cvsglb(hlfg) $hlfg
-    
-    option add *Canvas.Background $cvsglb(shadow)
-    option add *Canvas.Foreground black
-    option add *Entry.Background $textbg
-    option add *Entry.Foreground $textfg
-    option add *Entry.selectBackground $hlbg
-    option add *Entry.selectForeground $hlfg
-    option add *Entry.readonlyBackground $cvsglb(lighter)
-    option add *Listbox.background $textbg
-    option add *Listbox.selectBackground $hlbg
-    option add *Listbox.selectForeground $hlfg
-    option add *Text.Background $textbg
-    option add *Text.Foreground $textfg
-    option add *Text.selectBackground $hlbg
-    option add *Text.selectForeground $hlfg
-    option add *Button.activeForeground $fg
-    option add *Menu.activeForeground $fg
-    option add *Checkbutton.Background $bg
-    
-    # checkbuttons and radiobuttons
-    option add *Menu.selectColor $fg
-    option add *Checkbutton.selectColor "#ffffff"
-    option add *Radiobutton.selectColor "#ffffff"
-    
-    if { ! [info exists cvscfg(guifont)] } {
-      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-      # This makes it look more classic
-      font configure TkHeadingFont -size 9
-      set cvscfg(guifont) TkHeadingFont
-      option add *Menu.font $cvscfg(guifont)
-      option add *Label.font $cvscfg(guifont)
-      option add *Button.font $cvscfg(guifont)
-    }
-  }
-  destroy .testlbl
-  
-  if {! [info exists cvscfg(dialogfont)]} {
-    set cvscfg(dialogfont) $cvscfg(guifont)
-  }
-  
-  if {$theme_system == "CDE"} {
-    # This makes it consistent with the rest of the CDE interface
-    option add *Menu.font $cvscfg(guifont)
-    option add *Label.font $cvscfg(guifont)
-    option add *Button.font $cvscfg(guifont)
-  }
-  #puts " Theme system: $theme_system"
-} else {
-  # Find out what the default gui font is
-  label .testlbl -text "LABEL"
-  # Find out what the tk default is
-  set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
-  set cvscfg(dialogfont) $cvscfg(guifont)
-  
-  set cvsglb(bg) [lindex [.testlbl cget -background] 0]
-  set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
-  # canvbg is for the treeviews, not the branch browser canvas
-  set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
-  destroy .testlbl
-  if {$WSYS eq "aqua"} {
-    # Keep everything from being blinding white
-    set arbitrarybg "#dddddd"
-    set lighterbg "#eeeeee"
-    option add *Frame.background $arbitrarybg userDefault
-    option add *Label.background $arbitrarybg userDefault
-    option add *Entry.highlightBackground $arbitrarybg userDefault
-    option add *Entry.readonlyBackground $lighterbg userDefault
-    option add *Canvas.highlightBackground #fefefe userDefault
-    option add *Message.Background $arbitrarybg userDefault
-    option add *Checkbutton.Background $arbitrarybg userDefault
-    option add *Radiobutton.Background $arbitrarybg userDefault
-    # button highlightbackground has to be the same as background
-    # or else there are little white boxes around the button "pill"
-    option add *Button.highlightBackground $arbitrarybg userDefault
-    # canvbg is for the treeviews, not the branch browser canvas
-    set cvsglb(canvbg) $lighterbg
-  }
-}
-
-# Suppress tearoffs in menubars
-option add *tearOff 0
-
-option add *ToolTip.background  "LightGoldenrod1" userDefault
-option add *ToolTip.foreground  "black" userDefault
-
-# This makes tk_messageBox use our font.  The default tends to be terrible
-# no matter what platform
-option add *Dialog.msg.font $cvscfg(dialogfont) userDefault
-# Sometimes we'll want to override this but let's set a default
-option add *Message.font $cvscfg(dialogfont) userDefault
-
-if {$WSYS eq "x11"} {
-  ttk::style configure TCombobox -arrowsize 16
-  # Header padding has no effect on aqua, but it works on X11
-  ttk::style configure Treeview.Heading -padding {4 0}
-}
-# And, background seems to have no effect on X11
-ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
-    -fieldbackground $cvsglb(canvbg)
-ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg)
-ttk::style configure Treeview.Cell -padding {2 0}
+#set WSYS [tk windowingsystem]
+##puts "Windowing sytem is $WSYS"
+#set theme_system "unknown"
+#
+#if {$WSYS eq "x11"} {
+#  # If X11, see if we can sense our environment somehow
+#  label .testlbl -text "LABEL"
+#  if [get_cde_params] {
+#    set theme_system "CDE"
+#    # Find out what the default gui font is
+#    if { ! [info exists cvscfg(guifont)] } {
+#      # Find out what the tk default is
+#      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+#    }
+#    # Put the Help menu back on the right
+#    tk::classic::restore menu
+#    # canvbg is for the treeviews, not the branch browser canvas
+#    set cvsglb(canvbg) $cvsglb(shadow)
+#  } elseif [get_gtk_params] {
+#    set theme_system "GTK"
+#    if { ! [info exists cvscfg(guifont)] } {
+#      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+#      font configure TkDefaultFont -size 9
+#      set cvscfg(guifont) TkDefaultFont
+#      option add *Menu.font $cvscfg(guifont)
+#      option add *Label.font $cvscfg(guifont)
+#      option add *Button.font $cvscfg(guifont)
+#    }
+#    # in KDE or Gnome or some such.  It rather rudely sets all the Tk
+#    # backgrounds the same which I don't like, so I'm going to use the same
+#    # trick I use for CDE to give the canvases a little shading.
+#    set cvsglb(bg) [lindex [.testlbl cget -background] 0]
+#    set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+#    # canvbg is for the treeviews, not the branch browser canvas
+#    set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
+#  } else {
+#    set bg  [lindex [.testlbl cget -background] 0]
+#    set fg  [lindex [.testlbl cget -foreground] 0]
+#    set hlbg "#4a6984"
+#    set hlfg "#ffffff"
+#    set textbg "#ffffff"
+#    set textfg "#000000"
+#    
+#    shades $bg
+#    
+#    set cvsglb(bg) $bg
+#    set cvsglb(fg) $fg
+#    set cvsglb(textbg) $textbg
+#    set cvsglb(textfg) $textfg
+#    set cvsglb(hlbg) $hlbg
+#    set cvsglb(hlfg) $hlfg
+#    
+#    option add *Canvas.Background $cvsglb(shadow)
+#    option add *Canvas.Foreground black
+#    option add *Entry.Background $textbg
+#    option add *Entry.Foreground $textfg
+#    option add *Entry.selectBackground $hlbg
+#    option add *Entry.selectForeground $hlfg
+#    option add *Entry.readonlyBackground $cvsglb(lighter)
+#    option add *Listbox.background $textbg
+#    option add *Listbox.selectBackground $hlbg
+#    option add *Listbox.selectForeground $hlfg
+#    option add *Text.Background $textbg
+#    option add *Text.Foreground $textfg
+#    option add *Text.selectBackground $hlbg
+#    option add *Text.selectForeground $hlfg
+#    option add *Button.activeForeground $fg
+#    option add *Menu.activeForeground $fg
+#    option add *Checkbutton.Background $bg
+#    
+#    # checkbuttons and radiobuttons
+#    option add *Menu.selectColor $fg
+#    option add *Checkbutton.selectColor "#ffffff"
+#    option add *Radiobutton.selectColor "#ffffff"
+#    
+#    if { ! [info exists cvscfg(guifont)] } {
+#      set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+#      # This makes it look more classic
+#      font configure TkHeadingFont -size 9
+#      set cvscfg(guifont) TkHeadingFont
+#      option add *Menu.font $cvscfg(guifont)
+#      option add *Label.font $cvscfg(guifont)
+#      option add *Button.font $cvscfg(guifont)
+#    }
+#  }
+#  destroy .testlbl
+#  
+#  if {! [info exists cvscfg(dialogfont)]} {
+#    set cvscfg(dialogfont) $cvscfg(guifont)
+#  }
+#  
+#  if {$theme_system == "CDE"} {
+#    # This makes it consistent with the rest of the CDE interface
+#    option add *Menu.font $cvscfg(guifont)
+#    option add *Label.font $cvscfg(guifont)
+#    option add *Button.font $cvscfg(guifont)
+#  }
+#  #puts " Theme system: $theme_system"
+#} else {
+#  # Find out what the default gui font is
+#  label .testlbl -text "LABEL"
+#  # Find out what the tk default is
+#  set cvscfg(guifont) [lindex [.testlbl configure -font] 4]
+#  set cvscfg(dialogfont) $cvscfg(guifont)
+#  
+#  set cvsglb(bg) [lindex [.testlbl cget -background] 0]
+#  set cvsglb(fg) [lindex [.testlbl cget -foreground] 0]
+#  # canvbg is for the treeviews, not the branch browser canvas
+#  set cvsglb(canvbg) [rgb_shadow $cvsglb(bg)]
+#  destroy .testlbl
+#  if {$WSYS eq "aqua"} {
+#    # Keep everything from being blinding white
+#    set arbitrarybg "#dddddd"
+#    set lighterbg "#eeeeee"
+#    option add *Frame.background $arbitrarybg userDefault
+#    option add *Label.background $arbitrarybg userDefault
+#    option add *Entry.highlightBackground $arbitrarybg userDefault
+#    option add *Entry.readonlyBackground $lighterbg userDefault
+#    option add *Canvas.highlightBackground #fefefe userDefault
+#    option add *Message.Background $arbitrarybg userDefault
+#    option add *Checkbutton.Background $arbitrarybg userDefault
+#    option add *Radiobutton.Background $arbitrarybg userDefault
+#    # button highlightbackground has to be the same as background
+#    # or else there are little white boxes around the button "pill"
+#    option add *Button.highlightBackground $arbitrarybg userDefault
+#    # canvbg is for the treeviews, not the branch browser canvas
+#    set cvsglb(canvbg) $lighterbg
+#  }
+#}
+#
+## Suppress tearoffs in menubars
+#option add *tearOff 0
+#
+#option add *ToolTip.background  "LightGoldenrod1" userDefault
+#option add *ToolTip.foreground  "black" userDefault
+#
+## This makes tk_messageBox use our font.  The default tends to be terrible
+## no matter what platform
+#option add *Dialog.msg.font $cvscfg(dialogfont) userDefault
+## Sometimes we'll want to override this but let's set a default
+#option add *Message.font $cvscfg(dialogfont) userDefault
+#
+#if {$WSYS eq "x11"} {
+#  ttk::style configure TCombobox -arrowsize 16
+#  # Header padding has no effect on aqua, but it works on X11
+#  ttk::style configure Treeview.Heading -padding {4 0}
+#}
+## And, background seems to have no effect on X11
+#ttk::style configure Treeview -font $cvscfg(listboxfont) -background $cvsglb(canvbg) \
+#    -fieldbackground $cvsglb(canvbg)
+#ttk::style configure Treeview.Heading -font $cvscfg(listboxfont) -background $cvsglb(bg)
+#ttk::style configure Treeview.Cell -padding {2 0}
 
 # Initialize logging (classes are C,F,T,D)
 if { ! [info exists cvscfg(log_classes)] } {
@@ -315,10 +315,10 @@ if { ! [info exists cvscfg(log_classes)] } {
 foreach class [split $cvscfg(log_classes) {}] {
   set logclass($class) $class
 }
-if { ! [info exists cvscfg(logging)] } {
+#if { ! [info exists cvscfg(logging)] } {
   set cvscfg(logging) false
-}
-load_all_images
+#}
+#load_all_images
 if {$cvscfg(logging)} {
   gen_log:init
 }

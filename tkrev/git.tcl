@@ -273,7 +273,7 @@ proc git_push {} {
   
   set command "git push --dry-run . HEAD"
   gen_log:log C "$command"
-  set ret [catch {exec {*}$command} dryrun_output]
+  set ret [catch {exec {*} $command} dryrun_output]
   gen_log:log F "$dryrun_output"
   
   # push will return "Everything up-to-date" if it is
@@ -313,7 +313,7 @@ proc git_fetch {} {
   
   set command "git fetch --dry-run"
   gen_log:log C "$command"
-  set ret [catch {exec {*}$command} dryrun_output]
+  set ret [catch {exec {*} $command} dryrun_output]
   gen_log:log F "$dryrun_output"
   
   # Fetch is just quiet if it's up to date
@@ -780,7 +780,7 @@ proc git_commit {comment args} {
       append  command " \"$f\""
     }
     gen_log:log C "$command"
-    set ret [catch {exec {*}$command} view_this]
+    set ret [catch {exec {*} $command} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
       gen_log:log T "LEAVE ERROR ($view_this)"
@@ -1010,7 +1010,7 @@ proc git_reconcile_conflict {args} {
     }
     set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$file\" \"$file\""
     gen_log:log C "$tkdiff_command"
-    set ret [catch {exec {*}$tkdiff_command &} view_this]
+    set ret [catch {exec {*} $tkdiff_command &} view_this]
   }
 
   gen_log:log T "LEAVE"

@@ -42,7 +42,7 @@ proc cvs_sandbox_runcmd {command output_var} {
   gen_log:log F "CD [pwd]"
   
   gen_log:log C "$command"
-  set ret [catch {exec {*}$command} view_this]
+  set ret [catch {exec {*} $command} view_this]
   gen_log:log T "RETURN $cvscfg(tmpdir)/cvstmpdir.$pid"
   return $cvscfg(tmpdir)/cvstmpdir.$pid
 }
@@ -65,7 +65,7 @@ proc cvs_sandbox_filetags {mcode args} {
     append command " \"$f\""
   }
   gen_log:log C "$command"
-  set ret [catch {exec {*}$command} view_this]
+  set ret [catch {exec {*} $command} view_this]
   if {$ret} {
     cd $cwd
     cvsfail $view_this .merge
@@ -378,7 +378,7 @@ proc cvs_edit {args} {
     regsub -all {\$} $file {\$} file
     set commandline "$cvs edit \"$file\""
     gen_log:log C "$commandline"
-    set ret [catch {exec {*}$commandline} view_this]
+    set ret [catch {exec {*} $commandline} view_this]
     if {$ret != 0} {
       view_output::new "CVS Edit" $view_this
     }
@@ -409,7 +409,7 @@ proc cvs_unedit {args} {
     regsub -all {\$} $file {\$} file
     set commandline "$cvs -n update \"$file\""
     gen_log:log C "$commandline"
-    catch {exec {*}$commandline} view_this
+    catch {exec {*} $commandline} view_this
     # Its OK if its locally added
     if {([llength $view_this] > 0) && ![string match "A*" $view_this] } {
       gen_log:log D "$view_this"
@@ -420,7 +420,7 @@ proc cvs_unedit {args} {
     
     set commandline "$cvs unedit \"$file\""
     gen_log:log C "$commandline"
-    set ret [catch {exec {*}$commandline} view_this]
+    set ret [catch {exec {*}  $commandline} view_this]
     if {$ret != 0} {
       view_output::new "CVS Edit" $view_this
     }
@@ -901,7 +901,7 @@ proc cvs_commit {revision comment args} {
       append commandline " \"$f\""
     }
     gen_log:log C "$commandline"
-    set ret [catch {exec {*}$commandline} view_this]
+    set ret [catch {exec {*} $commandline} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
       gen_log:log T "LEAVE ERROR ($view_this)"
@@ -1217,7 +1217,7 @@ proc cvs_merge_tag_seq {from frombranch totag fromtag args} {
     append commandline " \"$f\""
   }
   gen_log:log C "$commandline"
-  set ret [catch {exec {*}$commandline} view_this]
+  set ret [catch {exec {*} $commandline} view_this]
   set logmode [expr {$ret ? {E} : {D}}]
   view_output::new "CVS Check" $view_this
   gen_log:log $logmode $view_this
@@ -1521,7 +1521,7 @@ proc cvs_version {} {
   
   set commandline "$cvs -v"
   gen_log:log C "$commandline"
-  set ret [catch {exec {*}$commandline} output]
+  set ret [catch {exec {*} $commandline} output]
   if {$ret} {
     cvsfail $output
     return
@@ -1561,7 +1561,7 @@ proc cvs_reconcile_conflict {args} {
     regsub -all {\$} $file {\$} filename
     set commandline "$cvs -n -q update \"$filename\""
     gen_log:log C "$commandline"
-    set ret [catch {exec {*}$commandline} status]
+    set ret [catch {exec {*} $commandline} status]
     set logmode [expr {$ret ? {E} : {D}}]
     gen_log:log $logmode "$status"
     
@@ -1583,7 +1583,7 @@ proc cvs_reconcile_conflict {args} {
       # we can resolve the conflict
       gen_log:log C "$commandline"
       set commandline "$cvs update \"$file\""
-      set ret [catch {exec {*}$commandline} status]
+      set ret [catch {exec {*} $commandline} status]
       set logmode [expr {$ret ? {E} : {D}}]
       gen_log:log $logmode "$status"
     } elseif { $match == 1 } {
@@ -1596,7 +1596,7 @@ proc cvs_reconcile_conflict {args} {
     # Invoke tkdiff with the proper option for a conflict file
     set tkdiff_command "$cvscfg(tkdiff) -conflict -o \"$filename\" \"$filename\""
     gen_log:log C "$tkdiff_command"
-    catch {exec {*}$tkdiff_command &} view_this
+    catch {exec {*} $tkdiff_command &} view_this
   }
   
   gen_log:log T "LEAVE"
@@ -1624,7 +1624,7 @@ proc cvs_gettaglist {filename parent} {
   
   set commandline "$cvs -d $cvscfg(cvsroot) log \"$filename\""
   gen_log:log C "$commandline"
-  set ret [catch {exec {*}$commandline} view_this]
+  set ret [catch {exec {*} $commandline} view_this]
   if {$ret} {
     cvsfail $view_this $parent
     cd $cwd
@@ -1679,7 +1679,7 @@ proc cvs_release {delflag args} {
     
     set commandline "$cvs -d $cvscfg(cvsroot) -n -q update \"$directory\""
     gen_log:log C "$commandline"
-    set ret [catch {exec {*}$commandline} view_this]
+    set ret [catch {exec {*} $commandline} view_this]
     if {$view_this != ""} {
       view_output::new "CVS Check" $view_this
       set mess "\"$directory\" is not up-to-date."
@@ -1689,7 +1689,7 @@ proc cvs_release {delflag args} {
       }
     }
     set commandline "$cvs -d $cvscfg(cvsroot) -Q release $delflag \"$directory\""
-    set ret [catch {exec {*}$commandline} view_this]
+    set ret [catch {exec {*} $commandline} view_this]
     gen_log:log C "$commandline"
     if {$ret != 0} {
       view_output::new "CVS Release" $view_this
@@ -2246,7 +2246,7 @@ proc cvs_directory_merge {} {
   regsub -all {\$} $files {\$} files
   set commandline "$cvs -d $cvscfg(cvsroot) log $files"
   gen_log:log C "$commandline"
-  catch {exec {*}$commandline} raw_log
+  catch {exec {*} $commandline} raw_log
   set log_lines [split $raw_log "\n"]
   
   foreach logline $log_lines {
