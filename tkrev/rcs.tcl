@@ -6,7 +6,7 @@ proc rcs_branches {files} {
   global cvscfg
   global cwd
   
-  gen_log:log T "ENTER ($files)"
+  #gen_log:log T "ENTER ($files)"
   
   if {$files == {}} {
     cvsfail "Please select one or more files!" .workdir
@@ -17,14 +17,14 @@ proc rcs_branches {files} {
     ::cvs_branchlog::new RCS "$filename"
   }
   
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # check out (co) a file.  Called from the "update" button
 proc rcs_checkout {files} {
   global cvscfg
   
-  gen_log:log T "ENTER ($files)"
+  #gen_log:log T "ENTER ($files)"
   
   if {$files == {}} {
     cvsfail "Please select one or more files!" .workdir
@@ -39,7 +39,7 @@ proc rcs_checkout {files} {
     $v\::wait
     setup_dir
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc rcs_lock {do files} {
@@ -53,7 +53,7 @@ proc rcs_lock {do files} {
     lock { set commandline "rcs -l $files"}
     unlock { set commandline "rcs -u $files"}
   }
-  gen_log:log C "$commandline"
+  #gen_log:log C "$commandline"
   set rcscmd [::exec::new "$commandline"]
   
   if {$cvscfg(auto_status)} {
@@ -67,7 +67,7 @@ proc rcs_checkin {revision comment args} {
   global cvscfg
   global inrcs
   
-  gen_log:log T "ENTER ($args)"
+  #gen_log:log T "ENTER ($args)"
   
   set filelist [lindex $args 0]
   if {$filelist == ""} {
@@ -97,11 +97,11 @@ proc rcs_checkin {revision comment args} {
     update idletasks
     set commandline \
         "$cvscfg(terminal) ci $revflag $filelist"
-    gen_log:log C "$commandline"
+    #gen_log:log C "$commandline"
     set ret [catch {exec {*}$commandline} view_this]
     if {$ret} {
       cvsfail $view_this .workdir
-      gen_log:log T "LEAVE ERROR ($view_this)"
+      #gen_log:log T "LEAVE ERROR ($view_this)"
       return
     }
   } else {
@@ -128,14 +128,14 @@ proc rcs_checkin {revision comment args} {
   if {$cvscfg(auto_status)} {
     setup_dir
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc rcs_commit_dialog {filelist} {
   global cvsglb
   global cvscfg
 
-  gen_log:log T "ENTER"
+  #gen_log:log T "ENTER"
 
     # commit any files selected via listbox selection mechanism.
   set cvsglb(commit_list) $filelist
@@ -226,7 +226,7 @@ proc rcs_commit_dialog {filelist} {
   wm title .commit "Commit Changes"
   wm minsize .commit 1 1
 
-  gen_log:log T "LEAVE"
+  ##gen_log:log T "LEAVE"
 }
 
 # Get an rcs status for files in working directory, for the dircanvas
@@ -234,13 +234,13 @@ proc rcs_workdir_status {} {
   global cvscfg
   global Filelist
 
-  gen_log:log T "ENTER"
+  ##gen_log:log T "ENTER"
 
   set rcsfiles [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   set command "rlog -h $rcsfiles"
-  gen_log:log C "$command"
+  ##gen_log:log C "$command"
   set ret [catch {exec {*}$command} raw_rcs_log]
-  gen_log:log F "$raw_rcs_log"
+  ##gen_log:log F "$raw_rcs_log"
 
     # The older version (pre-5.x or something) of RCS is a lot different from
     # the newer versions, explaining some of the ugliness here
@@ -253,7 +253,7 @@ proc rcs_workdir_status {} {
       regsub {^.*Working file:\s+} $rlogline "" filename
       regsub {\s*$} $filename "" filename
       lappend filenames $filename
-      gen_log:log D "RCS file $filename"
+      ##gen_log:log D "RCS file $filename"
       set Filelist($filename:wrev) ""
       set Filelist($filename:stickytag) ""
       set Filelist($filename:option) ""
@@ -261,16 +261,16 @@ proc rcs_workdir_status {} {
         set Filelist($filename:status) "RCS Up-to-date"
     # Do rcsdiff to see if it's changed
         set command "rcsdiff \"$filename\""
-        gen_log:log C "$command"
+        ##gen_log:log C "$command"
         set ret [catch {exec {*}$command} output]
-        gen_log:log F "$output"
+        #gen_log:log F "$output"
         set splitline [split $output "\n"]
         if [string match {====*} [lindex $splitline 0]] {
            set splitline [lrange $splitline 1 end]
         }
         if {[llength $splitline] > 3} {
           set Filelist($filename:status) "RCS Modified"
-          gen_log:log D "$filename MODIFIED"
+          #gen_log:log D "$filename MODIFIED"
         }
       } else {
         set Filelist($filename:status) "RCS Needs Checkout"
@@ -283,7 +283,7 @@ proc rcs_workdir_status {} {
       regsub {head:\s+} $rlogline "" revnum
       set Filelist($filename:wrev) "$revnum"
       set Filelist($filename:stickytag) "$revnum on trunk"
-      gen_log:log D "  Rev \"$revnum\""
+      #gen_log:log D "  Rev \"$revnum\""
       continue
     } 
     if {[string match "branch:*" $rlogline]} {
@@ -291,7 +291,7 @@ proc rcs_workdir_status {} {
       if {[string length $revnum] > 0} {
         set Filelist($filename:wrev) "$revnum"
         set Filelist($filename:stickytag) "$revnum on branch"
-        gen_log:log D "  Branch rev \"$revnum\""
+        #gen_log:log D "  Branch rev \"$revnum\""
       }
       continue
     }
@@ -300,7 +300,7 @@ proc rcs_workdir_status {} {
        set who [lindex $splitline 1]
        set who [string trimright $who ":"]
        append lockers ",$who"
-       gen_log:log D " lockers $lockers"
+       #gen_log:log D " lockers $lockers"
     } else {
       if {[string match "access list:*" $rlogline]} {
         set lockers [string trimleft $lockers ","]
@@ -320,32 +320,32 @@ proc rcs_workdir_status {} {
       }
     }
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # for Directory Status Check
 proc rcs_check {} {
   global cvscfg
 
-  gen_log:log T "ENTER"
+  #gen_log:log T "ENTER"
 
   set v [::viewer::new "RCS Directory Check"]
   set rcsfiles [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   set command "rlog -h $rcsfiles"
-  gen_log:log C "$command"
+  #gen_log:log C "$command"
   set ret [catch {exec {*}$command} raw_rcs_log]
-  gen_log:log F "$raw_rcs_log"
+  #gen_log:log F "$raw_rcs_log"
 
   set rlog_lines [split $raw_rcs_log "\n"]
   foreach rlogline $rlog_lines {
     if {[string match "Working file:*" $rlogline]} {
       regsub {Working file: } $rlogline "" filename
       regsub {\s*$} $filename "" filename
-      gen_log:log D "RCS file $filename"
+      #gen_log:log D "RCS file $filename"
       if {[file exists $filename]} {
     # Do rcsdiff to see if it's changed
         set command "rcsdiff -q \"$filename\" > $cvscfg(null)"
-        gen_log:log C "$command"
+        #gen_log:log C "$command"
         set ret [catch {exec {*}$command}]
         if {$ret == 1} {
           $v\::log "\nM $filename"
@@ -355,21 +355,21 @@ proc rcs_check {} {
       }
     }
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # for Log in Reports Menu
 proc rcs_log {detail args} {
   global cvscfg
 
-  gen_log:log T "ENTER ($detail $args)"
+  #gen_log:log T "ENTER ($detail $args)"
 
   set filelist [join $args]
   if {$filelist == ""} {
     set filelist [glob -nocomplain -- RCS/* RCS/.??* *,v .??*,v]
   }
-  gen_log:log D "detail $detail"
-  gen_log:log D "$filelist"
+  #gen_log:log D "detail $detail"
+  #gen_log:log D "$filelist"
 
   set commandline "rlog "
   switch -- $detail {
@@ -386,12 +386,12 @@ proc rcs_log {detail args} {
   $v\::do "$commandline" 0 rcslog_colortags
   busy_done .workdir.main
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc rcs_log_rev {revision filename} {
 
-  gen_log:log T "ENTER ($revision $filename)"
+  #gen_log:log T "ENTER ($revision $filename)"
 
   set commandline "rlog"
   if {$revision ne ""} {
@@ -401,14 +401,14 @@ proc rcs_log_rev {revision filename} {
   set v [viewer::new "RCS log -r$revision $filename "]
   $v\::do "$commandline" 0 rcslog_colortags
 
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # This views a specific revision of a file
 proc rcs_fileview_checkout {revision filename} {
   global cvscfg
 
-  gen_log:log T "ENTER ($revision $filename)"
+  #gen_log:log T "ENTER ($revision $filename)"
   if {$revision == {}} {
     set commandline "co -p \"$filename\""
     set v [viewer::new "$filename"]
@@ -418,7 +418,7 @@ proc rcs_fileview_checkout {revision filename} {
     set v [viewer::new "$filename Revision $revision"]
     $v\::do "$commandline" 0
   }
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 # Revert a file to checked-in version by removing the local
@@ -426,13 +426,13 @@ proc rcs_fileview_checkout {revision filename} {
 proc rcs_revert {args} {
   global cvscfg
         
-  gen_log:log T "ENTER ($args)"
+  #gen_log:log T "ENTER ($args)"
   set filelist [join $args]
 
-  gen_log:log D "Reverting $filelist"
-  gen_log:log F "DELETE $filelist"
+  #gen_log:log D "Reverting $filelist"
+  #gen_log:log F "DELETE $filelist"
   file delete $filelist
-  gen_log:log C "co $filelist"
+  #gen_log:log C "co $filelist"
   set rcscmd [exec::new "co $filelist"]
         
   if {$cvscfg(auto_status)} {
@@ -440,6 +440,6 @@ proc rcs_revert {args} {
     setup_dir 
   }     
         
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }     
 

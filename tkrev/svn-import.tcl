@@ -11,16 +11,16 @@ proc svn_import_run {} {
   global cvscfg
   global incvs insvn inrcs ingit
   
-  gen_log:log T "ENTER"
+  ##gen_log:log T "ENTER"
   
   lassign [cvsroot_check [pwd]] incvs insvn inrcs ingit
   if {$insvn} {
     cvsok "This directory is already in Subversion.\nCan\'t import here!" .svn_import
-    gen_log:log T "LEAVE"
+    ##gen_log:log T "LEAVE"
     return
   } elseif {$incvs} {
     cvsok "There are CVS directories here.\nPlease remove them first." .svn_import
-    gen_log:log T "LEAVE"
+    ##gen_log:log T "LEAVE"
     return
   }
   
@@ -38,7 +38,7 @@ proc svn_import_run {} {
     wm deiconify .svn_import
     raise .svn_import
     grab set .svn_import
-    gen_log:log T "LEAVE"
+    #gen_log:log T "LEAVE"
     return
   }
   
@@ -84,13 +84,13 @@ proc svn_import_run {} {
   wm title .svn_import "Import a Project into Subversion"
   wm minsize .svn_import 1 1
   
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
 proc svn_do_import {imtop imdir} {
   global cvscfg
   
-  gen_log:log T "ENTER"
+  #gen_log:log T "ENTER"
   set imdir [pwd]
   set cwd [pwd]
   
@@ -104,10 +104,10 @@ proc svn_do_import {imtop imdir} {
   
   # Now check out the new module
   cd ..
-  gen_log:log F "CD [pwd]"
+  #gen_log:log F "CD [pwd]"
   # We have to move the original stuff entirely out of the way.
   # Otherwise checkout won't do the whole tree.
-  gen_log:log F "MOVE $imdir $imdir.orig"
+  #gen_log:log F "MOVE $imdir $imdir.orig"
   if {[file isdirectory $imdir.orig]} {
     file delete -force -- $imdir.orig
   }
@@ -123,11 +123,11 @@ proc svn_do_import {imtop imdir} {
     file rename $imdir.orig $imdir
     cvsok "$err" .isvn_mport
   } else {
-    gen_log:log F "CD [pwd]"
+    #gen_log:log F "CD [pwd]"
   }
   
   setup_dir
   modbrowse_run svn
-  gen_log:log T "LEAVE"
+  #gen_log:log T "LEAVE"
 }
 
