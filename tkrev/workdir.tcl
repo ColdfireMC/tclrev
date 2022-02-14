@@ -1233,34 +1233,31 @@ proc workdir_print_file {args} {
   #gen_log:log T "LEAVE"
 }
 
-proc cvsroot_check { dir } {
-  global cvscfg
-  global cvsglb
-  global incvs insvn inrcs ingit
+proc cvsroot_check { dir cvscfg_str cvsglb_str} {
+#  global cvscfg
+#  global cvsglb
+  array set cvscfg $cvscfg_str
+  array set cvsglb $cvsglb_str
   
-  #gen_log:log T "ENTER ($dir)"
-  
-  lassign {0 0 0 0} incvs insvn inrcs ingit
-  
+  set srcdirtype(incvs) 0
+  set srcdirtype(insvn) 0
+  set srcdirtype(inrcs) 0
+  set srcdirtype(ingit) 0
+	
   set cvsrootfile [file join $dir CVS Root]
+	
   if {[file isfile $cvsrootfile]} {
-    #gen_log:log C "$cvsrootfile"
     set incvs [ read_cvs_dir [file join $dir CVS]]
     # Outta here, don't check for svn or rcs
-    if {$incvs} {
-      #gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
-      return [list $incvs $insvn $inrcs $ingit]
+    if {$srcdirtype(incvs)} {
+      return [array get srcdirtype]
     }
   }
-  
-  #gen_log:log C "svn info"
   set svnret [catch {exec {*}svn info} svnout]
   if {! $svnret} {
-    #gen_log:log F $svnout
-    set insvn [ read_svn_dir $dir ]
-    if {$insvn} {
-      #gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
-      return [list $incvs $insvn $inrcs $ingit]
+    set srcdirtype(insvn) [ read_svn_dir $dir ]
+    if {$srcdirtype(insvn)} {
+      return a
     }
   }
   
@@ -1275,7 +1272,7 @@ proc cvsroot_check { dir } {
     set cvscfg(rcsdir) ""
   }
   
-  if {$inrcs} {
+  if {$srcdirtype(inrcs)} {
     # Make sure we have rcs, and bag this (silently) if we don't
     set command "rcs --version"
     #gen_log:log C "$command"
@@ -1284,28 +1281,26 @@ proc cvsroot_check { dir } {
     if {$ret} {
       if [string match {rcs*} $raw_rcs_log] {
         # An old version of RCS, but it's here
-        set inrcs 1
+        set srcdirtype(inrcs) 1
       } else {
-        set inrcs 0
+        set srcdirtype(inrcs) 0
       }
     }
   }
-  
-  ##gen_log:log C "git rev-parse --is-inside-work-tree"
   set gitret [catch {exec {*}git rev-parse --is-inside-work-tree} gitout]
   if {! $gitret} {
     # revparse may return "false"
     ##gen_log:log F "gitout $gitout"
     if {$gitout} {
-      set ingit 1
+      set srcdirtype(ingit) 1
       find_git_remote $dir
     }
   } else {
     ###gen_log:log E "gitout $gitout"
-    set ingit 0
+    set srcdirtype(ingit) 0
   }
-  ##gen_log:log T "LEAVE ($incvs $insvn $inrcs $ingit)"
-  return [list $incvs $insvn $inrcs $ingit]
+  puts [array get srcdirtype]
+  return [array get srcdirtype]
 }
 
 proc isCmDirectory { file } {
@@ -1318,7 +1313,6 @@ proc isCmDirectory { file } {
     "SCCS" { set value 1 }
     default { set value 0 }
   }
-  ##gen_log:log T "LEAVE ($value)"
   return $value
 }
 
@@ -1347,12 +1341,9 @@ proc getFiles { } {
     }
   } else {
     foreach item $cvscfg(show_file_filter) {
-      #gen_log:log T "glob -nocomplain $item"
       set filelist [ concat [ glob -nocomplain $item ] $filelist ]
     }
   }
-  ##gen_log:log D "filelist ($filelist)"
-  
   # ignore files if requested by ingore_file_filter
   set ignore_file_filter [concat $cvscfg(ignore_file_filter) $cvsglb(vcs_hidden_files)]
   if { $ignore_file_filter != "" } {
@@ -1393,16 +1384,6 @@ proc getFiles { } {
   return $filelist
 }
 
-proc log_toggle { } {
-  global cvscfg
-  
-  if {$cvscfg(logging)} {
-    #gen_log:init
-  } else {
-    #gen_log:quit
-  }
-}
-
 proc exit_cleanup { force } {
   global cvscfg
   
@@ -1440,152 +1421,3 @@ proc exit_cleanup { force } {
   catch {file delete -force [file join $cvscfg(tmpdir) cvstmpdir.$pid]}
   exit
 }
-
-#proc save_options { } {
-#  #
-#  # Save the options which are configurable from the GUI
-#  #
-#  global cvscfg
-#  global logcfg
-#  global bookmarks
-#  
-#  #gen_log:log T "ENTER"
-#  
-#  # There are two kinds of options we can set
-#  set BOOLopts { allfiles auto_status confirm_prompt \
-#        gitdetail showstatcol showdatecol showwrevcol showeditcol auto_tag \
-#      status_filter recurse logging blame_linenums use_cvseditor }
-#  set STRGopts { show_file_filter ignore_file_filter clean_these editor preftab \
-#        gitblame_since gitbranchgroups gitlog_opts gitlog_since \
-#        gitmaxbranch gitmaxhist gitbranchregex \
-#        printer log_classes lastdir sort_pref editor editorargs \
-#        workgeom modgeom loggeom shell tkdiff toomany_tags tracgeom blamegeom \
-#      svn_trunkdir svn_branchdir svn_tagdir }
-#  
-#  # Plus the logcanvas options
-#  set LOGopts [concat [array names logcfg show_*] scale]
-#  
-#  # remove obsolete settings
-#  if {[info exists cvscfg(editorargs)] } {
-#    if {$cvscfg(editorargs) != ""} {
-#      set cvscfg(editor) [concat $cvscfg(editor) $cvscfg(editorargs)]
-#    }
-#    unset cvscfg(editorargs)
-#  }
-#  if {[info exists cvscfg(gitsince)] } {
-#    unset cvscfg(gitsince)
-#  }
-#  
-#  # Save the list so we can keep track of what we've done
-#  set BOOLset $BOOLopts
-#  set STRGset $STRGopts
-#  set LOGset $LOGopts
-#  
-#  set optfile [file join $cvscfg(home) .tkrev]
-#  set bakfile [file join $cvscfg(home) .tkrev.bak]
-#  # Save the old .tkrev file
-#  #gen_log:log F "MOVE $optfile $bakfile"
-#  catch {file rename -force $optfile $bakfile}
-#  
-#  #gen_log:log F "OPEN $optfile"
-#  if {[catch {set fo [open $optfile w]}]} {
-#    cvsfail "Cannot open $optfile for writing" .workdir
-#    return
-#  }
-#  #gen_log:log F "OPEN $bakfile"
-#  
-#  if {! [catch {set fi [open $bakfile r]}]} {
-#    while { [eof $fi] == 0 } {
-#      gets $fi line
-#      set match 0
-#      if {[regexp {^#} $line]} {
-#        # Don't try to scan comments.
-#        ##gen_log:log D "PASSING \"$line\""
-#        puts $fo "$line"
-#        continue
-#      } elseif {[string match "*set *bookmarks*" $line]} {
-#        # Discard old bookmarks
-#        continue
-#      } else {
-#        foreach opt $BOOLopts {
-#          if {! [info exists cvscfg($opt)]} { continue }
-#          if {[string match "*set *cvscfg($opt)*" $line]} {
-#            # Print it and remove it from the list
-#            #gen_log:log D "REPLACING $line  w/ set cvscfg($opt) $cvscfg($opt)"
-#            puts $fo "set cvscfg($opt) $cvscfg($opt)"
-#            set idx [lsearch $BOOLset $opt]
-#            set BOOLset [lreplace $BOOLset $idx $idx]
-#            set match 1
-#            break
-#          }
-#        }
-#        foreach opt $STRGopts {
-#          if {! [info exists cvscfg($opt)]} { continue }
-#          if {[string match "*set *cvscfg($opt)*" $line]} {
-#            # Print it and remove it from the list
-#            #gen_log:log D "REPLACING $line  w/ set cvscfg($opt) $cvscfg($opt)"
-#            puts $fo "set cvscfg($opt) \{$cvscfg($opt)\}"
-#            set idx [lsearch $STRGset $opt]
-#            set STRGset [lreplace $STRGset $idx $idx]
-#            set match 1
-#            break
-#          }
-#        }
-#        if {[string match "*set *cvscfg(editorargs)*" $line]} {
-#          # editorargs is no longer necessary
-#          continue
-#        }
-#        foreach opt $LOGopts {
-#          if {! [info exists logcfg($opt)]} { continue }
-#          if {[string match "*set *logcfg($opt)*" $line]} {
-#            # Print it and remove it from the list
-#            #gen_log:log D "REPLACING \"$line\"  w/ set logcfg($opt) \"$logcfg($opt)\""
-#            puts $fo "set logcfg($opt) \"$logcfg($opt)\""
-#            set idx [lsearch $LOGset $opt]
-#            set LOGset [lreplace $LOGset $idx $idx]
-#            set match 1
-#            break
-#          }
-#        }
-#        if {$match == 0} {
-#          # We didn't do a replacement
-#          #gen_log:log D "PASSING \"$line\""
-#          # If we don't check this, we get an extra blank line every time
-#          # we save the file.  Messy.
-#          if {[eof $fi] == 1} { break }
-#          puts $fo "$line"
-#        }
-#      }
-#    }
-#    foreach mark [lsort [array names bookmarks]] {
-#      #gen_log:log D "Adding bookmark \"$mark\""
-#      puts $fo "set \"bookmarks($mark)\" \"$bookmarks($mark)\""
-#    }
-#    
-#    close $fi
-#  }
-#  
-#  # Print what's left over
-#  foreach opt $BOOLset {
-#    if {! [info exists cvscfg($opt)]} { continue }
-#    #gen_log:log D "ADDING cvscfg($opt) $cvscfg($opt)"
-#    puts $fo "set cvscfg($opt) $cvscfg($opt)"
-#  }
-#  
-#  foreach opt $STRGset {
-#    if {! [info exists cvscfg($opt)]} { continue }
-#    #gen_log:log D "ADDING cvscfg($opt) \"$cvscfg($opt)\""
-#    puts $fo "set cvscfg($opt) \"$cvscfg($opt)\""
-#  }
-#  
-#  foreach opt $LOGset {
-#    if {! [info exists logcfg($opt)]} { continue }
-#    #gen_log:log D "ADDING logcfg($opt) \"$logcfg($opt)\""
-#    puts $fo "set logcfg($opt) \"$logcfg($opt)\""
-#  }
-#  
-#  close $fo
-#  picklist_save
-#  #gen_log:log T "LEAVE"
-#}
-
