@@ -239,4 +239,26 @@ if { [string equal $argv "help"] } {
 }
 exit -1 
 
+proc make_src_ctrled { type } {
+	
+}
+proc checkout_proj { } {
+	
+}
+proc checkout_files { } {
+	
+}
+proc commit_project {} {
+	
+}
+proc commit_files {} {
+	
+}
+proc redef_project_commands {} {
+	
+}
+proc autobuild_project_from_repo {} {
+	
+}
 
+proc 
