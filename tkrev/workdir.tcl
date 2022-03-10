@@ -17,7 +17,7 @@ proc workdir_setup {} {
   global logclass
   global tcl_platform
   global incvs insvn inrcs ingit
-  
+ set vrbl 1  
   global dot_workdir
   #gen_log:log T "ENTER"
   set cwd [pwd]
