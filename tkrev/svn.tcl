@@ -128,7 +128,6 @@ proc svn_workdir_status {} {
     $cmd(svn_status)\::destroy
     catch {unset cmd(svn_status)}
   }
-  
   # do very simple xml parsing
   foreach entry $entrylist {
     set filename ""

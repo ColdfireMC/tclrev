@@ -1,53 +1,162 @@
-#!/bin/sh
-#-*-tcl-*-
-# the next line restarts using tclsh \
-    exec tclsh "$0" -- ${1+"$@"}
-
-#
-# TkRev Main program -- A Tk interface to CVS.
-#
-# Uses a structured modules file -- see the manpage for more details.
-#
-# Author:  Del (del@babel.dialix.oz.au)
-    
-#
-#package require parse_args
-
-
-proc make_src_ctrled { type } {
-	
+##
+# tclrev entry
+array set repo "" 
+array set cvsglb ""
+array set cvscfg ""
+set repotype_default ""
+set repotype
+proc make_src_ctrled { } {
+	global repo
+	global cvsglb ""
+	global cvscfg ""
+	switch repotype {
+        svn {
+            ACTION
+        }
+        git {
+            ACTION2
+        }
+		vcs {
+            ACTION2
+        }
+		rcs {
+			
+		}
+		default {
+			puts "error "
+		}	
+    }
 }
-proc checkout_proj { } {
-	
+proc checkout_proj { proj_url } {
+	global repo
+	global cvsglb ""
+	global cvscfg ""
+	switch repotype {
+        svn {
+            svn_check
+        }
+        git {
+            ACTION2
+        }
+		vcs {
+            ACTION2
+        }
+		rcs {
+			
+		}
+		
+		default {
+			puts "error "
+		}	
+    }
 }
-proc checkout_files { } {
-	
+proc checkout_files { repo_url repotype file_list} {
+	global repo
+	global cvsglb ""
+	global cvscfg ""
+	switch repotype {
+        svn {
+            svn_check
+        }
+        git {
+            ACTION2
+        }
+		vcs {
+            ACTION2
+        }
+		rcs {
+			
+		}
+		default {
+		puts "error "
+		}	
+    }
 }
-proc commit_project { } {
-	
+proc repo_file_delete { files args } {
+    global repo
+	global cvsglb ""
+	global cvscfg ""
+	switch repotype {
+        svn {
+            svn_check
+        }
+        git {
+            ACTION2
+        }
+		vcs {
+            ACTION2
+        }
+		rcs {
+			
+		}	
+		default {
+			puts "error "
+		}
+    }
 }
-proc commit_files { } {
-	
+proc commit_project { repotype proj_struct msg} {
+	global repo
+	global cvsglb ""
+	global cvscfg ""
+	switch repotype {
+        svn {
+            svn_check
+        }
+        git {
+            ACTION2
+        }
+		vcs {
+            ACTION2
+        }
+		rcs {
+			
+		}
+		default {
+			puts "error "
+		}	
+    }
+}
+proc commit_files { repotype file_list msg args } {
+	global repo
+	global cvsglb ""
+	global cvscfg ""
+	switch repotype {
+        svn {
+            svn_commit msg args
+        }
+        git {
+            ACTION2
+        }
+		vcs {
+            ACTION2
+        }
+		rcs {
+			
+		}
+		default {
+			puts "error "
+		}	
+    }
 }
 proc redef_project_commands { } {
 	
 }
-proc autobuild_project_from_repo { } {
-	
-}
-proc srcctrlchk {cvscfg_str} {
+#proc autobuild_project_from_repo { } {
+#	
+# }
+proc srcctrlchk {} {
 	global env
+	global cvscfg
 	global cvsglb
 	set srcdirtype_str ""
 	set srcdirtype(insvn) 0
 	set srcdirtype(ingit) 0
 	set srcdirtype(inrcs) 0
-	set srcdirtype(incvs) 0
-	array set cvscfg $cvscfg_str 
-	# Detect whether we're in a revision-controlled directory  
+	set srcdirtype(incvs) 0 
 	puts [pwd]
-#	set srcdirtype_str [cvsroot_check [pwd] [array get cvscfg] [array get cvsglb]]
-#	array set srcdirtype $srcdirtype_str
+	set srcdirtype_str [cvsroot_check [pwd] [array get cvscfg] [array get cvsglb]]
+	array set srcdirtype $srcdirtype_str
+	
 	if {![info exists cvscfg(ignore_file_filter)]} {
 		set cvscfg(ignore_file_filter) ""
 	}
@@ -56,23 +165,49 @@ proc srcctrlchk {cvscfg_str} {
 	}
 	if {![info exists cvscfg(show_file_filter)]} {
 		set cvscfg(show_file_filter) "*"
-	}	    
+	}
+	
 	set cvsglb(root) ""
 	set cvsglb(vcs) ""
-	if {$srcdirtype(insvn) == 1} {
+	
+	if {{$srcdirtype(insvn) == 1} && {$srcdirtype(incvs) == 0} && {$srcdirtype(ingit) == 0}} {
 		set cvsglb(root) $cvscfg(svnroot)
 		set cvsglb(vcs) svn
 		puts "svn"
-	} elseif {$srcdirtype(incvs) == 1} {
+	} elseif {{$srcdirtype(insvn) == 0} && {$srcdirtype(incvs) == 1} && {$srcdirtype(ingit) == 0}} {
 		set cvsglb(root) $cvscfg(cvsroot)
 		set cvsglb(vcs) cvs
 		puts "cvs"
-	} elseif {$srcdirtype(ingit) == 1} {
+	} elseif {{$srcdirtype(insvn) == 0} && {$srcdirtype(incvs) == 0} && {$srcdirtype(ingit) == 1}} {
        set cvsglb(root) $cvscfg(url)
        set cvsglb(vcs) git
        puts "git"
     } else {
-     puts "Directory doesn't seem to be in CVS or SVN"
+		switch repotype_default {
+			svn {
+				if {$srcdirtype(insvn) == 1} {
+					set repotype svn
+				} 
+			}
+			git {
+				if {$srcdirtype(ingit) == 1} {
+					set repotype git
+				} 
+			}
+			cvs {
+				if {$srcdirtype(incvs) == 1} {
+					set repotype cvs
+				} 
+			}
+			rcs {
+				puts "rcs not supported yet"
+			}
+			default {
+				puts "Error: default not applicable"
+		}
+    }
+		puts "Directory doesn't seem to be in Git, CVS or SVN, or is being controlled by more than one version control system"
+		return -1
     }
 	# We'll respect CVSROOT environment variable if it's set
     if {[info exists env(CVSROOT)]} {
@@ -80,11 +215,11 @@ proc srcctrlchk {cvscfg_str} {
 		set cvscfg(cvsroot) $env(CVSROOT)
 		set cvsglb(vcs) cvs
     }
-	return [array get srcdirtype]
 }
-proc usgprint {argv} {
+proc usgprint {} {
 	# Command line options	
 	set usage "Usage:"
+	global argv
 	append usage "\n tkrev \[-root <cvsroot>\] \[-win workdir|module|merge\]"
 	append usage "\n tkrev \[-log|blame <file>\]"
 	append usage "\n tkrev <file> - same as tkrev -log <file>"
@@ -146,14 +281,12 @@ proc usgprint {argv} {
 			}
 		}
 	}
-	else
-	{
+	else {
 		puts $usage
 	}
 }
-
-proc tkrevinit { cvscfg_str } {
-	array set cvscfg $cvscfg_str
+proc tkrevinit { } {
+	global cvscfg
   	global auto_path
 	global TCDIR
 	global HOME
@@ -244,20 +377,6 @@ proc tkrevinit { cvscfg_str } {
 	if {$cvscfg(use_cvseditor) && ![info exists cvscfg(terminal)]} {
 		cvserror "cvscfg(terminal) is required if cvscfg(use_cvseditor) is set \a"
 	}
-	return [array get cvscfg]
+	srcctrlchk  
 }
-puts $argv 
-# puts $dir
-array set cvsglb ""
-array set cvscfg ""
-if {[string equal $argv "help"]} {
-	usgprint $argv 
-	exit -1
-} else {
-	set cvscfg_str [tkrevinit [array get cvscfg]]
-	array set cvscfg $cvscfg_str
-	set src_ctrl_str [srcctrlchk [array get cvscfg]]
-	array set src_ctrl $src_ctrl_str
-	exit 0 	
-}
-exit -1 
+

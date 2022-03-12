@@ -1260,7 +1260,6 @@ proc cvsroot_check { dir cvscfg_str cvsglb_str} {
       return a
     }
   }
-  
   set rcsdir [file join $dir RCS]
   if {[file exists $rcsdir]} {
     set cvscfg(rcsdir) $rcsdir
