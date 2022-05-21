@@ -1,10 +1,4 @@
-##
-# tclrev entry
-array set repo "" 
-array set cvsglb ""
-array set cvscfg ""
-set repotype_default ""
-set repotype
+
 proc make_src_ctrled { } {
 	global repo
 	global cvsglb ""
@@ -149,53 +143,42 @@ proc srcctrlchk {} {
 	global cvscfg
 	global cvsglb
 	set srcdirtype_str ""
-	set srcdirtype(insvn) 0
-	set srcdirtype(ingit) 0
-	set srcdirtype(inrcs) 0
-	set srcdirtype(incvs) 0 
+	set srcdirtype(insvn) false
+	set srcdirtype(ingit) false
+	set srcdirtype(inrcs) false
+	set srcdirtype(incvs) false
 	puts [pwd]
 	set srcdirtype_str [cvsroot_check [pwd] [array get cvscfg] [array get cvsglb]]
 	array set srcdirtype $srcdirtype_str
-	
-	if {![info exists cvscfg(ignore_file_filter)]} {
-		set cvscfg(ignore_file_filter) ""
-	}
-	if {[info exists cvscfg(file_filter)]} {
-		unset cvscfg(file_filter)
-	}
-	if {![info exists cvscfg(show_file_filter)]} {
-		set cvscfg(show_file_filter) "*"
-	}
-	
 	set cvsglb(root) ""
 	set cvsglb(vcs) ""
 	
-	if {{$srcdirtype(insvn) == 1} && {$srcdirtype(incvs) == 0} && {$srcdirtype(ingit) == 0}} {
+	if {{$srcdirtype(insvn) == true} && {$srcdirtype(incvs) == false} && {$srcdirtype(ingit) == false}} {
 		set cvsglb(root) $cvscfg(svnroot)
 		set cvsglb(vcs) svn
 		puts "svn"
-	} elseif {{$srcdirtype(insvn) == 0} && {$srcdirtype(incvs) == 1} && {$srcdirtype(ingit) == 0}} {
+	} elseif {{$srcdirtype(insvn) == false} && {$srcdirtype(incvs) == true} && {$srcdirtype(ingit) == false}} {
 		set cvsglb(root) $cvscfg(cvsroot)
 		set cvsglb(vcs) cvs
 		puts "cvs"
-	} elseif {{$srcdirtype(insvn) == 0} && {$srcdirtype(incvs) == 0} && {$srcdirtype(ingit) == 1}} {
+	} elseif {{$srcdirtype(insvn) == false} && {$srcdirtype(incvs) == false} && {$srcdirtype(ingit) == true}} {
        set cvsglb(root) $cvscfg(url)
        set cvsglb(vcs) git
        puts "git"
     } else {
 		switch repotype_default {
 			svn {
-				if {$srcdirtype(insvn) == 1} {
+				if {$srcdirtype(insvn) == true} {
 					set repotype svn
 				} 
 			}
 			git {
-				if {$srcdirtype(ingit) == 1} {
+				if {$srcdirtype(ingit) == true} {
 					set repotype git
 				} 
 			}
 			cvs {
-				if {$srcdirtype(incvs) == 1} {
+				if {$srcdirtype(incvs) == true} {
 					set repotype cvs
 				} 
 			}
@@ -223,7 +206,10 @@ proc usgprint {} {
 	append usage "\n tkrev \[-root <cvsroot>\] \[-win workdir|module|merge\]"
 	append usage "\n tkrev \[-log|blame <file>\]"
 	append usage "\n tkrev <file> - same as tkrev -log <file>"
-	if {[info exists argv]}	{
+}	
+	
+proc arg_parse {argv} {
+ if {[info exists argv]}	{
 		for {set i 0} {$i < [llength $argv]} {incr i} {
 			set arg [lindex $argv $i]
 			set val [lindex $argv [expr {$i+1}]]
@@ -379,4 +365,15 @@ proc tkrevinit { } {
 	}
 	srcctrlchk  
 }
-
+##
+# tclrev entry
+array set repo "" 
+array set cvsglb ""
+array set cvscfg ""
+set repotype_default ""
+set repotype ""
+if {[info exists argv] } { 
+	tkrevinit
+} else {
+	usgprint
+}

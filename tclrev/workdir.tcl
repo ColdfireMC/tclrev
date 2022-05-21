@@ -17,7 +17,7 @@ proc workdir_setup {} {
   global logclass
   global tcl_platform
   global incvs insvn inrcs ingit
- set vrbl 1  
+  set vrbl 1  
   global dot_workdir
   #gen_log:log T "ENTER"
   set cwd [pwd]
@@ -301,11 +301,7 @@ proc workdir_setup {} {
 #  frame .workdir.main
 #  pack .workdir.main -side bottom -fill both -expand 1 -fill both
 #  update idletasks
-#  
-  if {! [winfo ismapped .workdir]} {
-    wm deiconify .workdir
-  }
-  
+#    
 #  #change_dir "[pwd]"
   setup_dir
   #gen_log:log T "LEAVE"
@@ -1239,10 +1235,10 @@ proc cvsroot_check { dir cvscfg_str cvsglb_str} {
   array set cvscfg $cvscfg_str
   array set cvsglb $cvsglb_str
   
-  set srcdirtype(incvs) 0
-  set srcdirtype(insvn) 0
-  set srcdirtype(inrcs) 0
-  set srcdirtype(ingit) 0
+  set srcdirtype(incvs) false
+  set srcdirtype(insvn) false
+  set srcdirtype(inrcs) false
+  set srcdirtype(ingit) false
 	
   set cvsrootfile [file join $dir CVS Root]
 	
@@ -1280,9 +1276,9 @@ proc cvsroot_check { dir cvscfg_str cvsglb_str} {
     if {$ret} {
       if [string match {rcs*} $raw_rcs_log] {
         # An old version of RCS, but it's here
-        set srcdirtype(inrcs) 1
+        set srcdirtype(inrcs) true
       } else {
-        set srcdirtype(inrcs) 0
+        set srcdirtype(inrcs) false
       }
     }
   }
@@ -1291,12 +1287,12 @@ proc cvsroot_check { dir cvscfg_str cvsglb_str} {
     # revparse may return "false"
     ##gen_log:log F "gitout $gitout"
     if {$gitout} {
-      set srcdirtype(ingit) 1
+      set srcdirtype(ingit) true
       find_git_remote $dir
     }
   } else {
     ###gen_log:log E "gitout $gitout"
-    set srcdirtype(ingit) 0
+    set srcdirtype(ingit) false
   }
   puts [array get srcdirtype]
   return [array get srcdirtype]
