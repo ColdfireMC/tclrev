@@ -1,3 +1,5 @@
+
+
 proc srcctrlchk {} { 
 	global env
 	global cvscfg
@@ -61,9 +63,8 @@ proc srcctrlchk {} {
 }
 proc usgprint {} { 
 	# Command line options	
-	set usage "Usage:"
-	global argv
-	append usage "\n tkrev \[-root <cvsroot>\] \[-win workdir|module|merge\]"
+	set usage "Usage:" 
+	append usage "\n tkrev \[-root <cvsroot>\] \[-win workdir|module|merge\]" 
 	append usage "\n tkrev \[-log|blame <file>\]"
 	append usage "\n tkrev <file> - same as tkrev -log <file>"
 }	 
@@ -127,8 +128,9 @@ proc arg_parse { argv } {
 	}
 }
 proc tkrevinit { } {
+	
 	global cvscfg
-  	global auto_path
+ global auto_path
 	global TCDIR
 	global HOME
 	global TCLROOT
@@ -140,14 +142,9 @@ proc tkrevinit { } {
 	if {[info exists TclRoot]} {
 		    return 1
 		}
-		if {[file type $Script] == "link"} {
-			#puts "$Script is a link"
-			set ScriptBin [file join [file dirname $Script] [file readlink $Script]]
-	   	} else {
-			set ScriptBin $Script
-		}
-
+	set ScriptBin [info nameofexecutable]
 	set TclRoot [file join [file dirname $ScriptBin]]
+	set TCDIR [file dirname [info script]]
 	puts "TclRoot $TclRoot"
 	if {$TclRoot == "."} {
 	 	set TclRoot [pwd]
@@ -159,7 +156,7 @@ proc tkrevinit { } {
 	if { [file exists [file join $TCDIR tkrev_def.tcl]] }	{
 		source [file join $TCDIR tkrev_def.tcl]
 	}
-	set optfile [file join $cvscfg(home) .tkrev]
+	set optfile [file join "~" .tkrev]
 	set old_optfile [file join $cvscfg(home) .tkcvs]
 	if { [file exists $old_optfile] && ![file exists $optfile] } {
 		file copy -- $old_optfile $optfile
@@ -180,6 +177,8 @@ proc tkrevinit { } {
 }
 ##
 # tclrev entry
+package require registry
+
 array set repo "" 
 array set cvsglb ""
 array set cvscfg ""

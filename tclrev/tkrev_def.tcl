@@ -90,15 +90,14 @@ set cvscfg(aster) "*.*"
 set cvscfg(null) "nul"
 # Terminal program
 set cvscfg(terminal) "command /c"
+set cvscfg(home) [file normalize $::env(HOMEPATH)]
 # Please don't ask me why you have to set -T on DOS,
 # experiments say you have! - CJ
 #set cvs "cvs -T $cvscfg(tmpdir)"
 set cvs "cvs"
 set cvscfg(editor) "notepad"
 # set temp directory
-set cvscfg(tmpdir) env("TEMP")
-#set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
-set cvscfg(tkdiff) "[file join \"[file dirname "$ScriptBin"] tkdiff\"]"
+set cvscfg(tmpdir) [file normalize $::env(PATH)]
 set cvscfg(print_cmd)    "pr"
 set cvscfg(shell)  ""
 set cvscfg(allow_abort)  "no"
