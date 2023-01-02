@@ -203,8 +203,9 @@ proc find_git_remote {dirname} {
   if {! [info exists cvscfg(origin)] } {
     set cvscfg(origin) ""
   }
-  set cmd(git_config) [exec::new "git remote -v"]
-  set lines [split [$cmd(git_config)\::output] "\n"]
+  set cmd(git_config) [exec {git} remote -v]
+    # set lines [split [$cmd(git_config)\::output] "\n"]
+  set lines [split $cmd(git_config) "\n"]
   set i 0
   foreach line $lines {
     if {$i == 0} {
@@ -348,14 +349,9 @@ proc git_fetch {} {
 
 proc git_list_tags {} {
   #gen_log:log T "ENTER"
+  set command "git tag --list"
+  [list [exec $command]]
   
-  set commandline "git tag --list"
-  set v [viewer::new "Tags"]
-  $v\::do "$commandline"
-  $v\::wait
-  $v\::clean_exec
-  
-  #gen_log:log T "LEAVE"
 }
 
 # Called from "Log" in Reports menu
@@ -636,11 +632,6 @@ proc git_patch { filename {rev1 {}} {rev2 {}} } {
 # called from the "Check Directory" button in the workdir and Reports menu
 proc git_check {} {
   global cvscfg
-  
-  #gen_log:log T "ENTER ()"
-  
-  busy_start .workdir.main
-  set title "Git Directory Check"
   # I know we use a short report for other VCSs, but for Git you really
   # need the full report to know what's staged and what's not
   set flags "--porcelain"
@@ -649,103 +640,11 @@ proc git_check {} {
     append flags " -uno"
   }
   set command "git status $flags"
-  set check_cmd [viewer::new $title]
-  $check_cmd\::do "$command" 0
-  
-  busy_done .workdir.main
-  #gen_log:log T "LEAVE"
+  exec "$command"
 }
 
 # dialog for git commit - called from workdir browser
-proc git_commit_dialog {} {
-  global cvsglb
-  global cvscfg
-  
-  # If marked files, commit these.  If no marked files, then
-  # commit any files selected via listbox selection mechanism.
-  # The cvsglb(commit_list) list remembers the list of files
-  # to be committed.
-  set cvsglb(commit_list) [workdir_list_files]
-  # If we want to use an external editor, just do it
-  if {$cvscfg(use_cvseditor)} {
-    git_commit "" "" $cvsglb(commit_list)
-    return
-  }
-  
-  if {[winfo exists .commit]} {
-    destroy .commit
-  }
-  
-  toplevel .commit
-  #grab set .commit
-  
-  frame .commit.top -border 8
-  frame .commit.down -relief groove -border 2
-  
-  pack .commit.top -side top -fill x
-  pack .commit.down -side bottom -fill x
-  frame .commit.comment
-  pack .commit.comment -side top -fill both -expand 1
-  label .commit.comment.lcomment -text "Your log message" -anchor w
-  button .commit.comment.history -text "Log History" \
-      -command history_browser
-  text .commit.comment.tcomment -relief sunken -width 70 -height 10 \
-      -bg $cvsglb(textbg) -exportselection 1 \
-      -wrap word -border 2 -setgrid yes
-  
-  
-  # Explain what it means to "commit" files
-  message .commit.message -justify left -aspect 800 \
-    -text "This will commit changes from your local, working directory
-  into the local repository, recursively."
-  
-  pack .commit.message -in .commit.top -padx 2 -pady 5
-  
-  button .commit.ok -text "OK" \
-      -command {
-    #grab release .commit
-    wm withdraw .commit
-    set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
-    git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
-    commit_history $cvsglb(commit_comment)
-  }
-  button .commit.apply -text "Apply" \
-      -command {
-    set cvsglb(commit_comment) [.commit.comment.tcomment get 1.0 end]
-    git_commit $cvsglb(commit_comment) $cvsglb(commit_list)
-    commit_history $cvsglb(commit_comment)
-  }
-  button .commit.clear -text "ClearAll" \
-      -command {
-    set version ""
-    .commit.comment.tcomment delete 1.0 end
-  }
-  button .commit.quit \
-      -command {
-    #grab release .commit
-    wm withdraw .commit
-  }
-  
-  .commit.ok configure -text "OK"
-  .commit.quit configure -text "Close"
-  
-  grid columnconf .commit.comment 1 -weight 1
-  grid rowconf .commit.comment 1 -weight 1
-  grid .commit.comment.lcomment -column 0 -row 0
-  grid .commit.comment.tcomment -column 1 -row 0 -rowspan 2 -padx 4 -pady 4 -sticky nsew
-  grid .commit.comment.history  -column 0 -row 1
-  
-  pack .commit.ok .commit.apply .commit.clear .commit.quit -in .commit.down \
-      -side left -ipadx 2 -ipady 2 -padx 4 -pady 4 -fill both -expand 1
-  
-  # Fill in the most recent commit message
-  .commit.comment.tcomment insert end $cvsglb(commit_comment)
-  
-  wm title .commit "Commit Changes"
-  wm minsize .commit 1 1
-  
-  #gen_log:log T "LEAVE"
-}
+
 
 # git commit - called from commit dialog
 proc git_commit {comment args} {

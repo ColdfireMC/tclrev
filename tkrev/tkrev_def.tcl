@@ -68,10 +68,10 @@ set cvscfg(mod_iconwidth) 24
 
 # Colours.  "Colors" that is if you are a yanqui who can't spell.
 # Added support for monochrome machines. -sj
-if { [winfo depth .] == 1 } {
-  option add *ToolTip.background  "white"
-  option add *ToolTip.foreground  "black"
-}
+#if { [winfo depth .] == 1 } {
+#  option add *ToolTip.background  "white"
+#  option add *ToolTip.foreground  "black"
+#}
 
 #
 # You can either un-comment these lines or
@@ -211,31 +211,32 @@ if {$tcl_platform(platform) == "windows"} {
   # set temp directory
   set cvscfg(tmpdir) "c:/temp"
   #set cvscfg(tkdiff) "$TclExe [file join \"[file dirname $ScriptBin] tkdiff.tcl\"]"
-  set cvscfg(tkdiff) "[file join \"[file dirname "$ScriptBin"] tkdiff\"]"
+  #set cvscfg(tkdiff) "[file join \"[file dirname "$ScriptBin"] tkdiff\"]"
   set cvscfg(print_cmd)    "pr"
   set cvscfg(shell)  ""
   set cvscfg(allow_abort)  "no"
-} else {
-  if {[tk windowingsystem] eq "aqua"} {
-    set cvscfg(terminal) "open -a Terminal -n"
-    set cvscfg(editor) "open -e"
-    #set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
-    # If you invoke vim this way, -psn_ tells it to run in its own window
-    #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
-    set cvscfg(shell) "open -a Terminal -n"
-    #set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
-  } else {
-    # Execution
-    set cvscfg(terminal) "xterm -e"
-    # Command shell
-    set cvscfg(shell) {xterm -name tkrevxterm -n {TkRev xterm}}
-    # To override the default editor (setup when tkrev is configured and
-    # installed) a user can set the cvscfg(editor) variable to the editor
-    # of choice in their .tkrev file
-    set cvscfg(editor) {xterm -e vi}
-    #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
-    set cvscfg(print_cmd)          "lpr"
-  }
+  
+}
+#  #  if {[tk windowingsystem] eq "aqua"} {
+#    set cvscfg(terminal) "open -a Terminal -n"
+#    set cvscfg(editor) "open -e"
+#    #set cvscfg(editor) /Applications/TextEdit.app/Contents/MacOS/TextEdit
+#    # If you invoke vim this way, -psn_ tells it to run in its own window
+#    #set cvscfg(editor) {/Applications/Vim.app/Contents/MacOS/Vim -psn}
+#    set cvscfg(shell) "open -a Terminal -n"
+#    #set cvscfg(tkdiff) "\"/Applications/TkDiff.app/Contents/MacOS/tkdiff\""
+#  } else {
+#    # Execution
+#    set cvscfg(terminal) "xterm -e"
+#    # Command shell
+#    set cvscfg(shell) {xterm -name tkrevxterm -n {TkRev xterm}}
+#    # To override the default editor (setup when tkrev is configured and
+#    # installed) a user can set the cvscfg(editor) variable to the editor
+#    # of choice in their .tkrev file
+#    set cvscfg(editor) {xterm -e vi}
+#    #set cvscfg(print_cmd)          {enscript -Ghr -fCourier8}
+#    set cvscfg(print_cmd)          "lpr"
+
   set cvscfg(tmpdir) "/tmp"
   set cvscfg(aster) "*"
   set cvscfg(null) "/dev/null"
@@ -262,7 +263,7 @@ if {$tcl_platform(platform) == "windows"} {
   #    {calibredrv -m} *.gds
   #}
   set cvscfg(allow_abort)  "yes"
-}
+
 
 #
 # --------------------

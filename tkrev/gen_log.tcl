@@ -105,7 +105,7 @@ proc gen_log:log { class string } {
     } else {
       set callerid [lindex [info level $callerlevel] 0]
     }
-    # Uncomment this to see the trace on stdout
+    # Uncomment this to see the trace on stdout 
     #puts "$class ($callerid) $string"
     .trace.text insert end [format "\[%s] %s\n" $callerid "$string"] tag$class
     set overflow [expr {[.trace.text index end] - $cvscfg(trace_savelines)}]
@@ -126,7 +126,7 @@ proc gen_log:quit { } {
   }
 }
 
-proc gen_log:clear { } {
+proc gen_log:clear { } { 
   .trace.text delete 1.0 end
 }
 
@@ -141,7 +141,7 @@ proc gen_log:save { } {
       -parent .trace
   ]
   if {$savfile == ""} {
-    return
+    return 
   }
   
   if {[catch {set fo [open $savfile w]}]} {

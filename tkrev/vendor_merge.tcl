@@ -1,14 +1,10 @@
-
 # Tcl Library for TkRev
-
 #
 # Modifications by Eugene Lee 10/16/03
 # 1. .merge window made more robust so user cannot key in incorrect data.
 # 2. Name of Vendor Module is selectable by user (no longer hardcoded to Vendor).
 #    proc vendor_wait no longer used
 # 3. Added proc vendorDialog
-
-
 proc merge_run {mcode} {
   # By: Eugene Lee, Aerospace Corporation, 11/12/95
   # Modified by E. Lee 10/16/03

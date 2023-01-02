@@ -11,7 +11,7 @@ proc prefdialog {} {
   toplevel $pd
   wm title $pd "TkRev Preferences"
   wm protocol $pd WM_DELETE_WINDOW { prefs_close }
-  wm withdraw .prefdlg
+  wm withdraw .prefdlg 
   
   lassign [winfo pointerxy .] x y
   incr x -350
@@ -34,7 +34,7 @@ proc prefdialog {} {
   prefs_git $pd.prefnb
   prefs_subversion $pd.prefnb
   prefs_cvs $pd.prefnb
-  
+   
   pack $pd.prefnb -side top -expand y -fill both
   
   if {[info exists cvscfg(preftab)]} {
@@ -117,7 +117,7 @@ proc prefs_diagram {w} {
       -textvariable logcfg(scale)
   
   pack  $w.logcanv.scale
-  grid columnconf $w.logcanv.scale 1 -weight 1
+  grid columnconf $w.logcanv.scale 1 -weight 1 
   grid $w.logcanv.scale.lspin -sticky w -column 0 -row 0
   grid $w.logcanv.scale.sspin -sticky w -column 1 -row 0
   
@@ -218,7 +218,7 @@ proc prefs_git {w} {
   grid $w.git.blame.blamelbl -sticky w -column 0 -row 0 -columnspan 2
   grid $w.git.blame.lgitblame_since -sticky w -column 0 -row 1
   grid $w.git.blame.egitblame_since -sticky ew -column 1 -row 1 -padx 2
-  
+   
   ttk::separator $w.git.sep2
   pack $w.git.sep2 -side top -fill x -pady 3
   

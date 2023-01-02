@@ -51,16 +51,9 @@ proc cvsalwaysconfirm {mess {parent {.}} } {
   return $answer
 }
 
-proc cvsfail {mess {parent {.}} } {
-  
-  if {! [winfo exists $parent]} {set parent .}
-  set title {TkRev Warning!}
-  tk_messageBox \
-      -icon warning \
-      -title $title \
-      -message $mess \
-      -parent $parent \
-      -type ok
+proc cvsfail {msg} {
+  puts "$msg"
+  return
 }
 
 proc cvserror {mess {parent {.}} } {
