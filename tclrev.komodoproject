@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
+<<<<<<< HEAD
 <project id="3afe6090-2384-4ddf-9973-3b29ac30f9ed" kpf_version="5" name="tclrev.komodoproject">
 <preference-set idref="3afe6090-2384-4ddf-9973-3b29ac30f9ed" id="project" preftype="project">
+=======
+<project id="7cb8bd83-6dba-4433-9a61-421b64a73ad6" kpf_version="5" name="tclrev.komodoproject">
+<preference-set idref="7cb8bd83-6dba-4433-9a61-421b64a73ad6" id="project" preftype="project">
+>>>>>>> 565667aaf4804f355ef7af23e80c98e8daa2d7b0
   <long id="prefs_version">1</long>
 </preference-set>
 </project>

@@ -6,8 +6,12 @@ proc read_svn_dir {dirname} {
   global current_tagname
   global module_dir
   global cmd
+<<<<<<< HEAD:tkrev/svn.tcl
       
   ##gen_log:log T "ENTER ($dirname)"
+=======
+  
+>>>>>>> 565667aaf4804f355ef7af23e80c98e8daa2d7b0:tclrev/svn.tcl
   set cvsglb(vcs) svn
   # svn info gets the URL
   # Have to do eval exec because we need the error output
@@ -21,8 +25,7 @@ proc read_svn_dir {dirname} {
   if {$ret} {
     cvsfail $output
     return 0
-  }
-  ##gen_log:log F $output
+  } 
   foreach infoline [split $output "\n"] {
     if {[string match "URL*" $infoline]} {
       set cvscfg(url) [lrange $infoline 1 end]
@@ -78,11 +81,9 @@ proc read_svn_dir {dirname} {
     puts "No conforming $cvscfg(svn_trunkdir)/$cvscfg(svn_branchdir)/$cvscfg(svn_tagdir) structure detected in the repository"
     puts " I won't be able to detect any branches or tags."
     set cvsglb(svnconform) 0
-    #gen_log:log T "LEAVE (-1)"
     return -1
   }
   set cvsglb(svnconform) 1
-  #gen_log:log T "LEAVE (0)"
   return 1
 }
 
