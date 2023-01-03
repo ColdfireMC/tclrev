@@ -1,5 +1,3 @@
-
-
 proc srcctrlchk {} { 
 	global env
 	global cvscfg
